@@ -7,17 +7,17 @@ book:
   subtitle: "One vocabulary. Two languages."
 
   # The hex sticker, designed by the author. It is the cover rather than a
-  # placeholder for one. The face is built from what the grammar actually has:
-  # the two pipes are the eyes, because they are the two bindings and a face has
-  # two; the brackets are the nose, because they mark a name *within* a step
-  # where the pipes join *between* them. The sibling project's sticker is the
-  # same construction on its own color, which is what makes them a set.
+  # placeholder for one. The face is the three places a pipeline can be written:
+  # R's pipe and Python's as the eyes, and the text form's column brackets
+  # between them, belonging to neither language. They also work at two scales,
+  # which is the sibling sticker's own logic: the pipes join one step to the
+  # next, the brackets mark a name inside one.
   cover-image: images/god-hex.png
   cover-image-alt: >-
     The god hex sticker. A slate blue hexagon with a black border, holding a
     face built from the grammar's own marks: R's pipe and Python's as the two
-    eyes, a pair of column brackets as the nose, and the package name as the
-    mouth.
+    eyes, the text form's column brackets as the nose, and the package name as
+    the mouth.
 
   # One name for now. The sibling book credits the models that wrote its prose
   # alongside the human, in a section of the preface that explains the division

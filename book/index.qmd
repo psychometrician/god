@@ -241,17 +241,27 @@ it can. That is not an apology. A grammar that refuses nothing has no shape.
 
 The hexagon at the top of this page says the same thing without a sentence. What
 sits inside it is a face. Its eyes are `|>` and `>>`, the pipe in R and the pipe
-in Python. Its nose is `[` and `]`, the brackets that go around a column's name.
-Its mouth is the package name.
+in Python. Its nose is `[` and `]`, which is how the plain text form names a
+column. Its mouth is the package name.
 
-Those marks are chosen and not decorative. A face has two eyes, and this grammar
-has two bindings: one language on the left, one on the right, saying the same
-thing. The brackets sit between them because they work at the other scale, the
-way the sibling project's sticker splits its own operators: the pipes join one
-step to the *next*, and the brackets mark a name *inside* one step. A full stop
-was considered for the nose and rejected, because this book argues at some length
-that joining steps with a dot is the thing god was built to avoid, and a cover
-should not say the opposite of its book.
+Those three marks are the three places you can write a pipeline, which is why
+they are the ones on the cover. A face has two eyes, and this grammar has two
+bindings: one language on the left, one on the right, saying the same thing.
+Between them sits the form that belongs to neither.
+
+They also work at two different scales, the way the sibling project's sticker
+splits its own operators. The pipes join one step to the *next*. The brackets
+mark a name *inside* one step.
+
+A full stop was considered for the nose and rejected, because this book argues at
+some length that joining steps with a dot is the thing god was built to avoid,
+and a cover should not say the opposite of its book.
+
+One thing the face does not show is worth saying here, because it is the first
+question a reader asks about it. You do not write those brackets in R or Python.
+There a column is a bare `revenue` or a `col.revenue`, and the brackets belong to
+the text form alone. Python borrows them in one place only, `col["order date"]`,
+for a name that is not a Python identifier.
 
 ## What this grammar borrows, and from where
 
