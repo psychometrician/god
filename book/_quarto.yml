@@ -50,6 +50,48 @@ book:
     left: |
       [Prose licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).]{.licence}
       [Code samples licensed [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).]{.licence}
+    # The center holds a reader count on the published site and nowhere else. It
+    # is an image, and the image *is* the counter, so every browser that opens a
+    # page fetches it, `localhost` among them. Left in this file it would count
+    # each of the 40 files rendered while writing as a reader. It lives in
+    # `_quarto-publish.yml`, which the workflow merges over this one and a local
+    # render never loads. That file says the rest.
+    right:
+      # The four the sibling book ends with, in the same order, drawn from
+      # Bootstrap Icons in `currentColor` so they take the theme with them.
+      #
+      # **All four are the author's rather than god's, and three are shared with
+      # gog unchanged.** There is no `goddeveloper` on either network and there
+      # should not be: the account named below displays as *psychometrician* and
+      # already speaks for both projects, the same way one blog carries posts
+      # about both. A second set of handles would split one voice in two.
+      #
+      # That is also why the labels say "psychometrician" rather than "god". A
+      # reader who follows the mark arrives at a person who writes both
+      # grammars, and a label promising god's own account would be wrong at the
+      # moment it mattered.
+      - icon: twitter-x
+        href: https://x.com/gogdeveloper
+        aria-label: "psychometrician on X"
+        target: _blank
+      - icon: bluesky
+        href: https://bsky.app/profile/gogdeveloper.bsky.social
+        aria-label: "psychometrician on Bluesky"
+        target: _blank
+      # The profile rather than this repository. A reader who wants the source
+      # has "Report an issue" in the margin of every page.
+      - icon: github
+        href: https://github.com/psychometrician
+        aria-label: "psychometrician on GitHub"
+        target: _blank
+      # The blog, which is where posts about god go: this repository publishes
+      # nothing and god gets no site of its own. `journal-text` rather than
+      # `book`, because the site uses `book` for this manual and the two marks
+      # must not be mistakable for each other by a reader who meets both.
+      - icon: journal-text
+        href: https://psychometrician.github.io/
+        aria-label: "psychometrician, the blog"
+        target: _blank
 
   # A toggle that folds away the chapter sidebar and the table of contents,
   # leaving the prose and the tables the whole width. Off until the reader asks

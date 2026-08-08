@@ -100,3 +100,84 @@ $blockquote-font-size:  1rem;
 .god-motto > p {
   margin-bottom: 0;
 }
+
+/* ---------------------------------------------------------------------------
+ * The footer
+ *
+ * Written into both theme files rather than into a stylesheet of its own,
+ * because Quarto compiles each theme into its own bundle and serves one at a
+ * time. A rule here is a light-theme rule, and its counterpart in the dark file
+ * differs only in the four colors. That is the same arrangement `.god-motto`
+ * above already uses.
+ * ------------------------------------------------------------------------- */
+
+/* Each licence is one unit. Left to itself the line broke wherever it ran out
+ * of room, which put "Apache 2.0." alone on a second line looking like a
+ * mistake. As inline blocks the two sentences can only break *between* each
+ * other, so a narrow footer gets two whole lines instead of one and a
+ * fragment. The margin is what separates them when they do share a line. */
+.nav-footer .licence {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+
+/* The licence text gets the room it needs and the icons take only their own
+ * width, rather than the regions splitting the bar evenly. Their own side
+ * padding comes off too: the row is already held to the writing's column, and
+ * a second inset inside it puts the licences right of everything above them. */
+.nav-footer-left {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  padding-left: 0;
+}
+
+.nav-footer-right {
+  flex: 0 0 auto;
+  padding-right: 0;
+}
+
+.nav-footer {
+  border-top: 1px solid $gray-300;
+  font-size: 0.92rem;
+  opacity: 0.85;
+}
+
+/* The follow row. Bigger than the licence text beside it, because these are
+ * the only things in the footer anyone clicks.
+ *
+ * Hover changes the *color* rather than only the opacity. Raising opacity
+ * moves a muted grey toward a slightly less muted grey, which on a busy page
+ * is not enough to read as a response. Going to near-black is unmistakable. */
+.nav-footer .nav-item .nav-link {
+  font-size: 1.18rem;
+  padding: 0.2rem 0.42rem;
+  opacity: 1;
+  color: #7d868f;
+  transition: color 0.14s ease, transform 0.14s ease;
+}
+
+.nav-footer .nav-item .nav-link:hover,
+.nav-footer .nav-item .nav-link:focus-visible {
+  color: $ink;
+  transform: translateY(-2px);
+}
+
+/* On a phone the regions stack and center: icons first, because they are what
+ * someone reaching the end of a page is looking for, and the licences
+ * underneath as the small print they are. */
+@media (max-width: 575px) {
+  .nav-footer {
+    flex-direction: column;
+    align-items: center;
+    row-gap: 0.15rem;
+  }
+
+  .nav-footer-right { order: 1; }
+  .nav-footer-left  { order: 2; text-align: center; }
+
+  .nav-footer .licence {
+    display: block;
+    margin-right: 0;
+  }
+}

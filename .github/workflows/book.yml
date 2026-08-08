@@ -152,9 +152,15 @@ jobs:
       - name: Render the whole book to HTML
         working-directory: book
         shell: bash
-        # `PIPESTATUS` by way of `pipefail`, because `tee` would otherwise
-        # swallow a non-zero exit and hand the next step a log to grade from a
-        # render that died.
+        # `pipefail` because `tee` would otherwise swallow a non-zero exit and
+        # hand the next step a log to grade from a render that died.
+        #
+        # The profile merges `_quarto-publish.yml` over the config, and the
+        # footer's reader count is the whole of what that adds. It is kept out
+        # of the base config because the badge is fetched by every browser that
+        # opens a page, so a local preview would count itself as a reader.
+        env:
+          QUARTO_PROFILE: publish
         run: |
           set -o pipefail
           quarto render --to html 2>&1 | tee .render.log
