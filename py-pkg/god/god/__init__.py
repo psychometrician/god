@@ -131,4 +131,8 @@ __all__ = [
     "run", "show_as", "god_sql",
     "GodError", "Expr",
 ]
-__version__ = "0.0.0.dev0"
+# One grammar, one number. This is the declaration a *user* reads, and the
+# release gate compares it against the other three — `pyproject.toml`, the
+# workspace `Cargo.toml`, and R's `DESCRIPTION` — because a manifest check alone
+# cannot see this one go stale.
+__version__ = "0.0.1"

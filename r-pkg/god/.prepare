@@ -1,0 +1,91 @@
+#!/bin/sh
+# .prepare — stage the engine's sources into the package, before it is tarred up
+#
+# The package farm builds a monorepo package like this:
+#
+#     git clone <repo>            # the whole repository, crates included
+#     PKGDIR=<repo>/r-pkg/god     # the `subdir` field in packages.json
+#     (cd $PKGDIR; sh .prepare) || true      # ← this script, in the FULL clone
+#     R CMD build $PKGDIR         # → god_x.y.z.tar.gz, from the subdir ALONE
+#                                 #   every platform binary is built from that
+#
+# **The trap is the last line.** `god-core/` and `god-cli/` sit *above* `$PKGDIR`,
+# so they never enter the tarball, and `inst/bin/` is gitignored so it arrives
+# empty. A tarball built that way carries no engine and no way to make one, and
+# `configure` then refuses on every platform — correctly, but pointing at the
+# wrong step.
+#
+# This script is the one moment the crates are still reachable. It copies them to
+# `tools/rust/`, which `R CMD build` includes in the tarball and `R CMD INSTALL`
+# does not try to compile. `configure` then has a source that travels.
+#
+# **It verifies its own work, and that is not defensive habit.** The farm runs it
+# as `|| true`, so a failure here is *swallowed* and resurfaces much later as a
+# configure error on every platform at once. A staging step that fails silently
+# is the same silent drop this project refuses everywhere else, so the exit code
+# is checked here and `configure` fails loudly if the staging did not happen.
+#
+# **There is nothing to vendor, and that is a property of the engine rather than
+# an omission.** `god-core` declares no runtime dependencies at all — it turns
+# text into a plan and a plan into SQL, and neither job needs a library — so
+# `cargo build -p god-cli` compiles two local crates and reaches the network for
+# nothing. DuckDB appears in the manifest as a *dev*-dependency, which that build
+# never touches. A vendoring step would therefore copy nothing and prove nothing.
+#
+# Usage:  sh .prepare
+
+set -e
+
+WORKSPACE="../.."
+DEST="tools/rust"
+
+# ---------------------------------------------------------------------------
+# Refuse early rather than half-stage. If the crates are not above us, this is
+# not the layout the script was written for, and copying nothing while exiting 0
+# is the exact failure it exists to prevent.
+# ---------------------------------------------------------------------------
+if [ ! -f "${WORKSPACE}/Cargo.toml" ] || [ ! -d "${WORKSPACE}/god-core" ]; then
+  echo "god/.prepare: no crate sources at ${WORKSPACE}/ — nothing to stage." >&2
+  echo "  Expected ${WORKSPACE}/Cargo.toml and ${WORKSPACE}/god-core/." >&2
+  echo "  This script runs from the package directory inside a full checkout." >&2
+  exit 1
+fi
+
+echo "* god/.prepare: staging the engine sources into ${DEST}/"
+
+# **Clear any engine a previous install left behind.** `inst/bin/` is gitignored,
+# so on the farm it arrives empty — that build starts from a fresh clone. On a
+# developer's machine it does not: `R CMD INSTALL` puts a binary there and
+# nothing takes it away, so `R CMD build` would package whatever the last install
+# produced. That tarball then carries an engine older than its own version
+# number, and `configure` *prefers* a prebuilt `inst/bin/` over every other
+# source, so the stale one is installed and never rebuilt. An assumption stated
+# in a comment is not enforcement; deleting is.
+rm -rf inst/bin
+
+rm -rf "${DEST}"
+mkdir -p "${DEST}"
+
+cp "${WORKSPACE}/Cargo.toml"  "${DEST}/Cargo.toml"
+cp "${WORKSPACE}/Cargo.lock"  "${DEST}/Cargo.lock"
+cp -R "${WORKSPACE}/god-core" "${DEST}/god-core"
+cp -R "${WORKSPACE}/god-cli"  "${DEST}/god-cli"
+
+# A development checkout may have a warm `target/` inside a crate directory. It
+# is hundreds of megabytes and rebuilt anyway, so it must not travel.
+rm -rf "${DEST}/god-core/target" "${DEST}/god-cli/target"
+
+# ---------------------------------------------------------------------------
+# Verify. Everything above can appear to work and leave a tarball that cannot
+# build, so the postconditions are checked rather than assumed.
+# ---------------------------------------------------------------------------
+for f in "${DEST}/Cargo.toml" "${DEST}/Cargo.lock" \
+         "${DEST}/god-core/Cargo.toml" "${DEST}/god-core/src/lib.rs" \
+         "${DEST}/god-cli/Cargo.toml"  "${DEST}/god-cli/src/main.rs"; do
+  if [ ! -f "$f" ]; then
+    echo "god/.prepare: staging incomplete — $f is missing." >&2
+    exit 1
+  fi
+done
+
+echo "* god/.prepare: staged $(du -sh "${DEST}" | cut -f1) into ${DEST}/"

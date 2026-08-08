@@ -1,0 +1,9 @@
+#!/bin/sh
+# configure.win — put the engine in the package, on Windows
+#
+# R runs this instead of `configure` on Windows, under Rtools' shell. The logic
+# is `configure`'s exactly; only the executable's name differs, so the two are
+# one file with the name passed in rather than two copies that can drift.
+
+set -e
+GOD_EXE_NAME="god-cli.exe" . ./configure

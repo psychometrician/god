@@ -251,8 +251,21 @@ god_call <- function(args, pipeline) {
   paste(readLines(out, warn = FALSE), collapse = "\n")
 }
 
+# What the engine is called on this machine.
+#
+# Windows is the only platform that spells it differently, and it spells it
+# differently in three places at once: the copy `configure.win` bundles, the file
+# a walk-up finds in `target/release/`, and anything already on the PATH. So the
+# name is decided once here rather than written out at each site. A per-site copy
+# is how a Windows package installs perfectly and then cannot find the engine it
+# just installed — the install and the lookup would each be right about a
+# different name.
+god_exe <- function() {
+  if (identical(.Platform$OS.type, "windows")) "god-cli.exe" else "god-cli"
+}
+
 god_binary <- function() {
-  bundled <- system.file("bin", "god-cli", package = "god")
+  bundled <- system.file("bin", god_exe(), package = "god")
   if (nzchar(bundled) && file.exists(bundled)) return(bundled)
 
   # Running from the source tree, which is how this is used before there is an
@@ -284,7 +297,7 @@ god_built_binary <- function() {
   for (start in starts) {
     directory <- normalizePath(start, mustWork = FALSE)
     repeat {
-      candidate <- file.path(directory, "target", "release", "god-cli")
+      candidate <- file.path(directory, "target", "release", god_exe())
       if (file.exists(candidate)) return(candidate)
       parent <- dirname(directory)
       if (identical(parent, directory)) break

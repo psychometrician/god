@@ -35,6 +35,13 @@ except ImportError:  # pragma: no cover - depends on the build environment
 
 HERE = Path(__file__).resolve().parent
 
+# What the engine is called on this machine. `run.py` decides the same thing for
+# the same reason, and the two have to agree: this is the name the wheel packs,
+# and that is the name the installed package looks for. A Windows wheel built
+# under one spelling and read under the other installs perfectly and then cannot
+# find the engine it is carrying.
+EXE = "god-cli.exe" if os.name == "nt" else "god-cli"
+
 
 def engine() -> Path:
     """The built engine, or a message naming the command that makes one."""
@@ -45,11 +52,11 @@ def engine() -> Path:
     # Climbed rather than counted, which is what both bindings do at run time.
     for directory in (HERE, *HERE.parents):
         for profile in ("release", "debug"):
-            candidate = directory / "target" / profile / "god-cli"
+            candidate = directory / "target" / profile / EXE
             if candidate.is_file():
                 return candidate
 
-    found = shutil.which("god-cli")
+    found = shutil.which(EXE)
     if found:
         return Path(found)
 
@@ -65,8 +72,8 @@ class BuildWithEngine(build_py):
         source = engine()
         destination = HERE / "god" / "bin"
         destination.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination / "god-cli")
-        (destination / "god-cli").chmod(0o755)
+        shutil.copy2(source, destination / EXE)
+        (destination / EXE).chmod(0o755)
         print(f"god: carrying the engine from {source}")
         super().run()
 
@@ -84,9 +91,20 @@ class PlatformWheel(bdist_wheel):
         one interpreter. This one holds a standalone executable that any Python
         can run, so the interpreter tags go back to `py3-none` and a single file
         serves every 3.x on that platform.
+
+        **The tag a release needs is not the one the build machine reports**, so
+        `GOD_WHEEL_PLAT` overrides it. Two cases need that and neither is exotic.
+        A Linux build reports a bare `linux_x86_64`, which PyPI rejects outright;
+        the wheel has to claim a `manylinux` tag naming the oldest glibc it will
+        run against. And a cross-compiled macOS wheel must claim the architecture
+        of the *binary it carries* rather than the runner's, or it installs on
+        the wrong machines and refuses the right ones.
+
+        Unset, this is the local build a developer wants: the tag names the
+        machine, because the engine inside was built there.
         """
         _python, _abi, platform = super().get_tag()
-        return "py3", "none", platform
+        return "py3", "none", os.environ.get("GOD_WHEEL_PLAT") or platform
 
 
 setup(cmdclass={"build_py": BuildWithEngine, "bdist_wheel": PlatformWheel})

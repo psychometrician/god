@@ -7,6 +7,36 @@ Nothing is released yet, so everything below is unreleased.
 
 ## Unreleased
 
+### The R package installs on a machine that has never seen this repository
+
+Installing used to need a copy of the engine already built beside the package, so
+it worked where god had been developed and nowhere else. The source tarball now
+carries the engine's sources and compiles them during installation, which takes a
+few seconds and needs [Rust](https://rustup.rs/) on the machine.
+
+```r
+install.packages("god_0.0.1.tar.gz", repos = NULL, type = "source")
+```
+
+If you already have an engine, point at it and skip the compile:
+
+```r
+Sys.setenv(GOD_CLI = "/path/to/god-cli")
+```
+
+An install that can find no engine and no way to build one now **refuses**,
+naming every place it looked and every way to fix it, rather than succeeding into
+a package that cannot answer a pipeline.
+
+### Windows
+
+Both packages now find their engine on Windows, which neither did before: the
+file is called `god-cli.exe` there, and both were asking for `god-cli`.
+
+### `god.__version__` reports the version you installed
+
+It said `0.0.0.dev0` regardless.
+
 ### `show_as` in Python returns the query instead of printing it
 
 `show_as` prints in R and returns invisibly. In Python it printed *and* returned

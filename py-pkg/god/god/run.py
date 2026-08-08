@@ -243,8 +243,19 @@ def _call(args: list[str], pipeline: str) -> str:
     return result.stdout
 
 
+# What the engine is called on this machine.
+#
+# Windows is the only platform that spells it differently, and it spells it
+# differently in three places at once: the copy ``setup.py`` packs into the
+# wheel, the file a walk-up finds in ``target/release/``, and anything already on
+# the PATH. So the name is decided once here rather than written out at each
+# site. A per-site copy is how a Windows wheel installs perfectly and then cannot
+# find the engine it just installed.
+_EXE = "god-cli.exe" if os.name == "nt" else "god-cli"
+
+
 def _binary() -> str:
-    bundled = Path(__file__).parent / "bin" / "god-cli"
+    bundled = Path(__file__).parent / "bin" / _EXE
     if bundled.exists():
         return str(bundled)
 
@@ -254,7 +265,7 @@ def _binary() -> str:
     if named and Path(named).exists():
         return named
 
-    found = shutil.which("god-cli")
+    found = shutil.which(_EXE)
     if found:
         return found
 
@@ -283,7 +294,7 @@ def _built_binary() -> str | None:
     starts = [Path.cwd(), Path(__file__).resolve().parent]
     for start in starts:
         for directory in (start, *start.parents):
-            candidate = directory / "target" / "release" / "god-cli"
+            candidate = directory / "target" / "release" / _EXE
             if candidate.exists():
                 return str(candidate)
     return None

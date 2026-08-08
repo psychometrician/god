@@ -15,57 +15,227 @@
 #   R CMD INSTALL r-pkg/god          # runs this, fills inst/bin/
 #   R CMD build   r-pkg/god          # tars what is now on disk
 #
-# The engine is looked for in the order a person would: what they pointed at,
-# what they built, then what is on the path.
+# Five ways the engine arrives, in the order they are tried:
+#
+#   1. already in `inst/bin/`   — a release tarball, and no workspace beside it
+#   2. $GOD_CLI                 — an engine built somewhere else
+#   3. a `target/` above us     — a development checkout
+#   4. built from the workspace — the crate sources that traveled with the repo
+#   5. built from `tools/rust/` — the crate sources staged *inside* the package
+#
+# **Step 4 is what makes `remotes::install_github()` work.** A GitHub tarball
+# carries `god-core/`, `god-cli/`, `Cargo.toml` and `Cargo.lock` but not
+# `target/` (it is gitignored), so before this step a GitHub install failed at
+# step 3. Building takes seconds, which is why it is last of the two: any engine
+# already present is preferred over compiling one.
+#
+# **Step 5 is what makes a subdirectory build work, and it is the one the package
+# farm needs.** That farm clones the whole repository but then runs `R CMD build`
+# on the `subdir` alone, so `../../` does not exist in the resulting tarball and
+# steps 3 and 4 both miss. `.prepare` runs before that build, in the full clone,
+# and copies the crates to `tools/rust/` — a directory `R CMD build` ships and
+# `R CMD INSTALL` does not try to compile. That is the only source left.
+#
+# Failing loudly when none of the five holds is the point. Installing a package
+# that is guaranteed not to answer anything is the silent drop this project
+# refuses everywhere else, so the diagnostic below gives direction rather than a
+# verdict.
 
 set -e
 
-TARGET="inst/bin/god-cli"
+# `configure.win` sources this file with the Windows name set, so the two
+# platforms share one copy of the logic rather than two that can drift.
+EXE="${GOD_EXE_NAME:-god-cli}"
+DEST="inst/bin"
+STAGED="tools/rust"
 
-if [ -n "$GOD_CLI" ] && [ -x "$GOD_CLI" ]; then
-  FOUND="$GOD_CLI"
-else
-  FOUND=""
-  # Walk up looking for a cargo build. The package sits at `r-pkg/god`, so the
-  # workspace root is two levels up in a checkout, but this counts nothing and
-  # simply climbs, which is what both bindings already do at run time.
-  DIR="$(pwd)"
-  while [ "$DIR" != "/" ]; do
-    for PROFILE in release debug; do
-      CANDIDATE="$DIR/target/$PROFILE/god-cli"
-      if [ -x "$CANDIDATE" ]; then
-        FOUND="$CANDIDATE"
-        break 2
-      fi
-    done
-    DIR="$(dirname "$DIR")"
-  done
+# ---------------------------------------------------------------------------
+# WebAssembly is not a platform this package can install on
+# ---------------------------------------------------------------------------
+#
+# The farm builds every package for WebAssembly as well as for the three desktop
+# platforms, and that build is the one place the whole design of this bridge
+# cannot reach. The R package answers a pipeline by running `god-cli` as a
+# separate process; R compiled to WebAssembly has no way to start one. So there
+# is no engine that could be bundled here, and no arrangement of the five
+# sources below that ends in a package able to return a table.
+#
+# Refusing *here*, rather than after the search, also stops a cross-compile that
+# cannot help: the farm's WebAssembly image replaces `cargo` with a shim that
+# adds an emscripten target to any `cargo build` arriving without one, so step 5
+# would compile happily and write something this script cannot use.
+#
+# The cross-build announces itself the standard way, on the configure command
+# line. `CC` is the fallback, for a caller that sets only the environment.
+for _arg in "$@"; do
+  case "${_arg}" in
+    --host=*emscripten*) GOD_WASM_HOST=1 ;;
+  esac
+done
+case "${CC}" in
+  *emcc*) GOD_WASM_HOST=1 ;;
+esac
 
-  if [ -z "$FOUND" ]; then
-    FOUND="$(command -v god-cli 2>/dev/null || true)"
-  fi
-fi
-
-if [ -z "$FOUND" ]; then
-  echo "----------------------------- god ------------------------------"
-  echo "The god engine was not found, so this package cannot be installed."
-  echo ""
-  echo "god is a grammar over an engine, and the engine is a Rust binary"
-  echo "that has to exist before the R package can carry it."
-  echo ""
-  echo "  cargo build --release"
-  echo ""
-  echo "Then install again. If the engine is somewhere else already, point"
-  echo "GOD_CLI at it:"
-  echo ""
-  echo "  GOD_CLI=/path/to/god-cli R CMD INSTALL r-pkg/god"
-  echo "----------------------------------------------------------------"
+if [ -n "${GOD_WASM_HOST}" ]; then
+  echo "god: this package cannot be built for WebAssembly." >&2
+  echo "" >&2
+  echo "It answers a pipeline by running the god-cli engine as a separate" >&2
+  echo "process, and R compiled to WebAssembly cannot start one. There is no" >&2
+  echo "engine to bundle for this target, and an install without one could not" >&2
+  echo "return a table." >&2
+  echo "" >&2
+  echo "god is available for Linux, macOS and Windows." >&2
   exit 1
 fi
 
-mkdir -p inst/bin
-cp "$FOUND" "$TARGET"
-chmod +x "$TARGET"
-echo "god: carrying the engine from $FOUND"
+# ---------------------------------------------------------------------------
+# Climb once, and record both things worth finding on the way up. Counting
+# levels would work today and break the first time the package moves; this
+# counts nothing, which is what both bindings already do at run time.
+# ---------------------------------------------------------------------------
+WORKSPACE=""
+BUILT=""
+DIR="$(pwd)"
+while [ "${DIR}" != "/" ]; do
+  if [ -z "${BUILT}" ]; then
+    for PROFILE in release debug; do
+      if [ -x "${DIR}/target/${PROFILE}/${EXE}" ]; then
+        BUILT="${DIR}/target/${PROFILE}/${EXE}"
+        break
+      fi
+    done
+  fi
+  if [ -z "${WORKSPACE}" ] && [ -f "${DIR}/Cargo.toml" ] && [ -f "${DIR}/god-cli/Cargo.toml" ]; then
+    WORKSPACE="${DIR}"
+  fi
+  DIR="$(dirname "${DIR}")"
+done
+
+# Build `god-cli` from a workspace manifest and report the binary's path on
+# success, nothing on failure.
+#
+# `cargo` is looked for in `~/.cargo/bin` as well as on `PATH`, because rustup
+# installs it there and adds it to the *interactive* shell's profile — which the
+# non-interactive shell `R CMD INSTALL` runs has not read.
+build_engine() {
+  _root="$1"
+  _cargo=""
+  if command -v cargo >/dev/null 2>&1; then
+    _cargo="cargo"
+  elif [ -x "${HOME}/.cargo/bin/cargo" ]; then
+    _cargo="${HOME}/.cargo/bin/cargo"
+  fi
+  [ -n "${_cargo}" ] || return 0
+
+  echo "* god: no prebuilt engine found — building it from ${_root}/." >&2
+  "${_cargo}" --version >&2 || true
+
+  # **Build from inside the workspace, not with `--manifest-path` from outside.**
+  # Cargo walks up from the *working directory* to find its configuration, not up
+  # from the manifest, so a build launched from here would read a different
+  # configuration than one launched from the crate root.
+  #
+  # `-j 2` is not a throttle worth arguing about here: the workspace is two local
+  # crates with no runtime dependencies between them and the outside world, so
+  # this compiles in seconds either way. It is set because a shared build farm is
+  # not the place to ask for every core on the machine.
+  #
+  # `|| true` because a build failure should reach the diagnostic at the bottom
+  # of this script, which names every fix, rather than exiting on cargo's alone.
+  ( cd "${_root}" && "${_cargo}" build --release -p god-cli -j 2 ) >&2 || true
+
+  # **Report nothing, but report it successfully.** The caller reads this
+  # function through a command substitution — `FOUND="$(build_engine …)"` — and
+  # under `set -e` an assignment whose substitution exits non-zero ends the
+  # script right there. A bare `[ -f … ] && echo …` as the last command does
+  # exactly that whenever the build produced no binary, which would make the
+  # diagnostic at the bottom of this file unreachable in the single case it is
+  # written for. What a reader would see instead is `configuration failed for
+  # package 'god'` and no reason.
+  if [ -f "${_root}/target/release/${EXE}" ]; then
+    echo "${_root}/target/release/${EXE}"
+  fi
+  return 0
+}
+
+# 1. A release tarball already carries it — and *already carries it* has to be
+#    told apart from *has a leftover from the last install*.
+#
+#    `inst/bin/` is gitignored, so in a development checkout it is whatever the
+#    previous `R CMD INSTALL` put there. Preferring it unconditionally would mean
+#    that once it existed, every later install shipped that engine no matter how
+#    far the sources had moved: `R CMD INSTALL` prints `DONE (god)` and the
+#    installed copy answers with an engine from hours ago.
+#
+#    The fact that separates the two is not an mtime, it is *what you are
+#    installing*: a release package tarball has no workspace beside it, and a
+#    development checkout does. So a bundled engine is authoritative only when
+#    there is nothing to rebuild it from.
+if [ -f "${DEST}/${EXE}" ] && [ -z "${WORKSPACE}" ]; then
+  echo "* god: using the engine already in ${DEST}/"
+  exit 0
+fi
+
+FOUND=""
+
+# 2. An engine built elsewhere.
+if [ -n "${GOD_CLI}" ] && [ -f "${GOD_CLI}" ]; then
+  FOUND="${GOD_CLI}"
+# 3. A development checkout, with a warm target/ somewhere above.
+elif [ -n "${BUILT}" ]; then
+  FOUND="${BUILT}"
+fi
+
+# Anything already on the path, before compiling one.
+if [ -z "${FOUND}" ]; then
+  FOUND="$(command -v "${EXE}" 2>/dev/null || true)"
+fi
+
+# 4. Build it from the crate sources that came along with the repo — a
+#    `remotes::install_github()` install, where the tarball carries the whole tree.
+if [ -z "${FOUND}" ] && [ -n "${WORKSPACE}" ]; then
+  FOUND="$(build_engine "${WORKSPACE}")"
+fi
+
+# 5. Build it from the crate sources staged *inside* the package by `.prepare` —
+#    a subdirectory build, which is how the package farm arrives. There is no
+#    workspace above that tarball, so this is the only source left.
+if [ -z "${FOUND}" ] && [ -f "${STAGED}/Cargo.toml" ] && [ -f "${STAGED}/god-cli/Cargo.toml" ]; then
+  FOUND="$(build_engine "${STAGED}")"
+fi
+
+if [ -z "${FOUND}" ]; then
+  echo "----------------------------- god ------------------------------" >&2
+  echo "The god engine was not found, so this package cannot be installed." >&2
+  echo "" >&2
+  echo "god is a grammar over an engine, and the engine is a Rust binary" >&2
+  echo "that has to exist before the R package can carry it. None of the" >&2
+  echo "five sources had one:" >&2
+  echo "  * a prebuilt engine in ${DEST}/" >&2
+  echo "  * \$GOD_CLI" >&2
+  echo "  * a target/{release,debug}/ in any directory above this one" >&2
+  echo "  * a source build from the workspace (the whole repository)" >&2
+  echo "  * a source build from ${STAGED}/ (sources staged by .prepare)" >&2
+  echo "" >&2
+  echo "Fixes, cheapest first:" >&2
+  echo "  Build it:        cargo build --release -p god-cli" >&2
+  echo "  Or point at one: GOD_CLI=/path/to/god-cli R CMD INSTALL r-pkg/god" >&2
+  echo "  No Rust?         install it from https://rustup.rs/" >&2
+  echo "" >&2
+  echo "If this is a subdirectory build, the likely cause is that .prepare did" >&2
+  echo "not run or did not finish: the farm invokes it as \`|| true\`, so its" >&2
+  echo "failure is swallowed and surfaces here instead. Check the build log for" >&2
+  echo "a \`god/.prepare:\` line." >&2
+  echo "" >&2
+  echo "Installing without it would produce a package that cannot answer a" >&2
+  echo "pipeline, which is the failure this check exists to make loud." >&2
+  echo "----------------------------------------------------------------" >&2
+  exit 1
+fi
+
+mkdir -p "${DEST}"
+cp "${FOUND}" "${DEST}/${EXE}"
+chmod 0755 "${DEST}/${EXE}"
+echo "* god: bundled the engine from ${FOUND}"
 
 exit 0
