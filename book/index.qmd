@@ -239,9 +239,13 @@ anything, and nothing can be said to cover more of the job than it does.
 So this book will tell you what god cannot do about as often as it tells you what
 it can. That is not an apology. A grammar that refuses nothing has no shape.
 
-The hexagon at the top of this page says the same thing without a sentence. What
-sits inside it is a face. Its eyes are `|>` and `>>`, the pipe in R and the pipe
-in Python. Its nose is `(` and `)`. Its mouth is the package name.
+The **hex sticker** at the top of this page says the same thing without a
+sentence. R packages have carried these for years, hexagonal so that a wall of
+them tiles, and handing one over is how the community introduces a package. If
+you have come from Python, that is all it is: a logo with a shape convention.
+
+What sits inside this one is a face. Its eyes are `|>` and `>>`, the pipe in R
+and the pipe in Python. Its nose is `(` and `)`. Its mouth is the package name.
 
 Those marks are chosen and not decorative, and the test they had to pass is that
 you actually write them. A face has two eyes and this grammar has two bindings:
