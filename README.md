@@ -1,7 +1,15 @@
 # god
 
+### Say it once. Run it anywhere.
+
 **A grammar of data.** One small vocabulary for manipulating tables, spelled the
-same way in R, in Python, and on a cluster.
+same way in R, in Python, and on a cluster. It is for the ordinary work: keep
+some rows, add a column, group and count, sort, join, reshape. Every day, in
+whichever language you are in.
+
+god is **G**rammar **O**f **D**ata, and its sibling
+[gog](https://github.com/psychometrician/gog) is a grammar of graphics. Written
+lowercase, always, the way dplyr and pandas are.
 
 > **Early.** The grammar parses, checks and compiles today; there is nothing to
 > install yet. What follows describes what is built and what is not, and says

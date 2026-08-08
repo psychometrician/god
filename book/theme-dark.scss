@@ -82,3 +82,24 @@ $input-bg:                $ink-panel;
 $input-color:             $paper;
 $input-border-color:      $ink-line;
 $input-placeholder-color: $paper-soft;
+
+/*-- scss:rules --*/
+
+/* The motto, set the way the sibling book sets its own: a tagline sitting tight
+ * under the title, underlined in the one color this project owns. The rule is
+ * written in both theme files rather than in a stylesheet of its own, so the
+ * underline takes each theme's value of `$slate` and nothing has to be
+ * overridden afterwards. */
+.god-motto {
+  width: fit-content;
+  margin: -0.95rem 0 2.4rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+  border-bottom: 3px solid $slate;
+  padding-bottom: 1px;
+}
+
+.god-motto > p {
+  margin-bottom: 0;
+}

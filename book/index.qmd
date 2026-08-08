@@ -8,6 +8,10 @@ number-sections: false
 
 # Preface {.unnumbered}
 
+::: {.god-motto}
+Say it once. Run it anywhere.
+:::
+
 god is one data-manipulation engine written in [Rust](https://www.rust-lang.org/),
 callable from [R](https://www.r-project.org/) and
 [Python](https://www.python.org/), and readable as itself wherever there is
@@ -26,6 +30,24 @@ A pipeline in god is a sequence of plain English verbs. You keep some rows, add 
 column, group and summarize, sort the result, and take the first ten. Each step
 takes a table and returns a table, so you can read a pipeline from top to bottom
 and stop anywhere.
+
+Most of what anyone does to a table is ordinary: keep some rows, add a column,
+group and count, sort, join a second table, reshape it. god is for that work,
+every day, in whichever of the two languages you happen to be in. It is not for
+the exotic case, and the chapter on what it refuses says so.
+
+## About the name
+
+god is **G**rammar **O**f **D**ata. Its sibling is [gog](https://psychometrician.github.io/gog-book/),
+a grammar of graphics, and the two are named the same way for the same reason.
+
+It is written lowercase, always, the way dplyr and pandas and npm are. Nobody
+writes DPLYR. No claim of any other kind is made by the letters, and none is
+intended: it is three initials that happened to spell a word, kept because the
+sibling naming is what makes the pair legible.
+
+You will see it lowercase everywhere in this book, including at the start of a
+sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
 pipeline. Go to [Part I](chapters/01-first-pipeline.qmd), which is six
