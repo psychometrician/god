@@ -141,6 +141,29 @@ you write them. dplyr has two ways to group.
 None of that is difficult in the sense that the *ideas* are difficult. The ideas
 are small: about fifteen operations, and you already know most of them.
 
+The ideas are also old, and that is worth knowing before learning a sixth
+spelling of them. Choosing rows, choosing columns, joining, grouping and
+totaling were set out as an algebra in 1970, and little has been added since
+except window functions and the two ways of reshaping a table. What changes
+every few years is the syntax, not the operations.
+
+## Five engines, one vocabulary
+
+There is evidence that a grammar outlives the engine underneath it, and it comes
+from the tool this one borrows from. dplyr's own documentation names five other
+backends it runs on: `arrow`, `dbplyr`, `dtplyr`, `duckplyr` and `sparklyr`. The
+same verbs reach Arrow, a SQL database, data.table, DuckDB and Spark.
+
+Read that list again, because it is the argument of this book made by somebody
+else. Five engines, one vocabulary, and the sentence you write does not change
+when the thing underneath it does. Nobody had to invent new words to reach
+DuckDB, and nobody will have to invent new words to reach whatever replaces it.
+
+What that list does not cross is a language. Every one of those backends is
+reached from R, so a person who opens a Python notebook starts again from the
+beginning. That gap is the whole of what this project is aimed at, and it is the
+reason a sixth spelling is worth anybody's afternoon.
+
 ## Where this one came from
 
 The rest of this preface is written in one voice about a system. This section is
@@ -203,6 +226,19 @@ still read six months later.
 dbplyr is the other answer worth naming, and it comes closest. It translates
 dplyr into SQL, so one grammar already reaches a database. It is R only. It does
 not help in a Python notebook and it does not help in a Databricks Python job.
+
+[Ibis](https://ibis-project.org/) is the same idea approached from the other
+side, and it is the nearest thing to this in Python. One API reaches more than
+twenty engines, it compiles a query rather than running one itself, and it is a
+serious piece of work by people who have thought about this longer than I have.
+It is Python only. Its sentences are method chains over an expression object,
+which is the shape I have already said I cannot hold.
+
+So the two best answers to this each solve one half of the problem. One grammar
+over many engines has been built twice, once in each language, and neither one
+crosses to the other. Standing in both languages at once is the part nobody had
+done, and it is a smaller ambition than either of them: not twenty engines, but
+two languages saying the same sentence.
 
 ### What was actually wanted
 
