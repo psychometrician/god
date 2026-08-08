@@ -118,22 +118,39 @@ jobs:
       # walks up for `book/.venv` and hands that exact directory to reticulate,
       # so a virtualenv anywhere else is a virtualenv the book will not find.
       #
-      # Three packages and no more. pandas and duckdb are what the Python
-      # binding itself declares; gog is chapter 29's, and it is the published
-      # wheel rather than a checkout because the R side is a published build
-      # too and the chapter should show one version of the sibling, not two.
+      # pandas and duckdb are what the Python binding itself declares. gog is
+      # chapter 29's, and it is the published wheel rather than a checkout
+      # because the R side is a published build too and the chapter should show
+      # one version of the sibling, not two.
       #
-      # jupyter and ipykernel are deliberately absent. They were needed while
-      # the book used the jupyter engine; it uses knitr with reticulate now, so
-      # no kernel is ever started and installing them would add a minute to
-      # every run for nothing.
+      # **jinja2 is the one no chapter reveals.** Two chunks print a frame with
+      # `.style.hide(axis="index")`, and that accessor is an optional extra of
+      # pandas rather than part of it. It is present in a developer's venv
+      # because jupyter drags it in, so the book renders here and dies on the
+      # runner at chapter 1 of 40 with an `AttributeError`. It is named here
+      # rather than inherited.
+      #
+      # jupyter and ipykernel are deliberately absent, which is what exposed
+      # that. They were needed while the book used the jupyter engine; it uses
+      # knitr with reticulate now, so no kernel is ever started and installing
+      # them would add a minute to every run to supply one small dependency.
+      #
+      # god itself is *not* installed, and must not be: every chapter's setup
+      # walks up and puts `py-pkg/god` on `sys.path`, so the book tests the
+      # binding in this checkout rather than whatever was last published.
       - name: The virtualenv the Python tabs run in
         shell: bash
         run: |
           python3 -m venv book/.venv
           book/.venv/bin/pip install --quiet --upgrade pip
-          book/.venv/bin/pip install --quiet pandas duckdb gog
-          book/.venv/bin/python -c "import pandas, duckdb, gog; print('venv ok')"
+          book/.venv/bin/pip install --quiet pandas duckdb gog jinja2
+          book/.venv/bin/python - <<'PY'
+          import pandas as pd, duckdb, gog, jinja2
+          # The accessor, not just the import: a present jinja2 that pandas
+          # cannot reach would pass an import check and fail the render.
+          pd.DataFrame({"a": [1]}).style.hide(axis="index")
+          print("venv ok:", pd.__version__, duckdb.__version__, gog.__version__)
+          PY
 
       # The four guards, before the render rather than after it. Each one is
       # cheap and each one fails on something a render would happily publish:
