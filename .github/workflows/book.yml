@@ -1,0 +1,253 @@
+# Render the manual and publish it to https://psychometrician.github.io/god-book/
+#
+# The site repository holds *only* the rendered HTML. The book's sources live
+# here beside the engine, and stay here: every table in the book is computed by
+# `god-cli` while the page is built, so one engine change invalidates every page
+# at once. Splitting them would turn that into a version-matching problem.
+#
+# **This is the rsync-by-hand publish written down as a job.** Doing it by hand
+# still works and is documented; what a job adds is that it cannot forget a
+# step, and three of the steps below are ones a person forgets.
+#
+# Four ways this can appear to succeed while shipping a broken book, each of
+# which has a guard further down:
+#
+#   * `cargo test` passing does not mean `target/release/god-cli` was rebuilt.
+#     The tests and the binary are separate artifacts. The build is explicit
+#     and asserted, because a stale binary computes every table in the book.
+#   * `quarto render` exits 0 with broken links, and writes `WARN:` rather than
+#     `warning:`. The exit code proves nothing, so the log is graded.
+#   * GitHub Pages runs Jekyll, which skips any path beginning with an
+#     underscore. Without `.nojekyll` the stylesheets and the search index go
+#     off every page, and the site still returns 200 while looking broken.
+#   * A defect can exist only in the output. A heading numbered `19.0.1`, or an
+#     HTML entity pandoc declined to decode inside a code span, is invisible to
+#     every guard in `book/`, because all four of them read `.qmd`. Thirteen of
+#     the first and eight of the second shipped that way. The rendered HTML is
+#     graded here instead.
+#
+# Why the whole book, every time: Quarto tracks `.qmd` dependencies, not the
+# binary. A per-chapter render leaves the untouched chapters showing tables the
+# engine no longer computes.
+#
+# **Until `BOOK_SITE_DEPLOY_KEY` exists this job runs and publishes nothing.**
+# The last step is the only one that needs it, and it is the only one that
+# writes anywhere outside the runner.
+
+name: book
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "book/**"
+      - "god-core/**"
+      - "god-cli/**"
+      - "r-pkg/**"
+      - "py-pkg/**"
+      - ".github/workflows/book.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One publish at a time, and the newest push wins. The site is a single orphan
+# commit force-pushed over whatever was there, so two concurrent runs would race
+# to be last rather than merge.
+concurrency:
+  group: book
+  cancel-in-progress: true
+
+jobs:
+  book:
+    name: render and publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+
+      # Both packages walk up the tree for `target/release/god-cli` rather than
+      # reading an environment variable, so building it here is the whole of
+      # what the book needs to find it. The `test -x` is not ceremony: without
+      # the binary the render does not fail quietly, it fails on chapter 1, but
+      # asserting it here says so in one line instead of in a stack trace.
+      - name: Build the engine that computes every table
+        run: |
+          cargo build --release -p god-cli
+          test -x target/release/god-cli
+          ./target/release/god-cli --vocabulary | head -3
+
+      # `extra-repositories` belongs on **this** action and not on the one
+      # below, which has no such input. It is where gog comes from: chapter 29
+      # draws with the sibling grammar, and gog is not on CRAN.
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          extra-repositories: https://psychometrician.r-universe.dev
+
+      # `duckdb` is the engine the book runs on and `DBI` is how chapter 26
+      # reaches a warehouse, so both come from the package's own DESCRIPTION.
+      # The rest are the book's and appear in no DESCRIPTION anywhere:
+      #
+      #   `pkgload`      how every chapter attaches the package from source
+      #   `reticulate`   how an R document runs a Python tab; a build dependency
+      #                  of the book and deliberately not of either package
+      #   `knitr`        the engine every chunk runs under
+      #   `rmarkdown`    never written in any chapter, and the render dies on
+      #                  chapter 1 without it, because Quarto's knitr engine
+      #                  shells out to it to execute an `{r}` chunk
+      #   `gog`          chapter 29 draws two plots with the sibling grammar,
+      #                  and a chapter that quietly lost its plots would still
+      #                  render and still exit 0
+      #
+      # gog resolves from the r-universe named on the step above, which serves
+      # built packages, so it stays one line rather than a second cargo build.
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r-pkg/god
+          extra-packages: >-
+            any::pkgload, any::reticulate, any::knitr, any::rmarkdown,
+            any::DBI, any::duckdb, any::gog
+
+      - uses: quarto-dev/quarto-actions/setup@v2
+
+      # **The path matters and is not a preference.** Every chapter's setup
+      # walks up for `book/.venv` and hands that exact directory to reticulate,
+      # so a virtualenv anywhere else is a virtualenv the book will not find.
+      #
+      # Three packages and no more. pandas and duckdb are what the Python
+      # binding itself declares; gog is chapter 29's, and it is the published
+      # wheel rather than a checkout because the R side is a published build
+      # too and the chapter should show one version of the sibling, not two.
+      #
+      # jupyter and ipykernel are deliberately absent. They were needed while
+      # the book used the jupyter engine; it uses knitr with reticulate now, so
+      # no kernel is ever started and installing them would add a minute to
+      # every run for nothing.
+      - name: The virtualenv the Python tabs run in
+        shell: bash
+        run: |
+          python3 -m venv book/.venv
+          book/.venv/bin/pip install --quiet --upgrade pip
+          book/.venv/bin/pip install --quiet pandas duckdb gog
+          book/.venv/bin/python -c "import pandas, duckdb, gog; print('venv ok')"
+
+      # The four guards, before the render rather than after it. Each one is
+      # cheap and each one fails on something a render would happily publish:
+      # a pipeline the grammar cannot read, a word in the vocabulary that no
+      # chapter demonstrates, a documented refusal that has stopped refusing.
+      #
+      # They also run inside the R suite, which is where a developer meets
+      # them. Repeated here because a publish is the last place to find out.
+      - name: The book's own guards
+        run: |
+          Rscript book/check_grammar.R
+          Rscript book/check_prose.R
+          Rscript book/check_vocabulary.R
+          Rscript book/check_refusals.R
+
+      - name: Render the whole book to HTML
+        working-directory: book
+        shell: bash
+        # `PIPESTATUS` by way of `pipefail`, because `tee` would otherwise
+        # swallow a non-zero exit and hand the next step a log to grade from a
+        # render that died.
+        run: |
+          set -o pipefail
+          quarto render --to html 2>&1 | tee .render.log
+
+      - name: Grade the render log
+        working-directory: book
+        shell: bash
+        # The advice for reading a render by eye is the broad grep
+        # `-inE "warn|error|unable|cannot|fail|not found"`. That is right for a
+        # person and wrong as an automatic gate on this book, which teaches its
+        # refusals: eighteen chunks are marked `error: true` on purpose, so
+        # those words appear throughout ordinary healthy output.
+        #
+        # Quarto's own markers are what a gate can trust: `ERROR:` and `WARN:`
+        # at the start of a line, and a stack trace when it dies.
+        run: |
+          if grep -nE "(^|\[[0-9;]*m)(ERROR|WARN):|^Stack trace:" .render.log; then
+            echo "::error::the render log has complaints (above)"
+            exit 1
+          fi
+          echo "log is clean"
+
+      - name: Grade the rendered HTML
+        working-directory: book
+        shell: bash
+        # **Everything here is a defect that exists only in the output.** No
+        # guard in `book/` can see any of it, because all four read `.qmd`.
+        run: |
+          test -f _book/index.html || { echo "::error::_book/index.html is missing"; exit 1; }
+
+          grep -q "site_libs" _book/index.html \
+            || { echo "::error::index.html does not reference site_libs"; exit 1; }
+
+          # A `###` under a chapter with no `##` above it. Quarto numbers it
+          # `19.0.1`, because there is no 19.1 for it to sit under, and
+          # `toc-depth: 2` keeps it out of the sidebar as well. Thirteen of
+          # these shipped in eight chapters.
+          if grep -rEq '<h[2-6][^>]*>[^<]*<span class="header-section-number">[0-9]+\.0\.' _book/; then
+            echo "::error::a subsection is numbered N.0.x - it needs a ## above it"
+            grep -rEo '<span class="header-section-number">[0-9]+\.0\.[0-9.]*</span>' _book/ | head
+            exit 1
+          fi
+
+          # An HTML entity inside a code span. Pandoc decodes entities in prose
+          # and leaves them alone in code, so a `kable` cell escaping a pipe to
+          # `&#124;` reaches the reader as those six characters. Eight did.
+          if grep -rEq '<code>[^<]*&amp;#[0-9]+;' _book/; then
+            echo "::error::an HTML entity is showing inside a code span"
+            grep -rEo '<code>[^<]*&amp;#[0-9]+;[^<]*' _book/ | head
+            exit 1
+          fi
+
+          # A Python object printing itself twice, or printing its repr with
+          # the newlines spelled out. Both reached the book from one binding
+          # that printed as well as returning.
+          if grep -rEq "<code>&#39;[^<]*\\\\n" _book/; then
+            echo "::error::a Python repr with escaped newlines is in a cell output"
+            exit 1
+          fi
+
+          # A PDF in _book/ would make Quarto offer the whole book as a
+          # download, and print is the publisher's.
+          if find _book -name '*.pdf' -print -quit | grep -q .; then
+            echo "::error::a PDF is in _book/ - it would appear as a download link"
+            exit 1
+          fi
+
+          # Required: Pages runs Jekyll, which skips underscore-prefixed paths,
+          # and Quarto writes its stylesheets and search index into site_libs/.
+          # No render produces either of these two files, and `force_orphan`
+          # below replaces the site wholesale, so they are made here.
+          touch _book/.nojekyll
+          cp LICENSE.md _book/LICENSE.md
+
+          echo "output looks right ($(du -sh _book | cut -f1))"
+
+      # Cross-repo, so the site keeps being served from `psychometrician/god-book`
+      # and this repository keeps its own Pages slot free. A deploy key rather
+      # than a token: it grants write on exactly one repository and nothing else.
+      #
+      # `force_orphan` keeps the site at one commit with no parent. History of
+      # generated output answers no question a reader has, and every engine
+      # change rewrites every table on every page, so an accumulating history
+      # would add a near-complete copy of the site per publish.
+      - name: Publish to the site repository
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.BOOK_SITE_DEPLOY_KEY }}
+          external_repository: psychometrician/god-book
+          publish_branch: main
+          publish_dir: book/_book
+          force_orphan: true
+          # No `${{ github.sha }}` here: the action appends `<owner>/<repo>@<sha>`
+          # of its own accord, and naming it as well would put the same forty
+          # characters in twice.
+          commit_message: "god: A Grammar of Data — rendered from"
