@@ -23,6 +23,8 @@ number-sections: false
 date-modified: "`r sub(' 0', ' ', format(Sys.Date(), '%B %d, %Y'))`"
 ---
 
+# Preface {.unnumbered}
+
 ```{r}
 #| include: false
 # **This chunk is what makes the date above a date.** Quarto evaluates inline R
@@ -32,13 +34,17 @@ date-modified: "`r sub(' 0', ' ', format(Sys.Date(), '%B %d, %Y'))`"
 # `engine: knitr` in the front matter does not substitute for it; that was tried
 # first and the row stayed missing.
 #
+# **It has to sit below the heading, not above it.** Quarto reads the file for
+# its first `#` line to name the chapter, and it does that before knitr has run,
+# so a comment at column 0 inside a fence is a heading as far as that scan is
+# concerned. Put this chunk first and the sidebar is titled with the first line
+# of this comment, the preface takes a number, and all 29 chapters shift by one.
+#
 # Nothing is computed here on purpose. The setup file every chapter includes
 # would do the job, and it attaches the package, starts reticulate and builds
 # seven tables for a page that shows none of them.
 invisible(NULL)
 ```
-
-# Preface {.unnumbered}
 
 ::: {.god-motto}
 Say it once. Run it anywhere.
