@@ -452,8 +452,8 @@ fill_missing <- function(.data, ...) {
 #'   the shape of their name — the same three ways `pick` chooses columns.
 #' @param name What the new column of names is called. A bare name, or the shape
 #'   of the old names in quotes when they hold more than one thing:
-#'   `name = "{question}_{year}"`. Writing `{value}` for a piece says that piece
-#'   picks which value column a row belongs to.
+#'   `name = "\{question\}_\{year\}"`. Writing `\{value\}` for a piece says that
+#'   piece picks which value column a row belongs to.
 #' @param value What the new column of values is called. Left out, the two are
 #'   called `name` and `value`, which are the grammar's own words for them.
 #' @return A pipeline.
@@ -526,7 +526,7 @@ lengthen <- function(.data, ..., name, value) {
 #'
 #' @param .data A table, or a pipeline.
 #' @param name The column the new column names come from, or the shape to build
-#'   them in: `name = "{question}_{year}"`.
+#'   them in: `name = "\{question\}_\{year\}"`.
 #' @param value What fills the cells. A bare column means one row per cell, and
 #'   the query stops and names the cell if two rows want one. An aggregation
 #'   says what to do about that instead: `value = average(answer)`.

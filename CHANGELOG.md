@@ -7,6 +7,17 @@ Nothing is released yet, so everything below is unreleased.
 
 ## Unreleased
 
+### Help pages, so `?keep` answers
+
+Every word in the grammar now has an R help page. `?keep`, `?summarize`,
+`?lengthen` and the rest used to say there was no documentation, though the
+explanations had been written all along — they were in the source and nothing
+turned them into pages.
+
+Two of them were also wrong in a way only the rendered page showed: `lengthen`
+and `widen` describe a name built from pieces, `name = "{question}_{year}"`, and
+the braces were being eaten. The page taught a shape that would not have worked.
+
 ### The R package installs on a machine that has never seen this repository
 
 Installing used to need a copy of the engine already built beside the package, so

@@ -13,13 +13,36 @@ suppressMessages({
   library(duckdb)
 })
 
-if (requireNamespace("pkgload", quietly = TRUE)) {
-  pkgload::load_all("r-pkg/god", export_all = FALSE, quiet = TRUE)
-} else {
+# **This file runs in two situations and has to tell them apart**, because the
+# paths here are relative to the repository root and only one of those
+# situations has a repository.
+#
+#   * From the repo root, as the development suite. The package is loaded from
+#     source with `pkgload::load_all()`, which honors the hand-written
+#     `NAMESPACE` (`export_all = FALSE`), so a missing `export()` fails right
+#     here — the class of defect plain `source()` can never see, because
+#     `source()` bypasses `NAMESPACE` entirely.
+#
+#   * Under `R CMD check`, from `<pkg>.Rcheck/tests/`, where `r-pkg/god` does not
+#     exist and the package has *already been installed* into the check library.
+#     There, loading the installed copy is not a fallback but the point: it is
+#     the thing being checked.
+#
+# **Testing for pkgload before testing for the repository is what broke this**,
+# and it broke it everywhere at once: the farm's first build of god failed on all
+# eight targets with pkgload's "does your project have a DESCRIPTION file?",
+# which says nothing about god and points at no fix. The package had installed
+# cleanly on every one of them.
+pkg_src <- "r-pkg/god"
+if (dir.exists(pkg_src) && requireNamespace("pkgload", quietly = TRUE)) {
+  pkgload::load_all(pkg_src, export_all = FALSE, quiet = TRUE)
+} else if (dir.exists(pkg_src)) {
   # No pkgload: source the files, and say so, because this path does not honor
   # NAMESPACE and a green run under it proves less.
   message("note: pkgload is not installed, so NAMESPACE is not being honored")
-  for (f in list.files("r-pkg/god/R", full.names = TRUE)) source(f)
+  for (f in list.files(file.path(pkg_src, "R"), pattern = "\\.R$", full.names = TRUE)) source(f)
+} else {
+  library(god)
 }
 
 passed <- 0
