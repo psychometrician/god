@@ -91,7 +91,7 @@ races |> add(place = rank(descending(score)), by = heat) |> sort(heat, place)
 
 :::
 
-### Numbering the rows instead
+## Numbering the rows instead
 
 `row_number()` numbers the rows 1, 2, 3, 4 and never ties. That is the whole
 difference from `rank`, and it shows on the same table.
@@ -141,7 +141,7 @@ That is the practical difference between the two. `rank` says what it goes by, s
 it never needs a `sort` and does not disturb the order of your table.
 `row_number()` says nothing, so it needs one.
 
-### Where a place can stand
+## Where a place can stand
 
 A place is worked out by looking at every row in the group, which means it cannot
 be the thing that decides which rows are in the group. Asking for the top three
@@ -209,7 +209,7 @@ group, and a place is worked out for every row, so there is nowhere to put the
 answer. Ask for the value you actually want instead, with `largest`, `first` or
 `row_count`.
 
-### Two words where dplyr has six
+## Two words where dplyr has six
 
 dplyr offers `row_number`, `min_rank`, `dense_rank`, `percent_rank`, `cume_dist`
 and `ntile`. This grammar has two, and the other four are refused until somebody

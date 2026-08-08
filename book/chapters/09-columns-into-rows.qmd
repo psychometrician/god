@@ -59,7 +59,7 @@ answers >> lengthen(col.q1, col.q2, col.q3, name = col.question, value = col.mar
 
 :::
 
-### Choosing the columns
+## Choosing the columns
 
 The columns are chosen the same three ways `pick` chooses them, so there is
 nothing new to learn. The commonest one by far is everything except the column
@@ -124,7 +124,7 @@ except GodError as refusal:
 
 :::
 
-### When a name holds two things
+## When a name holds two things
 
 Column names often encode more than one thing: `q1_2020` is a question and a
 year. Say what the names look like, and name each piece:

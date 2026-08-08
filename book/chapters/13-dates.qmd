@@ -4,6 +4,9 @@ title: "Dates"
 
 {{< include ../_setup.qmd >}}
 
+A date usually arrives as text. `to_date` reads one, and once a column holds a
+date there is a word for each part you might want out of it.
+
 ::: {.panel-tabset}
 
 ### R

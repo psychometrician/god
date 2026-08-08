@@ -48,27 +48,6 @@ except GodError as refusal:
 
 :::
 
-### Between two ends
-
-::: {.panel-tabset}
-
-### R
-
-```{r}
-sales |> keep(between(revenue, 150, 400)) |> sort(revenue)
-```
-
-### Python
-
-```{python}
-sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue)
-```
-
-:::
-
-Both ends count, the way SQL and dplyr both have it, so nothing here needs
-checking against a manual.
-
 ## The four conversions
 
 `to_text`, `to_number`, `to_whole` and `to_date` are the whole set. Each one says
@@ -103,3 +82,28 @@ A conversion that cannot be made is not a silent missing value in either
 language. The engine underneath decides what to do with `to_number("abc")`, and
 this is one of the few places where what you get depends on where the pipeline
 ran.
+
+## Between two ends
+
+`between` is not a conversion, and it is here because it is the other word you
+reach for when a column has just become a number. It asks whether a value falls
+in a range.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(between(revenue, 150, 400)) |> sort(revenue)
+```
+
+### Python
+
+```{python}
+sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue)
+```
+
+:::
+
+Both ends count, the way SQL and dplyr both have it, so nothing here needs
+checking against a manual.

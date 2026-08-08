@@ -64,7 +64,7 @@ survey >> summarize(where(kind == "number", average(value)))
 That one line does not name a column at all, so it keeps working when the table
 gains one.
 
-### Case, and the two words that handle it
+## Case, and the two words that handle it
 
 The name tests match exactly, so `name starts "q"` does not find a column called
 `Q1_score`. Mixed-case names are ordinary enough that this comes up quickly.
@@ -117,7 +117,7 @@ and it is wrong: two columns can differ only by case, and a grammar that pretend
 otherwise cannot treat them as the two columns they are. Asking for it is one
 word.
 
-### Why you have to write `name`
+## Why you have to write `name`
 
 The same three words also test what is **inside** a column, and there the subject
 is the column itself.

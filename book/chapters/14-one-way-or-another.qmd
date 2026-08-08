@@ -54,7 +54,7 @@ pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A", otherwise 
 
 :::
 
-`ann` scored 95, met the first question she was asked, and got a B.
+`ann` scored 95, met the first question that was asked, and got a B.
 
 Leave out `otherwise` and a row that matched nothing is missing:
 

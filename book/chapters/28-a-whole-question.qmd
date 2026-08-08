@@ -4,8 +4,9 @@ title: "A whole question, answered"
 
 {{< include ../_setup.qmd >}}
 
-The sections above take one verb at a time, which is the right way to meet them
-and not how anyone uses them. Here is a question that needs most of the book.
+The chapters before this one take one verb at a time, which is the right way to
+meet them and not how anyone uses them. Here is a question that needs most of
+the book.
 
 The table is a set of survey returns. Each respondent answered three questions,
 some answers are missing, a backup file filled in some of the gaps, and the

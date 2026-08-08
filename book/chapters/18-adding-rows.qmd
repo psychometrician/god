@@ -4,6 +4,9 @@ title: "Adding rows from another table"
 
 {{< include ../_setup.qmd >}}
 
+`add_rows` stacks another table underneath this one. Nothing is matched and no
+column is added; the rows just carry on where the first table stopped.
+
 ::: {.panel-tabset}
 
 ### R

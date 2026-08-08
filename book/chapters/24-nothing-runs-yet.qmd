@@ -24,7 +24,7 @@ type(answer).__name__
 
 :::
 
-Printing it runs it, which is why every example above shows a table. When you
+Printing it runs it, which is why every example so far shows a table. When you
 want the table itself, ask for it with `collect`.
 
 ::: {.panel-tabset}

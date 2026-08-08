@@ -24,6 +24,18 @@ spoken <- function(pipeline, language) {
   gsub("\n", " ", trimws(paste(text, collapse = " ")))
 }
 
+# A cell written as HTML rather than as markdown, because of what a markdown
+# table has to do with a pipe. `kable` escapes every `|` in a cell to `&#124;`
+# so it cannot be read as a column separator, and pandoc leaves an entity alone
+# inside a code span, so every dplyr row came out reading
+# `sales &#124;> filter(...)`. Writing the cell as HTML keeps the pipe a pipe.
+code <- function(x) {
+  x <- gsub("&", "&amp;", x, fixed = TRUE)
+  x <- gsub("<", "&lt;", x, fixed = TRUE)
+  x <- gsub(">", "&gt;", x, fixed = TRUE)
+  paste0("<code>", x, "</code>")
+}
+
 sentences <- c(
   "sales then keep where [region] is \"West\"",
   "sales then pick [product, revenue]",
@@ -43,11 +55,12 @@ sentences <- c(
 short <- function(x, n = 60) ifelse(nchar(x) > n, paste0(substr(x, 1, n - 1), "…"), x)
 knitr::kable(
   data.frame(
-    god    = paste0("`", sub("^sales then ", "", sentences), "`"),
-    dplyr  = paste0("`", short(vapply(sentences, spoken, "", "dplyr")), "`"),
-    pandas = paste0("`", short(vapply(sentences, spoken, "", "pandas")), "`"),
+    god    = code(sub("^sales then ", "", sentences)),
+    dplyr  = code(short(vapply(sentences, spoken, "", "dplyr"))),
+    pandas = code(short(vapply(sentences, spoken, "", "pandas"))),
     check.names = FALSE, row.names = NULL
-  )
+  ),
+  format = "html", escape = FALSE
 )
 ```
 
@@ -55,11 +68,12 @@ knitr::kable(
 #| echo: false
 knitr::kable(
   data.frame(
-    god     = paste0("`", sub("^sales then ", "", sentences), "`"),
-    polars  = paste0("`", short(vapply(sentences, spoken, "", "polars")), "`"),
-    pyspark = paste0("`", short(vapply(sentences, spoken, "", "pyspark")), "`"),
+    god     = code(sub("^sales then ", "", sentences)),
+    polars  = code(short(vapply(sentences, spoken, "", "polars"))),
+    pyspark = code(short(vapply(sentences, spoken, "", "pyspark"))),
     check.names = FALSE, row.names = NULL
-  )
+  ),
+  format = "html", escape = FALSE
 )
 ```
 
@@ -71,9 +85,12 @@ rather than the abbreviation.
 
 ```{r}
 #| echo: false
+#| output: asis
+# `asis` is what makes the headings below headings. Without it the whole loop
+# lands on the page as one block of literal text, hashes and fences included.
 one <- "sales then keep where [region] is \"West\" then summarize [total] as total([revenue]) by [product]"
 for (language in c("sql", "spark", "dplyr", "pandas", "polars", "pyspark")) {
-  cat("##", language, "\n\n```\n", sep = "")
+  cat("### `", language, "`\n\n```\n", sep = "")
   invisible(capture.output(text <- show_as(one, language, sales = sales)))
   cat(paste(text, collapse = "\n"), "\n```\n\n", sep = "")
 }

@@ -1,7 +1,8 @@
 # Choosing columns without naming them
 
-When a table has thirty columns and you want the eight beginning with `q`,
-naming them is tedious and goes stale the moment a ninth arrives.
+Every column chosen so far has been chosen by writing its name. That holds until
+the table is wide, or until the columns it arrives with change from one month to
+the next.
 
 Three chapters, each a different question about a column. What is its name
 shaped like? What kind of thing does it hold? And once you have chosen a set of

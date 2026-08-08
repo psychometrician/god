@@ -74,7 +74,7 @@ except GodError as refusal:
 
 :::
 
-### Taking the first column that has a value
+## Taking the first column that has a value
 
 `fill_missing` puts one value in every gap. When the value you want is in another
 column, `first_present` reads across the columns you name and takes the first one
@@ -115,9 +115,10 @@ Two things about it are worth knowing before you rely on it, and both are places
 people are usually surprised.
 
 The order is a priority rather than a set. It reads left to right and stops at the
-first column that has a value, so ana is reached on her mobile even though she
-also has a landline and an email. Writing the same three columns in another order
-gives a different answer, which is the point of writing them in an order at all.
+first column that has a value, so ana is reached on the mobile number even though
+a landline and an email are there too. Writing the same three columns in another
+order gives a different answer, which is the point of writing them in an order at
+all.
 
 The only thing it skips is a missing value. A zero, an empty text and a `no`
 are all values, and they come back.

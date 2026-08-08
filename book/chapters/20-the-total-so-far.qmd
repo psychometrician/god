@@ -4,6 +4,9 @@ title: "The total so far"
 
 {{< include ../_setup.qmd >}}
 
+`running_total` adds a column up as it goes down the rows, so each row carries
+the total of everything to that point.
+
 ::: {.panel-tabset}
 
 ### R

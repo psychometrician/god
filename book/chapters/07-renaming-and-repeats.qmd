@@ -4,8 +4,9 @@ title: "Renaming, and dropping repeats"
 
 {{< include ../_setup.qmd >}}
 
-The new name goes first, the way assignment reads and the way every other verb
-that makes a column already works. If you are arriving from pandas, read that
+`rename` gives a column a different name and changes nothing else. The new name
+goes first, the way assignment reads and the way every other verb that makes a
+column already works. If you are arriving from pandas, read that
 pair twice: `rename(columns={"old": "new"})` is the other way round, and both
 spellings are legal here.
 

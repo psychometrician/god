@@ -136,10 +136,13 @@ format:
     # example is an R tab and a Python tab, and a table of contents reading
     # "R, Python, R, Python" down the page is worse than no entry at all.
     #
-    # **The chapter split is what makes this right rather than a compromise.**
-    # While the book was three files, real subsections sat at level three beside
-    # those labels and were invisible here. They are `##` inside their own
-    # chapters now, so two is the whole depth there is.
+    # **So every subsection of a chapter is `##`, with no exceptions**, and the
+    # reason is worse than a missing entry in the sidebar. A `###` in a chapter
+    # that has no `##` above it is numbered `19.0.1` on the page, because there
+    # is no section 19.1 for it to sit under. Thirteen of them shipped that way
+    # in eight chapters before anyone looked at a rendered heading. Level three
+    # is left for a page that has real `##` parents and no tabsets, which is the
+    # preface and the dialect blocks in Appendix C.
     toc-depth: 2
     number-sections: true
     code-link: false

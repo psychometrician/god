@@ -62,7 +62,7 @@ answers >> lengthen(col.q1, col.q2, col.q3) >> widen()
 
 :::
 
-### When two rows want the same cell
+## When two rows want the same cell
 
 A cell holds one value. If two rows both claim it, there is no answer, and
 choosing one of them silently is how a wrong number reaches a report.
@@ -124,7 +124,7 @@ twice >> widen(name = col.question, value = average(col.mark), by = col.student)
 
 :::
 
-### Saying what it makes
+## Saying what it makes
 
 The columns `widen` produces come from the data, which nothing can know before
 the query runs. Every other step in the grammar is checked against columns that
