@@ -19,16 +19,24 @@ book:
     face built from the grammar's own marks: R's pipe and Python's as the two
     eyes, a pair of parentheses as the nose, and the package name as the mouth.
 
-  # One name for now. The sibling book credits the models that wrote its prose
-  # alongside the human, in a section of the preface that explains the division
-  # of labor. That is a decision to make once there is prose to divide, not
-  # before, and the copyright holder is the human in either case.
+  # Two names, the human first, the way the sibling book does it. The model is
+  # named as a co-author of the *book* rather than as a tool that helped, because
+  # it wrote the prose, and "with assistance from" would understate that. The
+  # copyright holder is the human either way, and a git commit is a different
+  # claim entirely: that one is about who is answerable for the repository, and
+  # it carries one name.
   author:
     - "psychometrician"
+    - "Claude Opus 5"
 
-  # The day the book first went up as a public website. Nothing is published yet,
-  # so there is no date to write, and an invented one would be the first false
-  # thing in the book.
+  # Two dates, and only one of them moves. This is the day the book first went up
+  # as a public website, written out in full so no render can change it. Its
+  # partner `date-modified` re-stamps on every build and lives in `index.qmd`'s
+  # front matter rather than here: `book:` rejects the key outright, and setting
+  # it at this file's top level would stamp an "Updated" row onto all 29 chapter
+  # pages, when only the landing page is a record of anything. Both labels are
+  # renamed under `language:` below.
+  date: "2026-08-07"
 
   # The site is served from a repository holding only the *rendered* book, so
   # "edit this page" has no source file to open and is left off. An issue link
@@ -121,6 +129,14 @@ book:
     - appendices/a-two-languages.qmd
     - appendices/b-every-word.qmd
     - appendices/c-phrasebook.qmd
+
+# Quarto's default labels for the two dates above are "Published" and
+# "Modified". Both are renamed rather than accepted: "Published" alone reads as
+# one date when there are two, and "Modified" describes a file where the reader
+# wants to know how current the book is.
+language:
+  title-block-published: "First published"
+  title-block-modified: "Updated"
 
 format:
   html:

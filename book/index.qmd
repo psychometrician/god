@@ -4,7 +4,39 @@
 # The heading below carries `.unnumbered` for the same reason, which is also
 # what keeps the first real chapter from being chapter two.
 number-sections: false
+
+# Re-stamped on every render, so the landing page reports how current this copy
+# is. Its fixed counterpart, the first-published date, is `book: date:` in
+# `_quarto.yml`. This one belongs here because it must reach the landing page
+# alone; the comment beside its partner says what the other placements do.
+#
+# **Quarto's own keywords do not work here and print themselves.** `today`,
+# `last-modified` and `now` each reach the page as the literal word, so the date
+# is computed in R instead. Measured on this book rather than assumed: with
+# `date-modified: last-modified` the row read "Updated last-modified".
+#
+# R formats the date as well as computing it, because `date-format` reaches
+# `date:` and not a value substituted into the front matter. Left as an ISO
+# string the two rows disagree: "August 7, 2026" above "2026-08-08". The `sub()`
+# drops the leading zero `%d` puts on a single-digit day, which is the one place
+# the two would still differ.
+date-modified: "`r sub(' 0', ' ', format(Sys.Date(), '%B %d, %Y'))`"
 ---
+
+```{r}
+#| include: false
+# **This chunk is what makes the date above a date.** Quarto evaluates inline R
+# in the front matter only when the document holds at least one executable
+# chunk, and this page runs no examples, so without a chunk the expression
+# reaches the page as its own source text and the "Updated" row never appears.
+# `engine: knitr` in the front matter does not substitute for it; that was tried
+# first and the row stayed missing.
+#
+# Nothing is computed here on purpose. The setup file every chapter includes
+# would do the job, and it attaches the package, starts reticulate and builds
+# seven tables for a page that shows none of them.
+invisible(NULL)
+```
 
 # Preface {.unnumbered}
 
