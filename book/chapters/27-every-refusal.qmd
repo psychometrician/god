@@ -1,0 +1,39 @@
+---
+title: "Every refusal is the grammar's"
+---
+
+{{< include ../_setup.qmd >}}
+
+The verbs build a sentence and check nothing. Whether a column exists, whether
+an aggregation belongs where you put it, whether the types line up: all of that
+is answered in one place, so both languages get the same answer, in the same
+words.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> keep(reveune > 100))
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> keep(col.reveune > 100))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The whole pipeline is read before any of it runs, so a mistake at step two is
+reported as a mistake at step two rather than partway through the work.
+
+There is one refusal that cannot work this way, and it is worth knowing which.
+When `widen` finds two rows wanting the same cell, that is a fact about the data
+rather than about the sentence, and the grammar reads column names rather than
+rows. So that one arrives while the query runs. The words are still the
+grammar's, and they still name what to write instead.

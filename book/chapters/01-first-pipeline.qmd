@@ -1,0 +1,93 @@
+---
+title: "Your first pipeline"
+---
+
+{{< include ../_setup.qmd >}}
+
+A pipeline is a sentence. It names a table, then says what happens to it, one
+step at a time, in the order the steps happen.
+
+Here is one. Read it aloud before you read anything about it.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  keep(region == "West") |>
+  add(margin = revenue - cost) |>
+  summarize(margin = total(margin), orders = row_count(), by = product) |>
+  sort(descending(margin))
+```
+
+### Python
+
+```{python}
+(sales
+  >> keep(col.region == "West")
+  >> add(margin = col.revenue - col.cost)
+  >> summarize(margin = total(col.margin), orders = row_count(), by = col.product)
+  >> sort(descending(col.margin)))
+```
+
+:::
+
+Keep the West rows. Add a margin. Total the margin by product and count the
+orders. Sort by margin, descending. That is the whole sentence, and the table
+under it is what the engine returned when this page was built.
+
+## The table
+
+Every example in this book runs on a table called `sales`, unless a chapter says
+otherwise. It is five rows, small enough to check the arithmetic by hand.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| echo: false
+sales
+```
+
+### Python
+
+```{python}
+#| echo: false
+# A frame of its own rather than a pipeline, so it is asked for the table view
+# here. Everything else is a pipeline and renders as a table on its own. Hidden
+# because it is the book showing you the data, not god's grammar.
+sales.style.hide(axis="index")
+```
+
+:::
+
+## The same sentence, twice
+
+The two tabs above are not translations of each other. They are the same
+sentence, and only two things about them differ.
+
+The first is the pipe. R writes `|>`, which is R's own. Python writes `>>`,
+because Python cannot have `|>` at all, and of the operators a data frame leaves
+free that is the one available everywhere.
+
+The second is how a column is named. R can look a name up in your data before it
+looks in your session, so a bare `revenue` is unambiguous there. Python has no
+such hook, so a column says that it is one: `col.revenue`.
+
+Every verb, every keyword and every argument position is the same. Someone who
+learned the grammar in one language has learned it in the other. Both tabs on
+every page of this book are executed when the book is built, so that claim is
+checked on every page rather than asserted once here.
+
+Appendix A has the rest of the differences between the two languages, and you do
+not need it yet.
+
+## How to read the rest
+
+Read the tab for the language you write. Glance at the other one when you are
+curious. The explanation under a tabset is written once and covers both.
+
+The next six chapters are one verb each. They are short, and by the end of them
+you can answer real questions about a table.

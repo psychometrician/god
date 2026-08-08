@@ -1,0 +1,14 @@
+# Line endings are LF everywhere, enforced rather than left to each machine's
+# `core.autocrlf`. A file that arrives with CRLF makes every later diff show the
+# whole file as changed, and the parity harness compares serialized plans byte
+# for byte -- a stray carriage return there is a failure with no visible cause.
+* text=auto eol=lf
+
+# Binary, so git never rewrites a byte inside them.
+*.png       binary
+*.jpg       binary
+*.parquet   binary
+*.arrow     binary
+*.feather   binary
+*.ico       binary
+*.pdf       binary

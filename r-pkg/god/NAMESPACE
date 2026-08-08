@@ -1,0 +1,45 @@
+# Hand maintained, and it says so. A file whose header claims to be generated
+# and is not is harmless until somebody believes it.
+
+# The verbs. Every one is an imperative English verb, and the list is closed:
+# a word that is not here is not in the grammar.
+export(keep)
+export(pick)
+export(add)
+export(summarize)
+export(sort)
+export(take)
+export(join)
+export(add_rows)
+export(drop_duplicates)
+export(rename)
+export(drop_missing)
+export(fill_missing)
+export(lengthen)
+export(widen)
+
+# Materializing. Nothing runs until the answer is wanted.
+export(collect)
+
+# Where the pipelines run. Not a word of the grammar: the sentences and the
+# vocabulary are the same wherever they are answered, and this only says which
+# engine answers them. Python needs no equivalent, because a Spark frame carries
+# its own session and the engine there follows the data.
+export(use_engine)
+
+# The text form, for where there is no host language to bind into.
+export(run)
+export(show_as)
+export(god_sql)
+
+# A pipeline is deferred, so it needs to say what it is when printed, and to
+# become a table when something asks it to.
+S3method(print, god_pipeline)
+S3method(format, god_pipeline)
+S3method(as.data.frame, god_pipeline)
+
+# `descending`, `all_but`, `where` and `name` are grammar rather than functions,
+# and are never
+# called: they are read out of the expression the caller wrote, the same way
+# `total` and `row_count` are. Exporting them would offer a function that does
+# nothing on its own, and mask two more names to do it.

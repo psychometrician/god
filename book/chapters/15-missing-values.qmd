@@ -1,0 +1,154 @@
+---
+title: "Missing values"
+---
+
+{{< include ../_setup.qmd >}}
+
+`drop_missing` drops rows where a named column is missing. With no column named,
+it looks at every column.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+patchy <- data.frame(
+  product = c("Widget", "Gadget", "Doohickey"),
+  revenue = c(100, NA, 300)
+)
+
+patchy |> drop_missing(revenue)
+```
+
+### Python
+
+```{python}
+patchy = pd.DataFrame({
+    "product": ["Widget", "Gadget", "Doohickey"],
+    "revenue": [100.0, None, 300.0],
+})
+
+patchy >> drop_missing(col.revenue)
+```
+
+:::
+
+`fill_missing` replaces missing values with something.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+patchy |> fill_missing(revenue = 0)
+```
+
+### Python
+
+```{python}
+patchy >> fill_missing(revenue = 0)
+```
+
+:::
+
+The filler has to be the same kind of thing the column holds, or the column would
+quietly stop being what it was.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(patchy |> fill_missing(revenue = "none"))
+```
+
+### Python
+
+```{python}
+try:
+    collect(patchy >> fill_missing(revenue = "none"))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+### Taking the first column that has a value
+
+`fill_missing` puts one value in every gap. When the value you want is in another
+column, `first_present` reads across the columns you name and takes the first one
+that is there.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+contacts <- data.frame(
+  name     = c("ana", "bo", "cy"),
+  mobile   = c("555-01", NA, NA),
+  landline = c("555-99", "555-02", NA),
+  email    = c("a@x", "b@x", "c@x"),
+  stringsAsFactors = FALSE
+)
+
+contacts |> add(reach = first_present(mobile, landline, email))
+```
+
+### Python
+
+```{python}
+contacts = pd.DataFrame({
+    "name":     ["ana", "bo", "cy"],
+    "mobile":   ["555-01", None, None],
+    "landline": ["555-99", "555-02", None],
+    "email":    ["a@x", "b@x", "c@x"],
+})
+
+contacts >> add(reach = first_present(col.mobile, col.landline, col.email))
+```
+
+:::
+
+Two things about it are worth knowing before you rely on it, and both are places
+people are usually surprised.
+
+The order is a priority rather than a set. It reads left to right and stops at the
+first column that has a value, so ana is reached on her mobile even though she
+also has a landline and an email. Writing the same three columns in another order
+gives a different answer, which is the point of writing them in an order at all.
+
+The only thing it skips is a missing value. A zero, an empty text and a `no`
+are all values, and they come back.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+readings <- data.frame(sensor = c(0, NA), backup = c(99, 99))
+readings |> add(used = first_present(sensor, backup))
+```
+
+### Python
+
+```{python}
+readings = pd.DataFrame({"sensor": [0.0, None], "backup": [99.0, 99.0]})
+readings >> add(used = first_present(col.sensor, col.backup))
+```
+
+:::
+
+The first sensor read zero, which is a reading, so it is kept. Only the row where
+the sensor recorded nothing at all falls through to the backup. If you want zero
+treated as missing too, say so in a step of its own, because that is a decision
+about your data rather than about the word.
+
+Every column it looks in has to hold the same kind of thing, since one of them is
+going to be the answer and a column holds one kind. If all of them are missing
+for a row, the answer for that row is missing.
+
+SQL and dplyr both call this `coalesce`. It is `first_present` here because
+`missing` is already the grammar's word for the absent value, so `present` is its
+opposite, and `first` says the part that trips people up.

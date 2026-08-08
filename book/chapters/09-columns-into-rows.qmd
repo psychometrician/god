@@ -1,0 +1,199 @@
+---
+title: "Turning columns into rows"
+---
+
+{{< include ../_setup.qmd >}}
+
+A survey usually arrives with a row per person and a column per question. Most
+things you want to ask of it need the opposite shape.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers <- data.frame(
+  student = c("ann", "bob"),
+  q1 = c(1, 4), q2 = c(2, 5), q3 = c(3, 6),
+  stringsAsFactors = FALSE
+)
+
+answers |> lengthen(q1, q2, q3)
+```
+
+### Python
+
+```{python}
+answers = pd.DataFrame({
+    "student": ["ann", "bob"],
+    "q1": [1, 4], "q2": [2, 5], "q3": [3, 6],
+})
+
+answers >> lengthen(col.q1, col.q2, col.q3)
+```
+
+:::
+
+The table grew taller, which is what the verb's name says. Direction is in the
+name because the alternative is a pair of words you have to look up every time.
+
+Two new columns arrived, called `name` and `value`. Those are the grammar's own
+words for what a column is called and what it holds, and they are the defaults
+here, so the shortest sentence is also the one that teaches the vocabulary.
+
+Give them names of your own when the table is about something:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers |> lengthen(q1, q2, q3, name = question, value = mark)
+```
+
+### Python
+
+```{python}
+answers >> lengthen(col.q1, col.q2, col.q3, name = col.question, value = col.mark)
+```
+
+:::
+
+### Choosing the columns
+
+The columns are chosen the same three ways `pick` chooses them, so there is
+nothing new to learn. The commonest one by far is everything except the column
+that identifies a row:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers |> lengthen(all_but(student), name = question, value = mark) |> take(3)
+```
+
+### Python
+
+```{python}
+answers >> lengthen(all_but(col.student), name = col.question, value = col.mark) >> take(3)
+```
+
+:::
+
+A question about the name works too, and it is the same `where` that chooses
+columns anywhere else:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers |> lengthen(where(startsWith(name, "q")), name = question, value = mark) |> take(2)
+```
+
+### Python
+
+```{python}
+answers >> lengthen(where(name.starts("q")), name = col.question, value = col.mark) >> take(2)
+```
+
+:::
+
+The columns being stacked have to hold the same kind of thing, because the one
+column they become can only hold one kind. Stacking a text column onto a number
+column is refused, and the refusal names both:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(answers |> lengthen(student, q1))
+```
+
+### Python
+
+```{python}
+try:
+    collect(answers >> lengthen(col.student, col.q1))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+### When a name holds two things
+
+Column names often encode more than one thing: `q1_2020` is a question and a
+year. Say what the names look like, and name each piece:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+terms <- data.frame(
+  id = c(1, 2),
+  q1_2020 = c(10, 20), q1_2021 = c(11, 21),
+  q2_2020 = c(12, 22), q2_2021 = c(13, 23)
+)
+
+terms |> lengthen(all_but(id), name = "{question}_{year}", value = mark) |> take(4)
+```
+
+### Python
+
+```{python}
+terms = pd.DataFrame({
+    "id": [1, 2],
+    "q1_2020": [10, 20], "q1_2021": [11, 21],
+    "q2_2020": [12, 22], "q2_2021": [13, 23],
+})
+
+terms >> lengthen(all_but(col.id), name = "{question}_{year}", value = col.mark) >> take(4)
+```
+
+:::
+
+The braces mark a piece, and everything outside them is the text that separates
+the pieces. That is the whole rule. It is not a regular expression, and it is not
+going to become one: a pattern you cannot read two months later is a pattern that
+costs more than it saves.
+
+A piece written `{value}` says something different. It says that piece picks
+which value column the row belongs to, rather than becoming a value itself. That
+is what to write when the names encode both what was measured and which measure
+it is:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+readings <- data.frame(
+  site = c("north", "south"),
+  air_mean = c(12.5, 15.0), air_max = c(20.0, 24.0),
+  sea_mean = c(8.5, 9.0),   sea_max = c(11.0, 12.5)
+)
+
+readings |> lengthen(all_but(site), name = "{medium}_{value}")
+```
+
+### Python
+
+```{python}
+readings = pd.DataFrame({
+    "site": ["north", "south"],
+    "air_mean": [12.5, 15.0], "air_max": [20.0, 24.0],
+    "sea_mean": [8.5, 9.0],   "sea_max": [11.0, 12.5],
+})
+
+readings >> lengthen(all_but(col.site), name = "{medium}_{value}")
+```
+
+:::
+
+Four columns became one column saying which medium, and two columns holding the
+two measures.

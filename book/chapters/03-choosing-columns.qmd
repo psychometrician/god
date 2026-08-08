@@ -1,0 +1,43 @@
+---
+title: "Choosing columns"
+---
+
+{{< include ../_setup.qmd >}}
+
+`pick` names the columns you want.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> pick(product, revenue)
+```
+
+### Python
+
+```{python}
+sales >> pick(col.product, col.revenue)
+```
+
+:::
+
+Wrap the names in `all_but` to say which ones to drop instead. It is the same
+verb, because choosing columns is choosing columns whichever way you say which
+ones, and it is the same word in both languages.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> pick(all_but(cost, region))
+```
+
+### Python
+
+```{python}
+sales >> pick(all_but(col.cost, col.region))
+```
+
+:::

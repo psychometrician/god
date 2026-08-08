@@ -1,0 +1,97 @@
+---
+title: "The same sentence in six dialects"
+---
+
+{{< include ../_setup.qmd >}}
+
+If you already write dplyr, pandas, polars, PySpark or SQL, this appendix is the
+translation. Each row is one god sentence and what it becomes in each of them.
+
+Nothing here is written by hand. Every cell is produced by asking god to print
+the pipeline in that language when this page is built, which is the same
+machinery Chapter 25 describes. A translation table maintained by a person goes
+out of date; this one cannot, because it is generated from the pipeline it
+describes.
+
+```{r}
+#| echo: false
+# Ask the engine for one sentence in one language. `show_as` prints as well as
+# returning, which is right at a prompt and not here, so the printing is caught
+# and thrown away.
+spoken <- function(pipeline, language) {
+  text <- NULL
+  invisible(capture.output(text <- show_as(pipeline, language, sales = sales)))
+  gsub("\n", " ", trimws(paste(text, collapse = " ")))
+}
+
+sentences <- c(
+  "sales then keep where [region] is \"West\"",
+  "sales then pick [product, revenue]",
+  "sales then add [margin] as [revenue] - [cost]",
+  "sales then summarize [total] as total([revenue]) by [product]",
+  "sales then sort [revenue] descending",
+  "sales then take 3",
+  "sales then drop_duplicates",
+  "sales then keep where [revenue] > 150 and [cost] < 100"
+)
+```
+
+## Row by row
+
+```{r}
+#| echo: false
+short <- function(x, n = 60) ifelse(nchar(x) > n, paste0(substr(x, 1, n - 1), "…"), x)
+knitr::kable(
+  data.frame(
+    god    = paste0("`", sub("^sales then ", "", sentences), "`"),
+    dplyr  = paste0("`", short(vapply(sentences, spoken, "", "dplyr")), "`"),
+    pandas = paste0("`", short(vapply(sentences, spoken, "", "pandas")), "`"),
+    check.names = FALSE, row.names = NULL
+  )
+)
+```
+
+```{r}
+#| echo: false
+knitr::kable(
+  data.frame(
+    god     = paste0("`", sub("^sales then ", "", sentences), "`"),
+    polars  = paste0("`", short(vapply(sentences, spoken, "", "polars")), "`"),
+    pyspark = paste0("`", short(vapply(sentences, spoken, "", "pyspark")), "`"),
+    check.names = FALSE, row.names = NULL
+  )
+)
+```
+
+## One sentence in full
+
+The table above shortens the long lines so that six languages fit across a page.
+Here is one sentence written out completely in each, so you can see the shape
+rather than the abbreviation.
+
+```{r}
+#| echo: false
+one <- "sales then keep where [region] is \"West\" then summarize [total] as total([revenue]) by [product]"
+for (language in c("sql", "spark", "dplyr", "pandas", "polars", "pyspark")) {
+  cat("##", language, "\n\n```\n", sep = "")
+  invisible(capture.output(text <- show_as(one, language, sales = sales)))
+  cat(paste(text, collapse = "\n"), "\n```\n\n", sep = "")
+}
+```
+
+## What the table is showing
+
+Read down a column and you are reading one library's idea of how a pipeline is
+written. Read across a row and you are reading one idea, six ways.
+
+The lengths differ, and the differences are the honest result rather than a
+selection. polars and PySpark have a method per verb, so a pipeline maps onto a
+chain and stays short. pandas has no single way to chain, so the idiom that does
+is `.assign` and `.loc[lambda d: ...]`, and every column inside one of those
+names the frame again. SQL puts the steps in an order that is not the order they
+happen in.
+
+This is also the way out. A small vocabulary covers most of what people do and
+never all of it, so when you reach the end of what god can say, you can ask it
+what your pipeline would have been in the tool you already use, and carry on
+there.

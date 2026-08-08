@@ -1,0 +1,81 @@
+/*-- scss:defaults --*/
+
+// The light theme. Bootstrap variables only, so Quarto compiles them into the
+// framework rather than fighting it afterwards with `!important`.
+//
+// The palette is the hex sticker's: slate `#b9cfe2`, black, white. The
+// sibling project's book is built the same way on its own sand, and the shared
+// construction is what makes the two read as a set rather than as two books.
+
+$slate:      #b9cfe2;
+$slate-deep: #8fb0cb;
+$slate-wash: #f0f5fa;
+$ink:          #12171c;
+$ink-soft:     #4d565f;
+
+$body-bg:      #ffffff;
+$body-color:   $ink;
+
+$link-color:        #1c5480;
+$link-hover-color:  #123c5e;
+
+// Cool greys, a shade off Bootstrap's own. The default `#f8f9fa` beside a
+// slate navbar reads as two unrelated designs.
+$gray-100: #f7f9fb;
+$gray-200: #e9eef4;
+$gray-300: #d5dee7;
+$gray-600: $ink-soft;
+$gray-800: #262d34;
+
+// The navbar takes the one color this project owns. A flat grey band is what
+// every framework-default site has.
+$navbar-bg:                 $slate;
+$navbar-light-color:        rgba(18, 23, 28, 0.72);
+$navbar-light-hover-color:  $ink;
+$navbar-light-active-color: $ink;
+$navbar-light-brand-color:  $ink;
+
+// Pinned, and pinned identically in both themes. cosmo and darkly ship
+// different navbar padding, so without this the bar changes height when the
+// toggle is clicked and the whole page steps down a few pixels with it. A theme
+// switch should change colors and nothing else.
+$navbar-padding-y: 0.6rem;
+$navbar-brand-padding-y: 0.25rem;
+$navbar-brand-font-size: 1.19rem;
+$navbar-nav-link-padding-x: 0.62rem;
+
+$font-family-sans-serif: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter,
+                         "Helvetica Neue", Arial, sans-serif;
+$font-family-monospace:  ui-monospace, "SF Mono", Menlo, Consolas,
+                         "Liberation Mono", monospace;
+
+// Larger than Bootstrap's 16px and looser than its 1.5. Both are readability
+// rather than taste: this book is written for readers working in a second
+// language.
+$font-size-base:   1.0625rem;
+$line-height-base: 1.7;
+
+// Code does not grow with the prose. Bootstrap sizes a `pre` at `0.875em` of
+// whatever it sits in, so raising the base above carries code up with it and a
+// long line stops fitting. That matters more here than in most books: a
+// pipeline is meant to be read aloud, and a block that hides its right-hand end
+// hides the end of the sentence. Pinned to the same value in the dark theme.
+$code-font-size: 0.824em;
+
+$headings-font-weight: 700;
+$headings-color:       $ink;
+
+$border-radius:    10px;
+$border-radius-lg: 16px;
+$border-color:     $gray-300;
+
+// Inline code is deliberately not brand-colored. Every chapter here names
+// columns and verbs in running prose, and coloring them would turn a paragraph
+// that mentions three of them into one that appears to be shouting. Code in
+// prose is a noun rather than an emphasis, so it takes a neutral panel and the
+// body's own ink. The brand color does its work in the navbar and the links.
+$code-color:            #262d34;
+$code-bg:               #eef1f5;
+$pre-bg:                $gray-100;
+$table-border-color:    $gray-300;
+$blockquote-font-size:  1rem;

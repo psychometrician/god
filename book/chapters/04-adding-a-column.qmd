@@ -1,0 +1,97 @@
+---
+title: "Adding a column"
+---
+
+{{< include ../_setup.qmd >}}
+
+`add` makes a column, or replaces one that is already there, and one `add` can
+make several at once.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add(margin = revenue - cost, paid = revenue * 2) |> pick(margin, paid)
+```
+
+### Python
+
+```{python}
+sales >> add(margin = col.revenue - col.cost, paid = col.revenue * 2) >> pick(col.margin, col.paid)
+```
+
+:::
+
+A column made in one step is not there yet for the rest of that same step. Every
+value in a step is worked out from the table as it arrives, so the second one
+cannot see the first.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> add(margin = revenue - cost, doubled = margin * 2) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Give it a step of its own and it works, and from there on the new column is an
+ordinary column that any later step can use.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(margin = revenue - cost) |>
+  add(doubled = margin * 2) |>
+  keep(margin > 50) |>
+  sort(descending(margin))
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(margin = col.revenue - col.cost)
+  >> add(doubled = col.margin * 2)
+  >> keep(col.margin > 50)
+  >> sort(descending(col.margin)))
+```
+
+:::
+
+This is worth knowing early if you are arriving from dplyr or pandas, because
+`mutate` and `assign` both let the second column read the first. This grammar
+does not, for the same reason SQL does not: a step is one step, rather than a
+sequence hiding inside one. Replacing a column is a different thing and works as
+you would expect, because the old value is on the table when the step begins.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add(revenue = revenue * 2) |> pick(product, revenue)
+```
+
+### Python
+
+```{python}
+sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
+```
+
+:::

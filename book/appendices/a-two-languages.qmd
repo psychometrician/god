@@ -1,0 +1,150 @@
+---
+title: "The two languages"
+---
+
+{{< include ../_setup.qmd >}}
+
+A pipeline is the same sentence in both languages. Chapter 1 showed the two
+places they differ. This appendix is the rest of it: why the pipe is what it is,
+the two rules Python adds, how R's own habits are read, and what god does to the
+names already in your session.
+
+Everything else in the book is written once, with a tab for each language,
+because everywhere else the two really are the same sentence.
+
+## The two differences
+
+`>>` is the pipe in Python, and it is an operator rather than a method call for
+the reason the preface gives: an arrow points at the next step and a dot ends a
+sentence. Python cannot have `|>` itself. Its operator set is fixed by the
+language, and `|>` does not even tokenize.
+
+Of the operators a frame leaves free, `>>` is the only one available everywhere,
+which makes it the choice rather than a preference. `|` was considered and would
+have been a disaster, because pandas defines it, so `frame | verb` never reaches
+the verb at all. It does an elementwise or and hands back a frame of `True`,
+which is a wrong answer with no error attached.
+
+`col.name` is how Python names a column. R can look a name up in your data before
+it looks in your session, so a bare `revenue` is unambiguous there. Python has no
+such hook, so a column says that it is one.
+
+## Two rules Python adds
+
+Neither comes from the grammar, and this book states them here rather than
+letting you find them in an error message.
+
+Comparisons joined by `&` need parentheses, because `&` binds more tightly than
+`==` in Python. Negation is `~`, because `not` is a keyword whose result Python
+turns into a bool, so an object cannot see it.
+
+```{python}
+sales >> keep((col.revenue > 150) & (col.cost < 100))
+```
+
+```{python}
+sales >> keep(~(col.product == "Widget"))
+```
+
+Asking whether a value is one of several is a method, since Python's `in` cannot
+be reached either.
+
+```{python}
+sales >> keep(col.region.is_in(["West", "East"]))
+```
+
+Write the values as a list when the order matters to you. A set works too, and
+gets sorted before it is written, because Python's hashing changes between runs
+and the same pipeline has to read the same way every time.
+
+One word used to be on this list and no longer is. The marker that inverts a
+`pick` was `except`, which Python had to spell `except_`, because `except` is a
+keyword here. It is `all_but` in both languages now, and in the text form. No
+word in the vocabulary is spelled differently in the two languages.
+
+## R's habits, in the grammar's words
+
+The grammar has one spelling for each idea, and some of R's spellings are not it.
+You still write R, and the verbs translate as they build the sentence. `format`
+shows what they wrote.
+
+```{r}
+cat(format(sales |> keep(region != "West" & !is.na(cost))))
+```
+
+`!=` became `is not` and `is.na` became `is missing`. The full set of
+replacements is small.
+
+```{r}
+#| echo: false
+translations <- data.frame(
+  `You write` = c("==", "!=", "&", "|", "!", "%in%", "is.na(x)", "TRUE", "NA"),
+  `god writes` = c("is", "is not", "and", "or", "not", "in { }",
+                   "x is missing", "yes", "missing"),
+  check.names = FALSE
+)
+knitr::kable(translations)
+```
+
+A set of values is written out, because the grammar has no variables yet and
+will not guess at one.
+
+```{r}
+sales |> keep(region %in% c("West", "East")) |> summarize(n = row_count(), by = region)
+```
+
+## The names god takes over
+
+Attaching god in R replaces `sort` for the rest of your session. That is
+deliberate: a prefix on every sentence is a worse trade than a good message on
+the few calls that go wrong. The message names what was shadowed and how to reach
+it.
+
+```{r}
+#| error: true
+sort(c(3, 1, 2))
+```
+
+What it does not take over is every other package you have. R looks a name up
+inside a package through that package's own namespace, never through the search
+path you attached to, so a function that calls `sort` in its own body is
+untouched. `median` and `quantile` both do.
+
+```{r}
+c(median(c(3, 1, 2)), quantile(1:9, 0.5))
+```
+
+So the cost is your own calls to `sort`, at the console or in a script, and
+nothing further. `base::sort` is always there, and the message above says so at
+the moment you need it.
+
+`keep`, `pick`, `summarize` and `add` collide with packages you may have attached
+rather than with base R, and load order decides which one wins. If you use dplyr
+in the same script, call one of them with its package in front:
+`dplyr::summarize`.
+
+Python has namespaces where R does not, so `import god` collides with nothing at
+all and only `from god import *` can.
+
+## If you also use gog
+
+`col` is a good enough name that other people picked it too. polars uses it, and
+so does gog, this project's sibling for drawing plots, where it does the same job
+for the same reason. `from god import *` and `from gog import *` in one file
+means the second one wins and the first is gone.
+
+Import them by name when you want both, which is what Python's namespaces are
+for:
+
+```python
+import god
+import gog
+
+sales_by_product = god.collect(
+    sales >> god.summarize(revenue = god.total(god.col.revenue), by = god.col.product)
+)
+```
+
+Or bring in one of them and reach for the other by name. The failure is loud if
+you forget: god's verbs have no idea what a gog column is, so a mixed-up pipeline
+stops rather than guessing.

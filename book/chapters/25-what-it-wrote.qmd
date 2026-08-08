@@ -1,0 +1,103 @@
+---
+title: "What it wrote, in a language you know"
+---
+
+{{< include ../_setup.qmd >}}
+
+A small vocabulary covers most of what people do and never all of it, so the
+question is not whether you reach its edge but what happens there. Ask any
+pipeline what it would be in dplyr, or ask for the query. There are seven
+answers: `sql`, `spark`, `dplyr`, `pandas`, `polars`, `pyspark`, and `god`
+itself.
+
+```{r}
+show_as(sales |> keep(region == "West") |> take(10), "dplyr")
+```
+
+```{r}
+show_as(sales |> summarize(revenue = total(revenue), by = product), "sql")
+```
+
+### The same sentence, on a cluster
+
+`"sql"` is the query for the engine on your machine. `"spark"` is the same
+pipeline for Spark, and the point is what does not change: the sentence you
+wrote.
+
+```{r}
+show_as(sales |> summarize(revenue = total(revenue), by = product), "spark")
+```
+
+The two queries differ in five places, and only two of those are cosmetic. A
+column is `` `revenue` `` on Spark and `"revenue"` here, and that one is worth
+knowing about: a double-quoted name on Spark is not a column at all, it is the
+text `'revenue'`, so a query written for the wrong engine would run happily and
+put the column's own name in every row. Dropping a column is `EXCEPT` rather than
+`EXCLUDE`, stopping a query is `raise_error` rather than `error`, and a backslash
+inside a text value has to be written twice.
+
+None of that is yours to remember. It is the difference between writing a
+pipeline and writing a query.
+
+### In a dataframe library instead
+
+A query is one answer. The other is the dataframe library you already use, which
+is what you want when the table is in front of you and there is no engine to hand
+anything to. The same pipeline, three ways:
+
+```{r}
+show_as(sales |>
+          add(margin = revenue - cost) |>
+          keep(margin > 50) |>
+          sort(descending(margin)), "polars")
+```
+
+```{r}
+show_as(sales |>
+          add(margin = revenue - cost) |>
+          keep(margin > 50) |>
+          sort(descending(margin)), "pandas")
+```
+
+```{r}
+show_as(sales |>
+          add(margin = revenue - cost) |>
+          keep(margin > 50) |>
+          sort(descending(margin)), "pyspark")
+```
+
+Each verb became one method, and the order of the steps did not move. What
+changes is how a column is named. polars writes `pl.col`, PySpark writes `F.col`,
+and pandas has no name of its own, so it borrows the frame it was handed and
+writes `d["margin"]` inside a small function.
+
+That last one is why the pandas rendering is the longest of the three, and it is
+the honest answer rather than a failure to find a shorter one. pandas has no
+single way to chain steps, so the idiom that does chain is `.assign` and
+`.loc[lambda d: ...]`, and a column inside either of those has to name the frame
+again. The grammar says `[margin]` once.
+
+Where an engine cannot say what a sentence means, you get a refusal rather than
+a query that says something close. Spark has to be told which columns a `widen`
+makes, because its pivot cannot work them out from the data:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+show_as(marks |> widen(name = question, value = mark, by = student), "spark")
+```
+
+### Python
+
+```{python}
+try:
+    show_as("marks then widen name [question], value [mark] by [student]",
+            "spark", marks = marks)
+except GodError as refusal:
+    print(refusal)
+```
+
+:::

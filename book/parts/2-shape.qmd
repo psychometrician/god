@@ -1,0 +1,11 @@
+# Changing a table's shape
+
+The six verbs work down a table. Sometimes the table is the wrong shape to begin
+with: a year in four columns when you wanted a year in four rows, or the reverse.
+
+Two verbs turn a table one way and back. `lengthen` makes it taller and `widen`
+makes it wider, and the names say which, because nobody could remember which of
+`melt` and `cast` did what.
+
+This is the part where a reader arriving from tidyr will recognize the job and
+not the argument list. There is a table in the first chapter comparing the two.

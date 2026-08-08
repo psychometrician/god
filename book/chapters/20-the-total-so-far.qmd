@@ -1,0 +1,74 @@
+---
+title: "The total so far"
+---
+
+{{< include ../_setup.qmd >}}
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+diary |> sort(on_) |> add(so_far = running_total(x))
+```
+
+### Python
+
+```{python}
+diary >> sort(col.on_) >> add(so_far = running_total(col.x))
+```
+
+:::
+
+`by` restarts it for each group, and `previous` and `following` look one row back
+and one row on:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+diary |>
+  sort(on_) |>
+  add(so_far = running_total(x), before = previous(x), after = following(x), by = g)
+```
+
+### Python
+
+```{python}
+(diary
+ >> sort(col.on_)
+ >> add(so_far = running_total(col.x), before = previous(col.x),
+        after = following(col.x), by = col.g))
+```
+
+:::
+
+The first row of a group has nothing before it and the last has nothing after
+it, so those are missing.
+
+All three need a `sort` in front of them, and say so if they do not get one. A
+total *so far* means nothing until something has said so far in what order:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(diary |> add(so_far = running_total(x)))
+```
+
+### Python
+
+```{python}
+try:
+    collect(diary >> add(so_far = running_total(col.x)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+`rank` is the exception, because its argument *is* the order: `rank(x)` says what
+it goes by, so it needs no sort in front of it.

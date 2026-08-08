@@ -1,0 +1,76 @@
+---
+title: "Tidying text"
+---
+
+{{< include ../_setup.qmd >}}
+
+Real tables arrive untidy. These are the words for that.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+messy <- data.frame(
+  raw = c("  ann marie  ", "  bob  "),
+  n = c(7L, 99L),
+  stringsAsFactors = FALSE
+)
+
+messy |>
+  add(name = trim(raw)) |>
+  add(first = split_text(name, " ", 1),
+      size = characters(name),
+      fixed = replace_text(name, "a", "A"))
+```
+
+### Python
+
+```{python}
+messy = pd.DataFrame({
+    "raw": ["  ann marie  ", "  bob  "],
+    "n": [7, 99],
+})
+
+(messy
+ >> add(name = trim(col.raw))
+ >> add(first = split_text(col.name, " ", 1),
+        size = characters(col.name),
+        fixed = replace_text(col.name, "a", "A")))
+```
+
+:::
+
+`split_text` says which piece it wants, counting from 1, because every value in
+the grammar is one value. Where there is no such piece the answer is empty text
+rather than missing, so `bob` gives back `bob`.
+
+`replace_text` looks for the text itself, not for a pattern, so nothing in it is
+special. `characters` counts characters; it is not called `length`, because R's
+`length` counts the elements of a vector and a word that reads as one thing and
+does another is the trap this vocabulary is built to avoid.
+
+## Case, both ways
+
+`lower` and `upper` fold a value's case. They are ordinary functions on a value,
+so they go anywhere a value goes.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+messy |> add(shout = upper(trim(raw)), quiet = lower(trim(raw))) |> pick(shout, quiet)
+```
+
+### Python
+
+```{python}
+messy >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw))) >> pick(col.shout, col.quiet)
+```
+
+:::
+
+The same two words also work on a column's *name* rather than on its contents,
+which is how you match names whose capitalization you cannot rely on. That is
+Chapter 22, and it needs no second spelling of either word.

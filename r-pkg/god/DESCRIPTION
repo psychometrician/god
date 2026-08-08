@@ -1,0 +1,20 @@
+Package: god
+Title: A Grammar of Data
+Version: 0.0.0.9000
+Authors@R:
+    person("psychometrician", role = c("aut", "cre"), email = "psychometrician@gmail.com")
+Description: One small vocabulary for manipulating tables, spelled the same way
+    in R, in Python, and on a cluster. A pipeline is checked before any of it
+    runs, so a bad column is reported at the step that names it rather than
+    failing partway through. The grammar owns the words, the checking and the
+    messages; an engine underneath does the work.
+License: Apache License (== 2.0)
+Encoding: UTF-8
+Depends:
+    R (>= 4.0)
+Imports:
+    DBI,
+    duckdb
+Suggests:
+    knitr,
+    pkgload

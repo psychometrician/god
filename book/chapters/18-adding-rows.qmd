@@ -1,0 +1,55 @@
+---
+title: "Adding rows from another table"
+---
+
+{{< include ../_setup.qmd >}}
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+more <- data.frame(
+  region = "North", product = "Sprocket", revenue = 400, cost = 120,
+  stringsAsFactors = FALSE
+)
+
+sales |> add_rows(more) |> take(6)
+```
+
+### Python
+
+```{python}
+more = pd.DataFrame({
+    "region": ["North"], "product": ["Sprocket"],
+    "revenue": [400], "cost": [120],
+})
+
+sales >> add_rows(more) >> take(6)
+```
+
+:::
+
+Both tables need the same columns. A column on one side only is refused rather
+than filled in with missing values, because a half-empty column that says nothing
+is how a mistake survives to the end of a pipeline.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> add_rows(data.frame(region = "North")))
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> add_rows(pd.DataFrame({"region": ["North"]})))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::

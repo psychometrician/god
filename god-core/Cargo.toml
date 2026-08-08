@@ -1,0 +1,15 @@
+[package]
+name = "god-core"
+description = "The grammar: text to a plan, validation, and a plan to a backend."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+
+# Only the tests link an engine. See the workspace manifest for why.
+[dev-dependencies]
+duckdb = { workspace = true }

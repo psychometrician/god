@@ -1,0 +1,11 @@
+# Choosing columns without naming them
+
+When a table has thirty columns and you want the eight beginning with `q`,
+naming them is tedious and goes stale the moment a ninth arrives.
+
+Three chapters, each a different question about a column. What is its name
+shaped like? What kind of thing does it hold? And once you have chosen a set of
+them, how do you apply one calculation to all of them at once?
+
+This is the part that replaces a family of helper functions in other tools with
+one word and a written subject.

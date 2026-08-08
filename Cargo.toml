@@ -1,0 +1,23 @@
+[workspace]
+members = ["god-core", "god-cli"]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["psychometrician"]
+rust-version = "1.75"
+
+# `god-core` has no runtime dependencies at all, and that is a design property
+# rather than an accident. It turns text into a plan and a plan into SQL, and
+# neither job needs a library. A crate with nothing under it compiles in seconds
+# and vendors without argument, which is what keeps the engine question open:
+# whatever executes the SQL is the host's business, not this crate's.
+#
+# DuckDB appears below as a *dev* dependency only. Tests have to check the rows
+# that come back rather than the SQL that went out — a query is a proxy, and a
+# proxy is how a check passes while the thing is wrong — so the suite needs a
+# real engine even though the library never links one.
+[workspace.dependencies]
+duckdb = { version = "1", features = ["bundled"] }

@@ -1,0 +1,19 @@
+god — a grammar of data
+Copyright 2026 psychometrician
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+--------------------------------------------------------------------------------
+Third-party material
+--------------------------------------------------------------------------------
+
+No third-party material is included in this work.
+
+god links polars (https://github.com/pola-rs/polars), which is licensed under
+the MIT License and is a dependency rather than included source. Its license
+travels with it, and cargo records it in the dependency tree. This is recorded
+here because polars does the work this project delegates rather than owns, and
+saying so is a courtesy the license happens not to require.
+
+Example datasets used in the book are named where they are used, with their
+source and license, in the chapter that first shows them.

@@ -1,0 +1,16 @@
+[package]
+name = "god-cli"
+description = "A plan on stdin; tables in and out as Arrow IPC."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "god-cli"
+path = "src/main.rs"
+
+[dependencies]
+god-core = { path = "../god-core" }

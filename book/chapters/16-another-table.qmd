@@ -1,0 +1,97 @@
+---
+title: "Bringing in another table"
+---
+
+{{< include ../_setup.qmd >}}
+
+`join` adds another table's columns to this one, matching rows by the columns
+that say which rows correspond. `products` holds a maker for each product.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> join(products, by = product) |> pick(product, maker, revenue)
+```
+
+### Python
+
+```{python}
+sales >> join(products, by = col.product) >> pick(col.product, col.maker, col.revenue)
+```
+
+:::
+
+Leave `by` out and god matches on the column names both tables share, then tells
+you which it chose. It is never silent about a choice you did not make.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> join(products) |> take(2)
+```
+
+### Python
+
+```{python}
+sales >> join(products) >> take(2)
+```
+
+:::
+
+What varies between the four joins you may know by name is only this: what
+happens to a row that found no match. So that is what the argument is called.
+
+| `unmatched =` | Which unmatched rows survive | Called elsewhere |
+|---|---|---|
+| `"this"` (the default) | this table's | left join |
+| `"none"` | neither table's | inner join |
+| `"both"` | both tables' | full join |
+
+There is no `"other"`, and that is not an omission. A right join is this join
+with the tables the other way round, so it adds no meaning and gets no word.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> join(products, unmatched = "none") |> summarize(revenue = total(revenue), by = maker)
+```
+
+### Python
+
+```{python}
+sales >> join(products, unmatched = "none") >> summarize(revenue = total(col.revenue), by = col.maker)
+```
+
+:::
+
+A column on both tables that is not being matched on would arrive twice, so it
+is refused rather than quietly renamed to something you did not choose.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+overlap <- data.frame(product = "Widget", revenue = 1, stringsAsFactors = FALSE)
+collect(sales |> join(overlap, by = product))
+```
+
+### Python
+
+```{python}
+overlap = pd.DataFrame({"product": ["Widget"], "revenue": [1]})
+
+try:
+    collect(sales >> join(overlap, by = col.product))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::

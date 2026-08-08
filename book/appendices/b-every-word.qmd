@@ -1,0 +1,99 @@
+---
+title: "Every word in the grammar"
+---
+
+{{< include ../_setup.qmd >}}
+
+The whole vocabulary, on one page. If you are deciding whether to learn this,
+read the list and see how long it takes: that is the argument, and it is shorter
+than the argument for it.
+
+Nothing here is typed by hand. The engine is asked what words it has when this
+page is built, so the list cannot describe a word that was removed or miss one
+that was added.
+
+```{r}
+#| echo: false
+vocabulary <- read.delim(
+  text = system2(god:::god_binary(), "--vocabulary", stdout = TRUE),
+  header = FALSE, col.names = c("kind", "word"), stringsAsFactors = FALSE
+)
+counts <- table(vocabulary$kind)
+```
+
+```{r}
+#| echo: false
+knitr::kable(
+  data.frame(
+    Kind = c("Verbs", "Aggregations", "Windows", "Scalar functions", "Grammar words"),
+    Count = as.integer(counts[c("verb", "aggregate", "window", "scalar", "word")]),
+    `What they do` = c(
+      "Steps in a pipeline. Every one is an imperative English verb",
+      "Collapse a group to one value",
+      "Answer for every row by looking at the other rows",
+      "Answer for one row from that row",
+      "The small words that join the rest together"
+    ),
+    check.names = FALSE
+  )
+)
+```
+
+## The verbs
+
+A pipeline is a table, then `then`, then one of these, repeated.
+
+```{r}
+#| echo: false
+paste0("`", vocabulary$word[vocabulary$kind == "verb"], "`", collapse = " · ") |> cat()
+```
+
+`keep` and `pick` are the two that choose: rows and columns. `add` and
+`summarize` are the two that make a column: one per row, and one per group.
+`sort` and `take` order and cut. Everything after those six is either a second
+table, a missing value, or a change of shape.
+
+## The aggregations
+
+These go inside `summarize`, and inside `add` when it carries a `by`.
+
+```{r}
+#| echo: false
+paste0("`", vocabulary$word[vocabulary$kind == "aggregate"], "`", collapse = " · ") |> cat()
+```
+
+## The windows
+
+These answer once per row by looking along the other rows. Several of them
+require a `sort` in front, because they mean nothing until something has said in
+what order.
+
+```{r}
+#| echo: false
+paste0("`", vocabulary$word[vocabulary$kind == "window"], "`", collapse = " · ") |> cat()
+```
+
+## The scalar functions
+
+One row in, one value out. These go anywhere a value goes.
+
+```{r}
+#| echo: false
+paste0("`", vocabulary$word[vocabulary$kind == "scalar"], "`", collapse = " · ") |> cat()
+```
+
+## The grammar words
+
+Not verbs and not functions. These are the joints: they say how the words on
+either side of them are related.
+
+```{r}
+#| echo: false
+paste0("`", vocabulary$word[vocabulary$kind == "word"], "`", collapse = " · ") |> cat()
+```
+
+## That is all of it
+
+There is no second list, no set of helpers, and no dialect that adds a few more
+on a cluster. A word that is not above is not in the grammar, and asking for one
+gets a refusal that names the nearest word that is.

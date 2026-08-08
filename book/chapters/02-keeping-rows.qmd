@@ -1,0 +1,61 @@
+---
+title: "Keeping rows"
+---
+
+{{< include ../_setup.qmd >}}
+
+`keep` takes a condition and keeps the rows where it holds.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(region == "West")
+```
+
+### Python
+
+```{python}
+sales >> keep(col.region == "West")
+```
+
+:::
+
+Conditions combine with `and` and `or`, and either language's negation reverses
+one.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(revenue > 150 & cost < 100)
+```
+
+### Python
+
+```{python}
+sales >> keep((col.revenue > 150) & (col.cost < 100))
+```
+
+:::
+
+There is no separate verb for dropping rows. Removing the rows where something
+is true is keeping the rows where it is false, and one verb says both.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(!(product == "Widget"))
+```
+
+### Python
+
+```{python}
+sales >> keep(~(col.product == "Widget"))
+```
+
+:::

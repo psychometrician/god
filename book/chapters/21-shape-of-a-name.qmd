@@ -1,0 +1,83 @@
+---
+title: "Choosing by the shape of a name"
+---
+
+{{< include ../_setup.qmd >}}
+
+When a table has thirty columns and you want the eight that begin with `q`,
+naming them is tedious and goes stale the moment a ninth arrives. `pick where`
+takes a question about a column's **name** instead.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey <- data.frame(
+  respondent = 1:3,
+  q1_score   = c(4, 5, 3),
+  q2_score   = c(2, 5, 5),
+  region     = c("West", "East", "West"),
+  stringsAsFactors = FALSE
+)
+
+survey |> pick(where(startsWith(name, "q")))
+```
+
+### Python
+
+```{python}
+survey = pd.DataFrame({
+    "respondent": [1, 2, 3],
+    "q1_score":   [4, 5, 3],
+    "q2_score":   [2, 5, 5],
+    "region":     ["West", "East", "West"],
+})
+
+survey >> pick(where(name.starts("q")))
+```
+
+:::
+
+`name` is the word for whichever column is being considered. There are three
+tests you can ask about it, `starts`, `ends` and `contains`, and they join with
+`and`, `or` and `not` like any other condition.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> pick(where(endsWith(name, "_score") | name == "respondent"))
+```
+
+### Python
+
+```{python}
+survey >> pick(where(name.ends("_score") | (name == "respondent")))
+```
+
+:::
+
+If no column's name matches, that is refused rather than handing back a table
+with no columns at all.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(survey |> pick(where(startsWith(name, "zzz"))))
+```
+
+### Python
+
+```{python}
+try:
+    collect(survey >> pick(where(name.starts("zzz"))))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::

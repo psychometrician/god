@@ -1,0 +1,153 @@
+---
+title: "Where this ends, and gog begins"
+---
+
+{{< include ../_setup.qmd >}}
+
+```{r}
+#| include: false
+suppressMessages(library(gog))
+```
+
+```{python}
+#| include: false
+import gog
+```
+
+god manipulates tables. It does not draw them, and it is not going to, because
+drawing is a different job with a different vocabulary. A grammar that tried to
+do both would stop being small enough to hold in your head, which is the one
+thing this project will not trade.
+
+That other grammar exists. **gog** is this project's sibling: a grammar of
+graphics, by the same author, built on the same discipline and holding the same
+promise about day one and day two. The two are meant to sit beside each other,
+and most real questions use both, because a question usually starts as a table
+that is the wrong shape and ends as a picture.
+
+## One question, end to end
+
+Here is the whole arc. A messy table arrives, god gets it into shape, and gog
+draws the answer. Nothing else is loaded.
+
+The table is quarterly revenue, one column per quarter, which is the shape a
+spreadsheet gives you and the wrong shape for almost everything else.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+quarters <- data.frame(
+  product = c("Widget", "Gadget", "Gizmo"),
+  q1 = c(100, 300, 250),
+  q2 = c(140, 280, 300),
+  q3 = c(180, 260, 360),
+  q4 = c(220, 240, 410)
+)
+
+quarters
+```
+
+### Python
+
+```{python}
+quarters = pd.DataFrame({
+    "product": ["Widget", "Gadget", "Gizmo"],
+    "q1": [100, 300, 250],
+    "q2": [140, 280, 300],
+    "q3": [180, 260, 360],
+    "q4": [220, 240, 410],
+})
+
+quarters.style.hide(axis="index")
+```
+
+:::
+
+Four columns that are really one variable measured four times. Turn them into
+rows, which is one verb, and the table is ready to be drawn.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+tidy <- quarters |>
+  lengthen(all_but(product), name = quarter, value = revenue) |>
+  collect()
+
+tidy |> head(4)
+```
+
+### Python
+
+```{python}
+tidy = collect(quarters
+  >> lengthen(all_but(col.product), name = col.quarter, value = col.revenue))
+
+tidy.head(4).style.hide(axis="index")
+```
+
+:::
+
+Now gog. The table goes in, a mark and two channels say what to draw, and the
+sentence reads the same way a god pipeline does.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(tidy) + x(quarter) + y(revenue) + color(product) + line
+```
+
+### Python
+
+```{python}
+gog.data(tidy) + gog.x(gog.col.quarter) + gog.y(gog.col.revenue) + gog.color(gog.col.product) + gog.line
+```
+
+:::
+
+That is the whole analysis. One reshape and one plot, in two packages that were
+designed to be read the same way.
+
+## What it replaced
+
+Written in the tools this book keeps comparing itself to, the same two steps
+need a reshaping function from one package and a plotting system from another,
+each with its own vocabulary, its own idea of what a column reference looks like,
+and its own rules about which arguments are quoted.
+
+The saving is not the number of lines. It is that `lengthen` and `line` come from
+the same design, so the second half of the analysis does not ask you to switch
+how you are thinking. `all_but` means in gog what it means here. So does `by`.
+
+## The one thing to know about using both
+
+In R, load them and go. The two packages take care not to collide, and R looks a
+column name up in your data before it looks anywhere else.
+
+In Python, one name is claimed by both. `col` is how each of them names a column,
+so `from god import *` followed by `from gog import *` would leave you with one
+of them and no warning. Import gog by name instead, which is what the examples
+above do:
+
+```python
+from god import *
+import gog
+```
+
+Then `col.revenue` is god's and `gog.col.revenue` is gog's, and nothing is
+ambiguous. Appendix A says the same thing about every other name god takes over.
+
+## Where to go next
+
+If you want the graphics grammar, its manual is
+[the gog book](https://psychometrician.github.io/gog-book/), and it is written
+the same way this one is: every plot on the page was drawn by the engine while
+the page was being built.
+
+Read it in the order you would use them. You start in god, with a table that is
+the wrong shape. You end in gog, looking at the answer.

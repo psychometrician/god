@@ -1,0 +1,213 @@
+---
+title: "Turning rows into columns"
+---
+
+{{< include ../_setup.qmd >}}
+
+`widen` is the inverse, and it reads the same two words the other way. `name`
+points at the column holding column names in both verbs. Here it is being read
+rather than made, and the verb is what says which.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+marks <- data.frame(
+  student  = c("ann", "ann", "bob", "bob"),
+  question = c("q1", "q2", "q1", "q2"),
+  mark     = c(1, 2, 4, 5),
+  stringsAsFactors = FALSE
+)
+
+marks |> widen(name = question, value = mark, by = student)
+```
+
+### Python
+
+```{python}
+marks = pd.DataFrame({
+    "student":  ["ann", "ann", "bob", "bob"],
+    "question": ["q1", "q2", "q1", "q2"],
+    "mark":     [1, 2, 4, 5],
+})
+
+marks >> widen(name = col.question, value = col.mark, by = col.student)
+```
+
+:::
+
+`by` says which columns identify a row. Leaving it out means every column not
+already named, which is usually right and is occasionally a surprise: one column
+you had forgotten about makes every row distinct, and the table comes back as
+tall as it went in. The grammar tells you what it assumed rather than deciding
+quietly.
+
+Because the two verbs are inverses and share their defaults, the round trip is a
+sentence with no arguments in it at all:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers |> lengthen(q1, q2, q3) |> widen()
+```
+
+### Python
+
+```{python}
+answers >> lengthen(col.q1, col.q2, col.q3) >> widen()
+```
+
+:::
+
+### When two rows want the same cell
+
+A cell holds one value. If two rows both claim it, there is no answer, and
+choosing one of them silently is how a wrong number reaches a report.
+
+This is the one refusal that arrives when the query runs rather than when the
+pipeline is checked. Whether two rows collide is a fact about the data, and the
+grammar reads column names rather than rows, so it cannot be known any earlier.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+twice <- data.frame(
+  student  = c("ann", "ann"),
+  question = c("q1", "q1"),
+  mark     = c(1, 9),
+  stringsAsFactors = FALSE
+)
+
+collect(twice |> widen(name = question, value = mark, by = student))
+```
+
+### Python
+
+```{python}
+try:
+    twice = pd.DataFrame({
+        "student":  ["ann", "ann"],
+        "question": ["q1", "q1"],
+        "mark":     [1, 9],
+    })
+    collect(twice >> widen(name = col.question, value = col.mark, by = col.student))
+except Exception as refusal:
+    # Not a `GodError`: this refusal is raised by the engine as it runs, so it
+    # arrives as whatever the engine raises. The words are the grammar's.
+    print(refusal)
+```
+
+:::
+
+Saying what should happen is a value rather than a new word. `value` takes an
+expression, so an aggregation there is the answer:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+twice |> widen(name = question, value = average(mark), by = student)
+```
+
+### Python
+
+```{python}
+twice >> widen(name = col.question, value = average(col.mark), by = col.student)
+```
+
+:::
+
+### Saying what it makes
+
+The columns `widen` produces come from the data, which nothing can know before
+the query runs. Every other step in the grammar is checked against columns that
+are known in advance, and this one cannot be.
+
+So a `widen` that says nothing about what it makes is allowed to be the answer,
+and is not allowed to be the middle of one:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(marks |> widen(name = question, value = mark, by = student) |> take(1))
+```
+
+### Python
+
+```{python}
+try:
+    collect(marks >> widen(name = col.question, value = col.mark, by = col.student) >> take(1))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Write the columns down and everything after the `widen` is checked as usual:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+marks |>
+  widen(name = question, value = mark, by = student, giving = c(q1, q2)) |>
+  add(gain = q2 - q1)
+```
+
+### Python
+
+```{python}
+(marks
+ >> widen(name = col.question, value = col.mark, by = col.student,
+          giving = [col.q1, col.q2])
+ >> add(gain = col.q2 - col.q1))
+```
+
+:::
+
+Writing them down buys two more things. A value in the data that you did not list
+stops the query instead of disappearing from the answer. And an empty cell can be
+filled, which needs `giving` for the same reason: saying what an empty cell holds
+means knowing which cells there are.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sparse <- data.frame(
+  student  = c("ann", "ann", "bob"),
+  question = c("q1", "q2", "q1"),
+  mark     = c(1, 2, 4),
+  stringsAsFactors = FALSE
+)
+
+sparse |> widen(name = question, value = mark, by = student,
+                missing = 0, giving = c(q1, q2))
+```
+
+### Python
+
+```{python}
+sparse = pd.DataFrame({
+    "student":  ["ann", "ann", "bob"],
+    "question": ["q1", "q2", "q1"],
+    "mark":     [1, 2, 4],
+})
+
+sparse >> widen(name = col.question, value = col.mark, by = col.student,
+                missing = 0, giving = [col.q1, col.q2])
+```
+
+:::

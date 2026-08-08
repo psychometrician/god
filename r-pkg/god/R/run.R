@@ -1,0 +1,325 @@
+# The R launcher.
+#
+# **This file carries bytes and decides nothing.** Validation, defaults, coercion
+# and every message belong to the grammar; a rule implemented here is a rule
+# Python would get wrong, and then the two languages disagree about what a
+# sentence means. What is left is: find the table, describe it, hand the text
+# over, run what comes back.
+#
+# It does not read the pipeline either. Picking the table's name out of the text
+# would be parsing — in a host, and a second time — so the grammar is asked
+# instead (`--needs`). The temptation to do it here with a regular expression is
+# exactly how two implementations start to differ.
+
+#' Run a pipeline
+#'
+#' @param pipeline The pipeline, as text.
+#' @param ... Tables, named. Usually unnecessary: the table named at the head of
+#'   the pipeline is looked up where you are calling from, the way
+#'   `duckdb.sql("SELECT * FROM df")` finds `df` in Python.
+#' @return A data frame.
+#' @export
+run <- function(pipeline, ...) {
+  tables <- list(...)
+  # A pipeline can name more than one table, which is what `join` brought. The
+  # grammar says which, in the order it names them, and the first is the head.
+  sources <- god_needs(pipeline)
+  here <- parent.frame()
+
+  for (source in sources) {
+    if (!source %in% names(tables)) {
+      found <- mget(source, envir = here, ifnotfound = list(NULL))[[1]]
+      if (is.null(found)) {
+        found <- god_in_engine(source)
+      }
+      if (is.null(found)) {
+        stop(
+          sprintf(
+            "the pipeline reads a table called `%s`, and there is no such table here.\n  Pass it by name: run(pipeline, %s = your_data)",
+            source, source
+          ),
+          call. = FALSE
+        )
+      }
+      tables[[source]] <- found
+    }
+  }
+
+  for (name in names(tables)) {
+    if (!is.data.frame(tables[[name]])) {
+      stop(sprintf("`%s` is not a table", name), call. = FALSE)
+    }
+  }
+
+  god_query(pipeline, tables, sources[[1]])
+}
+
+#' Run pipelines somewhere other than this machine
+#'
+#' **The sentences do not change and neither does the vocabulary.** What changes
+#' is which engine answers them. Point god at a warehouse connection and the same
+#' pipeline runs there, against tables it already holds, with nothing copied over.
+#'
+#' A connection from `sparklyr`, or from `odbc` against a warehouse, is what this
+#' is for. Both are `DBI` connections, so god needs to know only two things: the
+#' connection, and which dialect of SQL to write for it.
+#'
+#' Call it with no arguments to go back to the engine on this machine.
+#'
+#' @param connection A `DBI` connection, or `NULL` to use the engine here.
+#' @param dialect Which SQL to write. `"sql"` for DuckDB, `"spark"` for Spark
+#'   and Databricks.
+#' @return The connection that was in use before, invisibly.
+#' @export
+use_engine <- function(connection = NULL, dialect = c("sql", "spark")) {
+  dialect <- match.arg(dialect)
+  was <- .god$given
+  .god$given <- connection
+  .god$dialect <- if (is.null(connection)) "sql" else dialect
+  invisible(was)
+}
+
+# Turn a pipeline into a query, run it, and hand back the rows.
+#
+# Shared by `run()` and by the native verbs, which differ only in where the text
+# came from — a string the caller wrote, or a sentence the verbs built. By the
+# time either gets here they are the same thing, and they had better be: a second
+# execution path is a second set of answers.
+god_query <- function(text, tables, source) {
+  # A connection the caller supplied answers in its own dialect, and the tables
+  # it already holds are not registered against it: a warehouse table is there
+  # under its own name, and copying a frame up to a cluster is not something a
+  # pipeline should do behind anyone's back.
+  if (!is.null(.god$given)) {
+    sql <- god_call(c(columns_args(tables, source), "--as", .god$dialect), text)
+    return(DBI::dbGetQuery(.god$given, sql))
+  }
+
+  sql <- god_call(columns_args(tables, source), text)
+
+  con <- god_connection()
+  for (name in names(tables)) {
+    duckdb::duckdb_register(con, name, tables[[name]])
+  }
+  # The tables are unregistered again so that a name in one pipeline cannot be
+  # found by the next one. A connection that quietly remembers is a connection
+  # where a typo resolves to last week's data.
+  on.exit(
+    for (name in names(tables)) try(duckdb::duckdb_unregister(con, name), silent = TRUE),
+    add = TRUE
+  )
+  DBI::dbGetQuery(con, sql)
+}
+
+# A table the given engine already holds, described rather than fetched.
+#
+# **A warehouse table is not a local variable and never will be**, so looking in
+# the caller's scope for `catalog.schema.orders` was always going to fail. Where
+# a connection has been given, it is asked instead, and asked for no rows: the
+# columns and their types are all the grammar needs to check a sentence, and
+# fetching a warehouse table in order to describe it would be the one thing this
+# design exists to avoid.
+god_in_engine <- function(source) {
+  if (is.null(.god$given)) {
+    return(NULL)
+  }
+  parts <- strsplit(source, ".", fixed = TRUE)[[1]]
+  quoted <- paste0("\"", gsub("\"", "\"\"", parts), "\"", collapse = ".")
+  out <- try(
+    DBI::dbGetQuery(.god$given, paste0("SELECT * FROM ", quoted, " WHERE 1 = 0")),
+    silent = TRUE
+  )
+  if (inherits(out, "try-error")) NULL else out
+}
+
+# One connection, reused.
+#
+# Opening one per pipeline is a fresh process's worth of work for a query that
+# takes a millisecond, and it announces itself on every open. The engine holds no
+# state between pipelines — the tables are registered and unregistered around
+# each one — so there is nothing for a shared connection to leak.
+.god <- new.env(parent = emptyenv())
+
+god_connection <- function() {
+  if (is.null(.god$con) || !DBI::dbIsValid(.god$con)) {
+    .god$con <- DBI::dbConnect(duckdb::duckdb())
+  }
+  .god$con
+}
+
+#' The same pipeline, written in a language you already know
+#'
+#' A small vocabulary covers most of what people do and never all of it, so the
+#' question is not whether you reach its edge but what happens when you do.
+#'
+#' @param pipeline The pipeline, as text.
+#' @param as Which language. `"sql"`, `"spark"`, `"dplyr"`, `"pandas"`,
+#'   `"polars"`, `"pyspark"`, or `"god"` itself. An unknown name is refused and
+#'   the message lists the real ones, so this list going stale costs nothing.
+#' @param ... Tables, named, if the one at the head is not in scope.
+#' @return The text, invisibly, after printing it.
+#' @export
+show_as <- function(pipeline, as = "dplyr", ...) {
+  tables <- list(...)
+
+  # A pipeline built from the native verbs already carries its table and knows
+  # what it is called, so there is nothing to look up.
+  if (inherits(pipeline, "god_pipeline")) {
+    tables[[pipeline$source]] <- pipeline$table
+    text <- god_call(
+      c(columns_args(pipeline$tables, pipeline$source), "--as", as),
+      god_written(pipeline)
+    )
+    cat(text)
+    return(invisible(text))
+  }
+
+  source <- god_needs(pipeline)
+  if (!source %in% names(tables)) {
+    tables[[source]] <- mget(source, envir = parent.frame(), ifnotfound = list(NULL))[[1]]
+  }
+  if (is.null(tables[[source]])) {
+    stop(
+      sprintf("the pipeline reads a table called `%s`, and there is no such table here", source),
+      call. = FALSE
+    )
+  }
+  text <- god_call(c("--columns", columns_of(tables[[source]]), "--as", as), pipeline)
+  cat(text)
+  invisible(text)
+}
+
+#' The query a pipeline becomes
+#'
+#' @param pipeline The pipeline, as text.
+#' @param columns The table's columns, as `name:type` separated by commas.
+#' @return The query, as text.
+#' @export
+god_sql <- function(pipeline, columns) {
+  god_call(c("--columns", columns), pipeline)
+}
+
+# -- talking to the grammar -------------------------------------------------
+
+# Which table does this pipeline read? Asked rather than worked out.
+god_needs <- function(pipeline) {
+  out <- god_call("--needs", pipeline)
+  names <- trimws(strsplit(out, "\n", fixed = TRUE)[[1]])
+  names[nzchar(names)]
+}
+
+# How the tables are described to the grammar.
+#
+# The head table's columns go in bare, and any other table names itself first.
+# One flag with two shapes rather than two flags, because the second shape only
+# exists for `join` and a pipeline without one should not have to know about it.
+columns_args <- function(tables, source) {
+  args <- c("--columns", columns_of(tables[[source]]))
+  for (name in names(tables)) {
+    if (!identical(name, source)) {
+      args <- c(args, "--columns", sprintf("%s=%s", name, columns_of(tables[[name]])))
+    }
+  }
+  args
+}
+
+# The one place a process is started.
+#
+# A refusal arrives on stderr already rendered, with its caret, and becomes the R
+# error verbatim. Wrapping it in "god-cli failed (exit 2)" would replace a
+# message written for a person with one written for a program.
+god_call <- function(args, pipeline) {
+  binary <- god_binary()
+  out <- tempfile()
+  err <- tempfile()
+  on.exit(unlink(c(out, err)), add = TRUE)
+
+  status <- system2(
+    binary, args,
+    stdout = out, stderr = err,
+    input = pipeline
+  )
+
+  messages <- readLines(err, warn = FALSE)
+  if (status != 0) {
+    stop("\n", paste(messages, collapse = "\n"), call. = FALSE)
+  }
+  # An assumption is not a failure and never stops anything, but it is never
+  # silent either.
+  if (length(messages)) message(paste(messages, collapse = "\n"))
+
+  paste(readLines(out, warn = FALSE), collapse = "\n")
+}
+
+god_binary <- function() {
+  bundled <- system.file("bin", "god-cli", package = "god")
+  if (nzchar(bundled) && file.exists(bundled)) return(bundled)
+
+  # Running from the source tree, which is how this is used before there is an
+  # installed package to bundle a binary into.
+  built <- Sys.getenv("GOD_CLI", "")
+  if (nzchar(built) && file.exists(built)) return(built)
+
+  # Where `cargo build --release` actually puts it. Looked for **because the
+  # message below tells the reader to run that command**, and a message that
+  # names a fix the code then ignores is worse than no message: you do the thing
+  # it asked for, nothing changes, and the tool looks broken rather than
+  # unconfigured.
+  found <- god_built_binary()
+  if (!is.null(found)) return(found)
+
+  stop(
+    "the god engine was not found. Build it with `cargo build --release`, or point GOD_CLI at it",
+    call. = FALSE
+  )
+}
+
+# Walk up looking for `target/release/god-cli`.
+#
+# From the working directory and from this file both, because the two differ:
+# a session run from the repository root finds it by the first, and one run from
+# anywhere else finds it by the second.
+god_built_binary <- function() {
+  starts <- unique(c(getwd(), dirname(god_source_dir())))
+  for (start in starts) {
+    directory <- normalizePath(start, mustWork = FALSE)
+    repeat {
+      candidate <- file.path(directory, "target", "release", "god-cli")
+      if (file.exists(candidate)) return(candidate)
+      parent <- dirname(directory)
+      if (identical(parent, directory)) break
+      directory <- parent
+    }
+  }
+  NULL
+}
+
+# Where this file is, when there is a source tree to have one.
+god_source_dir <- function() {
+  own <- getNamespaceInfo("god", "path")
+  if (is.character(own) && nzchar(own)) own else getwd()
+}
+
+# -- describing a table -----------------------------------------------------
+
+# A data frame's columns, in the grammar's words.
+#
+# **This is the one thing the launcher knows that the grammar does not**: what R
+# calls a column's type. The mapping is deliberately coarse, because the grammar
+# draws only the distinctions that change whether a sentence is legal, and a type
+# it has no opinion about passes every test rather than failing them.
+columns_of <- function(table) {
+  kinds <- vapply(table, god_type, character(1))
+  paste(sprintf("%s:%s", names(table), kinds), collapse = ",")
+}
+
+god_type <- function(column) {
+  if (inherits(column, c("Date", "POSIXct", "POSIXt"))) return("date")
+  if (is.logical(column)) return("truth")
+  if (is.numeric(column)) return("number")
+  if (is.character(column)) return("text")
+  # A factor is text with a fixed set of values, and the grammar has no opinion
+  # about the fixed set.
+  if (is.factor(column)) return("text")
+  "unknown"
+}

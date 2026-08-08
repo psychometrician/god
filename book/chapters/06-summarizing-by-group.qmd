@@ -1,0 +1,130 @@
+---
+title: "Summarizing by group"
+---
+
+{{< include ../_setup.qmd >}}
+
+`summarize` collapses rows. Each new column is an aggregation, and `by` names
+the columns that say which rows go together.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(revenue = total(revenue), orders = row_count(), by = product)
+```
+
+### Python
+
+```{python}
+sales >> summarize(revenue = total(col.revenue), orders = row_count(), by = col.product)
+```
+
+:::
+
+Grouping by several columns is a list.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(revenue = total(revenue), by = c(region, product))
+```
+
+### Python
+
+```{python}
+sales >> summarize(revenue = total(col.revenue), by = [col.region, col.product])
+```
+
+:::
+
+Without `by`, the whole table is one group.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(biggest = largest(revenue), average = average(cost))
+```
+
+### Python
+
+```{python}
+sales >> summarize(biggest = largest(col.revenue), average = average(col.cost))
+```
+
+:::
+
+Grouping is an argument rather than a step, so there is nothing to ungroup
+afterwards and no state to carry between verbs.
+
+## The nine ways to collapse a group
+
+`total` and `average` are the two you will reach for most. There are nine
+altogether, and the list is closed.
+
+`total`, `average` and `median` are the three that combine numbers into one.
+`smallest` and `largest` take the ends. `first` and `last` take a value by
+position, which is why they need the rows to be in a known order. `row_count`
+counts the rows and takes no column at all. `unique_count` counts how many
+different values a column holds.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(
+  cheapest = smallest(cost),
+  dearest  = largest(cost),
+  middle   = median(revenue),
+  kinds    = unique_count(product),
+  by = region
+)
+```
+
+### Python
+
+```{python}
+sales >> summarize(
+  cheapest = smallest(col.cost),
+  dearest  = largest(col.cost),
+  middle   = median(col.revenue),
+  kinds    = unique_count(col.product),
+  by = col.region
+)
+```
+
+:::
+
+`first` and `last` answer by position, so a sort in front of them is what decides
+which row they mean. Without one they still answer, and the answer is whatever
+order the rows arrived in.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(revenue)) |> summarize(
+  best  = first(product),
+  worst = last(product),
+  by = region
+)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.revenue)) >> summarize(
+  best  = first(col.product),
+  worst = last(col.product),
+  by = col.region
+)
+```
+
+:::

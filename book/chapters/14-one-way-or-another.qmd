@@ -1,0 +1,104 @@
+---
+title: "Answering one way or another"
+---
+
+{{< include ../_setup.qmd >}}
+
+`when` asks a question and gives the answer beside it, then asks the next one.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+pupils <- data.frame(
+  name = c("ann", "bob", "cat"),
+  score = c(95, 75, 50),
+  stringsAsFactors = FALSE
+)
+
+pupils |> add(band = when(score >= 90, "A", score >= 70, "B", otherwise = "C"))
+```
+
+### Python
+
+```{python}
+pupils = pd.DataFrame({
+    "name": ["ann", "bob", "cat"],
+    "score": [95, 75, 50],
+})
+
+pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B", otherwise = "C"))
+```
+
+:::
+
+The arguments come in pairs: a question, then what it gives. **The first question
+that is true wins**, so the order is part of what the sentence means. Ask the
+same two the other way round and the answers change, which is not a trap but the
+thing you are choosing when you write them in an order:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+pupils |> add(band = when(score >= 70, "B", score >= 90, "A", otherwise = "C"))
+```
+
+### Python
+
+```{python}
+pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A", otherwise = "C"))
+```
+
+:::
+
+`ann` scored 95, met the first question she was asked, and got a B.
+
+Leave out `otherwise` and a row that matched nothing is missing:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+pupils |> add(top = when(score >= 90, "yes"))
+```
+
+### Python
+
+```{python}
+pupils >> add(top = when(col.score >= 90, "yes"))
+```
+
+:::
+
+Every answer has to be the same kind of thing, because they all end up in one
+column:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(pupils |> add(band = when(score >= 90, "A", otherwise = 0)))
+```
+
+### Python
+
+```{python}
+try:
+    collect(pupils >> add(band = when(col.score >= 90, "A", otherwise = 0)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Python has a conditional of its own, and it is worth saying why god does not use
+it. Writing `"A" if col.score >= 90 else "B"` would decide the answer once, while
+the pipeline was being built, and throw the question away. Nothing would report a
+problem. R has no such expression at all. So the word is `when` in both, and it
+is the same word in the text form.

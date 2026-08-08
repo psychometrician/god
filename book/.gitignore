@@ -1,0 +1,13 @@
+/.quarto/
+**/*.quarto_ipynb
+
+# Rendered output never sits beside a source file. The root allowlist already
+# hides `_book/`; this line covers the other direction, which is a stray page
+# landing in `book/` itself.
+#
+# The sibling project committed 30 chapters that way once, as byte-identical
+# duplicates of `_book/`. A full render deletes them, so every later render then
+# produced 30 spurious deletions, which invited copying them back and kept the
+# accident alive for two more sessions. Verify a render by reading `_book/`, and
+# never copy anything out of it.
+*.html

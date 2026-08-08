@@ -1,0 +1,446 @@
+---
+# A preface is not chapter zero, and numbering it said otherwise: its sections
+# read as 0.1 through 0.9 while carrying no argument a reader would ever cite.
+# The heading below carries `.unnumbered` for the same reason, which is also
+# what keeps the first real chapter from being chapter two.
+number-sections: false
+---
+
+# Preface {.unnumbered}
+
+god is one data-manipulation engine written in [Rust](https://www.rust-lang.org/),
+callable from [R](https://www.r-project.org/) and
+[Python](https://www.python.org/), and readable as itself wherever there is
+neither. Its vocabulary is plain everyday English, and its shape comes from
+[dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/),
+which are the tools that got this right.
+
+Behind both is one promise:
+
+> Anyone who works with data should be able to read a pipeline aloud on day one,
+> write one themselves on day two, and still have it after a year away.
+
+That last clause is the hard one, and it is the reason this project exists.
+
+A pipeline in god is a sequence of plain English verbs. You keep some rows, add a
+column, group and summarize, sort the result, and take the first ten. Each step
+takes a table and returns a table, so you can read a pipeline from top to bottom
+and stop anywhere.
+
+You do not have to read this preface. Nothing in it is needed to write a
+pipeline. Go to [Part I](chapters/01-first-pipeline.qmd), which is six
+short chapters and the whole working vocabulary, and come back here when you want
+to know why the grammar refuses what it refuses. If you would rather see all of
+it at once first, [Appendix B](appendices/b-every-word.qmd) is every word there
+is, on one page.
+
+## One sentence, twice
+
+Here is a pipeline in R.
+
+```r
+sales |>
+  keep(region == "West") |>
+  add(margin = revenue - cost) |>
+  summarize(margin = total(margin), orders = row_count(), by = product) |>
+  sort(descending(margin)) |>
+  take(10)
+```
+
+Here is the same pipeline in Python.
+
+```python
+(sales
+  >> keep(col.region == "West")
+  >> add(margin = col.revenue - col.cost)
+  >> summarize(margin = total(col.margin), orders = row_count(), by = col.product)
+  >> sort(descending(col.margin))
+  >> take(10))
+```
+
+Read them aloud and they are one sentence. Keep the rows where the region is
+West. Add a margin column. For each product, total the margin and count the
+orders. Sort by margin, largest first. Take the top ten.
+
+## Two differences
+
+The two versions differ in two things.
+
+- **The pipe.** R uses its native `|>`. Python uses `>>`.
+- **The column.** R writes a bare name, `revenue`. Python writes `col.revenue`.
+
+No word in the vocabulary is spelled differently in the two languages. Every
+verb, every marker, every argument name is the same in both, and that is meant
+literally rather than approximately: one word used to break it, and it was
+renamed rather than excused.
+
+What is left is not vocabulary but syntax, and all of it is Python's own. This
+book states it here rather than letting you find it in an error message.
+Comparisons joined by `&` need parentheses, because `&` binds more tightly than
+`==`. Negation is `~`, because Python cannot redefine `not`. Asking whether a
+value is one of several is `col.region.is_in([...])`, and asking whether one is
+missing is `col.cost.is_missing()`, because Python's `in` cannot be reached by an
+object at all.
+
+## A third place to write it
+
+Some places have no language to bind into: a database cell, a configuration file,
+a pipeline that was stored or generated rather than typed. There the grammar is
+written as plain text, and it is the same grammar.
+
+```
+sales
+  then keep where [region] is "West"
+  then summarize [margin] as total([margin]) by [product]
+```
+
+Both versions above produce exactly this, which is why a pipeline can move
+between a script, a notebook and a warehouse without being rewritten.
+
+## Why there is another one of these
+
+You have probably met at least one tool for this already. Here is one operation,
+grouping and totaling, written five ways:
+
+```
+dplyr       df |> group_by(g) |> summarise(total = sum(x))
+pandas      df.groupby('g')['x'].sum().reset_index()
+polars      df.group_by('g').agg(pl.col('x').sum().alias('total'))
+data.table  df[, .(total = sum(x)), by = g]
+SQL         SELECT g, SUM(x) AS total FROM df GROUP BY g
+```
+
+Every one of those is a fine tool and none of them is the problem. The problem is
+that there are five, and that each has collected rules that have to be memorized
+rather than worked out. pandas has three ways to filter a row, and an index that
+changes what square brackets mean. SQL's clauses are not executed in the order
+you write them. dplyr has two ways to group.
+
+None of that is difficult in the sense that the *ideas* are difficult. The ideas
+are small: about fifteen operations, and you already know most of them.
+
+## Where this one came from
+
+The rest of this preface is written in one voice about a system. This section is
+not, because the honest answer to "why build another one of these" is personal.
+
+dplyr and tidyr are what I use for my own work, most days. Nothing here is a
+complaint about them and nothing here is meant to replace them. If R is the only
+place you work, they are better than this is and they will stay better. They have
+years of care in them and a large community around them.
+
+The difficulty starts when I leave R. Some work has to happen in Python, and some
+has to happen in Databricks.
+
+I have tried to learn pandas more than once, and PySpark more than once. Each
+time I learned it, and each time, about a week later, most of the syntax was gone
+again. Not the ideas. The ideas are the same fifteen operations in every tool.
+What I lost was which method, in which order, taking which argument.
+
+That is twenty years of pattern, not one bad month. pandas, data.table, polars,
+and every other package I have worked in have gone the same way. dplyr and tidyr
+are the exception, and they are the only exception.
+
+That is not a claim about pandas, which is a serious tool that a great deal of
+the world runs on. It is a claim about what I can remember. A tool you have to
+relearn every time you pick it up is a tool you put off using, and the work goes
+back to the language you already know, which is not always the right place for
+it.
+
+### The data.table case
+
+You could reasonably stop here and say this is just someone who likes R. The
+piece of evidence that says otherwise is data.table, which is in R.
+
+data.table is fast, concise, and admired by people who work with large tables
+every day. I tried to learn it and lost it the same way, on the same schedule as
+pandas.
+
+That is the useful part. The tools I could not retain do not sort by language.
+They sort by shape: `df[i, j, by]` and `df.groupby('g')['x'].sum()` are
+punctuation and brackets, and the two tools I did retain read from left to right
+as a sentence.
+
+So this is a preference, and it is worth naming as one rather than presenting it
+as a finding. It is a preference about shape, and data.table is how I know it is
+not about the language.
+
+### The polars question
+
+polars deserves its own paragraph, because it is what a reader should ask about
+first. It has an R port and a Python port, so one API in two languages already
+exists. It is fast, lazy, and carefully designed. It did not solve this for me
+either.
+
+What did not survive the week was the words. polars is written as method chains
+over column objects, `pl.col('x').sum().alias('total')`, and its vocabulary comes
+from the dataframe tradition rather than from English. That is a defensible
+design and it suits people who work in it every day. It was not the thing I could
+still read six months later.
+
+dbplyr is the other answer worth naming, and it comes closest. It translates
+dplyr into SQL, so one grammar already reaches a database. It is R only. It does
+not help in a Python notebook and it does not help in a Databricks Python job.
+
+### What was actually wanted
+
+All three attempts have one thing in common, and it is the connector. pandas and
+polars chain with `.`, polars in R chains with `$`, and data.table nests inside
+brackets.
+
+A dot is how English ends a sentence. Using it to join the steps of one works
+against what the mark already means, and what I had left after a week was a row
+of dots with no memory of which order they went in.
+
+`|>` does not read that way. It points at the next step, and what it says is
+*then*.
+
+So the ask was narrow. dplyr and tidyr's sentence, in Python and in a SQL job,
+with as little changed as the languages allow.
+
+That turned out to be two things: `>>` where R writes `|>`, and `col.revenue`
+where R writes `revenue`. Every verb, every keyword and every argument position
+is the same in both. `>>` was picked to point the same way `|>` points, which is
+the whole of its job here. Python cannot have `|>` itself, and the next chapter
+says why.
+
+So this is not a better dplyr, and it is not trying to be. It is dplyr's reading
+experience in the places dplyr cannot go, and the price of carrying it there is a
+much smaller vocabulary than dplyr has. Whether that trade is worth making is
+yours to judge, and the chapter after this one is where you can see the size of
+it.
+
+### The bar this sets
+
+Reading it on day one and writing it on day two is the promise made above. There
+is a second half, and it is the harder one. You should still have it after a year
+away. Not remember that it exists. Be able to write a pipeline in it,
+after twelve months of not touching it, without opening this book.
+
+That is the standard a physical skill meets and a syntax usually does not. It is
+the reason the vocabulary is closed, the reason a word means one thing in every
+sentence, and the reason several useful things are deliberately missing.
+
+It also sets what counts as success, which is worth saying plainly because it is
+not what a feature list would suggest. No vocabulary this small covers everything
+anyone does with data, and this one is not trying to. Covering enough of it, in a
+form that stays learned, is the win. What happens when you
+reach the edge is the next thing this preface talks about.
+
+## *A* grammar, not *the* grammar
+
+The cover says *a*, and that is a claim rather than modesty. There are many
+grammars of data that could be built, and several good ones exist. This is one
+of them, with stated limits: a closed vocabulary, a set of laws it answers to,
+and a list of things it refuses and says why. Those limits are what make the
+claim testable. A tool with no stated boundary cannot be measured against
+anything, and nothing can be said to cover more of the job than it does.
+
+So this book will tell you what god cannot do about as often as it tells you what
+it can. That is not an apology. A grammar that refuses nothing has no shape.
+
+The hexagon at the top of this page says the same thing without a sentence. What
+sits inside it is a face. Its eyes are `|>` and `>>`, the pipe in R and the pipe
+in Python. Its nose is `[` and `]`, the brackets that go around a column's name.
+Its mouth is the package name.
+
+Those marks are chosen and not decorative. A face has two eyes, and this grammar
+has two bindings: one language on the left, one on the right, saying the same
+thing. The brackets sit between them because they work at the other scale, the
+way the sibling project's sticker splits its own operators: the pipes join one
+step to the *next*, and the brackets mark a name *inside* one step. A full stop
+was considered for the nose and rejected, because this book argues at some length
+that joining steps with a dot is the thing god was built to avoid, and a cover
+should not say the opposite of its book.
+
+## What this grammar borrows, and from where
+
+Its vocabulary and its working shape come from **dplyr** and **tidyr**, which
+solved this for R and are the reason the author still writes R. Its verbs, its
+grouping and its two reshaping directions are all recognizable from there, and
+where god differs it is usually because it had to say the same thing in two
+languages at once.
+
+One further idea comes from **Hangeul**, the Korean alphabet designed in 1443, by
+way of this project's sibling, and it is one idea rather than a theme: parts that
+combine the same way every time are easy to read and easy to write. That is the
+whole of the borrowing, and nothing else about the alphabet is claimed here.
+
+Applied, it means a small set of verbs, functions and delimiters where a rule you
+learn in one place holds in every other. The promise at the top of this preface
+is what that regularity is *for*. And there is a working test that keeps it
+honest rather than aspirational: if you can say something two ways, one of them
+is a bug. Report it.
+
+## Naming a column whatever you like
+
+You can call a column `sort`, or `total`, or even `then`, and nothing breaks.
+Each spelling has its own unambiguous answer: R looks names up in your data
+first, Python writes `col.sort`, and the text form puts it in brackets.
+
+In the text form, four delimiters each do exactly one job.
+
+| | Means |
+|---|---|
+| `[ … ]` | a column, or a list of columns |
+| `" … "` | a text value |
+| `( … )` | a group; a name in front of one applies that name to it |
+| `{ … }` | a set of values to match |
+
+Inside `[ ]` it is a column, always. Outside, it is grammar.
+
+```
+orders then sort [sort] descending
+```
+
+No backticks, no escape word, and no list of names you are not allowed to use.
+This grammar does not restrict what your columns are called; it marks where a
+name is being used.
+
+## Words instead of symbols, where the languages disagree
+
+A symbol that means different things in different tools is not in this grammar. A
+plain word that means one thing everywhere is.
+
+| Instead of | Write |
+|---|---|
+| `==` or `=` | `is` |
+| `!=` or `<>` | `is not` |
+| `TRUE` / `True` / `true` | `yes` |
+| `NA` / `None` / `NULL` | `missing` |
+| `%in%` / `.isin()` / `IN` | `in { … }` |
+| `&` and `\|` | `and` and `or` |
+
+`<`, `<=`, `>` and `>=` stay as they are, because those already agree everywhere.
+
+## It will tell you what it wrote
+
+No small vocabulary covers everything, and this one does not try. When you reach
+its edge, you can ask what your pipeline would be in a tool you already use:
+
+```
+$ god --as dplyr 'sales then keep where [region] is "West" then take 10'
+sales |>
+  filter((region == "West")) |>
+  head(10)
+```
+
+The pipeline is wrapped in single quotes because a text value inside it is
+written with double quotes, which keeps the shell out of it.
+
+Learning this grammar is meant to make the tools you already have easier, not to
+replace them.
+
+## When something is wrong
+
+The whole pipeline is read and checked before any of it runs, so a mistake at
+step two is reported as a mistake at step two, with the word underlined:
+
+```
+illegal: there is no column called `reveune`. Did you mean `revenue`?
+The table has: region, product, revenue, cost, ordered_on
+  |
+2 |   then keep where [reveune] > 100
+  |                    ^^^^^^^
+```
+
+A refusal always names what would have happened and what to write instead. And
+nothing is ever quietly ignored: a pipeline that runs, returns a number, and
+silently dropped one of your lines is the way a tool loses your trust.
+
+## What god does not do
+
+god is not an engine. The work of joining, grouping, sorting and handling missing
+values is done underneath by software built for it. god owns the words, the
+checking and the error messages.
+
+god also does not own your data. A table arrives from your language and leaves as
+one. There is no god table type to convert to, and no session to open.
+
+Anything that does not return a table belongs to your language rather than to
+god. Fitting a model, running a test, drawing a plot, writing a file: those are
+things R and Python already do well, and a grammar that tried to absorb them
+would stop being small enough to read.
+
+### So how fast is it?
+
+The question has two answers, and keeping them apart is the honest way to ask it.
+
+What god costs is compiling your pipeline: reading it, checking it against the
+columns, and writing the query. That is a fixed cost per pipeline rather than per
+row, so it does not grow with your data. A hundred rows and a hundred million
+rows compile in the same time.
+
+Everything after that belongs to the engine you pointed god at. It hands DuckDB
+or Spark a query and steps out of the way. So a comparison of god against polars
+is really DuckDB against polars, and reporting it as god's number would take
+credit, or blame, for somebody else's engine.
+
+That is why this book has no benchmark table. The claim it makes instead is
+narrower: the grammar costs almost nothing to put in front of an engine, and your
+query reaches that engine unchanged. If you want to know how fast an answer comes
+back, measure the engine, and ask `show_as` for the exact query to measure.
+
+Speed was never the goal here. The goal is that you can still write a pipeline a
+year after the last one.
+
+## Who this book is for
+
+You have worked with data in a table before. You know what a row is, what a
+column is, and what it means to group by something and count. That is the whole
+assumption.
+
+If you are near the start, read the book in order. Part I is six short
+chapters and six verbs, and when you finish it you can answer real questions
+about a table. Nothing before Part I is required, including this preface.
+
+If you have used several of these tools already, you are the other reader this
+book is written for, and you will get more out of it from the back. Appendix
+C is one sentence written out in dplyr, pandas, polars, PySpark and SQL side by
+side, which is the fastest way to see what is being proposed. Appendix B is the
+entire vocabulary on one page. Part VII is where the claims in this preface are
+demonstrated rather than asserted, including the one about a pipeline running
+unchanged on a cluster.
+
+You do not need to know dplyr, and you do not need to know pandas. If you know
+one of them, some chapters will read as a vocabulary list, and that is fine. If
+you know neither, nothing here assumes you do.
+
+## Where this stops, and what picks it up
+
+god manipulates tables. It does not draw them, and it never will, because
+drawing is a different grammar with a different vocabulary.
+
+That grammar exists, and it is this project's sibling.
+[gog](https://psychometrician.github.io/gog-book/) is a grammar of graphics
+built on the same discipline, by the same author, with the same promise about
+day one and day two. The two are designed to sit next to each other: a question
+usually starts as a table you have to reshape and ends as a picture, so you start
+in god and finish in gog.
+
+[Chapter 29](chapters/29-with-gog.qmd) shows one question answered end to end
+that way. It is worth reading even if you never draw a plot, because it is the
+clearest statement of where this grammar's job ends.
+
+## How to read the examples
+
+Every example in this book is written twice, once in R and once in Python, and
+the two sit in tabs above the same explanation. Click the one you write.
+
+They are not illustrations of each other. Both are executed when the book is
+built, so a tab showing a table is a tab whose code ran, and the two tables come
+back from the same engine. If a sentence ever stopped meaning the same thing in
+the two languages, the tabs would stop agreeing on this page, which is the
+easiest place to notice it.
+
+The chapter before the verbs is the exception, and deliberately so: it is about
+the two places the languages differ, and there the two are not the same sentence.
+
+## The state of this book
+
+The book is being written alongside the grammar, and it grows a chapter at a
+time. A chapter appears here when the verbs it describes exist and run.
+
+That order is deliberate. Prose can name a verb that was never built, and the
+book will still build cleanly, so the only reliable protection is to write the
+chapter after the verb rather than before it.

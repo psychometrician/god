@@ -1,0 +1,152 @@
+---
+title: "Choosing by what a column holds"
+---
+
+{{< include ../_setup.qmd >}}
+
+The other thing you can ask about a column without looking at a single row is
+what kind of thing is in it. `kind` is one of `"number"`, `"text"`, `"truth"` or
+`"date"`.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> pick(where(kind == "number"))
+```
+
+### Python
+
+```{python}
+survey >> pick(where(kind == "number"))
+```
+
+:::
+
+Both questions live in the same `where`, so they join.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> pick(where(kind == "number" & startsWith(name, "q")))
+```
+
+### Python
+
+```{python}
+survey >> pick(where((kind == "number") & name.starts("q")))
+```
+
+:::
+
+Put it with `summarize` and you have the sentence people reach for most: average
+every number, whatever the numbers happen to be called.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> summarize(where(kind == "number", average(value)))
+```
+
+### Python
+
+```{python}
+survey >> summarize(where(kind == "number", average(value)))
+```
+
+:::
+
+That one line does not name a column at all, so it keeps working when the table
+gains one.
+
+### Case, and the two words that handle it
+
+The name tests match exactly, so `name starts "q"` does not find a column called
+`Q1_score`. Mixed-case names are ordinary enough that this comes up quickly.
+
+There is no flag for it, because a name is text and text has a case. Fold the
+case and ask the question.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+mixed <- data.frame(Q1_score = 4, q2_score = 5, Region = "West",
+                    stringsAsFactors = FALSE)
+
+mixed |> pick(where(startsWith(tolower(name), "q")))
+```
+
+### Python
+
+```{python}
+mixed = pd.DataFrame({"Q1_score": [4], "q2_score": [5], "Region": ["West"]})
+
+mixed >> pick(where(lower(name).starts("q")))
+```
+
+:::
+
+`lower` and `upper` are ordinary words, so they work on a value in exactly the
+same way.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+mixed |> keep(tolower(Region) == "west")
+```
+
+### Python
+
+```{python}
+mixed >> keep(lower(col.Region) == "west")
+```
+
+:::
+
+Folding the case of every name automatically would have been the other option,
+and it is wrong: two columns can differ only by case, and a grammar that pretends
+otherwise cannot treat them as the two columns they are. Asking for it is one
+word.
+
+### Why you have to write `name`
+
+The same three words also test what is **inside** a column, and there the subject
+is the column itself.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> keep(startsWith(region, "W"))
+```
+
+### Python
+
+```{python}
+survey >> keep(col.region.starts("W"))
+```
+
+:::
+
+So `starts` means one thing, "this text begins with that text", and the subject
+says what text is being asked about. Writing it is what keeps the two apart.
+
+The alternative would have been `pick(starting("q"))`, which is shorter and
+leaves nothing in the sentence to say whether `starting` is looking at a name or
+at a value. You would learn it from the position, which is the kind of rule this
+grammar removes rather than adds.
+
+The tests are the same words in both languages. What differs is how a column's
+name is reached, which is the same difference as everywhere else: R writes a bare
+name and Python writes `col.name`, so R spells this with base R's `startsWith`
+and Python with a method.

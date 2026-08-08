@@ -1,0 +1,154 @@
+```{r}
+#| include: false
+# The preamble every chapter needs, in one place.
+#
+# Each chapter renders in a session of its own, so each one has to attach the
+# package, point reticulate at the book's virtualenv, and hold the tables the
+# examples run on. Written once here and pulled in with
+# `{{< include ../_setup.qmd >}}` at the top of every chapter.
+#
+# **The leading underscore is not decoration.** All three book tools skip any
+# path containing `/_`, so this file is not scanned for prose and is not mistaken
+# for a chapter. It carries no prose to scan.
+# **Paths are found by walking up rather than counted from here.** A chapter in
+# `book/chapters/` and a page at `book/` are different distances from the
+# package, and knitr runs each chunk from its own file's directory, so a fixed
+# `../` is right for exactly one of them. Walking up is what both packages
+# already do to find `god-cli`, and it does not care how deep a chapter sits.
+find_up <- function(target) {
+  directory <- normalizePath(getwd())
+  repeat {
+    candidate <- file.path(directory, target)
+    if (file.exists(candidate)) return(candidate)
+    parent <- dirname(directory)
+    if (identical(parent, directory)) stop("cannot find ", target, " above ", getwd())
+    directory <- parent
+  }
+}
+
+suppressMessages(
+  pkgload::load_all(find_up("r-pkg/god"), export_all = FALSE, quiet = TRUE)
+)
+options(width = 76)
+
+library(reticulate)
+use_virtualenv(find_up("book/.venv"), required = TRUE)
+
+# The engine announces where it keeps its extensions the first time anything
+# connects to it. Spending that first connection here means the announcement
+# lands in a hidden chunk rather than in the middle of a reader's first example.
+invisible(capture.output(
+  suppressMessages(collect(data.frame(a = 1) |> take(1)))
+))
+
+sales <- data.frame(
+  region  = c("West", "West", "West", "West", "East"),
+  product = c("Widget", "Widget", "Gadget", "Gadget", "Widget"),
+  revenue = c(100, 200, 300, 150, 500),
+  cost    = c(40, 50, 100, 50, 100),
+  stringsAsFactors = FALSE
+)
+
+products <- data.frame(
+  product = c("Widget", "Gadget", "Doohickey"),
+  maker   = c("Acme", "Globex", "Initech"),
+  stringsAsFactors = FALSE
+)
+
+# The three tables that more than one chapter needs. Each is also defined
+# visibly in the chapter that introduces it, because a reader meeting a table
+# should see what is in it. This copy is what keeps a *later* chapter working.
+survey <- data.frame(
+  respondent = 1:3,
+  q1_score   = c(4, 5, 3),
+  q2_score   = c(2, 5, 5),
+  region     = c("West", "East", "West"),
+  stringsAsFactors = FALSE
+)
+
+answers <- data.frame(
+  student = c("ann", "bob"),
+  q1 = c(1, 4), q2 = c(2, 5), q3 = c(3, 6),
+  stringsAsFactors = FALSE
+)
+
+marks <- data.frame(
+  student  = c("ann", "ann", "bob", "bob"),
+  question = c("q1", "q2", "q1", "q2"),
+  mark     = c(1, 2, 4, 5),
+  stringsAsFactors = FALSE
+)
+
+# These two are introduced in one chapter and used again in the next, because
+# the chapters they belong to were one long section before the book was split.
+# `n` is written `7L` rather than `7` so R holds a whole number where Python
+# does: a double there makes `to_text` say "7.0" in one language and "7" in the
+# other, which is a fixture difference wearing a grammar difference's clothes.
+messy <- data.frame(
+  raw = c("  ann marie  ", "  bob  "),
+  n = c(7L, 99L),
+  stringsAsFactors = FALSE
+)
+
+diary <- data.frame(
+  g = c("a", "a", "b"),
+  on_ = c("2026-01-02", "2026-01-05", "2026-01-06"),
+  x = c(10, 20, 30),
+  stringsAsFactors = FALSE
+)
+```
+
+```{python}
+#| include: false
+import sys, pathlib
+# Walked up rather than counted, for the reason the R side gives above.
+_here = pathlib.Path.cwd().resolve()
+for _up in (_here, *_here.parents):
+    if (_up / "py-pkg" / "god").exists():
+        sys.path.insert(0, str(_up / "py-pkg" / "god"))
+        break
+import pandas as pd
+pd.set_option("display.width", 76)
+from god import *
+
+sales = pd.DataFrame({
+    "region":  ["West", "West", "West", "West", "East"],
+    "product": ["Widget", "Widget", "Gadget", "Gadget", "Widget"],
+    "revenue": [100, 200, 300, 150, 500],
+    "cost":    [40, 50, 100, 50, 100],
+})
+
+products = pd.DataFrame({
+    "product": ["Widget", "Gadget", "Doohickey"],
+    "maker":   ["Acme", "Globex", "Initech"],
+})
+
+survey = pd.DataFrame({
+    "respondent": [1, 2, 3],
+    "q1_score":   [4, 5, 3],
+    "q2_score":   [2, 5, 5],
+    "region":     ["West", "East", "West"],
+})
+
+answers = pd.DataFrame({
+    "student": ["ann", "bob"],
+    "q1": [1, 4], "q2": [2, 5], "q3": [3, 6],
+})
+
+marks = pd.DataFrame({
+    "student":  ["ann", "ann", "bob", "bob"],
+    "question": ["q1", "q2", "q1", "q2"],
+    "mark":     [1, 2, 4, 5],
+})
+
+messy = pd.DataFrame({
+    "raw": ["  ann marie  ", "  bob  "],
+    "n": [7, 99],
+})
+
+diary = pd.DataFrame({
+    "g": ["a", "a", "b"],
+    "on_": ["2026-01-02", "2026-01-05", "2026-01-06"],
+    "x": [10, 20, 30],
+})
+```

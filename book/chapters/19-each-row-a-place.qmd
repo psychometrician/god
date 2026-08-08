@@ -1,0 +1,229 @@
+---
+title: "Giving each row a place"
+---
+
+{{< include ../_setup.qmd >}}
+
+`rank` gives every row its place by some column. It is a value like any other, so
+it goes in `add`.
+
+The table below has a tie in it on purpose, because the tie is where ranking
+functions differ from each other and where most of the confusion lives.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races <- data.frame(
+  heat  = c("x", "x", "y", "y"),
+  name  = c("ana", "bo", "cy", "di"),
+  score = c(20, 20, 5, 50),
+  stringsAsFactors = FALSE
+)
+
+races |> add(place = rank(score)) |> sort(place)
+```
+
+### Python
+
+```{python}
+races = pd.DataFrame({
+    "heat":  ["x", "x", "y", "y"],
+    "name":  ["ana", "bo", "cy", "di"],
+    "score": [20, 20, 5, 50],
+})
+
+races >> add(place = rank(col.score)) >> sort(col.place)
+```
+
+:::
+
+Read the places down the column: 1, 2, 2, 4. The lowest score is first, the two
+20s **share** second place, and the next value takes fourth. Third place is not
+awarded, because two rows already stand ahead of the 50.
+
+The `sort` at the end is doing real work. Adding a column says nothing about what
+order the rows come back in, so a sentence that wants a particular order asks for
+it.
+
+That is how a race is scored, and it is what people mean when they say rank. It
+is worth saying out loud because the alternative is just as common in other
+tools: numbering the *distinct values* instead would give 1, 2, 2, 3 and award a
+third place to the runner who came fourth.
+
+`descending` reverses it, and it is the same word `sort` takes, because a column
+in an ordering position is one idea wherever it appears.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races |> add(place = rank(descending(score)))
+```
+
+### Python
+
+```{python}
+races >> add(place = rank(descending(col.score)))
+```
+
+:::
+
+`by` restarts the numbering inside each group, so every heat gets a winner.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races |> add(place = rank(descending(score)), by = heat) |> sort(heat, place)
+```
+
+### Python
+
+```{python}
+(races
+  >> add(place = rank(descending(col.score)), by = col.heat)
+  >> sort(col.heat, col.place))
+```
+
+:::
+
+### Numbering the rows instead
+
+`row_number()` numbers the rows 1, 2, 3, 4 and never ties. That is the whole
+difference from `rank`, and it shows on the same table.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races |> sort(score) |> add(n = row_number()) |> sort(n)
+```
+
+### Python
+
+```{python}
+races >> sort(col.score) >> add(n = row_number()) >> sort(col.n)
+```
+
+:::
+
+`row_number()` takes no argument, so it can only mean the order the rows are
+already in, and a table has no order until a `sort` gives it one. Without one it
+is refused rather than answered, because two runs could disagree and both look
+right.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(races |> add(n = row_number()))
+```
+
+### Python
+
+```{python}
+try:
+    collect(races >> add(n = row_number()))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+That is the practical difference between the two. `rank` says what it goes by, so
+it never needs a `sort` and does not disturb the order of your table.
+`row_number()` says nothing, so it needs one.
+
+### Where a place can stand
+
+A place is worked out by looking at every row in the group, which means it cannot
+be the thing that decides which rows are in the group. Asking for the top three
+inside `keep` is refused, and the message names both ways to say it.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(races |> keep(rank(score) <= 2))
+```
+
+### Python
+
+```{python}
+try:
+    collect(races >> keep(rank(col.score) <= 2))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Make the column first, then filter on it like any other column.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races |> add(place = rank(descending(score))) |> keep(place <= 2)
+```
+
+### Python
+
+```{python}
+races >> add(place = rank(descending(col.score))) >> keep(col.place <= 2)
+```
+
+:::
+
+If you only want the top rows and not the place itself, `take` says it in one
+step and leaves no extra column behind.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+races |> sort(descending(score)) |> take(1, by = heat)
+```
+
+### Python
+
+```{python}
+races >> sort(descending(col.score)) >> take(1, by = col.heat)
+```
+
+:::
+
+`summarize` also refuses a place, for the opposite reason: it returns one row per
+group, and a place is worked out for every row, so there is nowhere to put the
+answer. Ask for the value you actually want instead, with `largest`, `first` or
+`row_count`.
+
+### Two words where dplyr has six
+
+dplyr offers `row_number`, `min_rank`, `dense_rank`, `percent_rank`, `cume_dist`
+and `ntile`. This grammar has two, and the other four are refused until somebody
+asks for one.
+
+The reason is that `rank` is already what a person means by the word. dplyr calls
+this one `min_rank`, which names how it is computed rather than what it is, and
+leaves the plain word `rank` free to mean something else. Here the plain word
+means the plain thing.
+
+The other four are real but specialist. `dense_rank` is the 1, 2, 2, 3 numbering
+described above; `percent_rank` and `cume_dist` are positions expressed as a
+fraction; `ntile` cuts the rows into buckets. Carrying four more words so that
+every reader has to learn which is which, in order to serve the cases that
+occasionally need one, is a poor trade. If you need one of them, the pipeline
+that gets you most of the way is `rank` plus arithmetic, and `show_as` will hand
+you the query to take the rest of the way.

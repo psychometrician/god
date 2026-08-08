@@ -1,0 +1,13 @@
+# Looking along the rows
+
+Every value so far has been worked out from one row, or from a whole group at
+once. This part is about values that need the other rows without collapsing
+them: a rank, a row number, a running total, the value one row back.
+
+These are window functions, and they are where most tools get complicated. Here
+they are ordinary things to write inside `add`, with one rule attached: several
+of them need a `sort` in front, because a total *so far* means nothing until
+something has said in what order.
+
+If you have written `OVER (PARTITION BY ...)` in SQL, this part is the short
+version of it.

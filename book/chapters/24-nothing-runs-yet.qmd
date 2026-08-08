@@ -1,0 +1,67 @@
+---
+title: "Nothing runs until you ask"
+---
+
+{{< include ../_setup.qmd >}}
+
+A verb does not return a table. It returns a pipeline, which is a plan for one.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answer <- sales |> keep(region == "West") |> take(2)
+class(answer)
+```
+
+### Python
+
+```{python}
+answer = sales >> keep(col.region == "West") >> take(2)
+type(answer).__name__
+```
+
+:::
+
+Printing it runs it, which is why every example above shows a table. When you
+want the table itself, ask for it with `collect`.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+nrow(collect(answer))
+```
+
+### Python
+
+```{python}
+len(collect(answer))
+```
+
+:::
+
+In R this matters for more than speed. `sort` and `keep` are names other packages
+use too, and a pipeline handed to the wrong `sort` has no meaning there, so it
+stops instead of returning a plausible answer.
+
+You can also see what the verbs wrote, which is the text form, and it is the same
+sentence in both languages.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+cat(format(sales |> keep(region == "West") |> take(10)))
+```
+
+### Python
+
+```{python}
+print((sales >> keep(col.region == "West") >> take(10)).written())
+```
+
+:::

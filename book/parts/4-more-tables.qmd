@@ -1,0 +1,12 @@
+# More than one table
+
+One table is rarely the whole story. A second one holds the names your first
+table only has codes for, or the rows you collected last month.
+
+Three chapters, and they answer three different questions. `join` brings columns
+in from another table. `matching` asks whether a row has a partner over there
+without bringing anything in. `add_rows` stacks a second table underneath.
+
+The distinction between the first two is worth the chapter it gets. A join can
+multiply your rows without telling you, and the reason `matching` exists is that
+it cannot.

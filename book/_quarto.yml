@@ -1,0 +1,168 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "god: A Grammar of Data"
+  subtitle: "One vocabulary. Two languages."
+
+  # The hex sticker, designed by the author. It is the cover rather than a
+  # placeholder for one. The face is built from what the grammar actually has:
+  # the two pipes are the eyes, because they are the two bindings and a face has
+  # two; the brackets are the nose, because they mark a name *within* a step
+  # where the pipes join *between* them. The sibling project's sticker is the
+  # same construction on its own color, which is what makes them a set.
+  cover-image: images/god-hex.png
+  cover-image-alt: >-
+    The god hex sticker. A slate blue hexagon with a black border, holding a
+    face built from the grammar's own marks: R's pipe and Python's as the two
+    eyes, a pair of column brackets as the nose, and the package name as the
+    mouth.
+
+  # One name for now. The sibling book credits the models that wrote its prose
+  # alongside the human, in a section of the preface that explains the division
+  # of labor. That is a decision to make once there is prose to divide, not
+  # before, and the copyright holder is the human in either case.
+  author:
+    - "psychometrician"
+
+  # The day the book first went up as a public website. Nothing is published yet,
+  # so there is no date to write, and an invented one would be the first false
+  # thing in the book.
+
+  # Off until there is a repository to point at. Left here so the reason is
+  # visible rather than the key merely missing.
+  # repo-url:
+  # repo-actions: [issue]
+  # site-url:
+
+  page-footer:
+    left: |
+      [Prose licensed [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/).]{.licence}
+      [Code samples licensed [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0).]{.licence}
+
+  # A toggle that folds away the chapter sidebar and the table of contents,
+  # leaving the prose and the tables the whole width. Off until the reader asks
+  # for it, and the browser remembers the choice across pages. Wide output is
+  # what makes it worth having: a table with a dozen columns is the first thing
+  # to benefit from the two columns going away.
+  reader-mode: true
+
+  # **Parts group the work, chapters are one topic each.** The order is a
+  # teaching order: the six verbs first, because a reader who stops after Part I
+  # can already answer real questions, then reshaping, then everything that goes
+  # *inside* a verb, then the parts that need more than one table or more than
+  # one row. A reader arriving from another tool can start at Part VII or at the
+  # appendices and work backwards.
+  #
+  # A chapter arrives **with** the verbs it documents rather than before them.
+  # Prose can name anything at all and still build clean, which is the one defect
+  # no live chunk can catch.
+  chapters:
+    - index.qmd
+
+    - part: parts/1-six-verbs.qmd
+      chapters:
+        - chapters/01-first-pipeline.qmd
+        - chapters/02-keeping-rows.qmd
+        - chapters/03-choosing-columns.qmd
+        - chapters/04-adding-a-column.qmd
+        - chapters/05-sorting-and-taking.qmd
+        - chapters/06-summarizing-by-group.qmd
+        - chapters/07-renaming-and-repeats.qmd
+        - chapters/08-words-that-repeat.qmd
+
+    - part: parts/2-shape.qmd
+      chapters:
+        - chapters/09-columns-into-rows.qmd
+        - chapters/10-rows-into-columns.qmd
+
+    - part: parts/3-values.qmd
+      chapters:
+        - chapters/11-tidying-text.qmd
+        - chapters/12-converting-kinds.qmd
+        - chapters/13-dates.qmd
+        - chapters/14-one-way-or-another.qmd
+        - chapters/15-missing-values.qmd
+
+    - part: parts/4-more-tables.qmd
+      chapters:
+        - chapters/16-another-table.qmd
+        - chapters/17-has-a-partner.qmd
+        - chapters/18-adding-rows.qmd
+
+    - part: parts/5-along-the-rows.qmd
+      chapters:
+        - chapters/19-each-row-a-place.qmd
+        - chapters/20-the-total-so-far.qmd
+
+    - part: parts/6-choosing-columns.qmd
+      chapters:
+        - chapters/21-shape-of-a-name.qmd
+        - chapters/22-what-a-column-holds.qmd
+        - chapters/23-one-value-per-column.qmd
+
+    - part: parts/7-how-it-works.qmd
+      chapters:
+        - chapters/24-nothing-runs-yet.qmd
+        - chapters/25-what-it-wrote.qmd
+        - chapters/26-somewhere-else.qmd
+        - chapters/27-every-refusal.qmd
+
+    # Outside every part, because they belong to all of them: one question
+    # answered with most of the vocabulary at once, and then where this grammar
+    # stops and the sibling one starts.
+    - chapters/28-a-whole-question.qmd
+    - chapters/29-with-gog.qmd
+
+  appendices:
+    - appendices/a-two-languages.qmd
+    - appendices/b-every-word.qmd
+    - appendices/c-phrasebook.qmd
+
+format:
+  html:
+    # Two themes and a toggle. Declaring both is what makes Quarto write the
+    # switch and put `quarto-light` / `quarto-dark` on the body. The palette in
+    # both files is the hex sticker's, because that sticker is the only original
+    # brand art this project has.
+    theme:
+      light: [cosmo, theme-light.scss]
+      dark: [darkly, theme-dark.scss]
+    toc: true
+    # Two rather than three, because the third level is the tab labels. Every
+    # example is an R tab and a Python tab, and a table of contents reading
+    # "R, Python, R, Python" down the page is worse than no entry at all.
+    #
+    # **The chapter split is what makes this right rather than a compromise.**
+    # While the book was three files, real subsections sat at level three beside
+    # those labels and were invisible here. They are `##` inside their own
+    # chapters now, so two is the whole depth there is.
+    toc-depth: 2
+    number-sections: true
+    code-link: false
+    code-copy: true
+    # Both languages, side by side, everywhere. The whole claim of this book is
+    # that the two sentences are the same sentence, and a reader who has to
+    # scroll to compare them cannot check that claim. That is why the examples
+    # are tabs rather than two chapters: the comparison is one click, in place,
+    # and neither language is the one you have to go and look up.
+    code-block-bg: true
+    code-overflow: wrap
+    # Every table on the page is a table, rather than a picture of a terminal.
+    # A pipeline hands this setting straight through, so both languages print
+    # the same way and neither one picks a format of its own.
+    df-print: kable
+
+# Freeze stays off, and it has to. The tables in this book are computed by the
+# engine binary rather than by the `.qmd`, and freeze invalidates on `.qmd`
+# changes. After an engine change it would serve stale results while the book
+# claims to be live, which is the exact failure the live-chunk rule exists to
+# prevent.
+execute:
+  freeze: false
+  # A refusal is shown on purpose in several chapters, with `#| error: true`.
+  # What is not wanted is the engine's own startup chatter or a driver's
+  # deprecation notice landing in the middle of an example.
+  warning: false
+  message: false

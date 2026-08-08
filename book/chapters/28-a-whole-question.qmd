@@ -1,0 +1,129 @@
+---
+title: "A whole question, answered"
+---
+
+{{< include ../_setup.qmd >}}
+
+The sections above take one verb at a time, which is the right way to meet them
+and not how anyone uses them. Here is a question that needs most of the book.
+
+The table is a set of survey returns. Each respondent answered three questions,
+some answers are missing, a backup file filled in some of the gaps, and the
+regions have long names that a lookup table holds.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+returns <- data.frame(
+  id     = c(1, 2, 3, 4, 5),
+  code   = c("W", "W", "E", "E", "N"),
+  q1     = c(5, 3, NA, 5, 2),
+  q2     = c(4, NA, 5, 4, 3),
+  q3     = c(NA, 2, 5, 5, 1),
+  q1_alt = c(NA, NA, 4, NA, NA),
+  stringsAsFactors = FALSE
+)
+
+places <- data.frame(
+  code = c("W", "E"),
+  area = c("West", "East"),
+  stringsAsFactors = FALSE
+)
+```
+
+```{r}
+#| echo: false
+returns
+```
+
+### Python
+
+```{python}
+returns = pd.DataFrame({
+    "id":     [1, 2, 3, 4, 5],
+    "code":   ["W", "W", "E", "E", "N"],
+    "q1":     [5.0, 3.0, None, 5.0, 2.0],
+    "q2":     [4.0, None, 5.0, 4.0, 3.0],
+    "q3":     [None, 2.0, 5.0, 5.0, 1.0],
+    "q1_alt": [None, None, 4.0, None, None],
+})
+
+places = pd.DataFrame({
+    "code": ["W", "E"],
+    "area": ["West", "East"],
+})
+```
+
+```{python}
+#| echo: false
+returns.style.hide(axis="index")
+```
+
+:::
+
+The question is this. For each area we have a name for, what did the average
+answer to each question look like, and which area scored highest on question
+one?
+
+Getting there takes seven steps, and each one is a verb from this chapter.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+answers <- returns |>
+  keep(matching(places, by = code)) |>
+  add(q1 = first_present(q1, q1_alt)) |>
+  pick(all_but(q1_alt)) |>
+  join(places, by = code) |>
+  summarize(where(startsWith(name, "q"), average(value)), by = area) |>
+  add(place = rank(descending(q1))) |>
+  sort(place)
+
+answers
+```
+
+### Python
+
+```{python}
+answers = (returns
+  >> keep(matching(places, by = col.code))
+  >> add(q1 = first_present(col.q1, col.q1_alt))
+  >> pick(all_but(col.q1_alt))
+  >> join(places, by = col.code)
+  >> summarize(where(name.starts("q"), average(value)), by = col.area)
+  >> add(place = rank(descending(col.q1)))
+  >> sort(col.place))
+
+answers
+```
+
+:::
+
+Read it aloud and it is the question. Keep the rows matching a place we know.
+Take the backup answer for question one where the first is missing. Drop the
+backup column. Bring in the area names. For each area, average every column whose
+name starts with `q`. Rank the areas by question one, highest first. Sort by that
+rank.
+
+Two things that would have been easy to get wrong are done by single clauses.
+`matching` drops respondent 5, whose code `N` is in no lookup row, and it cannot
+multiply the rows the way a join could. And the `summarize` names no question
+column at all, so a fourth question arriving next month is included without this
+line changing.
+
+Here is the whole thing as SQL, which is what actually ran.
+
+```{r}
+show_as(returns |>
+  keep(matching(places, by = code)) |>
+  add(q1 = first_present(q1, q1_alt)) |>
+  pick(all_but(q1_alt)) |>
+  join(places, by = code) |>
+  summarize(where(startsWith(name, "q"), average(value)), by = area) |>
+  add(place = rank(descending(q1))) |>
+  sort(place), "sql")
+```

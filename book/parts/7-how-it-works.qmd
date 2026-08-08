@@ -1,0 +1,13 @@
+# How god works
+
+Everything so far has been the grammar. This part is the machinery underneath
+it, and it matters because it is what you reach for at the edges.
+
+Nothing runs until you ask for it. Any pipeline will print itself back to you in
+a language you already use, which is the way out when the vocabulary does not
+cover what you need. A table that lives in a warehouse can be read where it
+sits. And when something is wrong, the whole pipeline is checked before any of
+it runs.
+
+Read this part if you are deciding whether to depend on god. It is where the
+claims made in the preface are demonstrated rather than asserted.

@@ -1,0 +1,43 @@
+---
+title: "Sorting and taking"
+---
+
+{{< include ../_setup.qmd >}}
+
+`sort` orders the rows, and `descending` reverses one key.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(revenue)) |> take(3)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.revenue)) >> take(3)
+```
+
+:::
+
+There is no `ascending`, because ascending is what happens when you do not ask
+for anything, and a word meaning "do the default" is a second way to say the
+same thing. Sorting by several keys reads left to right.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(product, descending(revenue))
+```
+
+### Python
+
+```{python}
+sales >> sort(col.product, descending(col.revenue))
+```
+
+:::

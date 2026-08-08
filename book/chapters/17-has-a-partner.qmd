@@ -1,0 +1,142 @@
+---
+title: "Asking whether a row has a partner"
+---
+
+{{< include ../_setup.qmd >}}
+
+Sometimes you do not want the other table's columns. You want to know which of
+your rows appear in it, and keep those. That is a question about a row, so it is
+written as one, and the verb that takes a question is `keep`.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+stocked <- data.frame(product = "Widget", stringsAsFactors = FALSE)
+
+sales |> keep(matching(stocked, by = product))
+```
+
+### Python
+
+```{python}
+stocked = pd.DataFrame({"product": ["Widget"]})
+
+sales >> keep(matching(stocked, by = col.product))
+```
+
+:::
+
+Nothing was added. The columns are the ones `sales` started with, and only the
+rows changed, which is why this is not spelled `join`. Negate it and you get
+exactly the rows the first one dropped.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(!matching(stocked, by = product))
+```
+
+### Python
+
+```{python}
+sales >> keep(~matching(stocked, by = col.product))
+```
+
+:::
+
+`by` works here exactly as it does on `join`, and leaving it out means the same
+thing: god matches on the column names both tables share and says which it
+chose.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(matching(stocked))
+```
+
+### Python
+
+```{python}
+sales >> keep(matching(stocked))
+```
+
+:::
+
+There is one thing `matching` guarantees that `join` cannot. If the other table
+has three rows for a product, a join gives you three rows back for each of
+yours. A question does not: a row either has a partner or it does not, and how
+many it has never reaches the answer.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+restocks <- data.frame(
+  product  = c("Widget", "Widget", "Widget"),
+  quantity = c(10, 20, 30),
+  stringsAsFactors = FALSE
+)
+
+nrow(collect(sales |> keep(matching(restocks, by = product))))
+nrow(collect(sales |> join(restocks, by = product, unmatched = "none")))
+```
+
+### Python
+
+```{python}
+restocks = pd.DataFrame({
+    "product":  ["Widget", "Widget", "Widget"],
+    "quantity": [10, 20, 30],
+})
+
+print(len(collect(sales >> keep(matching(restocks, by = col.product)))))
+print(len(collect(sales >> join(restocks, by = col.product, unmatched = "none"))))
+```
+
+:::
+
+`matching` is the whole question `keep` asks rather than one part of one, so it
+does not combine with `and`. Ask it in its own step.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> keep(matching(products, by = product) & revenue > 100))
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> keep(matching(products, by = col.product) & (col.revenue > 100)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
+```
+
+### Python
+
+```{python}
+sales >> keep(matching(products, by = col.product)) >> keep(col.revenue > 100)
+```
+
+:::

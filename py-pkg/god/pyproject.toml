@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+# The distribution name and the import name are independent, and here they
+# differ: `god` was taken on PyPI in 2016 by an unrelated package. Every example
+# and every chapter says `import god` regardless.
+name = "grammar-of-data"
+version = "0.0.0.dev0"
+description = "A grammar of data: one vocabulary for tables, in R, Python and SQL"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{ name = "psychometrician" }]
+dependencies = ["duckdb>=1.0", "pandas>=2.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["god*"]

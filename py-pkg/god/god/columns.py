@@ -1,0 +1,323 @@
+"""How Python names a column, and what you can say about one.
+
+**This is the Python half of the one piece of real logic that lives in a host.**
+Its opposite number is the R translator, and the two exist to do the same job by
+different means: turn what someone wrote in their own language into the grammar's
+own text.
+
+The means differ because the languages do. R captures an expression without
+evaluating it and reads its syntax tree, so `total` and `descending` there are
+names in a tree and no function called `total` exists. Python evaluates as it
+goes, so the same words have to be real objects that build a sentence as they are
+called. **Same decisions, different mechanism**, and that difference is exactly
+why the parity harness compares the two: a translator can only drift from its
+twin, never from itself.
+
+The one rule that shapes everything here: an operator on a column returns a piece
+of the grammar's text rather than a value. `col.region == "West"` is not a
+comparison, it is the sentence `[region] is "West"` being written down.
+"""
+
+from __future__ import annotations
+
+__all__ = ["col", "Expr"]
+
+
+class Expr:
+    """A piece of a sentence, in the grammar's words.
+
+    Operators build bigger pieces rather than computing anything. Nothing here
+    knows what is in the table, and nothing here checks: whether `[revenue]`
+    exists and whether `total` may appear where it was written are the grammar's
+    questions, answered once, in one place, for both languages.
+    """
+
+    __slots__ = ("_text", "_negation", "_column", "_brings")
+
+    def __init__(
+        self,
+        text: str,
+        negation: str | None = None,
+        column: str | None = None,
+        brings=None,
+    ):
+        self._text = text
+        # The table this expression reads, when it reads one. `matching` is the
+        # only expression that names a table, and `keep` has to hand that table
+        # over with the pipeline; nothing else in a sentence reaches outside the
+        # one table at its head.
+        self._brings = brings
+        # Two forms have a better spelling for their own negation than wrapping
+        # them in `not` would give, and reaching it matters because it is what a
+        # person would have written by hand.
+        self._negation = negation
+        # The bare name, when this expression is nothing but a column. `pick`,
+        # `by` and `sort` take names rather than values, and this is how they
+        # tell the difference without parsing the text back.
+        self._column = column
+
+    def __str__(self) -> str:
+        return self._text
+
+    def __repr__(self) -> str:
+        return f"god expression: {self._text}"
+
+    # -- the words where the hosts disagree ---------------------------------
+
+    def __eq__(self, other):
+        return _infix(self, "is", other)
+
+    def __ne__(self, other):
+        return _infix(self, "is not", other)
+
+    def __lt__(self, other):
+        return _infix(self, "<", other)
+
+    def __le__(self, other):
+        return _infix(self, "<=", other)
+
+    def __gt__(self, other):
+        return _infix(self, ">", other)
+
+    def __ge__(self, other):
+        return _infix(self, ">=", other)
+
+    def __and__(self, other):
+        return _infix(self, "and", other)
+
+    def __or__(self, other):
+        return _infix(self, "or", other)
+
+    def __rand__(self, other):
+        return _infix(other, "and", self)
+
+    def __ror__(self, other):
+        return _infix(other, "or", self)
+
+    # -- the three text tests ------------------------------------------------
+    #
+    # Methods, for the same reason `is_in` and `is_missing` are: these sit
+    # between their operands in the grammar, and Python has no way to add an
+    # infix word. The subject is written either way, which is the point.
+
+    def starts(self, value):
+        """`col.product.starts("W")`, or `name.starts("q")` for a column's name."""
+        return Expr(f"({self._text} starts {_value(value)})")
+
+    def ends(self, value):
+        """`col.file.ends(".csv")`, or `name.ends("_id")` for a column's name."""
+        return Expr(f"({self._text} ends {_value(value)})")
+
+    def contains(self, value):
+        """`col.note.contains("urgent")`, or `name.contains("rev")` for a name."""
+        return Expr(f"({self._text} contains {_value(value)})")
+
+    def __invert__(self):
+        """`~`, because Python cannot overload `not`.
+
+        `not` is a keyword whose result Python coerces to a bool, so a class
+        cannot see it at all. `~` is the only prefix operator available, which
+        makes it the spelling rather than a choice between spellings.
+        """
+        if self._negation is not None:
+            return Expr(self._negation, brings=self._brings)
+        # The table travels through the negation, because an anti join reads the
+        # other table exactly as much as a semi join does.
+        return Expr(f"(not {self._text})", brings=self._brings)
+
+    # -- arithmetic ----------------------------------------------------------
+
+    def __add__(self, other):
+        return _infix(self, "+", other)
+
+    def __sub__(self, other):
+        return _infix(self, "-", other)
+
+    def __mul__(self, other):
+        return _infix(self, "*", other)
+
+    def __truediv__(self, other):
+        return _infix(self, "/", other)
+
+    def __radd__(self, other):
+        return _infix(other, "+", self)
+
+    def __rsub__(self, other):
+        return _infix(other, "-", self)
+
+    def __rmul__(self, other):
+        return _infix(other, "*", self)
+
+    def __rtruediv__(self, other):
+        return _infix(other, "/", self)
+
+    def __neg__(self):
+        return Expr(f"-{self._text}")
+
+    # -- the two the grammar spells with words -------------------------------
+
+    def is_in(self, values):
+        """`[region] in {"West", "East"}`.
+
+        Python's `in` cannot be reached: it calls `__contains__` on the thing on
+        the right and coerces the answer to a bool, so an expression object never
+        sees it. A method is the only route, and `{ }` around the values is a set
+        literal in Python as well as in the grammar, so the two lines look alike.
+
+        **A set is sorted before it is written, and it has to be.** Python
+        randomizes string hashing per process, so iterating the same set literal
+        gives a different order on every run. Written out as they came, the same
+        pipeline would emit different text each time it was executed, which
+        breaks the one promise this project makes. A list or a tuple keeps the
+        order it was written in, because that order was chosen by a person.
+        """
+        items = ", ".join(_value(v) for v in _each(values))
+        if not items:
+            raise GodExpressionError("a set needs at least one value")
+        return Expr(
+            f"({self._text} in {{{items}}})",
+            negation=f"({self._text} not in {{{items}}})",
+        )
+
+    def is_missing(self):
+        """`[cost] is missing`, and `~col.cost.is_missing()` for the other way."""
+        return Expr(
+            f"({self._text} is missing)",
+            negation=f"({self._text} is not missing)",
+        )
+
+    # An expression is not a value, so it has no meaningful hash. Defining
+    # `__eq__` already removed the inherited one; saying so here is for the
+    # reader rather than for Python.
+    __hash__ = None
+
+
+class GodExpressionError(Exception):
+    """Something in an expression the grammar cannot be given."""
+
+
+class _Columns:
+    """`col`, the one name Python adds to the grammar.
+
+    R writes a bare `revenue` because it can look a name up in the data before
+    the scope. Python has no such hook, so a column says it is one. That is the
+    second of the two differences between the languages, and the whole of it.
+    """
+
+    __slots__ = ()
+
+    def __getattr__(self, name: str) -> Expr:
+        if name.startswith("__"):
+            raise AttributeError(name)
+        return Expr(f"[{name}]", column=name)
+
+    def __getitem__(self, name: str) -> Expr:
+        """For a column whose name is not a Python identifier: `col["order date"]`."""
+        return Expr(f"[{name}]", column=str(name))
+
+    def __repr__(self) -> str:
+        return "col: write col.name for a column"
+
+
+col = _Columns()
+
+
+# -- writing a value out -----------------------------------------------------
+
+
+def _infix(left, word: str, right) -> Expr:
+    return Expr(f"({_operand(left)} {word} {_operand(right)})")
+
+
+def _operand(value) -> str:
+    return value._text if isinstance(value, Expr) else _value(value)
+
+
+def _value(value) -> str:
+    """A Python value, as the grammar writes it."""
+    if isinstance(value, Expr):
+        return value._text
+
+    # `bool` before `int`, because in Python a bool **is** an int and the wrong
+    # order would write `yes` as `1`.
+    if isinstance(value, bool):
+        return "yes" if value else "no"
+
+    if value is None:
+        return "missing"
+
+    if isinstance(value, str):
+        # The grammar closes a text value at the first `"` and has no escape, so
+        # a value containing one cannot be written at all. Refusing here names
+        # the problem; passing it through would end the sentence somewhere the
+        # caller did not intend.
+        if '"' in value:
+            raise GodExpressionError(
+                "god cannot yet write a text value containing a double quote, "
+                "and will not guess where it ends"
+            )
+        return f'"{value}"'
+
+    if isinstance(value, (int, float)):
+        return _number(value)
+
+    raise GodExpressionError(
+        f"god does not know how to write `{value!r}` in a pipeline"
+    )
+
+
+def _number(value) -> str:
+    """A number, never in scientific notation.
+
+    Python writes large and small numbers as `1e+05`, and the grammar reads
+    digits and at most one point. Formatting is fixed here so the two hosts write
+    the same number the same way.
+    """
+    if isinstance(value, int):
+        return str(value)
+    if value != value or value in (float("inf"), float("-inf")):
+        raise GodExpressionError(f"god cannot write `{value}` as a number")
+    written = f"{value:.10f}".rstrip("0")
+    return written + "0" if written.endswith(".") else written
+
+
+def _each(values):
+    """The values in a set, in an order that does not change between runs.
+
+    An ordered collection keeps the order it was written in. An unordered one is
+    sorted, because Python's per-process hash randomization means a `set` yields
+    its members differently on every run, and a pipeline whose text depends on
+    which run wrote it is not one pipeline.
+    """
+    if isinstance(values, (str, bytes)) or not hasattr(values, "__iter__"):
+        return [values]
+    if isinstance(values, (list, tuple)):
+        return list(values)
+    try:
+        return sorted(values)
+    except TypeError:
+        # Values that cannot be ordered against each other. Nothing here can make
+        # them deterministic, so say so rather than emit a different sentence
+        # each run.
+        raise GodExpressionError(
+            "god cannot put these values in a settled order, and the same "
+            "pipeline has to read the same way every time. Write them as a "
+            "list: [\"West\", \"East\"]"
+        ) from None
+
+
+def name_of(value, where: str) -> str:
+    """The column a name-taking position was given.
+
+    `pick`, `by` and `sort` take columns rather than values, so being handed an
+    expression is a mistake worth naming at the point it is made rather than
+    letting it arrive at the grammar as something stranger.
+    """
+    if isinstance(value, Expr) and value._column is not None:
+        return value._column
+    if isinstance(value, str):
+        return value
+    written = value._text if isinstance(value, Expr) else repr(value)
+    raise GodExpressionError(
+        f"`{where}` names a column, and `{written}` is not a column name"
+    )

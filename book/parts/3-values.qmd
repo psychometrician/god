@@ -1,0 +1,12 @@
+# What goes in a column
+
+So far a new column has been arithmetic on the ones already there. This part is
+about everything else you can put in one.
+
+Text you need to clean up. A number that arrived as text. A date you want the
+year out of. A category that depends on a condition. A value that is missing,
+which is its own subject and gets a chapter.
+
+Every one of these is written the same way, inside `add` or `summarize`, so
+there is no new grammar in this part. There are only more words to write in a
+place you already know.

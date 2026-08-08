@@ -1,0 +1,88 @@
+---
+title: "Dates"
+---
+
+{{< include ../_setup.qmd >}}
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+diary <- data.frame(
+  g = c("a", "a", "b"),
+  on_ = c("2026-01-02", "2026-01-05", "2026-01-06"),
+  x = c(10, 20, 30),
+  stringsAsFactors = FALSE
+)
+
+diary |>
+  add(d = to_date(on_)) |>
+  add(year = year(d), month = month(d), weekday = weekday(d))
+```
+
+### Python
+
+```{python}
+diary = pd.DataFrame({
+    "g": ["a", "a", "b"],
+    "on_": ["2026-01-02", "2026-01-05", "2026-01-06"],
+    "x": [10, 20, 30],
+})
+
+(diary
+ >> add(d = to_date(col.on_))
+ >> add(year = year(col.d), month = month(col.d), weekday = weekday(col.d)))
+```
+
+:::
+
+**`weekday` counts Monday as 1**, wherever you run it. That is the grammar's
+numbering rather than the engine's, and it has to be: asked plainly, one engine
+calls a Friday 5 and another calls it 4, and neither says anything is wrong.
+
+## The five parts
+
+`year`, `month`, `day`, `weekday` and `hour`. Each one pulls a number out of a
+date, and each is named for what it returns.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+diary |>
+  add(on = to_date(on_)) |>
+  add(y = year(on), m = month(on), d = day(on), wd = weekday(on)) |>
+  pick(on_, y, m, d, wd)
+```
+
+### Python
+
+```{python}
+(diary
+  >> add(on = to_date(col.on_))
+  >> add(y = year(col.on), m = month(col.on), d = day(col.on), wd = weekday(col.on))
+  >> pick(col.on_, col.y, col.m, col.d, col.wd))
+```
+
+:::
+
+`hour` is the fifth, and it wants a value that carries a time. A plain date has
+no hour in it, so on the dates above it answers zero rather than refusing.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data.frame(at = "2026-01-02 14:30:00") |> add(h = hour(to_date(at))) |> pick(at, h)
+```
+
+### Python
+
+```{python}
+pd.DataFrame({"at": ["2026-01-02 14:30:00"]}) >> add(h = hour(to_date(col.at))) >> pick(col.at, col.h)
+```
+
+:::

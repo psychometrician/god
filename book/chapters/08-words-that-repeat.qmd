@@ -1,0 +1,168 @@
+---
+title: "The words that repeat"
+---
+
+{{< include ../_setup.qmd >}}
+
+You have met six verbs and a handful of small words that go with them: `by`,
+`where`, `as`, `all_but`, `descending`. This chapter is about those small words,
+and it is the shortest useful thing in the book.
+
+Each of them means one thing. Not one thing per verb, one thing. When you meet a
+verb you have never seen, the small words in it already make sense, and that is
+most of what makes this grammar quick to get back after a year away.
+
+## `by` says which rows go together
+
+You saw `by` on `summarize`, where it made the groups. It is the same word on
+`add`, where it says which rows a value is worked out within, and on `take`,
+where it says which rows the first few are taken from.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(total = total(revenue), by = product)
+```
+
+### Python
+
+```{python}
+sales >> summarize(total = total(col.revenue), by = col.product)
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add(share = revenue / total(revenue), by = product) |> pick(product, revenue, share)
+```
+
+### Python
+
+```{python}
+sales >> add(share = col.revenue / total(col.revenue), by = col.product) >> pick(col.product, col.revenue, col.share)
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(revenue)) |> take(1, by = product)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.revenue)) >> take(1, by = col.product)
+```
+
+:::
+
+Three verbs, one word, one meaning. Later you will meet `by` on `join` and on
+`widen`, and it will mean the same thing there: the columns that say which rows
+correspond.
+
+## `as` gives something a name
+
+`add [name] as [value]`. The name goes first, the way assignment reads, and the
+same shape names the result of `rename` and the filler in `fill_missing`.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add(margin = revenue - cost) |> rename(earned = revenue) |> pick(product, earned, margin)
+```
+
+### Python
+
+```{python}
+sales >> add(margin = col.revenue - col.cost) >> rename(earned = col.revenue) >> pick(col.product, col.earned, col.margin)
+```
+
+:::
+
+## `all_but` turns a list inside out
+
+Wrap the names you do *not* want. It is the same word wherever a set of columns
+is chosen, which so far is `pick` and, in the next part, `lengthen`.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> pick(all_but(cost, region))
+```
+
+### Python
+
+```{python}
+sales >> pick(all_but(col.cost, col.region))
+```
+
+:::
+
+## `descending` reverses an ordering
+
+It is a modifier on a column, in a position where an ordering is being given. So
+it reads the same on `sort` and inside `rank`, and it needs no argument of its
+own on either.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add(place = rank(descending(revenue))) |> sort(place) |> pick(product, revenue, place)
+```
+
+### Python
+
+```{python}
+sales >> add(place = rank(descending(col.revenue))) >> sort(col.place) >> pick(col.product, col.revenue, col.place)
+```
+
+:::
+
+## `where` asks a question
+
+On `keep` the question is about a row. Later you will see it on `pick`, where the
+question is about a column, and the difference is written down rather than
+guessed: inside `pick` you say `name` or `kind` to name what you are asking
+about.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(revenue > 150)
+```
+
+### Python
+
+```{python}
+sales >> keep(col.revenue > 150)
+```
+
+:::
+
+## Why this matters more than it looks
+
+A vocabulary is easy to learn and easy to lose. What survives a year away is not
+the word list, it is the rules for putting words together, and those only survive
+if there are few of them and they have no exceptions.
+
+So the test this grammar sets itself is not whether it has a word for everything.
+It is whether a word you learned in one place still means the same thing in the
+next place you meet it. Every part after this one is that test being run.

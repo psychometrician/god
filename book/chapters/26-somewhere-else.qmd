@@ -1,0 +1,79 @@
+---
+title: "A table that lives somewhere else"
+---
+
+{{< include ../_setup.qmd >}}
+
+Everything so far has read a table sitting in front of you. A warehouse names
+its tables in parts instead, as a catalog, then a schema, then the table, and a
+pipeline can say so. The dots are part of the name:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+show_as("shop.orders then sort [revenue] descending then take 5",
+        "spark", `shop.orders` = data.frame(product = "Widget", revenue = 10))
+```
+
+### Python
+
+```{python}
+show_as("shop.orders then sort [revenue] descending then take 5",
+        "spark", **{"shop.orders": pd.DataFrame({"product": ["Widget"],
+                                                 "revenue": [10]})})
+```
+
+:::
+
+Each part is quoted on its own, because each part is a name in its own right.
+Quoting the whole of `shop.orders` would ask for one table called `shop.orders`,
+which is not a table anybody has.
+
+A dot means this and nothing else. It joins the parts of a table's name, in the
+four places a table is named: at the head of a pipeline, and in `join`,
+`add_rows` and `matching`. Anywhere else it is refused, the way it always was.
+
+### Where the pipeline runs
+
+The sentence does not change. What changes is which engine answers it, and each
+language says so in its own way, because the two reach a cluster differently.
+
+In R, hand `use_engine` a connection. Anything `DBI` speaks will do, which
+includes `sparklyr` and an `odbc` connection to a warehouse. Tables the
+connection already holds are found by name, and nothing is copied up to it. The
+connection below is a local database standing in for a remote one, so that this
+page runs what it describes:
+
+```{r}
+warehouse <- DBI::dbConnect(duckdb::duckdb())
+DBI::dbExecute(warehouse, "CREATE SCHEMA shop")
+DBI::dbExecute(warehouse, "CREATE TABLE shop.orders (region VARCHAR, revenue DOUBLE)")
+DBI::dbExecute(warehouse, "INSERT INTO shop.orders VALUES
+                             ('West', 100), ('West', 250), ('East', 400)")
+
+use_engine(warehouse)
+run("shop.orders then summarize [total] as total([revenue]) by [region]")
+```
+
+The table was never in this session. It was described by asking the engine for
+its columns and no rows, and the totalling happened where the data already was.
+
+```{r}
+use_engine()   # back to the engine on this machine
+```
+
+In Python there is nothing to say, because a Spark frame carries its session
+with it. Give the verbs Spark tables and the pipeline runs on Spark; give them
+pandas tables and it runs here, so `orders >> summarize(total = total(col.revenue),
+by = col.region)` picks its engine from `orders`.
+
+The answer comes back in the same currency as the question. Ask with pandas
+frames and you get a pandas frame. Ask with Spark frames and you get a Spark
+frame, still on the cluster, because bringing the answer of a pipeline over a
+warehouse table down to one machine is rarely what you meant.
+
+A pipeline that mixes the two is refused. One query cannot read a table on a
+cluster and a table in your session at the same time, and saying so is better
+than quietly moving one of them.

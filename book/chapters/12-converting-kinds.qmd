@@ -1,0 +1,105 @@
+---
+title: "Saying what something is"
+---
+
+{{< include ../_setup.qmd >}}
+
+Conversions are always written out. Nothing here converts a column on your
+behalf, because a column that quietly changes what it holds is the hardest kind
+of mistake to find later.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+messy |> add(word = to_text(n)) |> add(digits = characters(word))
+```
+
+### Python
+
+```{python}
+messy >> add(word = to_text(col.n)) >> add(digits = characters(col.word))
+```
+
+:::
+
+**Every conversion begins `to_`**, and nothing else does: `to_number`,
+`to_whole`, `to_text`, `to_date`. Ask for the characters in a number without
+converting it first and you are told which conversion you wanted:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(messy |> add(size = characters(n)))
+```
+
+### Python
+
+```{python}
+try:
+    collect(messy >> add(size = characters(col.n)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+### Between two ends
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(between(revenue, 150, 400)) |> sort(revenue)
+```
+
+### Python
+
+```{python}
+sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue)
+```
+
+:::
+
+Both ends count, the way SQL and dplyr both have it, so nothing here needs
+checking against a manual.
+
+## The four conversions
+
+`to_text`, `to_number`, `to_whole` and `to_date` are the whole set. Each one says
+what it makes rather than what it takes, so there is nothing to remember about
+direction.
+
+`to_number` gives a number that may have a decimal point. `to_whole` gives one
+that may not, and it truncates rather than rounding, which is worth knowing
+before you use it on money.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+messy |>
+  add(as_text = to_text(n), rounded = to_whole(to_number(n) / 2)) |>
+  pick(n, as_text, rounded)
+```
+
+### Python
+
+```{python}
+(messy
+  >> add(as_text = to_text(col.n), rounded = to_whole(to_number(col.n) / 2))
+  >> pick(col.n, col.as_text, col.rounded))
+```
+
+:::
+
+A conversion that cannot be made is not a silent missing value in either
+language. The engine underneath decides what to do with `to_number("abc")`, and
+this is one of the few places where what you get depends on where the pipeline
+ran.
