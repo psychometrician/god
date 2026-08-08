@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-95 -112 190 224" width="1696" height="2000"
+     role="img" aria-label="The god hex sticker. A slate blue hexagon with a black border, holding a face built from the grammar's own marks: R's pipe and Python's as the two eyes, a pair of parentheses as the nose, and the package name as the mouth.">
+
+  <!-- The god hex sticker.
+       Standard hex geometry: 2 inches tall by 1.732 wide, pointy top, flat sides.
+
+       **Every face mark is drawn geometry, never type.** `|` and `/` have
+       different heights in almost every typeface, and a chevron set as text
+       carries its own sidebearings, so equal point sizes give visibly unequal
+       marks. Only the wordmark is set, and it wants a single-story `g` to match
+       the sibling sticker's.
+
+       The nose was `[ ]` until 2026-08-07 and is now `( )`. The test that
+       changed it: a mark on the cover should be one a reader actually types.
+       Measured across the parity corpus, `[` and `]` appear 0 times in R and 7
+       in Python, all of them Python's own list syntax; parentheses appear 224
+       times in R and 232 in Python, because every verb call in both languages
+       has them. -->
+
+  <defs>
+    <!-- R's pipe. The bar is deliberately shorter than the chevron: matched
+         heights read as two unrelated marks, a shorter bar reads as one token. -->
+    <g id="eye-rpipe">
+      <rect x="-17.5" y="-14" width="8.5" height="28"/>
+      <path d="M -1.5,-14 L 11.5,0 L -1.5,14" fill="none" stroke="#000000"
+            stroke-width="8.5" stroke-linejoin="miter"/>
+    </g>
+
+    <!-- Python's pipe. Nested, but with a channel between them. Spaced they read
+         as "> >"; nested to touching they fuse into a single arrowhead. -->
+    <g id="eye-pypipe">
+      <path d="M -17,-14 L -4,0 L -17,14" fill="none" stroke="#000000"
+            stroke-width="8.5" stroke-linejoin="miter"/>
+      <path d="M 0,-14 L 13,0 L 0,14" fill="none" stroke="#000000"
+            stroke-width="8.5" stroke-linejoin="miter"/>
+    </g>
+
+    <!-- An opening parenthesis, drawn as one curve across the same 36-unit nose
+         band the bracket used. The stroke is 6.5 rather than the eyes' 8.5: a
+         curve of equal width carries more ink than a straight one and would
+         outweigh them. -->
+    <g id="paren-open">
+      <path d="M 5.5,-18 C -6.5,-11 -6.5,11 5.5,18" fill="none" stroke="#000000"
+            stroke-width="6.5" stroke-linecap="butt"/>
+    </g>
+  </defs>
+
+  <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"
+           fill="#B9CFE2" stroke="#000000" stroke-width="11" stroke-linejoin="miter"/>
+
+  <g fill="#000000" text-anchor="middle">
+    <use href="#eye-rpipe" x="-41" y="-31"/>
+    <use href="#eye-pypipe" x="39" y="-31"/>
+
+    <!-- Mirrored rather than drawn twice, so the two halves cannot drift apart.
+         The gap between them is load-bearing: closed up, `()` reads as an empty
+         call rather than as a nose. -->
+    <use href="#paren-open" x="-11" y="10"/>
+    <g transform="translate(11,10) scale(-1,1)"><use href="#paren-open"/></g>
+
+    <!-- Nudged two units left of the geometric centre. `god` puts an ascender on
+         its last letter and a descender on its first, so its weight runs
+         diagonally and true centring makes it lean right. Any tool's
+         align-centre works on the bounding box and will undo this. -->
+    <text x="-2" y="61" font-size="40" textLength="70" lengthAdjust="spacingAndGlyphs"
+          font-family="Avenir Next, Avenir, Futura, Century Gothic, Trebuchet MS, sans-serif"
+          font-weight="700">god</text>
+  </g>
+</svg>

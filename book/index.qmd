@@ -241,27 +241,30 @@ it can. That is not an apology. A grammar that refuses nothing has no shape.
 
 The hexagon at the top of this page says the same thing without a sentence. What
 sits inside it is a face. Its eyes are `|>` and `>>`, the pipe in R and the pipe
-in Python. Its nose is `[` and `]`, which is how the plain text form names a
-column. Its mouth is the package name.
+in Python. Its nose is `(` and `)`. Its mouth is the package name.
 
-Those three marks are the three places you can write a pipeline, which is why
-they are the ones on the cover. A face has two eyes, and this grammar has two
-bindings: one language on the left, one on the right, saying the same thing.
-Between them sits the form that belongs to neither.
+Those marks are chosen and not decorative, and the test they had to pass is that
+you actually write them. A face has two eyes and this grammar has two bindings:
+one language on the left, one on the right, saying the same thing. Both eyes
+point right, so the face is looking at the next step rather than at you.
 
-They also work at two different scales, the way the sibling project's sticker
-splits its own operators. The pipes join one step to the *next*. The brackets
-mark a name *inside* one step.
+The parentheses are what the two bindings share. Every verb in both languages is
+a call, so `keep(...)` and `summarize(...)` are the shape of every sentence you
+will write on either side. They also work at the other scale, which is the
+sibling sticker's own logic: the pipes join one step to the *next*, and the
+parentheses hold what happens *inside* one.
 
-A full stop was considered for the nose and rejected, because this book argues at
-some length that joining steps with a dot is the thing god was built to avoid,
-and a cover should not say the opposite of its book.
+The column brackets were on the cover until they were measured. Across the
+sentences this book is tested against, `[` and `]` appear **not once** in R, and
+the handful of times they appear in Python they are Python's own list syntax
+rather than anything god asks for. They are the plain text form's way of naming a
+column, which is a real job, and it is not a job most readers will ever see. A
+cover should carry a mark its reader types.
 
-One thing the face does not show is worth saying here, because it is the first
-question a reader asks about it. You do not write those brackets in R or Python.
-There a column is a bare `revenue` or a `col.revenue`, and the brackets belong to
-the text form alone. Python borrows them in one place only, `col["order date"]`,
-for a name that is not a Python identifier.
+A full stop was considered for the nose and rejected for the opposite reason:
+you would type it, and this book argues at some length that joining steps with a
+dot is the thing god was built to avoid. A cover should not say the opposite of
+its book.
 
 ## What this grammar borrows, and from where
 
