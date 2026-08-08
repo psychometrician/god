@@ -9,6 +9,8 @@ A query can be exactly what was expected and the answer still wrong, and a suite
 built on proxies passes for years while the thing it covers is broken.
 """
 
+import contextlib
+import io
 import os
 import sys
 from pathlib import Path
@@ -160,6 +162,20 @@ check(
     god.show_as('sales then keep where [region] is "West" then take 10').strip(),
     'sales |>\n  filter((region == "West")) |>\n  head(10)',
 )
+
+# **It returns and does not print, and both halves matter.** A notebook and a
+# prompt each show what an expression evaluates to, so a `show_as` that printed
+# as well would show the query twice; the book had exactly that on two pages.
+# The repr is the text rather than a quoted string with `\n` in it, because the
+# thing being echoed is a query someone asked to read.
+_written = god.show_as('sales then take 1', "sql")
+check("show_as reprs as the query itself", repr(_written), str(_written))
+check("show_as is still a string", isinstance(_written, str), True)
+
+_out = io.StringIO()
+with contextlib.redirect_stdout(_out):
+    god.show_as('sales then take 1', "sql")
+check("show_as prints nothing of its own", _out.getvalue(), "")
 
 print("\nthe verbs write the grammar's own sentence")
 

@@ -35,7 +35,7 @@ A dot means this and nothing else. It joins the parts of a table's name, in the
 four places a table is named: at the head of a pipeline, and in `join`,
 `add_rows` and `matching`. Anywhere else it is refused, the way it always was.
 
-### Where the pipeline runs
+## Where the pipeline runs
 
 The sentence does not change. What changes is which engine answers it, and each
 language says so in its own way, because the two reach a cluster differently.

@@ -7,6 +7,21 @@ Nothing is released yet, so everything below is unreleased.
 
 ## Unreleased
 
+### `show_as` in Python returns the query instead of printing it
+
+`show_as` prints in R and returns invisibly. In Python it printed *and* returned
+a visible string, so a notebook showed the query twice, or showed it once and
+then again as a quoted string with the newlines spelled out. It now returns, and
+the value it returns shows itself as the query rather than as a quoted string, so
+the Python line is the same as the R one:
+
+```python
+show_as(sales >> keep(col.region == "West") >> take(10), "dplyr")
+```
+
+It is still a string, so `.strip()`, `.splitlines()` and the rest still work. If
+you were relying on the printing, wrap the call in `print`.
+
 ### The manual is a book now
 
 Seven parts, 29 chapters and three appendices, in a teaching order. The six verbs

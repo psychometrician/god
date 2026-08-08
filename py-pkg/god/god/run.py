@@ -147,7 +147,24 @@ def _on_spark(session, pipeline: str, tables: dict, source: str):
                 pass
 
 
-def show_as(pipeline: str, as_: str = "dplyr", **tables) -> str:
+class _Written(str):
+    """A rendering that shows itself the way it will be read.
+
+    An ordinary `str` echoes at a prompt with its quotes and its `\\n` escapes
+    showing, which is the wrong picture of a query someone asked to look at. R's
+    `show_as` prints the text and returns it invisibly; Python has no invisible
+    return, so the same effect is a string that reprs as itself.
+
+    It is a `str`, so every string method still works on it.
+    """
+
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return str(self)
+
+
+def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
     """The same pipeline, written in a language you already know.
 
     A small vocabulary covers most of what people do and never all of it, so the
@@ -156,18 +173,19 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> str:
     ``as_`` is ``"sql"``, ``"spark"``, ``"dplyr"``, ``"pandas"``, ``"polars"``,
     ``"pyspark"``, or ``"god"`` itself. An unknown name is refused and the
     message lists the real ones, so this list going stale costs nothing.
+
+    **This returns rather than prints.** A notebook and a prompt both show what
+    an expression evaluates to, so printing as well would show it twice.
     """
     # A pipeline built from the native verbs already carries its table and knows
     # what it is called, so there is nothing to look up.
     from .verbs import Pipeline
 
     if isinstance(pipeline, Pipeline):
-        text = _call(
+        return _Written(_call(
             _columns_args(pipeline.tables, pipeline.source) + ["--as", as_],
             pipeline.written(),
-        )
-        print(text)
-        return text
+        ))
 
     source = _needs(pipeline)[0]
     frame = tables.get(source)
@@ -177,9 +195,7 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> str:
         raise GodError(
             f"the pipeline reads a table called `{source}`, and there is no such table here"
         )
-    text = _call(["--columns", _columns_of(frame), "--as", as_], pipeline)
-    print(text)
-    return text
+    return _Written(_call(["--columns", _columns_of(frame), "--as", as_], pipeline))
 
 
 def god_sql(pipeline: str, columns: str) -> str:

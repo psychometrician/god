@@ -10,23 +10,59 @@ pipeline what it would be in dplyr, or ask for the query. There are seven
 answers: `sql`, `spark`, `dplyr`, `pandas`, `polars`, `pyspark`, and `god`
 itself.
 
+::: {.panel-tabset}
+
+### R
+
 ```{r}
 show_as(sales |> keep(region == "West") |> take(10), "dplyr")
 ```
+
+### Python
+
+```{python}
+show_as(sales >> keep(col.region == "West") >> take(10), "dplyr")
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
 
 ```{r}
 show_as(sales |> summarize(revenue = total(revenue), by = product), "sql")
 ```
 
-### The same sentence, on a cluster
+### Python
+
+```{python}
+show_as(sales >> summarize(revenue = total(col.revenue), by = col.product), "sql")
+```
+
+:::
+
+## The same sentence, on a cluster
 
 `"sql"` is the query for the engine on your machine. `"spark"` is the same
 pipeline for Spark, and the point is what does not change: the sentence you
 wrote.
 
+::: {.panel-tabset}
+
+### R
+
 ```{r}
 show_as(sales |> summarize(revenue = total(revenue), by = product), "spark")
 ```
+
+### Python
+
+```{python}
+show_as(sales >> summarize(revenue = total(col.revenue), by = col.product), "spark")
+```
+
+:::
 
 The two queries differ in five places, and only two of those are cosmetic. A
 column is `` `revenue` `` on Spark and `"revenue"` here, and that one is worth
@@ -39,11 +75,15 @@ inside a text value has to be written twice.
 None of that is yours to remember. It is the difference between writing a
 pipeline and writing a query.
 
-### In a dataframe library instead
+## In a dataframe library instead
 
 A query is one answer. The other is the dataframe library you already use, which
 is what you want when the table is in front of you and there is no engine to hand
 anything to. The same pipeline, three ways:
+
+::: {.panel-tabset}
+
+### R
 
 ```{r}
 show_as(sales |>
@@ -52,6 +92,21 @@ show_as(sales |>
           sort(descending(margin)), "polars")
 ```
 
+### Python
+
+```{python}
+show_as(sales
+  >> add(margin = col.revenue - col.cost)
+  >> keep(col.margin > 50)
+  >> sort(descending(col.margin)), "polars")
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
+
 ```{r}
 show_as(sales |>
           add(margin = revenue - cost) |>
@@ -59,12 +114,38 @@ show_as(sales |>
           sort(descending(margin)), "pandas")
 ```
 
+### Python
+
+```{python}
+show_as(sales
+  >> add(margin = col.revenue - col.cost)
+  >> keep(col.margin > 50)
+  >> sort(descending(col.margin)), "pandas")
+```
+
+:::
+
+::: {.panel-tabset}
+
+### R
+
 ```{r}
 show_as(sales |>
           add(margin = revenue - cost) |>
           keep(margin > 50) |>
           sort(descending(margin)), "pyspark")
 ```
+
+### Python
+
+```{python}
+show_as(sales
+  >> add(margin = col.revenue - col.cost)
+  >> keep(col.margin > 50)
+  >> sort(descending(col.margin)), "pyspark")
+```
+
+:::
 
 Each verb became one method, and the order of the steps did not move. What
 changes is how a column is named. polars writes `pl.col`, PySpark writes `F.col`,
@@ -94,8 +175,8 @@ show_as(marks |> widen(name = question, value = mark, by = student), "spark")
 
 ```{python}
 try:
-    show_as("marks then widen name [question], value [mark] by [student]",
-            "spark", marks = marks)
+    show_as(marks >> widen(name = col.question, value = col.mark, by = col.student),
+            "spark")
 except GodError as refusal:
     print(refusal)
 ```

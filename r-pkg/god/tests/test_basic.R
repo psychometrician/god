@@ -140,6 +140,17 @@ check("show_as returns the translation",
       show_as("sales then keep where [region] is \"West\" then take 10"),
       "sales |>\n  filter((region == \"West\")) |>\n  head(10)")
 
+# **Printed once and returned invisibly**, which is the pair Python matches by
+# returning a value whose repr is the query and printing nothing. Pinned on both
+# sides so a change to either is caught rather than discovered in a rendered
+# page showing the same query twice.
+check("show_as prints the translation once",
+      length(capture.output(show_as("sales then take 1", "sql"))),
+      3L)
+check("show_as returns invisibly",
+      withVisible(show_as("sales then take 1", "sql"))$visible,
+      FALSE)
+
 cat("\nthe verbs write the grammar's own sentence\n")
 
 # **Asserted on the text rather than on the rows**, deliberately. A verb's whole

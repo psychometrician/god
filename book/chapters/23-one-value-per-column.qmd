@@ -5,8 +5,8 @@ title: "One value, applied to every column that matches"
 {{< include ../_setup.qmd >}}
 
 Writing the same thing for eight columns is eight chances to write it slightly
-differently. `add where` takes the pattern from the section above and one value
-to apply to each column it matches. Inside that value, `value` stands for the
+differently. `add where` takes the same pattern the last two chapters used and
+one value to apply to each column it matches. Inside that value, `value` stands for the
 column being worked on.
 
 ::: {.panel-tabset}
@@ -94,7 +94,7 @@ show_as(survey |> add(where(startsWith(name, "q"), value * 10)), "god")
 ### Python
 
 ```{python}
-print(show_as(survey >> add(where(name.starts("q"), value * 10)), "god"))
+show_as(survey >> add(where(name.starts("q"), value * 10)), "god")
 ```
 
 :::
