@@ -30,11 +30,13 @@ book:
   # so there is no date to write, and an invented one would be the first false
   # thing in the book.
 
-  # Off until there is a repository to point at. Left here so the reason is
-  # visible rather than the key merely missing.
-  # repo-url:
-  # repo-actions: [issue]
-  # site-url:
+  # The site is served from a repository holding only the *rendered* book, so
+  # "edit this page" has no source file to open and is left off. An issue link
+  # still works, and is how a reader reports a mistake. `site-url` is not needed
+  # to serve the book; it is what gives the pages canonical URLs and a sitemap.
+  repo-url: https://github.com/psychometrician/god
+  repo-actions: [issue]
+  site-url: https://psychometrician.github.io/god-book/
 
   page-footer:
     left: |
