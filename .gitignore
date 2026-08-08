@@ -106,6 +106,14 @@ r-pkg/*.tar.gz
 r-pkg/god/inst/bin/
 r-pkg/god/tools/rust/
 
+# The same thing on the Python side: `setup.py` copies the engine into the
+# package before the wheel is built. It was not named here until the hook that
+# creates it existed, and a built engine is not something to commit.
+py-pkg/god/god/bin/
+py-pkg/god/build/
+py-pkg/god/dist/
+py-pkg/god/*.egg-info/
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb

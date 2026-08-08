@@ -1,0 +1,71 @@
+#!/bin/sh
+# Put the engine inside the package, at install time.
+#
+# **This is what makes an installed copy self-contained.** `run.R` asks
+# `system.file("bin", "god-cli", package = "god")` first, and nothing else in
+# the package ever creates that file. Without this script the lookup falls
+# through to a development checkout, which is fine on the machine that built it
+# and useless anywhere else.
+#
+# R runs `configure` on install, not on `R CMD build`. That ordering is not
+# cosmetic and it is the one trap here that ships a broken artifact silently:
+# **install first, then build the tarball**, or the tarball carries no engine
+# and works only for whoever built it.
+#
+#   R CMD INSTALL r-pkg/god          # runs this, fills inst/bin/
+#   R CMD build   r-pkg/god          # tars what is now on disk
+#
+# The engine is looked for in the order a person would: what they pointed at,
+# what they built, then what is on the path.
+
+set -e
+
+TARGET="inst/bin/god-cli"
+
+if [ -n "$GOD_CLI" ] && [ -x "$GOD_CLI" ]; then
+  FOUND="$GOD_CLI"
+else
+  FOUND=""
+  # Walk up looking for a cargo build. The package sits at `r-pkg/god`, so the
+  # workspace root is two levels up in a checkout, but this counts nothing and
+  # simply climbs, which is what both bindings already do at run time.
+  DIR="$(pwd)"
+  while [ "$DIR" != "/" ]; do
+    for PROFILE in release debug; do
+      CANDIDATE="$DIR/target/$PROFILE/god-cli"
+      if [ -x "$CANDIDATE" ]; then
+        FOUND="$CANDIDATE"
+        break 2
+      fi
+    done
+    DIR="$(dirname "$DIR")"
+  done
+
+  if [ -z "$FOUND" ]; then
+    FOUND="$(command -v god-cli 2>/dev/null || true)"
+  fi
+fi
+
+if [ -z "$FOUND" ]; then
+  echo "----------------------------- god ------------------------------"
+  echo "The god engine was not found, so this package cannot be installed."
+  echo ""
+  echo "god is a grammar over an engine, and the engine is a Rust binary"
+  echo "that has to exist before the R package can carry it."
+  echo ""
+  echo "  cargo build --release"
+  echo ""
+  echo "Then install again. If the engine is somewhere else already, point"
+  echo "GOD_CLI at it:"
+  echo ""
+  echo "  GOD_CLI=/path/to/god-cli R CMD INSTALL r-pkg/god"
+  echo "----------------------------------------------------------------"
+  exit 1
+fi
+
+mkdir -p inst/bin
+cp "$FOUND" "$TARGET"
+chmod +x "$TARGET"
+echo "god: carrying the engine from $FOUND"
+
+exit 0
