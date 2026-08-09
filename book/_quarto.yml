@@ -111,67 +111,77 @@ book:
   # A chapter arrives **with** the verbs it documents rather than before them.
   # Prose can name anything at all and still build clean, which is the one defect
   # no live chunk can catch.
+  # File names carry no numbers, and that is a rule rather than a style. The
+  # order is this list's alone; a number in a file name restates it, and two
+  # spellings of one order drift the day a chapter is inserted, which this book
+  # plans to keep doing.
   chapters:
     - index.qmd
 
-    - part: parts/1-six-verbs.qmd
+    - part: parts/six-verbs.qmd
       chapters:
-        - chapters/01-first-pipeline.qmd
-        - chapters/02-keeping-rows.qmd
-        - chapters/03-choosing-columns.qmd
-        - chapters/04-adding-a-column.qmd
-        - chapters/05-sorting-and-taking.qmd
-        - chapters/06-summarizing-by-group.qmd
-        - chapters/07-renaming-and-repeats.qmd
-        - chapters/08-words-that-repeat.qmd
+        - chapters/first-pipeline.qmd
+        - chapters/keeping-rows.qmd
+        - chapters/choosing-columns.qmd
+        - chapters/adding-a-column.qmd
+        - chapters/sorting-and-taking.qmd
+        - chapters/summarizing-by-group.qmd
+        - chapters/renaming-and-repeats.qmd
+        - chapters/words-that-repeat.qmd
 
-    - part: parts/2-shape.qmd
+    - part: parts/shape.qmd
       chapters:
-        - chapters/09-columns-into-rows.qmd
-        - chapters/10-rows-into-columns.qmd
+        - chapters/columns-into-rows.qmd
+        - chapters/rows-into-columns.qmd
 
-    - part: parts/3-values.qmd
+    - part: parts/values.qmd
       chapters:
-        - chapters/11-tidying-text.qmd
-        - chapters/12-converting-kinds.qmd
-        - chapters/13-dates.qmd
-        - chapters/14-one-way-or-another.qmd
-        - chapters/15-missing-values.qmd
+        - chapters/tidying-text.qmd
+        - chapters/converting-kinds.qmd
+        - chapters/dates.qmd
+        - chapters/one-way-or-another.qmd
+        - chapters/missing-values.qmd
 
-    - part: parts/4-more-tables.qmd
+    - part: parts/more-tables.qmd
       chapters:
-        - chapters/16-another-table.qmd
-        - chapters/17-has-a-partner.qmd
-        - chapters/18-adding-rows.qmd
+        - chapters/another-table.qmd
+        - chapters/has-a-partner.qmd
+        - chapters/adding-rows.qmd
 
-    - part: parts/5-along-the-rows.qmd
+    - part: parts/along-the-rows.qmd
       chapters:
-        - chapters/19-each-row-a-place.qmd
-        - chapters/20-the-total-so-far.qmd
+        - chapters/each-row-a-place.qmd
+        - chapters/the-total-so-far.qmd
 
-    - part: parts/6-choosing-columns.qmd
+    - part: parts/choosing-columns.qmd
       chapters:
-        - chapters/21-shape-of-a-name.qmd
-        - chapters/22-what-a-column-holds.qmd
-        - chapters/23-one-value-per-column.qmd
+        - chapters/shape-of-a-name.qmd
+        - chapters/what-a-column-holds.qmd
+        - chapters/one-value-per-column.qmd
 
-    - part: parts/7-how-it-works.qmd
+    - part: parts/how-it-works.qmd
       chapters:
-        - chapters/24-nothing-runs-yet.qmd
-        - chapters/25-what-it-wrote.qmd
-        - chapters/26-somewhere-else.qmd
-        - chapters/27-every-refusal.qmd
+        - chapters/nothing-runs-yet.qmd
+        - chapters/what-it-wrote.qmd
+        - chapters/somewhere-else.qmd
+        - chapters/every-refusal.qmd
 
     # Outside every part, because they belong to all of them: one question
     # answered with most of the vocabulary at once, and then where this grammar
     # stops and the sibling one starts.
-    - chapters/28-a-whole-question.qmd
-    - chapters/29-with-gog.qmd
+    - chapters/a-whole-question.qmd
+    - chapters/with-gog.qmd
 
   appendices:
     - appendices/a-two-languages.qmd
     - appendices/b-every-word.qmd
     - appendices/c-phrasebook.qmd
+
+# The provenance layer: the grammar's ideas are old, and the book says whose
+# they are. APA because the sibling book uses it, and one style across the two
+# books is the same rule as one spelling across the two languages.
+bibliography: references.bib
+csl: apa.csl
 
 # Quarto's default labels for the two dates above are "Published" and
 # "Modified". Both are renamed rather than accepted: "Published" alone reads as

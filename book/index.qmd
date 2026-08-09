@@ -88,7 +88,7 @@ You will see it lowercase everywhere in this book, including at the start of a
 sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
-pipeline. Go to [Part I](chapters/01-first-pipeline.qmd), which is the six
+pipeline. Go to [Part I](chapters/first-pipeline.qmd), which is the six
 everyday verbs in eight short chapters, and come back here when you want
 to know why the grammar refuses what it refuses. If you would rather see all of
 it at once first, [Appendix B](appendices/b-every-word.qmd) is every word there
@@ -548,7 +548,7 @@ day one and day two. The two are designed to sit next to each other: a question
 usually starts as a table you have to reshape and ends as a picture, so you start
 in god and finish in gog.
 
-[Chapter 29](chapters/29-with-gog.qmd) shows one question answered end to end
+[Chapter 29](chapters/with-gog.qmd) shows one question answered end to end
 that way. It is worth reading even if you never draw a plot, because it is the
 clearest statement of where this grammar's job ends.
 

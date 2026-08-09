@@ -10,7 +10,7 @@ in each of them.
 
 Nothing here is written by hand. Every cell is produced by asking god to print
 the pipeline in that language when this page is built, which is the same
-machinery [Chapter 25](../chapters/25-what-it-wrote.qmd) describes. A translation table maintained by a person goes
+machinery [Chapter 25](../chapters/what-it-wrote.qmd) describes. A translation table maintained by a person goes
 out of date; this one cannot, because it is generated from the pipeline it
 describes.
 

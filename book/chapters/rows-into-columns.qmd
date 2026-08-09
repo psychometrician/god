@@ -97,9 +97,10 @@ try:
         "mark":     [1, 9],
     })
     collect(twice >> widen(name = col.question, value = col.mark, by = col.student))
-except Exception as refusal:
-    # Not a `GodError`: this refusal is raised by the engine as it runs, so it
-    # arrives as whatever the engine raises. The words are the grammar's.
+except GodError as refusal:
+    # This refusal is raised by the engine as the query runs, and the binding
+    # hands it over as a `GodError` like every other one. The words are the
+    # grammar's, wrapped in the engine's report.
     print(refusal)
 ```
 
