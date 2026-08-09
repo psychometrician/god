@@ -757,6 +757,21 @@ book_guard("every word the grammar has, the book demonstrates",
 book_guard("every refusal the book shows, the grammar makes",
            "book/check_refusals.R", "check_refusals")
 
+# **A guard nobody runs is worse than no guard, because it reads as coverage.**
+# `check_vocabulary.R` sat on disk, complete and invoked by nothing, and looked
+# exactly like coverage until a survey caught it. So the checkers are
+# themselves checked: every `book/check_*` file has to be named by one of the
+# two suites, which are the places a guard is actually run from.
+if (dir.exists("book")) {
+  checkers <- list.files("book", pattern = "^check_.*[.](R|py)$")
+  suites <- c(readLines("r-pkg/god/tests/test_basic.R", warn = FALSE),
+              readLines("py-pkg/god/tests/test_basic.py", warn = FALSE))
+  orphaned <- Filter(function(f) !any(grepl(f, suites, fixed = TRUE)), checkers)
+  check("no book guard sits unwired", orphaned, character(0))
+} else {
+  cat("  skip  no book guard sits unwired (not run from the repository root)\n")
+}
+
 cat("\nthe guard can fail\n")
 local({
   before <- failed
