@@ -30,7 +30,6 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-ENGINE = ROOT / "target" / "release" / "god-cli"
 
 # Python exports these and the grammar does not know them, each for a reason
 # that is about Python rather than about the vocabulary.
@@ -56,12 +55,19 @@ R_EXTRA = {"collect", "run", "show_as", "god_sql", "use_engine"}
 
 
 def engine_vocabulary() -> dict[str, set[str]]:
-    if not ENGINE.exists():
-        print(f"the engine is not built: {ENGINE}", file=sys.stderr)
-        print("build it with `cargo build --release`", file=sys.stderr)
+    # The binding's own resolution, `GOD_CLI` included, rather than a private
+    # copy of the path. A private copy is how this harness once asked a
+    # different engine than the one the sentences ran on.
+    sys.path.insert(0, str(ROOT / "py-pkg" / "god"))
+    from god.run import GodError, _binary
+
+    try:
+        engine = _binary()
+    except GodError as refusal:
+        print(refusal, file=sys.stderr)
         raise SystemExit(1)
     out = subprocess.run(
-        [str(ENGINE), "--vocabulary"], capture_output=True, text=True, check=True
+        [engine, "--vocabulary"], capture_output=True, text=True, check=True
     ).stdout
     words: dict[str, set[str]] = {}
     for line in out.splitlines():

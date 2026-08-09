@@ -654,6 +654,29 @@ check_error("all_but wants all its columns inside it",
 check_error("take wants a whole number", lambda: sales >> take(2.5), "take(10)")
 check_error("a verb needs a table", lambda: 3 >> take(1), "works on a table")
 
+print("\nwhich engine answers")
+
+# The order is the contract, and it is the same in R: GOD_CLI, then a source
+# tree's own build, then the bundled copy, then the working directory's tree,
+# then the PATH. The second check is the one with a history: a bundled copy
+# left behind by a wheel build used to outrank everything, so a harness could
+# spend a day testing last week's engine.
+import os as _os  # noqa: E402
+import tempfile as _tempfile  # noqa: E402
+from god.run import _EXE as _exe, _binary as _resolve  # noqa: E402
+
+with _tempfile.NamedTemporaryFile(delete=False) as _f:
+    _named_engine = _f.name
+_old_god_cli = _os.environ.pop("GOD_CLI", None)
+_os.environ["GOD_CLI"] = _named_engine
+check("an explicit GOD_CLI outranks everything", _resolve(), _named_engine)
+_os.environ.pop("GOD_CLI", None)
+check("a source tree's build outranks a bundled copy",
+      _resolve().endswith(_os.path.join("target", "release", _exe)), True)
+if _old_god_cli is not None:
+    _os.environ["GOD_CLI"] = _old_god_cli
+_os.unlink(_named_engine)
+
 print("\nthe two bindings agree with the engine about every word")
 
 # **Run here rather than left to whoever remembers.** The R suite runs the book
@@ -715,6 +738,22 @@ else:
     failed += 1
     print("  FAIL  a printing backend renders something else\n"
           + _printed.stdout.rstrip()[-2000:])
+
+# The Python half of every documented refusal. The R suite forces the
+# `error: true` chunks; the try/except twins beside them were proved by
+# nothing until this guard, and a binding can drift visibly on a page while
+# parity stays green — `show_as` did exactly that for a day.
+_refusals = subprocess.run(
+    [sys.executable, str(Path(__file__).resolve().parents[3] / "book" / "check_refusals.py")],
+    capture_output=True, text=True,
+)
+if _refusals.returncode == 0:
+    passed += 1
+    print("  ok    every Python refusal in the book still refuses")
+else:
+    failed += 1
+    print("  FAIL  a Python refusal in the book stopped refusing\n"
+          + _refusals.stdout.rstrip()[-2000:])
 
 print("\nwhat the package exports")
 

@@ -683,6 +683,29 @@ if (requireNamespace("knitr", quietly = TRUE)) {
   cat("  note: knitr is not installed, so the document printing is untested\n")
 }
 
+cat("\nwhich engine answers\n")
+
+# The order is the contract, and it is the same in Python: GOD_CLI, then a
+# source tree's own build, then the bundled copy, then the working directory's
+# tree, then the PATH. The second check only means something where a source
+# tree exists; under `R CMD check` the installed copy's bundled engine is the
+# right answer, so the check is skipped there rather than failed.
+tmp_engine <- tempfile()
+file.create(tmp_engine)
+old_god_cli <- Sys.getenv("GOD_CLI", unset = NA)
+Sys.setenv(GOD_CLI = tmp_engine)
+check("an explicit GOD_CLI outranks everything", god:::god_binary(), tmp_engine)
+if (is.na(old_god_cli)) Sys.unsetenv("GOD_CLI") else Sys.setenv(GOD_CLI = old_god_cli)
+if (!is.null(god:::god_walk_up(dirname(god:::god_source_dir())))) {
+  check("a source tree's build outranks a bundled copy",
+        grepl(file.path("target", "release"), god:::god_binary(), fixed = TRUE),
+        TRUE)
+} else {
+  cat("  ok    (no source tree here; the bundled engine is the right answer)\n")
+  passed <- passed + 1
+}
+unlink(tmp_engine)
+
 cat("\nthe book is held to the grammar it documents\n")
 
 # Sourced rather than restated, so there is one copy of each rule. Both guards

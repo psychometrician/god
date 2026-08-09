@@ -58,7 +58,7 @@ same grammar, written as text:
 
 ```
 sales
-  then keep where [region] is 'West'
+  then keep where [region] is "West"
   then summarize [margin] as total([margin]) by [product]
 ```
 
@@ -102,7 +102,7 @@ A small vocabulary covers most of what people do and never all of it. So when yo
 reach the edge, god hands you the same pipeline in a language you already know:
 
 ```
-$ god show --as dplyr "sales then keep where [region] is 'West' then take 10"
+$ god --columns 'region:text,revenue:number' --as dplyr 'sales then keep where [region] is "West" then take 10'
 sales |>
   filter((region == "West")) |>
   head(10)

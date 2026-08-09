@@ -432,14 +432,16 @@ No small vocabulary covers everything, and this one does not try. When you reach
 its edge, you can ask what your pipeline would be in a tool you already use:
 
 ```
-$ god --as dplyr 'sales then keep where [region] is "West" then take 10'
+$ god --columns 'region:text,revenue:number' --as dplyr 'sales then keep where [region] is "West" then take 10'
 sales |>
   filter((region == "West")) |>
   head(10)
 ```
 
 The pipeline is wrapped in single quotes because a text value inside it is
-written with double quotes, which keeps the shell out of it.
+written with double quotes, which keeps the shell out of it. The `--columns`
+list is the table the pipeline is checked against: nothing is written out
+until the whole sentence has passed the same checks a running one would.
 
 Learning this grammar is meant to make the tools you already have easier, not to
 replace them.

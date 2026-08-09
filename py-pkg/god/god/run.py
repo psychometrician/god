@@ -255,28 +255,35 @@ _EXE = "god-cli.exe" if os.name == "nt" else "god-cli"
 
 
 def _binary() -> str:
-    bundled = Path(__file__).parent / "bin" / _EXE
-    if bundled.exists():
-        return str(bundled)
-
-    # Running from the source tree, which is how this is used before there is an
-    # installed package to bundle a binary into.
+    # The order is the contract, and R resolves in the same order. An explicit
+    # ``GOD_CLI`` always wins. A source tree's own build outranks the bundled
+    # copy, because the copy ``setup.py`` packs during a wheel build lingers
+    # beside the source afterward, exactly as old as the last wheel — bundled
+    # first is how a harness spends a day testing last week's engine. The
+    # bundled engine is the installed package's answer; the working directory's
+    # tree and the PATH come last, because neither has a reason to match this
+    # copy of the binding. The walk-ups exist **because the message below names
+    # `cargo build --release`**, and a message that names a fix the code then
+    # ignores is worse than no message.
     named = os.environ.get("GOD_CLI", "")
     if named and Path(named).exists():
         return named
 
+    beside_source = _walk_up(Path(__file__).resolve().parent)
+    if beside_source:
+        return beside_source
+
+    bundled = Path(__file__).parent / "bin" / _EXE
+    if bundled.exists():
+        return str(bundled)
+
+    beside_cwd = _walk_up(Path.cwd())
+    if beside_cwd:
+        return beside_cwd
+
     found = shutil.which(_EXE)
     if found:
         return found
-
-    # Where ``cargo build --release`` actually puts it. Looked for **because the
-    # message below tells the reader to run that command**, and a message that
-    # names a fix the code then ignores is worse than no message: you do the
-    # thing it asked for, nothing changes, and the tool looks broken rather than
-    # unconfigured.
-    built = _built_binary()
-    if built:
-        return built
 
     raise GodError(
         "the god engine was not found. Build it with `cargo build --release`, "
@@ -284,19 +291,12 @@ def _binary() -> str:
     )
 
 
-def _built_binary() -> str | None:
-    """Walk up looking for ``target/release/god-cli``.
-
-    From the working directory and from this file both, because the two differ:
-    a session run from the repository root finds it by the first, and one run
-    from anywhere else finds it by the second.
-    """
-    starts = [Path.cwd(), Path(__file__).resolve().parent]
-    for start in starts:
-        for directory in (start, *start.parents):
-            candidate = directory / "target" / "release" / _EXE
-            if candidate.exists():
-                return str(candidate)
+def _walk_up(start: Path) -> str | None:
+    """``target/release/god-cli``, in this directory or any above it."""
+    for directory in (start, *start.parents):
+        candidate = directory / "target" / "release" / _EXE
+        if candidate.exists():
+            return str(candidate)
     return None
 
 

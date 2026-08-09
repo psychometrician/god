@@ -265,21 +265,30 @@ god_exe <- function() {
 }
 
 god_binary <- function() {
+  # The order is the contract, and Python resolves in the same order. An
+  # explicit `GOD_CLI` always wins. A source tree's own build outranks the
+  # bundled copy, because an engine staged into `inst/bin` lingers beside the
+  # source after an in-place install, exactly as old as it — bundled first is
+  # how a harness spends a day testing last week's engine. The bundled engine
+  # is the installed package's answer; the working directory's tree and the
+  # PATH come last, because neither has a reason to match this copy of the
+  # binding. The walk-ups exist **because the message below names
+  # `cargo build --release`**, and a message that names a fix the code then
+  # ignores is worse than no message.
+  named <- Sys.getenv("GOD_CLI", "")
+  if (nzchar(named) && file.exists(named)) return(named)
+
+  beside_source <- god_walk_up(dirname(god_source_dir()))
+  if (!is.null(beside_source)) return(beside_source)
+
   bundled <- system.file("bin", god_exe(), package = "god")
   if (nzchar(bundled) && file.exists(bundled)) return(bundled)
 
-  # Running from the source tree, which is how this is used before there is an
-  # installed package to bundle a binary into.
-  built <- Sys.getenv("GOD_CLI", "")
-  if (nzchar(built) && file.exists(built)) return(built)
+  beside_cwd <- god_walk_up(getwd())
+  if (!is.null(beside_cwd)) return(beside_cwd)
 
-  # Where `cargo build --release` actually puts it. Looked for **because the
-  # message below tells the reader to run that command**, and a message that
-  # names a fix the code then ignores is worse than no message: you do the thing
-  # it asked for, nothing changes, and the tool looks broken rather than
-  # unconfigured.
-  found <- god_built_binary()
-  if (!is.null(found)) return(found)
+  on_path <- unname(Sys.which(god_exe()))
+  if (nzchar(on_path)) return(on_path)
 
   stop(
     "the god engine was not found. Build it with `cargo build --release`, or point GOD_CLI at it",
@@ -287,22 +296,15 @@ god_binary <- function() {
   )
 }
 
-# Walk up looking for `target/release/god-cli`.
-#
-# From the working directory and from this file both, because the two differ:
-# a session run from the repository root finds it by the first, and one run from
-# anywhere else finds it by the second.
-god_built_binary <- function() {
-  starts <- unique(c(getwd(), dirname(god_source_dir())))
-  for (start in starts) {
-    directory <- normalizePath(start, mustWork = FALSE)
-    repeat {
-      candidate <- file.path(directory, "target", "release", god_exe())
-      if (file.exists(candidate)) return(candidate)
-      parent <- dirname(directory)
-      if (identical(parent, directory)) break
-      directory <- parent
-    }
+# `target/release/god-cli`, in this directory or any above it.
+god_walk_up <- function(start) {
+  directory <- normalizePath(start, mustWork = FALSE)
+  repeat {
+    candidate <- file.path(directory, "target", "release", god_exe())
+    if (file.exists(candidate)) return(candidate)
+    parent <- dirname(directory)
+    if (identical(parent, directory)) break
+    directory <- parent
   }
   NULL
 }

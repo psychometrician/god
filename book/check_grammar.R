@@ -25,7 +25,7 @@
 #
 # Run from the repository root; sourced by the R test suite.
 
-check_grammar <- function(dirs = "book", binary = NULL) {
+check_grammar <- function(dirs = "book", files = "README.md", binary = NULL) {
   if (is.null(binary)) binary <- god_engine()
   if (is.null(binary)) {
     cat("SKIP: the engine is not built, so no pipeline in the book was checked\n")
@@ -37,6 +37,11 @@ check_grammar <- function(dirs = "book", binary = NULL) {
   # The same rule the other guards apply: `_book/` is output, and a
   # `_`-prefixed file is one the author has deliberately withheld.
   qmds <- qmds[!grepl("/_", qmds, fixed = TRUE)]
+  # The root README shows the same transcript the preface does, and it sat
+  # outside this guard for as long as the guard only read `book/` — which is
+  # how the exact defect class named in the header above survived there after
+  # it had been killed in the preface. Markdown is read the same way `.qmd` is.
+  qmds <- c(qmds, files[file.exists(files)])
 
   # Every flag the command line actually has, read from the command line rather
   # than written down here. A list restated in a guard is a list that goes stale
@@ -96,7 +101,9 @@ check_block <- function(block, binary, flags, short) {
   prompts <- grep("^\\s*\\$\\s+god\\b", body)
   if (length(prompts)) {
     checked <- 0L
-    for (i in prompts) {
+    ends <- c(prompts[-1L] - 1L, length(body))
+    for (k in seq_along(prompts)) {
+      i <- prompts[[k]]
       command <- sub("^\\s*\\$\\s+", "", body[i])
       complaint <- check_command(command, flags)
       if (!is.null(complaint)) {
@@ -109,7 +116,29 @@ check_block <- function(block, binary, flags, short) {
         refusal <- god_refusal(binary, pipeline)
         if (!is.null(refusal)) {
           bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(refusal)))
+          next
         }
+      }
+      # **Then the command is run, and the page's output has to be the
+      # output.** Parsing alone let a transcript through that exits 1: every
+      # flag was real and the pipeline parsed, and the command still refused
+      # to answer, because `--columns` was missing. So a transcript is
+      # executed the way every chunk in the book is, and the lines under the
+      # prompt are compared against what the command printed. A transcript
+      # that means to show a refusal has no convention yet; the first one
+      # added will fail here, and that is the moment to design one.
+      shown <- if (i < ends[[k]]) body[(i + 1L):ends[[k]]] else character(0)
+      ran <- run_transcript(binary, command)
+      if (!is.null(ran$complaint)) {
+        bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(ran$complaint)))
+        next
+      }
+      if (!identical(trimws(shown, "right"), trimws(ran$lines, "right"))) {
+        bad <- c(bad, sprintf(
+          "  %s:%d  the page shows output the command does not print\n%s",
+          short, at + i - 1L,
+          indent(paste0("page   | ", paste(shown, collapse = " / "), "\n",
+                        "engine | ", paste(ran$lines, collapse = " / ")))))
       }
     }
     return(list(bad = bad, checked = checked))
@@ -167,6 +196,20 @@ god_flags <- function(binary) {
   help <- paste(readLines(out, warn = FALSE), collapse = "\n")
   found <- regmatches(help, gregexpr("--[a-z][a-z-]*", help))[[1]]
   unique(found)
+}
+
+# The transcript, actually run: exit 0 and its stdout, or the complaint.
+run_transcript <- function(binary, command) {
+  tokens <- shell_tokens(command)[-1L]
+  out <- tempfile(); err <- tempfile()
+  on.exit(unlink(c(out, err)), add = TRUE)
+  status <- suppressWarnings(system2(binary, shQuote(tokens), stdout = out, stderr = err))
+  if (status != 0L) {
+    return(list(complaint = sprintf(
+      "the command exits %d rather than answering:\n%s", status,
+      paste(readLines(err, warn = FALSE), collapse = "\n")), lines = NULL))
+  }
+  list(complaint = NULL, lines = readLines(out, warn = FALSE))
 }
 
 # -- reading a command line --------------------------------------------------
