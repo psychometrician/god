@@ -154,11 +154,12 @@ jobs:
           print("venv ok:", pd.__version__, duckdb.__version__, gog.__version__)
           PY
 
-      # The five guards, before the render rather than after it. Each one is
+      # The book's guards, before the render rather than after it. Each one is
       # cheap and each one fails on something a render would happily publish:
-      # a pipeline the grammar cannot read, a word in the vocabulary that no
-      # chapter demonstrates, a documented refusal that has stopped refusing —
-      # in either language, which is what the fifth covers.
+      # a pipeline the grammar cannot read, a word no chapter demonstrates, a
+      # refusal that stopped refusing in either language, a tabset that lost a
+      # tab, a chapter that broke the template its part page promises, a rule
+      # the preface states and the pages no longer keep.
       #
       # They also run inside the two suites, which is where a developer meets
       # them. Repeated here because a publish is the last place to find out.
@@ -169,6 +170,9 @@ jobs:
           Rscript book/check_prose.R
           Rscript book/check_vocabulary.R
           Rscript book/check_refusals.R
+          Rscript book/check_tabs.R
+          Rscript book/check_template.R
+          Rscript book/check_promises.R
           book/.venv/bin/python book/check_refusals.py
 
       - name: Render the whole book to HTML

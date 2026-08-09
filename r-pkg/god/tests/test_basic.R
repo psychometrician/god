@@ -756,6 +756,12 @@ book_guard("every word the grammar has, the book demonstrates",
 # would report every refusal as passing while testing none.
 book_guard("every refusal the book shows, the grammar makes",
            "book/check_refusals.R", "check_refusals")
+book_guard("every tabset holds one sentence in both languages",
+           "book/check_tabs.R", "check_tabs")
+book_guard("every verb chapter follows the template",
+           "book/check_template.R", "check_template")
+book_guard("the book keeps the rules its preface states",
+           "book/check_promises.R", "check_promises")
 
 # **A guard nobody runs is worse than no guard, because it reads as coverage.**
 # `check_vocabulary.R` sat on disk, complete and invoked by nothing, and looked
