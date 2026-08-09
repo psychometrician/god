@@ -3,10 +3,26 @@
 One table is rarely the whole story. A second one holds the names your first
 table only has codes for, or the rows you collected last month.
 
-Three chapters, and they answer three different questions. `join` brings columns
-in from another table. `matching` asks whether a row has a partner over there
-without bringing anything in. `add_rows` stacks a second table underneath.
+Combining tables is the oldest part of the algebra: the join is most of what
+Codd's 1970 paper is remembered for [@codd1970], and it is the operation that
+makes a collection of small tables more useful than one wide one. It is also
+where pipelines go quietly wrong, which is why this part is three chapters
+rather than one.
 
-The distinction between the first two is worth the chapter it gets. A join can
-multiply your rows without telling you, and the reason `matching` exists is that
-it cannot.
+The three chapters answer three different questions. `join` brings columns in
+from another table. `matching` asks whether a row has a partner over there,
+without bringing anything in. `add_rows` stacks a second table underneath.
+The order is deliberate: first the verb everyone arrives wanting, then the
+verb that keeps the first one honest, then the one that is simpler than both.
+
+One law holds the part together: **a join must not multiply rows behind you**. If the other table has three rows for a product, a join hands back
+three rows for each of yours, and nothing about the result says so. That is
+not a defect of joins; it is what a join is. The reason `matching` exists is
+that it cannot do this: a question about partnership returns each of your
+rows once or not at all, however many partners it found. The distinction is
+worth the chapter it gets.
+
+The cast is built for this part. `sales` holds a product that `products` has
+never heard of, and `products` lists one that never sold, so every join in
+these chapters has rows that match and rows that do not, the way real
+lookups do.

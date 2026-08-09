@@ -157,6 +157,49 @@ sales
 Both versions above produce exactly this, which is why a pipeline can move
 between a script, a notebook and a warehouse without being rewritten.
 
+## The rules this book is held to
+
+The preface makes large claims, so the book binds itself to five rules you can
+check, and every one of them is checked by a script each time the book is
+built.
+
+- **Both tabs are one sentence.** Every example is written twice, R above
+  Python, and both run when the book is built. Two tabs disagreeing on a page
+  is a defect the build refuses to ship.
+- **Questions first.** A teaching chapter opens with a question about data,
+  never with a feature. The verb arrives as an answer.
+- **A small cast.** The same few tables carry the whole book, and three
+  quarters of its pipelines start from one of them.
+- **Read it aloud.** The first pipeline of every teaching chapter is followed
+  by the same sentence in the grammar's own words, in italics. The gloss is
+  not decoration: it is a pipeline too, and the build parses every one.
+- **Refusals on stage.** What the grammar refuses is shown refusing, live, in
+  both languages, so an error message is something you have already read
+  before one finds you.
+
+## The cast
+
+Every example in this book runs on the same few tables, declared here once.
+
+- `sales`: fifteen rows of orders. Three regions, four products, a year of
+  dates, a quantity and the money. Small enough to check a total by eye,
+  large enough that no group is a single row.
+- `products`: the lookup table beside it. One product nobody sold, and one
+  sale of a product nobody lists; the mismatch is kept on purpose, for the
+  chapters on joining.
+- `survey`: the wide one. Six respondents, eight score columns, and four
+  columns of everything else, which is what choosing columns by name is for.
+- `answers` and `marks`: the same facts twice, once wide and once long, for
+  the chapters on reshaping.
+- `messy` and `diary`: text that needs repair, and dates that need reading.
+- `gapminder`: 1,704 rows of countries and years [@bryan2025gapminder], the
+  one table you cannot check by eye, for the moments a verb has to prove it
+  survives scale.
+
+The cast is closed. A new table costs you attention, so when a chapter needs a
+special shape (two rows that collide, a table with one column) it builds the
+smallest table that shows it, and returns to the cast in the next example.
+
 ## Why there is another one of these
 
 You have probably met at least one tool for this already. Here is one operation,
@@ -181,9 +224,16 @@ are small: about fifteen operations, and you already know most of them.
 
 The ideas are also old, and that is worth knowing before learning a sixth
 spelling of them. Choosing rows, choosing columns, joining, grouping and
-totaling were set out as an algebra in 1970, and little has been added since
-except window functions and the two ways of reshaping a table. What changes
-every few years is the syntax, not the operations.
+totaling were set out as an algebra by E. F. Codd in 1970 [@codd1970], and the
+ambition to write that algebra as English sentences is nearly as old: SEQUEL,
+the query language that became SQL, stated it in its title in 1974
+[@chamberlin1974]. Little has been added since except window functions and the
+two directions of reshaping, and the pattern behind `summarize ... by` had a
+name, split-apply-combine, before this project existed [@wickham2011]. What
+changes every few years is the syntax, not the operations: pandas
+[@mckinney2010] and dplyr [@wickham2023dplyr; @wickham2019tidyverse] are the
+two homes this vocabulary answers to, and the shape its tables arrive in has a
+name and a paper of its own [@wickham2014tidy].
 
 ## Five engines, one vocabulary
 

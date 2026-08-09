@@ -1,14 +1,41 @@
 # The six verbs
 
-Six words do most of the work. You can keep rows, choose columns, add a column,
-summarize by group, sort, and take the first few. Almost everything people
-actually do to a table is some arrangement of those six.
+Six words do most of the work anyone does to a table. You can keep rows,
+choose columns, add a column, summarize by group, sort, and take the first
+few. Almost everything else people do is an arrangement of those six.
 
-This part introduces them one at a time, and every chapter is short on purpose.
-By the end of it you can answer real questions, and the rest of the book is the
-same six verbs with more to say inside them. Two short chapters close the part:
-renaming and dropping repeats, and the small words that travel with every verb.
+The claim is older than any tool you have used. In 1970, E. F. Codd showed
+that questions about tables need only a handful of operations, each taking a
+table and giving a table back, so that the operations compose without limit
+[@codd1970]. SQL gave that algebra an English surface four years later
+[@chamberlin1974], and every tool since has carried the same handful under
+different names: dplyr, pandas, polars, Spark. The six verbs in this part are
+those survivors, spelled once. Nothing here is god's invention, and that is
+the point. You have already met every idea in this part, in at least one
+other spelling.
 
-If you have used dplyr, you already know five of these under other names. If you
-have used pandas or SQL, you know all six as several different spellings each,
-and the point of this part is that here there is one spelling.
+The part runs in one direction. The first chapter shows a whole pipeline, so
+you know what the pieces are for before you meet them one at a time. Six
+short chapters then take one verb each, a seventh adds renaming and dropping
+repeats, and an eighth gathers the small words (`by`, `as`, `where`,
+`all_but`, `descending`) that travel between verbs. Two practice chapters
+close the part: one where you read pipelines, and one where you write them.
+
+One law holds the part together: **one word, one meaning**. `by` means the
+same thing after `summarize` as it does after `take`; `as` always names what
+was made; nothing is spelled two ways. The same law is applied to this book's
+own structure. Every verb chapter is built one way, and you can hold it to
+the shape. It opens with a question about data, and the verb arrives as the
+answer. The first pipeline is followed by the same sentence in the grammar's
+own words, in italics; read that one aloud, and every later pipeline reads
+the same way. The middle of a chapter shows what the verb can vary and argues
+one design decision. Two sections close every verb chapter, always last,
+always under the same names: *What travels with it* lists the small words the
+verb shares with the rest of the grammar, and *What it refuses* shows the
+refusals live, in both languages. The sameness is deliberate. A book whose
+chapters share one shape is faster to learn the second time than the first.
+
+The promise this part answers for is the preface's: read a pipeline aloud on
+day one, write one on day two, and still have it after a year away. When the
+practice chapters are behind you, the first two clauses are due. The third is
+what the sameness is for.

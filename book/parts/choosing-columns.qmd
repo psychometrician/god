@@ -1,12 +1,25 @@
 # Choosing columns without naming them
 
-Every column chosen so far has been chosen by writing its name. That holds until
-the table is wide, or until the columns it arrives with change from one month to
-the next.
+Every column chosen so far has been chosen by writing its name. That holds
+until the table is wide, or until the columns it arrives with change from one
+month to the next. The `survey` table is this part's stage: eight score
+columns and four of everything else, which is exactly wide enough that
+naming columns one by one is the wrong tool.
+
+Split-apply-combine named the pattern of doing one thing to each group of
+rows [@wickham2011]; this part is the same pattern turned sideways, one thing
+to each of a set of columns. dplyr grew a helper family for it (`starts_with`,
+`ends_with`, `contains`, `where`, `across`), and pandas answers it with
+string methods over `df.columns`. god replaces the family with one word and a
+written subject.
 
 Three chapters, each a different question about a column. What is its name
-shaped like? What kind of thing does it hold? And once you have chosen a set of
-them, how do you apply one calculation to all of them at once?
+shaped like? What kind of thing does it hold? And once you have chosen a set
+of them, how do you apply one calculation to all of them at once?
 
-This is the part that replaces a family of helper functions in other tools with
-one word and a written subject.
+One law holds the part together: **say the subject, written down, never
+guessed**. A condition about a column's name writes the word `name`; a
+condition about what it holds writes the word `kind`; the calculation applied
+to every chosen column writes the word `value` for the column being worked
+on. Nothing is inferred from context, because a selection you cannot read
+back is a selection you cannot trust a year from now.

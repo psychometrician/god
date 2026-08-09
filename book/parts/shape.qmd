@@ -1,11 +1,25 @@
 # Changing a table's shape
 
-The six verbs work down a table. Sometimes the table is the wrong shape to begin
-with: a year in four columns when you wanted a year in four rows, or the reverse.
+The six verbs work down a table. Sometimes the table is the wrong shape to
+begin with: a year in four columns when you wanted a year in four rows, or the
+reverse.
 
-Two verbs turn a table one way and back. `lengthen` makes it taller and `widen`
-makes it wider, and the names say which, because nobody could remember which of
-`melt` and `cast` did what.
+The target shape has a name and a paper of its own. A table is *tidy* when
+each variable is a column and each observation is a row [@wickham2014tidy],
+and most of what a pipeline can do, it can only do to a table in that shape.
+Real tables arrive the other way as often as not, because the shape that is
+easy to type into is rarely the shape that is easy to ask questions of.
 
-This is the part where a reader arriving from tidyr will recognize the job and
-not the argument list. There is a table in the first chapter comparing the two.
+Two verbs turn a table one way and back, and the names say which. `lengthen`
+makes it taller and `widen` makes it wider, because nobody could remember
+which of `melt` and `cast` did what, and a verb whose direction is not in its
+name has to be looked up every time. `lengthen` comes first in this part
+because it is the direction data usually needs on arrival; `widen` is the way
+back, for the table a person reads rather than the table a pipeline works on.
+
+One law holds the part together: **the same facts, either shape**. Reshaping
+moves values, and it never invents or discards one; where a verb has to
+decide something you did not say, it prints the assumption back, so what it
+chose is on the page rather than in your imagination. A reader arriving from
+tidyr will recognize the job here and not the argument list, and the first
+chapter has a table comparing the two.

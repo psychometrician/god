@@ -1,12 +1,27 @@
 # What goes in a column
 
-So far a new column has been arithmetic on the ones already there. This part is
-about everything else you can put in one.
+So far a new column has been arithmetic on the ones already there. This part
+is about everything else you can put in one: text you need to clean up, a
+number that arrived as text, a date you want the year out of, a category that
+depends on a condition, and a value that is missing, which is its own subject
+and gets a chapter.
 
-Text you need to clean up. A number that arrived as text. A date you want the
-year out of. A category that depends on a condition. A value that is missing,
-which is its own subject and gets a chapter.
+The cell is where grammars usually leak. Most tools keep their verbs small
+and then hand the inside of a column to something larger: a regular
+expression language for text, a format string for dates, the host language
+itself for everything conditional. Each of those is a second grammar hiding
+inside the first, and each is a thing you relearn every time you return.
 
-Every one of these is written the same way, inside `add` or `summarize`, so
-there is no new grammar in this part. There are only more words to write in a
-place you already know.
+So one law holds this part together: **no new grammar inside a cell**. Every
+value in this part is written the same way, as a plain named function inside
+`add` or `summarize`, taking columns and giving a column. The words are few
+and closed on purpose: three text tests, a handful of text repairs, four
+conversions that say what they give, five date parts, one conditional. When
+they are not enough, the answer is the escape hatch in Part VII, not a
+pattern language smuggled in through a cell.
+
+The order of the chapters is the order the problems arrive in. Text first,
+because untidy text is how most tables greet you; then conversions, because a
+cleaned column is often still the wrong kind; then dates, the conversion with
+its own vocabulary; then the conditional; then missing values last, because
+missingness touches everything before it.
