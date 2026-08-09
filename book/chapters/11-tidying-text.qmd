@@ -73,4 +73,5 @@ messy >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw))) >> pick
 
 The same two words also work on a column's *name* rather than on its contents,
 which is how you match names whose capitalization you cannot rely on. That is
-Chapter 22, and it needs no second spelling of either word.
+[Chapter 22](22-what-a-column-holds.qmd), and it needs no second spelling of
+either word.

@@ -234,7 +234,8 @@ import gog
 ```
 
 Then `col.life` is god's and `gog.col.life` is gog's, and nothing is ambiguous.
-Appendix A says the same thing about every other name god takes over.
+[Appendix A](../appendices/a-two-languages.qmd) says the same thing about every
+other name god takes over.
 
 ## Where to go next
 

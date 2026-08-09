@@ -81,8 +81,8 @@ learned the grammar in one language has learned it in the other. Both tabs on
 every page of this book are executed when the book is built, so that claim is
 checked on every page rather than asserted once here.
 
-Appendix A has the rest of the differences between the two languages, and you do
-not need it yet.
+[Appendix A](../appendices/a-two-languages.qmd) has the rest of the differences
+between the two languages, and you do not need it yet.
 
 ## How to read the rest
 
