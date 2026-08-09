@@ -59,6 +59,24 @@ survey >> pick(where(name.ends("_score") | (name == "respondent")))
 
 :::
 
+`contains` is the third test, for a mark that sits in the middle of a name:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> pick(where(grepl("q", name)))
+```
+
+### Python
+
+```{python}
+survey >> pick(where(name.contains("q")))
+```
+
+:::
+
 If no column's name matches, that is refused rather than handing back a table
 with no columns at all.
 

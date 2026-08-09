@@ -6,7 +6,8 @@ actually do to a table is some arrangement of those six.
 
 This part introduces them one at a time, and every chapter is short on purpose.
 By the end of it you can answer real questions, and the rest of the book is the
-same six verbs with more to say inside them.
+same six verbs with more to say inside them. Two short chapters close the part:
+renaming and dropping repeats, and the small words that travel with every verb.
 
 If you have used dplyr, you already know five of these under other names. If you
 have used pandas or SQL, you know all six as several different spellings each,

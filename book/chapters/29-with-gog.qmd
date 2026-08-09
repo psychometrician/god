@@ -7,13 +7,19 @@ title: "Where this ends, and gog begins"
 ```{r}
 #| include: false
 suppressMessages(library(gog))
-nations <- read.csv("https://psychometrician.github.io/gog-book/data/gm_all.csv")
+# Gapminder's country panel (CC BY 4.0), vendored beside the book: this render
+# used to fetch it from the sibling book's site, which made one URL the single
+# point of failure for the whole build.
+nations <- read.csv(find_up("book/data/gm_all.csv"))
 ```
 
 ```{python}
 #| include: false
 import gog
-nations = pd.read_csv("https://psychometrician.github.io/gog-book/data/gm_all.csv")
+_data = next(p / "book" / "data" / "gm_all.csv"
+             for p in (pathlib.Path.cwd(), *pathlib.Path.cwd().parents)
+             if (p / "book" / "data" / "gm_all.csv").exists())
+nations = pd.read_csv(_data)
 ```
 
 god manipulates tables. It does not draw them, and it is not going to, because
@@ -32,7 +38,8 @@ This chapter is one question answered end to end. Nothing else is loaded.
 
 Gapminder's country panel: 142 countries, twelve observations each from 1952 to
 2007, 1,704 rows in all. It is a real table rather than a demonstration, which
-is the point of using it here.
+is the point of using it here. The numbers are Gapminder's, CC BY 4.0, and the
+file ships beside the book, so rendering this page needs no network.
 
 ::: {.panel-tabset}
 

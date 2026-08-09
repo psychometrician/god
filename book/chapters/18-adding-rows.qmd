@@ -33,6 +33,24 @@ sales >> add_rows(more) >> take(6)
 
 :::
 
+The other table can even be this one, which is how a table is doubled:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> add_rows(sales) |> summarize(rows = row_count())
+```
+
+### Python
+
+```{python}
+sales >> add_rows(sales) >> summarize(rows = row_count())
+```
+
+:::
+
 Both tables need the same columns. A column on one side only is refused rather
 than filled in with missing values, because a half-empty column that says nothing
 is how a mistake survives to the end of a pipeline.

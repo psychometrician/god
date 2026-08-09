@@ -4,7 +4,7 @@ title: "The words that repeat"
 
 {{< include ../_setup.qmd >}}
 
-You have met six verbs and a handful of small words that go with them: `by`,
+You have met eight verbs and a handful of small words that go with them: `by`,
 `where`, `as`, `all_but`, `descending`. This chapter is about those small words,
 and it is the shortest useful thing in the book.
 

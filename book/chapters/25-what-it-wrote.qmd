@@ -182,3 +182,35 @@ except GodError as refusal:
 ```
 
 :::
+
+## When the query is all you want
+
+`show_as` starts from a pipeline and a table you are holding. `god_sql` is the
+shortcut for the other situation: you have the sentence and you know the
+columns, and the query itself is the thing you are after, for a scheduler, a
+dashboard, or a warehouse console that will run it far from here.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+cat(god_sql(
+  'sales then keep where [region] is "West" then take 3',
+  "region:text,product:text,revenue:number"
+))
+```
+
+### Python
+
+```{python}
+print(god_sql(
+    'sales then keep where [region] is "West" then take 3',
+    "region:text,product:text,revenue:number"
+))
+```
+
+:::
+
+No table is attached and none is needed. The column list is the contract, and
+the same checks run against it before anything is written out.

@@ -4,8 +4,9 @@ title: "The same sentence in six dialects"
 
 {{< include ../_setup.qmd >}}
 
-If you already write dplyr, pandas, polars, PySpark or SQL, this appendix is the
-translation. Each row is one god sentence and what it becomes in each of them.
+If you already write dplyr, pandas, polars, PySpark, SQL or Spark SQL, this
+appendix is the translation. Each row is one god sentence and what it becomes
+in each of them.
 
 Nothing here is written by hand. Every cell is produced by asking god to print
 the pipeline in that language when this page is built, which is the same
@@ -71,6 +72,19 @@ knitr::kable(
     god     = code(sub("^sales then ", "", sentences)),
     polars  = code(short(vapply(sentences, spoken, "", "polars"))),
     pyspark = code(short(vapply(sentences, spoken, "", "pyspark"))),
+    check.names = FALSE, row.names = NULL
+  ),
+  format = "html", escape = FALSE
+)
+```
+
+```{r}
+#| echo: false
+knitr::kable(
+  data.frame(
+    god   = code(sub("^sales then ", "", sentences)),
+    sql   = code(short(vapply(sentences, spoken, "", "sql"))),
+    spark = code(short(vapply(sentences, spoken, "", "spark"))),
     check.names = FALSE, row.names = NULL
   ),
   format = "html", escape = FALSE

@@ -88,8 +88,8 @@ You will see it lowercase everywhere in this book, including at the start of a
 sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
-pipeline. Go to [Part I](chapters/01-first-pipeline.qmd), which is six
-short chapters and the whole working vocabulary, and come back here when you want
+pipeline. Go to [Part I](chapters/01-first-pipeline.qmd), which is the six
+everyday verbs in eight short chapters, and come back here when you want
 to know why the grammar refuses what it refuses. If you would rather see all of
 it at once first, [Appendix B](appendices/b-every-word.qmd) is every word there
 is, on one page.
@@ -499,15 +499,30 @@ back, measure the engine, and ask `show_as` for the exact query to measure.
 Speed was never the goal here. The goal is that you can still write a pipeline a
 year after the last one.
 
+## Installing it
+
+In R, from R-universe, as a binary with nothing else to set up:
+
+```r
+install.packages("god",
+  repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
+```
+
+Python is next: the packages are built, and when the release lands it will be
+`pip install grammar-of-data`, with `import god` regardless, because the PyPI
+name `god` was taken in 2016 by an unrelated package.
+
+Every example in this book runs, live, in both languages, exactly as printed.
+
 ## Who this book is for
 
 You have worked with data in a table before. You know what a row is, what a
 column is, and what it means to group by something and count. That is the whole
 assumption.
 
-If you are near the start, read the book in order. Part I is six short
-chapters and six verbs, and when you finish it you can answer real questions
-about a table. Nothing before Part I is required, including this preface.
+If you are near the start, read the book in order. Part I is the six everyday
+verbs, in eight short chapters, and when you finish it you can answer real
+questions about a table. Nothing before Part I is required, including this preface.
 
 If you have used several of these tools already, you are the other reader this
 book is written for, and you will get more out of it from the back. Appendix
