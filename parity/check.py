@@ -189,6 +189,17 @@ def sentences(path: Path) -> list[str]:
 
 
 def main() -> int:
+    # The working files are cleaned up even when a witness dies mid-loop: the
+    # allowlist .gitignore makes any leftover a visible stray in `git status`,
+    # and an exception used to leak them past the cleanup at the loop's end.
+    try:
+        return _main()
+    finally:
+        for leftover in (".driver.R", ".pipeline.god"):
+            (ROOT / "parity" / leftover).unlink(missing_ok=True)
+
+
+def _main() -> int:
     pipelines = sentences(CORPUS)
     r_native = sentences(R_CORPUS)
     py_corpus = sentences(PY_CORPUS)
@@ -257,9 +268,6 @@ def main() -> int:
 
         agreed += 1
         print(f"  ok     {i:2}. {label}")
-
-    for leftover in (".driver.R", ".pipeline.god"):
-        (ROOT / "parity" / leftover).unlink(missing_ok=True)
 
     print(f"\n{agreed} agreed, {disagreed} disagreed")
     return 1 if disagreed else 0
