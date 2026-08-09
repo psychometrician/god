@@ -4,7 +4,9 @@ title: "Sorting and taking"
 
 {{< include ../_setup.qmd >}}
 
-`sort` orders the rows, and `descending` reverses one key.
+Which three orders were the largest of the year? Two verbs answer it
+together, and they nearly always travel as a pair: `sort` puts the rows in an
+order, and `take` keeps the first few of them.
 
 ::: {.panel-tabset}
 
@@ -22,9 +24,28 @@ sales >> sort(descending(col.revenue)) >> take(3)
 
 :::
 
-There is no `ascending`, because ascending is what happens when you do not ask
-for anything, and a word meaning "do the default" is a second way to say the
-same thing. Sorting by several keys reads left to right.
+*`sales then sort [revenue] descending then take 3`*
+
+`take` on its own is honest but rarely what you meant: it keeps the first
+rows *in whatever order the table happens to be in*, which is fine for
+peeking at a table and wrong for answering a question. The sort in front is
+what turns "some three rows" into "the three largest", and that distinction
+returns with force at the end of this chapter.
+
+## Why there is no ascending
+
+`descending` reverses one key, and there is no matching word `ascending`,
+because ascending is what happens when you do not ask for anything. A word
+that means "do the default" is a second way to say the same thing, and every
+second way costs every reader a small doubt: if both spellings exist, do
+they differ? In this grammar, if two spellings existed they *would* differ,
+so the redundant one is simply absent. This is the smallest example of the
+one-way rule you will meet, and the cheapest place to get used to it.
+
+## Several keys
+
+Sorting by several keys reads left to right: the first key decides, the
+second breaks its ties, and so on down.
 
 ::: {.panel-tabset}
 
@@ -41,3 +62,77 @@ sales >> sort(col.product, descending(col.revenue))
 ```
 
 :::
+
+`descending` wraps the key it reverses, not the whole sort, so mixed
+directions are ordinary: products forward, revenue backward, exactly as
+written.
+
+## The latest one of each
+
+Here is the pair doing its best work. Which was the most recent order in
+each region? In most tools this question has a name you have to learn
+(`slice_max`, `nlargest`, a window function with a filter); here it is the
+two verbs you already have, plus `by`:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(date)) |> take(1, by = region) |> pick(region, date, product)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.date)) >> take(1, by = col.region) >> pick(col.region, col.date, col.product)
+```
+
+:::
+
+*`sales then sort [date] descending then take 1 by [region] then pick [region, date, product]`*
+
+Sort newest first, take the first row of each region. The dates in this book
+are written `2026-10-02` style, and text in that shape sorts correctly as
+text, which is why no date machinery was needed; Part III introduces the real
+date words for the shapes that do not sort on their own.
+
+## What travels with it
+
+- `descending` belongs to the key it wraps, and only `sort` accepts it.
+- `by` after `take` means what `by` means everywhere: do this per group. The
+  chapter on the small words returns to it.
+- `take` composes with everything that settles an order, and the windowed
+  words in Part V (`rank`, `row_number`) lean on `sort` in exactly the way
+  `take ... by` does below.
+
+## What it refuses
+
+The first row *of each group* means nothing until something has said first by
+what. `take ... by` without a sort in front is refused, not guessed at:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> take(1, by = region) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> take(1, by = col.region))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+A bare `take` is allowed and a grouped one is not, and the asymmetry is the
+honest one. Peeking at some rows of a table is a real thing to want; "the
+first of each group, by no particular order" is not a question, it is a
+coin toss dressed as one, and a tool that answered it would be choosing your
+answer for you.

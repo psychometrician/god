@@ -4,8 +4,10 @@ title: "Summarizing by group"
 
 {{< include ../_setup.qmd >}}
 
-`summarize` collapses rows. Each new column is an aggregation, and `by` names
-the columns that say which rows go together.
+How much did each product bring in over the year? The question is not about
+any row; it is about the rows that belong together. `summarize` collapses
+rows into answers: each new column is an aggregation, and `by` names the
+columns that say which rows go together.
 
 ::: {.panel-tabset}
 
@@ -23,7 +25,16 @@ sales >> summarize(revenue = total(col.revenue), orders = row_count(), by = col.
 
 :::
 
-Grouping by several columns is a list.
+*`sales then summarize [revenue] as total([revenue]), [orders] as row_count() by [product]`*
+
+Fifteen rows in, four out, one per product. This is the verb that turns a
+record of what happened into a statement about it, and it is the single most
+common reason anyone opens a table.
+
+## Several groups, or none
+
+Grouping by several columns is a list, and every combination that appears in
+the data gets a row:
 
 ::: {.panel-tabset}
 
@@ -41,7 +52,7 @@ sales >> summarize(revenue = total(col.revenue), by = [col.region, col.product])
 
 :::
 
-Without `by`, the whole table is one group.
+Without `by`, the whole table is one group, and the answer is one row:
 
 ::: {.panel-tabset}
 
@@ -59,19 +70,50 @@ sales >> summarize(biggest = largest(col.revenue), average = average(col.cost))
 
 :::
 
-Grouping is an argument rather than a step, so there is nothing to ungroup
-afterwards and no state to carry between verbs.
+## Grouping is an argument, not a state
+
+In this grammar, grouping is a word inside the step it affects. It is not a
+mode you switch the table into. Nothing needs ungrouping afterwards, no verb
+behaves differently because of what an earlier verb declared, and a pipeline
+read a year from now says everything it does, where it does it. dplyr readers
+will recognize the disease this avoids: a `group_by()` three steps up
+silently changing what `summarise()` and `mutate()` mean, and the ritual
+`ungroup()` that follows every recipe like an apology. Here there is nothing
+to forget, because there is nothing being remembered.
+
+## One spelling where you have learned five
+
+This one operation is where the world's tools disagree the loudest. Group
+and total, five ways:
+
+```
+dplyr       df |> group_by(g) |> summarise(total = sum(x))
+pandas      df.groupby('g')['x'].sum().reset_index()
+polars      df.group_by('g').agg(pl.col('x').sum().alias('total'))
+data.table  df[, .(total = sum(x)), by = g]
+SQL         SELECT g, SUM(x) AS total FROM df GROUP BY g
+```
+
+Every one of these describes the same act, the one Codd's algebra called
+aggregation over a partition [@codd1970] and the R world later named
+split-apply-combine [@wickham2011]: split the rows by a key, apply a
+collapse, combine the answers. The ideas have been stable for fifty years.
+The spelling is what churns, and the spelling is what you forget. god's bet
+is that `summarize ... by ...`, read aloud, is the spelling you will still
+have when the others have faded, because it is the one that says what the
+operation does in the words you would use to describe it.
 
 ## The nine ways to collapse a group
 
-`total` and `average` are the two you will reach for most. There are nine
-altogether, and the list is closed.
+`total` and `average` are the two you will use most. There are nine
+altogether, and the list is closed on purpose: a small shelf you can hold
+whole beats a long one you have to search.
 
-`total`, `average` and `median` are the three that combine numbers into one.
-`smallest` and `largest` take the ends. `first` and `last` take a value by
-position, which is why they need the rows to be in a known order. `row_count`
-counts the rows and takes no column at all. `unique_count` counts how many
-different values a column holds.
+`total`, `average` and `median` combine numbers into one. `smallest` and
+`largest` take the ends. `first` and `last` take a value by position, which
+is why they want the rows in a known order. `row_count` counts the rows and
+takes no column at all. `unique_count` counts how many different values a
+column holds.
 
 ::: {.panel-tabset}
 
@@ -101,9 +143,8 @@ sales >> summarize(
 
 :::
 
-`first` and `last` answer by position, so a sort in front of them is what decides
-which row they mean. Without one they still answer, and the answer is whatever
-order the rows arrived in.
+`first` and `last` answer by position, so a sort in front of them decides
+which row they mean:
 
 ::: {.panel-tabset}
 
@@ -128,3 +169,81 @@ sales >> sort(descending(col.revenue)) >> summarize(
 ```
 
 :::
+
+## The same sentence at scale
+
+Everything above ran on fifteen rows you can check by hand, which is how a
+verb should be met. Here is the same verb meeting a table nobody checks by
+hand: `gapminder`, the cast's large table, holding a half century of
+countries and years.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+gapminder |>
+  keep(year == 2007) |>
+  summarize(life = average(life), countries = row_count(), by = continent) |>
+  sort(descending(life))
+```
+
+### Python
+
+```{python}
+(gapminder
+  >> keep(col.year == 2007)
+  >> summarize(life = average(col.life), countries = row_count(), by = col.continent)
+  >> sort(descending(col.life)))
+```
+
+:::
+
+*`gapminder then keep where [year] is 2007 then summarize [life] as average([life]), [countries] as row_count() by [continent] then sort [life] descending`*
+
+One thousand seven hundred rows went in; five came out, one per continent,
+with the count beside each average so the answer carries its own weight of
+evidence. The sentence is the same length it was on fifteen rows, and that is
+the point of the demonstration: nothing about the grammar knows or cares how
+big the table is. Part VII shows the same indifference reaching a warehouse.
+
+## What travels with it
+
+- `by` is the same word, with the same meaning, that grouped `take` in the
+  last chapter and will group windows in Part V: these rows belong together.
+- `as` names each answer, name first, exactly as it does in `add`.
+- The nine aggregations reappear inside `add ... by`, where they broadcast a
+  group's answer back onto its rows instead of collapsing them; the chapter
+  on the small words shows the share-of-group idiom that buys.
+
+## What it refuses
+
+Every value in a `summarize` must span its group. A bare column does not,
+and the grammar will not guess which of a group's values you meant:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> summarize(revenue = revenue, by = region) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> summarize(revenue = col.revenue, by = col.region))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+SQL answers this same mistake with an error about grouping clauses that has
+confused beginners for decades; some tools answer it by silently taking the
+first value, which is worse. This message names the actual problem, one row
+per group against many values per group, and lists the words that resolve
+it. Refusing with a direction is the grammar's answer to a whole class of
+half-remembered rules.

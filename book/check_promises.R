@@ -106,10 +106,16 @@ check_promises <- function(book = "book") {
       }
     }
     if (is.na(first_example)) next               # a chapter may run nothing
-    window <- ln[first_example:min(length(ln), first_example + 10)]
+    # The gloss follows the *tabset*, not the R chunk: the Python tab and the
+    # closing `:::` sit between the first chunk and the gloss, so the window
+    # opens at the tabset's closing fence when there is one.
+    after <- ln[first_example:min(length(ln), first_example + 25)]
+    closes <- which(grepl("^\\s*:::\\s*$", after))
+    anchor <- if (length(closes)) first_example + closes[1] - 1 else first_example
+    window <- ln[anchor:min(length(ln), anchor + 10)]
     if (!any(grepl("\\*`[^`]+`\\*", window)))
       problems <- c(problems, sprintf(
-        "%s:%d first example has no read-aloud gloss within 10 lines",
+        "%s:%d first example has no read-aloud gloss within 10 lines of its tabset",
         f, first_example))
   }
 

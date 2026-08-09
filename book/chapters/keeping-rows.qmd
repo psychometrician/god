@@ -4,7 +4,10 @@ title: "Keeping rows"
 
 {{< include ../_setup.qmd >}}
 
-`keep` takes a condition and keeps the rows where it holds.
+Which of the year's orders happened in the West? Most questions about a table
+begin this way, by wanting fewer rows than you have. `keep` is the verb: it
+takes a condition, asks it of every row, and keeps the rows where the answer
+is yes.
 
 ::: {.panel-tabset}
 
@@ -22,27 +25,69 @@ sales >> keep(col.region == "West")
 
 :::
 
-Conditions combine with `and` and `or`, and either language's negation reverses
-one.
+*`sales then keep where [region] is "West"`*
+
+Six of the fifteen rows survive. The other nine were not deleted from
+anything; `sales` is untouched, and the pipeline handed back a new, smaller
+table. Every verb in this grammar works that way, so no step can damage the
+table a colleague is using behind you.
+
+## Combining conditions
+
+Conditions join with *and* and *or*, and a negation reverses one. Ask for the
+larger orders that were still cheap to fulfill:
 
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
-sales |> keep(revenue > 150 & cost < 100)
+sales |> keep(revenue >= 150 & cost < 100)
 ```
 
 ### Python
 
 ```{python}
-sales >> keep((col.revenue > 150) & (col.cost < 100))
+sales >> keep((col.revenue >= 150) & (col.cost < 100))
 ```
 
 :::
 
-There is no separate verb for dropping rows. Removing the rows where something
-is true is keeping the rows where it is false, and one verb says both.
+Python needs the parentheses and R does not, because Python's `&` binds more
+tightly than its `==`; that rule is Python's, not the grammar's, and the
+preface's list of Python's own rules is the whole of that subject.
+
+## The words where the hosts disagree
+
+Look at what the gloss did to the R sentence above. `==` became `is`, and `&`
+became `and`. That is not a stylistic flourish; it is a decision about which
+words can be in a grammar at all.
+
+A symbol that means different things in different tools is a word this
+grammar refuses to own. `=` assigns in one language, compares in another, and
+half the world's beginners have been burned by the difference. So the text
+form spells every contested symbol as the English word that means only one
+thing, and each binding translates its host's habit into that word:
+
+| you write in R | you write in Python | the grammar's word |
+|---|---|---|
+| `==` | `==` | `is` |
+| `!=` | `!=` | `is not` |
+| `&` | `&` | `and` |
+| `\|` | `\|` | `or` |
+| `!` | `~` | `not` |
+| `%in%` | `.is_in([...])` | `in { }` |
+| `is.na(x)` | `.is_missing()` | `[x] is missing` |
+
+You keep writing your language's habits, and the grammar keeps one meaning
+under them. When a pipeline moves to a database cell or a colleague's screen,
+it is the unambiguous spelling that travels.
+
+## One verb, both directions
+
+There is no separate verb for dropping rows. Removing the rows where
+something is true is keeping the rows where it is false, and one verb says
+both:
 
 ::: {.panel-tabset}
 
@@ -59,3 +104,49 @@ sales >> keep(~(col.product == "Widget"))
 ```
 
 :::
+
+This is the first sighting of a rule you will meet on every page: if the
+grammar can already say something, it does not grow a second way to say it. A
+`drop` verb would cost a word, and every reader who met `drop(x)` beside
+`keep(!x)` would have to learn, and then remember, that they are the same
+thing. The grammar spends its words on meanings, not on synonyms.
+
+## What travels with it
+
+- `where` is how the text form marks the condition, as in the gloss above.
+  You never type it in R or Python; the condition sits inside the verb.
+- The condition language itself travels whole. Everything you can write in a
+  `keep` you can later write inside `pick where` (choosing columns by a
+  question) and inside `when` (choosing a value by a question), unchanged.
+- `and`, `or`, `not`, `is`, `in`, `missing` are the grammar's own words for
+  the contested symbols, and the table above is their whole story.
+
+## What it refuses
+
+A condition that can never be true is a mistake, not a preference, and the
+grammar says so before anything runs. Text is never greater than a number:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> keep(region > 100))
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> keep(col.region > 100))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Nothing was scanned and no rows came back empty. The pipeline was refused
+whole, at the step that is wrong, with the fix in the message. A tool that
+instead answered with zero rows would have told you something false about
+your data, quietly, and you would have believed it.

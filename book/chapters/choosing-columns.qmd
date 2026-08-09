@@ -4,7 +4,9 @@ title: "Choosing columns"
 
 {{< include ../_setup.qmd >}}
 
-`pick` names the columns you want.
+The table has six columns and your answer needs two of them. Which product,
+and what did it bring in? `pick` names the columns you want, and the rest do
+not travel any further down the pipeline.
 
 ::: {.panel-tabset}
 
@@ -22,9 +24,18 @@ sales >> pick(col.product, col.revenue)
 
 :::
 
-Wrap the names in `all_but` to say which ones to drop instead. It is the same
-verb, because choosing columns is choosing columns whichever way you say which
-ones, and it is the same word in both languages.
+*`sales then pick [product, revenue]`*
+
+All fifteen rows are still here. `keep` and `pick` are the two axes of the
+same act of narrowing: `keep` decides which rows survive and never touches
+the columns, `pick` decides which columns survive and never touches the rows.
+Between them you can cut any table down to exactly the piece your question is
+about, and the two read as what they are, one verb per axis.
+
+## Saying which ones to drop
+
+When the columns you want outnumber the ones you do not, name the leavers.
+Wrap the names in `all_but`:
 
 ::: {.panel-tabset}
 
@@ -41,3 +52,69 @@ sales >> pick(all_but(col.cost, col.region))
 ```
 
 :::
+
+It is the same verb, deliberately. Choosing columns is choosing columns
+whichever way you say which ones, so there is no second verb called `drop`
+here for the same reason there was no second verb for dropping rows in the
+last chapter. `all_but` is a marker on the list, not a new idea, and it is
+the same word in both languages and in the text form.
+
+## Column order
+
+`pick` also settles column order, because the order you name the columns is
+the order the table comes back in. There is no separate rearranging verb: if
+you want `revenue` first, ask for it first. One small consequence is worth
+knowing now: a `pick` is a statement about the table it receives, so a column
+a previous step made is as pickable as one the table arrived with, and a
+column you picked away is gone for every later step. Each step sees only the
+table the last step handed it.
+
+## When names are not enough
+
+Naming columns one at a time holds up until the table is wide, or until next
+month's file arrives with two more columns than this month's. There is a
+second form, `pick where`, that chooses columns by a question about them
+instead of by name, and it reuses the condition language you met in the last
+chapter. It has a part of its own near the end of the book, because the
+interesting questions (what is the name shaped like, what kind of value does
+it hold) deserve more than a footnote. Until then, every table in this part
+is narrow enough to name.
+
+## What travels with it
+
+- `all_but` inverts any list of columns, here and anywhere a list of columns
+  appears; you will meet it again in `lengthen`.
+- `where` waits inside this verb too: `pick where` takes the same conditions
+  `keep` takes, aimed at columns instead of rows, in Part VI.
+- The order of names is meaningful, which is the general rule about lists in
+  this grammar: nothing you write is decoration.
+
+## What it refuses
+
+A misspelled column is caught before anything runs, and the refusal does not
+stop at no:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> pick(product, reveune))
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> pick(col.product, col.reveune))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message names the nearest real column and then lists everything the
+table has, because the second most common cause of this error is not a typo
+at all: it is being wrong about which table you are holding. Both repairs are
+on the screen, and neither requires opening another window.

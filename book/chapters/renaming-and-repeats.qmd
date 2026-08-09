@@ -4,11 +4,10 @@ title: "Renaming, and dropping repeats"
 
 {{< include ../_setup.qmd >}}
 
-`rename` gives a column a different name and changes nothing else. The new name
-goes first, the way assignment reads and the way every other verb that makes a
-column already works. If you are arriving from pandas, read that
-pair twice: `rename(columns={"old": "new"})` is the other way round, and both
-spellings are legal here.
+Why is this row in the table twice? And why is the column called `revenue`
+when the report you owe someone says `earned`? Two small verbs do the
+housekeeping the core six leave behind: `rename` changes what a column is
+called, and `drop_duplicates` removes exact repeats.
 
 ::: {.panel-tabset}
 
@@ -26,10 +25,21 @@ sales >> rename(earned = col.revenue) >> pick(col.product, col.earned)
 
 :::
 
-`drop_duplicates` drops rows that are identical across every column. The answer
-comes back in a settled order, because dropping repeats says nothing about which
-order the rest should be in, and an answer that reorders itself between runs is
-not predictable.
+*`sales then rename [earned] as [revenue] then pick [product, earned]`*
+
+`rename` changes the name and nothing else: not the values, not the order,
+not the kind. The new name goes first, the way assignment reads and the way
+every naming verb in this grammar already works. If you are arriving from
+pandas, read that direction twice: `rename(columns={"old": "new"})` is the
+other way around, and both directions are legal spellings here, so only the
+grammar's one-direction rule keeps a pipeline readable without a glossary.
+
+## Dropping repeats
+
+`drop_duplicates` drops the rows that are identical across every column. The
+answer comes back in a settled order, because dropping repeats says nothing
+about which order the rest should be in, and an answer that reorders itself
+between runs is an answer you cannot test.
 
 ::: {.panel-tabset}
 
@@ -46,3 +56,79 @@ pd.DataFrame({"a": [1, 1, 2], "b": ["x", "x", "y"]}) >> drop_duplicates()
 ```
 
 :::
+
+## Why it takes no columns
+
+Other tools let you write `distinct(g)` or `drop_duplicates(subset="g")`, and
+the argument means two different things depending on the tool and the day:
+sometimes "the distinct values of `g`", sometimes "whole rows, one per value
+of `g`". The second reading has a hole in it that no tool can fill: *which*
+whole row, out of the several that share a `g`? Any answer is an arbitrary
+choice dressed as a function.
+
+So here the verb takes no columns, and each of the two things you might have
+meant has its own honest spelling. The distinct values of a column are a
+`pick` followed by the drop:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> pick(region, product) |> drop_duplicates()
+```
+
+### Python
+
+```{python}
+sales >> pick(col.region, col.product) >> drop_duplicates()
+```
+
+:::
+
+*`sales then pick [region, product] then drop_duplicates`*
+
+And one whole row per group is last chapter's idiom, `sort` then
+`take 1 by`, which forces you to say *which* row, because "the latest" or
+"the largest" was always the real question hiding inside "one per group".
+Two meanings, two spellings, and neither has an arbitrary choice inside it.
+
+## What travels with it
+
+- `as` in the gloss is the same naming word it was in `add` and `summarize`,
+  with the same direction: what it becomes, then what it was.
+- `pick` then `drop_duplicates` is this grammar's spelling of every
+  `distinct()` you have written elsewhere.
+- `sort` then `take 1 by` is its spelling of every "first row per group",
+  and the refusal that guards it was staged two chapters ago.
+
+## What it refuses
+
+Renaming a column onto a name the table already has would leave two columns
+with one name, and every later step ambiguous:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> rename(region = revenue) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> rename(region = col.revenue))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message carries the fix in both directions, because this mistake has two
+common causes: you meant a different new name, or you had the direction
+backward and were trying to rename `region` itself. Naming which side goes
+first, in the message, at the moment of failure, is how a one-direction rule
+earns the small strictness it asks of you.

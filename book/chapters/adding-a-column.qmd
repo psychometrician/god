@@ -4,51 +4,52 @@ title: "Adding a column"
 
 {{< include ../_setup.qmd >}}
 
-`add` makes a column, or replaces one that is already there, and one `add` can
-make several at once.
+What did each order actually earn, and what was the price per unit? Neither
+number is in the table, but everything needed to work them out is. `add`
+makes a column from the ones already there, and one `add` can make several at
+once.
 
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
-sales |> add(margin = revenue - cost, paid = revenue * 2) |> pick(margin, paid)
+sales |>
+  add(margin = revenue - cost, price = revenue / quantity) |>
+  pick(product, quantity, margin, price)
 ```
 
 ### Python
 
 ```{python}
-sales >> add(margin = col.revenue - col.cost, paid = col.revenue * 2) >> pick(col.margin, col.paid)
+(sales
+  >> add(margin = col.revenue - col.cost, price = col.revenue / col.quantity)
+  >> pick(col.product, col.quantity, col.margin, col.price))
 ```
 
 :::
 
-A column made in one step is not there yet for the rest of that same step. Every
-value in a step is worked out from the table as it arrives, so the second one
-cannot see the first.
+*`sales then add [margin] as [revenue] - [cost], [price] as [revenue] / [quantity] then pick [product, quantity, margin, price]`*
 
-::: {.panel-tabset}
+Read the price column down and you will notice it repeats by product; each
+product sells at one price all year in this table, which is what makes its
+totals easy to check by eye. The new columns are ordinary columns from here
+on: pickable, keepable, sortable, and summable like anything the table
+arrived with.
 
-### R
+## The name goes first
 
-```{r}
-#| error: true
-sales |> add(margin = revenue - cost, doubled = margin * 2) |> collect()
-```
+`as` is the word that names what was made, and the name comes first: new name,
+then the value. That is the order assignment reads in almost every language,
+and it is the same order `rename` and `summarize` will use, so there is one
+direction to remember across the whole grammar rather than one per verb.
 
-### Python
+## A step is one step
 
-```{python}
-try:
-    collect(sales >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
-except GodError as refusal:
-    print(refusal)
-```
-
-:::
-
-Give it a step of its own and it works, and from there on the new column is an
-ordinary column that any later step can use.
+A column made in a step is not there yet for the rest of that same step.
+Every value in a step is worked out from the table as it arrives, so a second
+value cannot read the first. When one column needs another, give it a step of
+its own, and the pipeline says what it does in the order it does it:
 
 ::: {.panel-tabset}
 
@@ -74,11 +75,19 @@ sales |>
 
 :::
 
-This is worth knowing early if you are arriving from dplyr or pandas, because
+This is worth meeting early if you are arriving from dplyr or pandas, because
 `mutate` and `assign` both let the second column read the first. This grammar
-does not, for the same reason SQL does not: a step is one step, rather than a
-sequence hiding inside one. Replacing a column is a different thing and works as
-you would expect, because the old value is on the table when the step begins.
+does not, for the same reason SQL does not: a step is one step, not a
+sequence hiding inside one. The moment two values in a step can depend on
+each other, the order they are written in starts to matter, and a reader has
+to trace a hidden pipeline inside every line. Two short steps cost you
+nothing at all when the book reaches laziness in Part VII, and they read as
+what they are.
+
+## Replacing a column
+
+Replacing is a different thing from self-reference, and it works exactly as
+you would expect, because the old value is on the table when the step begins:
 
 ::: {.panel-tabset}
 
@@ -95,3 +104,48 @@ sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
 ```
 
 :::
+
+The doubled `revenue` exists only in the pipeline's answer. The `sales` your
+session holds is unchanged, the way it always is.
+
+## What travels with it
+
+- `as` names what a step makes, name first, and it means exactly this again
+  in `summarize` and in `rename`.
+- The whole expression language rides inside `add`: arithmetic here, and in
+  Part III the text repairs, conversions, dates, and conditionals, all
+  written in this same seat.
+- `by` can follow an `add` whose value summarizes a group, which turns a
+  collapse into a broadcast; the chapter on the small words shows it, and
+  share-of-group is the idiom it exists for.
+
+## What it refuses
+
+The law above is enforced, not advised. A value that reads a column made in
+its own step is refused whole, before anything runs:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> add(margin = revenue - cost, doubled = margin * 2) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message does not stop at no: it names the two-step spelling that works.
+The same law has a second face the text form can reach, making one name twice
+in a single step, and it is refused with the same directness, because a
+column silently thrown away is work silently thrown away. If you remember
+that a step is one step, you will never meet either message again.

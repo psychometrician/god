@@ -4,10 +4,13 @@ title: "Your first pipeline"
 
 {{< include ../_setup.qmd >}}
 
-A pipeline is a sentence. It names a table, then says what happens to it, one
-step at a time, in the order the steps happen.
+You have a year of sales in front of you. Which product earned the most in
+the West, once costs come out? That is a real question, the shape of a
+hundred you will ask this year, and one sentence answers it.
 
-Here is one. Read it aloud before you read anything about it.
+A pipeline is that sentence. It names a table, then says what happens to it,
+one step at a time, in the order the steps happen. Here is the whole answer.
+Read it aloud before you read anything about it.
 
 ::: {.panel-tabset}
 
@@ -33,14 +36,43 @@ sales |>
 
 :::
 
+*`sales then keep where [region] is "West" then add [margin] as [revenue] - [cost] then summarize [margin] as total([margin]), [orders] as row_count() by [product] then sort [margin] descending`*
+
 Keep the West rows. Add a margin. Total the margin by product and count the
-orders. Sort by margin, descending. That is the whole sentence, and the table
-under it is what the engine returned when this page was built.
+orders. Sort by margin, largest first. That is the whole sentence, the table
+under it is what the engine returned when this page was built, and its top
+row is the answer to the question you started with.
+
+Notice what you did not have to know. No method names, no bracket rules, no
+order of clauses to memorize. You read a sentence in plain English, and if
+you can read this one you can already read most of the pipelines in this
+book, including the ones no page has shown you yet.
+
+## The gloss, and why it runs
+
+The italic line under the example is the same sentence a third time, in the
+grammar's own words. This book prints one under the first example of every
+teaching chapter, and reading it aloud is not a ritual for its own sake: it
+is the retention promise being rehearsed. A sentence you can say is a
+sentence you can still say after a year away.
+
+The gloss is not decoration, and it is not pseudocode. The text form is a
+real spelling of the grammar, for the places that have neither R nor Python
+to bind into: a database cell, a configuration file, a stored pipeline. In
+it, `then` is the pipe, pronounced. A column rides in square brackets,
+`[margin]`, so that any name at all can be a column. And because it is real,
+this book's build hands every gloss on every page to the engine and refuses
+to publish if one stops parsing. A gloss cannot rot into wishful thinking;
+the machinery will not let it.
 
 ## The table
 
-Every example in this book runs on a table called `sales`, unless a chapter says
-otherwise. It is fifteen rows, small enough to check the arithmetic by hand.
+Every example in this book runs on a table called `sales`, unless a chapter
+says otherwise. It is fifteen rows: three regions, four products, a year of
+dates, and for each order a quantity, the revenue, and the cost. Small
+enough to check any total by hand, which you should feel free to do; the
+whole cast of tables this book uses is declared in the preface, and none of
+them will change shape under you between chapters.
 
 ::: {.panel-tabset}
 
@@ -69,25 +101,44 @@ The two tabs above are not translations of each other. They are the same
 sentence, and only two things about them differ.
 
 The first is the pipe. R writes `|>`, which is R's own. Python writes `>>`,
-because Python cannot have `|>` at all, and of the operators a data frame leaves
-free that is the one available everywhere.
+because Python cannot have `|>` at all, and of the operators a data frame
+leaves free that is the one available everywhere.
 
-The second is how a column is named. R can look a name up in your data before it
-looks in your session, so a bare `revenue` is unambiguous there. Python has no
-such hook, so a column says that it is one: `col.revenue`.
+The second is how a column is named. R can look a name up in your data before
+it looks in your session, so a bare `revenue` is unambiguous there. Python
+has no such hook, so a column says that it is one: `col.revenue`.
 
-Every verb, every keyword and every argument position is the same. Someone who
-learned the grammar in one language has learned it in the other. Both tabs on
-every page of this book are executed when the book is built, so that claim is
-checked on every page rather than asserted once here.
+Every verb, every keyword and every argument position is the same. Someone
+who learned the grammar in one language has learned it in the other. Both
+tabs on every page of this book are executed when the book is built, so that
+claim is checked on every page rather than asserted once here.
 
-[Appendix A](../appendices/a-two-languages.qmd) has the rest of the differences
-between the two languages, and you do not need it yet.
+[Appendix A](../appendices/a-two-languages.qmd) has the rest of the
+differences between the two languages, and you do not need it yet.
+
+## What a step is
+
+Each step in the sentence takes a table and gives a table back. That one fact
+carries more weight than it looks like it should. It means you can stop the
+pipeline anywhere and look at what you have so far. It means the order you
+read is the order things happen, top to bottom, with no clause waiting to
+leap out of sequence the way a SQL `WHERE` runs before the `SELECT` written
+above it. And it means every chapter in this book can teach one verb at a
+time, because a verb never needs to know which verbs came before it.
+
+There is one more fact about the sentence you just read, and it can wait for
+its own chapter: nothing ran until the page asked to see the answer. A
+pipeline is a plan, not a command, and the chapter on laziness at the start
+of Part VII shows what that buys you.
 
 ## How to read the rest
 
 Read the tab for the language you write. Glance at the other one when you are
 curious. The explanation under a tabset is written once and covers both.
 
-The next six chapters are one verb each. They are short, and by the end of them
-you can answer real questions about a table.
+The next chapters of this part are one verb each, and they share one shape,
+declared on the part page you just passed: a question, the verb that answers
+it, what the verb can vary, then what travels with it and what it refuses.
+They are short, and by the end of them you can answer real questions about a
+table, which is a claim the practice chapters at the end of the part will
+ask you to prove.
