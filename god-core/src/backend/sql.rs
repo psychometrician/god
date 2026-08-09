@@ -36,7 +36,7 @@
 //! the whole argument for `parity/spark.py` running the corpus on two engines and
 //! comparing tables, rather than a test asserting on the SQL.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::diagnostic::Diagnostic;
 use crate::check::Schema;
 use crate::plan::*;
@@ -120,10 +120,6 @@ impl Backend for Sql {
         "sql"
     }
 
-    fn purpose(&self) -> Purpose {
-        Purpose::Execute
-    }
-
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {
         DUCKDB.render(plan, entering)
     }
@@ -134,10 +130,6 @@ pub struct SparkSql;
 impl Backend for SparkSql {
     fn name(&self) -> &'static str {
         "spark"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Execute
     }
 
     /// **The one sentence Spark cannot say.** Its `PIVOT` needs the values

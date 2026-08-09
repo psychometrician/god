@@ -27,7 +27,7 @@
 //! rows is `pd.concat`, a function over two frames rather than a method on one,
 //! and asking whether a row has a partner needs the other frame in hand.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::check::Schema;
 use crate::plan::*;
 
@@ -42,10 +42,6 @@ struct Over<'a> {
 impl Backend for Pandas {
     fn name(&self) -> &'static str {
         "pandas"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Read
     }
 
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {

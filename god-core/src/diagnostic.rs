@@ -27,6 +27,10 @@ pub enum Kind {
     Illegal,
     /// The sentence is legal and is not built yet. Fatal, and says so, because a
     /// legal sentence that quietly does nothing is worse than one that stops.
+    ///
+    /// Nothing constructs this today: the vocabulary is closed and every word in
+    /// it is built. It stays because it is the taxonomy's middle, and the first
+    /// accepted-but-unbuilt word should not have to teach callers a new kind.
     Unsupported,
     /// The grammar chose something the caller did not say. Not fatal, and names
     /// both the choice and how to state it outright.

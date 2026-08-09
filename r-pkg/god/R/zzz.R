@@ -5,7 +5,10 @@
 # Markdown is a table on a page, and console text there is a picture of a
 # terminal rather than a table.
 
-#' @export
+# No `@export` tag here, and none may return: roxygen would turn it into an
+# `S3method(knit_print, god_pipeline)` line in NAMESPACE, which makes knitr a
+# load-time dependency. `.onLoad` below registers the method only where knitr
+# actually exists.
 knit_print.god_pipeline <- function(x, ...) {
   # **Delegating rather than choosing a format is the whole point.** The
   # document already has an answer for how a table is printed, in `df-print`, and

@@ -181,13 +181,10 @@ pub enum Step {
     /// to hand rows over in the order they arrived.
     Take { count: u64, by: Vec<Name>, span: Span },
 
-    /// `join products by [id]`, with an optional `unmatched "both"`.
-    ///
-    /// The only thing that varies between the four classic joins is what happens
-    /// to a row that found no match, so that is what the argument is named for.
-    /// There is no right join, and that is Law 5 rather than an omission: it is a
-    /// left join with the tables swapped, so it adds no meaning.
     /// `add_rows more_sales`
+    ///
+    /// The other table's rows, underneath. A column that is on one side only is
+    /// refused by the checker, so there is nothing here to configure.
     AddRows { other: Name, span: Span },
 
     /// `drop_duplicates`
@@ -264,6 +261,12 @@ pub enum Step {
         span: Span,
     },
 
+    /// `join products by [id]`, with an optional `unmatched "both"`.
+    ///
+    /// The only thing that varies between the four classic joins is what happens
+    /// to a row that found no match, so that is what the argument is named for.
+    /// There is no right join, and that is Law 5 rather than an omission: it is a
+    /// left join with the tables swapped, so it adds no meaning.
     Join {
         other: Name,
         /// Empty when the caller did not say, which is not the same as none:
@@ -1018,13 +1021,6 @@ impl Expr {
         }
     }
 
-    /// Whether this expression collapses many rows into one.
-    ///
-    /// The question the grammar asks constantly: `summarize` requires it of every
-    /// value, and `add` treats it as a broadcast over the group rather than a
-    /// collapse. Answered by looking for an aggregating call anywhere inside,
-    /// because `total([revenue]) - total([cost])` aggregates and neither half of
-    /// it is a bare call.
     /// Whether a window sits anywhere inside this value.
     ///
     /// The mirror of `aggregates`, and needed for the same reason: three places
@@ -1051,6 +1047,13 @@ impl Expr {
         found
     }
 
+    /// Whether this expression collapses many rows into one.
+    ///
+    /// The question the grammar asks constantly: `summarize` requires it of every
+    /// value, and `add` treats it as a broadcast over the group rather than a
+    /// collapse. Answered by looking for an aggregating call anywhere inside,
+    /// because `total([revenue]) - total([cost])` aggregates and neither half of
+    /// it is a bare call.
     pub fn aggregates(&self) -> bool {
         let mut found = false;
         self.walk(&mut |e| {

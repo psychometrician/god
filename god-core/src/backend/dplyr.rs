@@ -27,7 +27,7 @@
 //! not be written bare in R it is wrapped in backticks, which is R's own answer
 //! and not the grammar's.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::check::Schema;
 use crate::plan::*;
 
@@ -36,10 +36,6 @@ pub struct Dplyr;
 impl Backend for Dplyr {
     fn name(&self) -> &'static str {
         "dplyr"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Read
     }
 
     // dplyr needs no help telling a new column from a rewritten one: `mutate`

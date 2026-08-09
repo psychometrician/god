@@ -9,11 +9,14 @@ Third-party material
 
 No third-party material is included in this work.
 
-god links polars (https://github.com/pola-rs/polars), which is licensed under
-the MIT License and is a dependency rather than included source. Its license
-travels with it, and cargo records it in the dependency tree. This is recorded
-here because polars does the work this project delegates rather than owns, and
-saying so is a courtesy the license happens not to require.
+Nothing is linked into the engine either: god-core has no runtime
+dependencies. The Rust test suite links DuckDB (https://duckdb.org), MIT
+licensed, to run generated queries and read the rows back — a development
+dependency that is never distributed. The R and Python packages declare
+dependencies (DuckDB; pandas in Python) that an install brings from their own
+distributions, and their licenses travel with them. The printing backends
+write source code for dplyr, pandas, polars and PySpark, which makes those
+projects targets rather than dependencies: nothing of theirs is included.
 
 Example datasets used in the book are named where they are used, with their
 source and license, in the chapter that first shows them.

@@ -28,7 +28,7 @@
 //! both the step's grouping and the expression's own ordering into one `Window`,
 //! where the grammar states them in two places.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::check::Schema;
 use crate::plan::*;
 
@@ -48,10 +48,6 @@ struct Over<'a> {
 impl Backend for PySpark {
     fn name(&self) -> &'static str {
         "pyspark"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Read
     }
 
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {

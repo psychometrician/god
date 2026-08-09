@@ -113,8 +113,3 @@ pub fn compile_tables(
         assumptions: checked.assumptions,
     })
 }
-
-/// The same pipeline, written in a language the reader already knows.
-pub fn show(source: &str, schema: &Schema, backend_name: &str) -> Result<String, Diagnostic> {
-    compile(source, schema, backend_name).map(|c| c.text)
-}

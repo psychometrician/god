@@ -30,9 +30,6 @@ pub trait Backend {
     /// The word a caller writes to ask for this one.
     fn name(&self) -> &'static str;
 
-    /// Whether the text this produces is meant for an engine or for a person.
-    fn purpose(&self) -> Purpose;
-
     /// What this backend cannot write, and why.
     ///
     /// **Almost every backend refuses nothing, which is why this has an answer
@@ -52,14 +49,6 @@ pub trait Backend {
     /// when the grammar says one thing and the target spells it two ways. Most
     /// backends ignore it.
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String;
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Purpose {
-    /// Hand it to an engine; expect a table back.
-    Execute,
-    /// Hand it to a person; expect them to recognize it.
-    Read,
 }
 
 /// Every backend the grammar has.

@@ -10,7 +10,7 @@
 //! It earns its place twice over: a plan that prints as text is a plan that can
 //! be saved in a config file, stored in a column, or handed between machines.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::check::Schema;
 use crate::plan::*;
 
@@ -19,10 +19,6 @@ pub struct God;
 impl Backend for God {
     fn name(&self) -> &'static str {
         "god"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Read
     }
 
     fn render(&self, plan: &Plan, _entering: &[Schema]) -> String {

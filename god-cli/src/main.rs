@@ -34,7 +34,7 @@
 use std::io::Read;
 use std::process::ExitCode;
 
-use god_core::{backend, compile, Schema, Type};
+use god_core::{backend, Schema, Type};
 
 const USAGE: &str = "\
 god — a grammar of data
@@ -131,7 +131,7 @@ fn vocabulary() -> String {
 fn run() -> Result<String, Failure> {
     let mut columns: Option<String> = None;
     let mut named: Vec<(String, String)> = Vec::new();
-    let mut wanted = "sql".to_string();
+    let mut wanted: Option<String> = None;
     let mut pipeline: Option<String> = None;
     let mut needs_only = false;
 
@@ -148,18 +148,41 @@ fn run() -> Result<String, Failure> {
                 // `--columns products=id:number,name:text` describes a table by
                 // name, for a pipeline that joins. Without a name it is the
                 // table at the head, which is the only one most pipelines have.
+                //
+                // Given twice is refused rather than last-one-wins: a flag this
+                // tool quietly dropped would be the same defect as a clause the
+                // grammar quietly dropped, and the grammar refuses those.
                 match split_named(&value) {
-                    Some((table, list)) => named.push((table, list)),
-                    None => columns = Some(value),
+                    Some((table, list)) => {
+                        if named.iter().any(|(t, _)| *t == table) {
+                            return Err(Failure::Usage(format!(
+                                "`--columns` described `{table}` twice, and a table takes one description"
+                            )));
+                        }
+                        named.push((table, list))
+                    }
+                    None => {
+                        if columns.is_some() {
+                            return Err(Failure::Usage(
+                                "`--columns` described the head table twice, and it takes one description".into(),
+                            ));
+                        }
+                        columns = Some(value)
+                    }
                 }
             }
             "--as" => {
-                wanted = args.next().ok_or_else(|| {
+                if wanted.is_some() {
+                    return Err(Failure::Usage(
+                        "`--as` was given twice, and this takes one".into(),
+                    ));
+                }
+                wanted = Some(args.next().ok_or_else(|| {
                     Failure::Usage(format!(
                         "`--as` needs a backend. There is: {}",
                         backend::names().join(", ")
                     ))
-                })?
+                })?)
             }
             other if other.starts_with('-') => {
                 return Err(Failure::Usage(format!("`{other}` is not an option")))
@@ -216,7 +239,7 @@ fn run() -> Result<String, Failure> {
     }
     let others = god_core::check::Tables::new(others);
 
-    let compiled = god_core::compile_tables(&pipeline, &schema, &others, &wanted)
+    let compiled = god_core::compile_tables(&pipeline, &schema, &others, wanted.as_deref().unwrap_or("sql"))
         .map_err(|d| Failure::Refused(d.render(&pipeline)))?;
 
     // An assumption is not a failure and does not stop anything, but it is never
@@ -234,11 +257,6 @@ fn run() -> Result<String, Failure> {
     Ok(out)
 }
 
-/// `region:text,revenue:number` into a schema.
-///
-/// A type the grammar does not recognize is read as one it has no opinion about
-/// rather than refused. The host knows its own type system and this list does
-/// not, so refusing an unfamiliar word would refuse working pipelines over
 /// Split `products=id:number` into the table and its columns.
 ///
 /// The `=` has to come before the first `:`, or `region:text` would read as a
@@ -254,6 +272,11 @@ fn split_named(value: &str) -> Option<(String, String)> {
     Some((value[..equals].to_string(), value[equals + 1..].to_string()))
 }
 
+/// `region:text,revenue:number` into a schema.
+///
+/// A type the grammar does not recognize is read as one it has no opinion about
+/// rather than refused. The host knows its own type system and this list does
+/// not, so refusing an unfamiliar word would refuse working pipelines over
 /// columns the grammar has simply never met.
 fn read_schema(list: &str) -> Result<Schema, Failure> {
     let mut columns = Vec::new();

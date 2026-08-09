@@ -163,6 +163,38 @@ fn an_unfamiliar_column_type_is_accepted_rather_than_refused() {
     assert_eq!(o.status.code(), Some(0), "stderr: {}", err(&o));
 }
 
+/// Given twice is refused rather than last-one-wins. A flag the tool quietly
+/// dropped would be the same defect as a clause the grammar quietly dropped,
+/// and the grammar refuses those.
+#[test]
+fn a_repeated_as_flag_is_refused() {
+    let o = god(&["--columns", COLUMNS, "--as", "dplyr", "--as", "sql", "sales then take 1"]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(err(&o).contains("`--as` was given twice"), "{}", err(&o));
+}
+
+#[test]
+fn a_second_schema_for_the_head_table_is_refused() {
+    let o = god(&["--columns", "a:number", "--columns", "b:number", "t then take 1"]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(err(&o).contains("described the head table twice"), "{}", err(&o));
+}
+
+#[test]
+fn two_descriptions_of_one_named_table_are_refused() {
+    let o = god(&[
+        "--columns",
+        COLUMNS,
+        "--columns",
+        "products=id:number",
+        "--columns",
+        "products=id:text",
+        "sales then take 1",
+    ]);
+    assert_eq!(o.status.code(), Some(1));
+    assert!(err(&o).contains("described `products` twice"), "{}", err(&o));
+}
+
 #[test]
 fn help_exits_zero_and_shows_an_example() {
     let o = god(&["--help"]);
