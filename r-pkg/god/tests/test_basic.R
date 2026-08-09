@@ -706,6 +706,14 @@ if (!is.null(god:::god_walk_up(dirname(god:::god_source_dir())))) {
 }
 unlink(tmp_engine)
 
+# knitr stays optional: `.onLoad` registers `knit_print` only where knitr
+# exists, and an `S3method(knit_print, ...)` line in NAMESPACE would make it a
+# load-time dependency. A default `roxygenise()` once nearly wrote that line,
+# from a stray `@export` tag that is deleted now; this pins the door shut.
+check("NAMESPACE never registers knit_print",
+      any(grepl("knit_print",
+                readLines(system.file("NAMESPACE", package = "god")))), FALSE)
+
 cat("\nthe book is held to the grammar it documents\n")
 
 # Sourced rather than restated, so there is one copy of each rule. Both guards

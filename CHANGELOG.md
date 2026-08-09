@@ -23,6 +23,14 @@ then the `PATH`. Before this, a bundled copy outranked `GOD_CLI` in both
 languages, R never looked at the `PATH`, and Python looked at it before the
 source tree — so the two languages could quietly run different engines.
 
+### A condition asked for a yes or no refuses, in Python
+
+`col.region == "West"` is a column expression, and Python's `and`, `or`, `in`
+and `if` used to read it as plain truth — an object is truthy by default, so
+every one of them quietly answered yes. Asking now refuses, naming `&`, `|`
+and `~` as the spellings that mean it. Notebook probes against `col` no longer
+get an expression back either, so a frame's tab-completion stays honest.
+
 ### The command line refuses a flag it would have dropped
 
 A second `--as`, a second schema for the head table, or two `--columns` for

@@ -62,6 +62,18 @@ class Expr:
     def __repr__(self) -> str:
         return f"god expression: {self._text}"
 
+    def __bool__(self):
+        # A condition is a column expression, not a yes or no, so Python's
+        # `and`, `or`, `in` and `if` have nothing true or false to read here.
+        # Refusing beats the alternative: an object is truthy by default, so
+        # every one of those would quietly answer yes.
+        from .run import GodError
+
+        raise GodError(
+            "this is a column expression, not a yes or no. Combine conditions "
+            "with `&`, `|` and `~`, and hand the whole expression to a verb"
+        )
+
     # -- the words where the hosts disagree ---------------------------------
 
     def __eq__(self, other):
@@ -207,7 +219,12 @@ class _Columns:
     __slots__ = ()
 
     def __getattr__(self, name: str) -> Expr:
-        if name.startswith("__"):
+        # Dunder probes, and the single-underscore ones notebook frontends
+        # send (`_ipython_canary_...`, `_repr_html_`), have to miss: an Expr
+        # answered there convinces a frontend this object is something it is
+        # not. A real column whose name starts with one underscore still
+        # works.
+        if name.startswith("__") or name.startswith(("_ipython_", "_repr_")):
             raise AttributeError(name)
         return Expr(f"[{name}]", column=name)
 

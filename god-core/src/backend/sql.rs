@@ -37,8 +37,8 @@
 //! comparing tables, rather than a test asserting on the SQL.
 
 use super::Backend;
-use crate::diagnostic::Diagnostic;
 use crate::check::Schema;
+use crate::diagnostic::Diagnostic;
 use crate::plan::*;
 use crate::vocabulary;
 
@@ -54,10 +54,13 @@ const CELL: &str = "__god_cell";
 
 /// The keys of the most recent `sort` before this step.
 fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
-    plan.steps[..before].iter().rev().find_map(|step| match step {
-        Step::Sort { keys, .. } => Some(keys.as_slice()),
-        _ => None,
-    })
+    plan.steps[..before]
+        .iter()
+        .rev()
+        .find_map(|step| match step {
+            Step::Sort { keys, .. } => Some(keys.as_slice()),
+            _ => None,
+        })
 }
 
 /// How one engine spells the few things engines spell differently.
@@ -104,14 +107,26 @@ pub struct Dialect {
 }
 
 /// DuckDB, which is what `--as sql` has always meant.
-const DUCKDB: Dialect =
-    Dialect { quote: '"', exclude: "EXCLUDE", raise: "error", escapes_backslash: false, weekday: "isodow({})", dynamic_pivot: true };
+const DUCKDB: Dialect = Dialect {
+    quote: '"',
+    exclude: "EXCLUDE",
+    raise: "error",
+    escapes_backslash: false,
+    weekday: "isodow({})",
+    dynamic_pivot: true,
+};
 
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
 /// out of a manual. Four of these five entries were found by running the
 /// constructs this file emits and reading what came back.
-const SPARK: Dialect =
-    Dialect { quote: '`', exclude: "EXCEPT", raise: "raise_error", escapes_backslash: true, weekday: "extract(DAYOFWEEK_ISO FROM {})", dynamic_pivot: false };
+const SPARK: Dialect = Dialect {
+    quote: '`',
+    exclude: "EXCEPT",
+    raise: "raise_error",
+    escapes_backslash: true,
+    weekday: "extract(DAYOFWEEK_ISO FROM {})",
+    dynamic_pivot: false,
+};
 
 pub struct Sql;
 
@@ -157,320 +172,347 @@ impl Backend for SparkSql {
 
 impl Dialect {
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {
-            let mut parts = Vec::new();
-            parts.push(format!("step0 AS (SELECT * FROM {})", self.table(&plan.source)));
-    
-            for (i, step) in plan.steps.iter().enumerate() {
-                let from = format!("step{i}");
-                let body = match step {
-                    Step::Keep { condition, .. } => {
-                        format!("SELECT * FROM {from} WHERE {}", self.condition_sql(condition, &from))
-                    }
-                    Step::Pick { names, all_but, .. } => {
-                        if *all_but {
-                            let dropped: Vec<String> =
-                                names.iter().map(|n| self.name(&n.text)).collect();
-                            format!("SELECT * {} ({}) FROM {from}", self.exclude, dropped.join(", "))
-                        } else {
-                            let kept: Vec<String> = names.iter().map(|n| self.name(&n.text)).collect();
-                            format!("SELECT {} FROM {from}", kept.join(", "))
-                        }
-                    }
-                    Step::Add { values, by, .. } => {
-                        let added: Vec<String> = values
-                            .iter()
-                            .map(|v| {
-                                // An aggregate written in `add` spans the group and
-                                // hands the same answer back to every row in it,
-                                // which is a window rather than a collapse.
-                                let over = Over { partition: by, order: last_sort(plan, i) };
-                                // A window writes its own `OVER`, because it needs an
-                                // `ORDER BY` inside it that the group alone cannot
-                                // supply. An aggregate does not, and gets the group
-                                // wrapped around it here.
-                                // One path for both kinds. A window writes its
-                                // own `OVER` because it needs an `ORDER BY`
-                                // inside it; an aggregate has its `OVER`
-                                // attached where the aggregate is, which is not
-                                // always the outside of the value.
-                                let value = self.expr_over(&v.value, over);
-                                format!("{value} AS {}", self.name(&v.name.text))
-                            })
-                            .collect();
-                        // `add` covers making a column and remaking one, because to
-                        // whoever writes it those are the same act. SQL does not
-                        // agree: a name that is already there has to be excluded
-                        // first or it arrives twice, and a name that is not there
-                        // cannot be excluded at all. So the two cases are told apart
-                        // here, from the columns this step was handed.
-                        let held = entering.get(i).map(|s| s.names()).unwrap_or_default();
-                        let replaced: Vec<String> = values
-                            .iter()
-                            .filter(|v| held.contains(&v.name.text))
-                            .map(|v| self.name(&v.name.text))
-                            .collect();
-                        let keep = if replaced.is_empty() {
-                            "*".to_string()
-                        } else {
-                            format!("* {} ({})", self.exclude, replaced.join(", "))
-                        };
-                        // **A window makes the row order the engine's choice, so
-                        // the sort has to be said again.** Computing one groups
-                        // the rows to do it, and nothing puts them back: the
-                        // same sentence returned the two regions in opposite
-                        // orders on two engines, with every value identical.
-                        //
-                        // This is the fourth time this exact shape has been
-                        // found, after `summarize`, `drop_duplicates` and
-                        // `take ... by`, and all four times by running two
-                        // things rather than by reading a query. The rule
-                        // underneath is worth stating plainly: **wherever a step
-                        // reorders rows to do its work, the order somebody asked
-                        // for has to be restated afterwards.**
-                        let ordered = if values.iter().any(|v| v.value.windows()) {
-                            last_sort(plan, i)
-                                .map(|keys| {
-                                    let written: Vec<String> = keys
-                                        .iter()
-                                        .map(|k| {
-                                            format!(
-                                                "{}{}",
-                                                self.name(&k.column.text),
-                                                if k.descending { " DESC" } else { "" }
-                                            )
-                                        })
-                                        .collect();
-                                    format!(" ORDER BY {}", written.join(", "))
-                                })
-                                .unwrap_or_default()
-                        } else {
-                            String::new()
-                        };
-                        format!("SELECT {keep}, {} FROM {from}{ordered}", added.join(", "))
-                    }
-                    Step::Summarize { values, by, .. } => {
-                        let mut selected: Vec<String> =
-                            by.iter().map(|n| self.name(&n.text)).collect();
-                        selected.extend(
-                            values
-                                .iter()
-                                .map(|v| format!("{} AS {}", self.expr(&v.value), self.name(&v.name.text))),
-                        );
-                        let mut out = format!("SELECT {} FROM {from}", selected.join(", "));
-                        if !by.is_empty() {
-                            let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
-                            out.push_str(&format!(" GROUP BY {}", groups.join(", ")));
-                            // **The groups come back in order, and they have to.**
-                            // `GROUP BY` promises nothing about row order, so a hash
-                            // aggregation hands them over in whatever order its table
-                            // yields — which differs between two runs of the same
-                            // pipeline, never mind between two hosts. That was found
-                            // by running one sentence in R and in Python and getting
-                            // the same rows in different orders.
-                            //
-                            // A pipeline whose answer reorders itself between runs is
-                            // not predictable, and predictable is the whole promise.
-                            // So the irregularity is made explicit rather than left
-                            // to the engine: groups are ordered by the columns that
-                            // define them. dplyr and pandas both do this, so it is
-                            // also what anyone arriving from either already expects.
-                            out.push_str(&format!(" ORDER BY {}", groups.join(", ")));
-                        }
-                        out
-                    }
-                    Step::Sort { keys, .. } => {
-                        let ordered: Vec<String> = keys
-                            .iter()
-                            .map(|k| {
-                                format!(
-                                    "{}{}",
-                                    self.name(&k.column.text),
-                                    if k.descending { " DESC" } else { "" }
-                                )
-                            })
-                            .collect();
-                        format!("SELECT * FROM {from} ORDER BY {}", ordered.join(", "))
-                    }
-                    Step::AddRows { other, .. } => {
-                        // `UNION ALL` rather than `UNION`, because adding rows adds
-                        // rows. Dropping the repeats would be `drop_duplicates`, and
-                        // a verb that quietly did two things is the trap `stack` was
-                        // renamed to escape.
-                        //
-                        // **The columns are written out on both sides rather than
-                        // matched by name.** DuckDB has `UNION ALL BY NAME` for
-                        // that and Spark has nothing, so naming them is what makes
-                        // one query serve both. It is also the more honest query:
-                        // the checker has already refused two tables that do not
-                        // hold the same columns, so the list exists and saying it
-                        // costs nothing. What it buys is that the two sides line up
-                        // by name even where the other table holds them in another
-                        // order, which is exactly what `BY NAME` was doing.
-                        let listed: Vec<String> =
-                            entering[i].columns.iter().map(|(c, _)| self.name(c)).collect();
-                        let columns = listed.join(", ");
+        let mut parts = Vec::new();
+        parts.push(format!(
+            "step0 AS (SELECT * FROM {})",
+            self.table(&plan.source)
+        ));
+
+        for (i, step) in plan.steps.iter().enumerate() {
+            let from = format!("step{i}");
+            let body = match step {
+                Step::Keep { condition, .. } => {
+                    format!(
+                        "SELECT * FROM {from} WHERE {}",
+                        self.condition_sql(condition, &from)
+                    )
+                }
+                Step::Pick { names, all_but, .. } => {
+                    if *all_but {
+                        let dropped: Vec<String> =
+                            names.iter().map(|n| self.name(&n.text)).collect();
                         format!(
-                            "SELECT {columns} FROM {from} UNION ALL SELECT {columns} FROM {}",
-                            self.table(&other.text)
+                            "SELECT * {} ({}) FROM {from}",
+                            self.exclude,
+                            dropped.join(", ")
                         )
+                    } else {
+                        let kept: Vec<String> = names.iter().map(|n| self.name(&n.text)).collect();
+                        format!("SELECT {} FROM {from}", kept.join(", "))
                     }
-    
-                    Step::DropDuplicates { .. } => {
-                        // **The same irregularity `summarize` has, and the same
-                        // answer.** `SELECT DISTINCT` promises nothing about the
-                        // order it hands rows back in, so a hash implementation
-                        // returns them in whatever order its table holds, and that
-                        // can differ between engines and between two runs of one.
-                        //
-                        // Its groups are the distinct rows, defined by every column,
-                        // so ordering by every column is the same rule summarize
-                        // follows rather than a second one.
-                        let all: Vec<String> =
-                            entering[i].columns.iter().map(|(c, _)| self.name(c)).collect();
-                        format!(
-                            "SELECT DISTINCT * FROM {from} ORDER BY {}",
-                            all.join(", ")
-                        )
-                    }
-    
-                    Step::Rename { values, .. } => {
-                        // The columns are written out rather than renamed in place,
-                        // so the order is the order they were in. `SELECT * EXCLUDE`
-                        // plus the new name would move every renamed column to the
-                        // end, which is a change nobody asked for.
-                        let renamed: Vec<String> = entering[i]
-                            .columns
-                            .iter()
-                            .map(|(column, _)| {
-                                match values.iter().find(|v| match &v.value {
-                                    Expr::Column(from) => &from.text == column,
-                                    _ => false,
-                                }) {
-                                    Some(v) => {
-                                        format!("{} AS {}", self.name(column), self.name(&v.name.text))
-                                    }
-                                    None => self.name(column),
-                                }
+                }
+                Step::Add { values, by, .. } => {
+                    let added: Vec<String> = values
+                        .iter()
+                        .map(|v| {
+                            // An aggregate written in `add` spans the group and
+                            // hands the same answer back to every row in it,
+                            // which is a window rather than a collapse.
+                            let over = Over {
+                                partition: by,
+                                order: last_sort(plan, i),
+                            };
+                            // A window writes its own `OVER`, because it needs an
+                            // `ORDER BY` inside it that the group alone cannot
+                            // supply. An aggregate does not, and gets the group
+                            // wrapped around it here.
+                            // One path for both kinds. A window writes its
+                            // own `OVER` because it needs an `ORDER BY`
+                            // inside it; an aggregate has its `OVER`
+                            // attached where the aggregate is, which is not
+                            // always the outside of the value.
+                            let value = self.expr_over(&v.value, over);
+                            format!("{value} AS {}", self.name(&v.name.text))
+                        })
+                        .collect();
+                    // `add` covers making a column and remaking one, because to
+                    // whoever writes it those are the same act. SQL does not
+                    // agree: a name that is already there has to be excluded
+                    // first or it arrives twice, and a name that is not there
+                    // cannot be excluded at all. So the two cases are told apart
+                    // here, from the columns this step was handed.
+                    let held = entering.get(i).map(|s| s.names()).unwrap_or_default();
+                    let replaced: Vec<String> = values
+                        .iter()
+                        .filter(|v| held.contains(&v.name.text))
+                        .map(|v| self.name(&v.name.text))
+                        .collect();
+                    let keep = if replaced.is_empty() {
+                        "*".to_string()
+                    } else {
+                        format!("* {} ({})", self.exclude, replaced.join(", "))
+                    };
+                    // **A window makes the row order the engine's choice, so
+                    // the sort has to be said again.** Computing one groups
+                    // the rows to do it, and nothing puts them back: the
+                    // same sentence returned the two regions in opposite
+                    // orders on two engines, with every value identical.
+                    //
+                    // This is the fourth time this exact shape has been
+                    // found, after `summarize`, `drop_duplicates` and
+                    // `take ... by`, and all four times by running two
+                    // things rather than by reading a query. The rule
+                    // underneath is worth stating plainly: **wherever a step
+                    // reorders rows to do its work, the order somebody asked
+                    // for has to be restated afterwards.**
+                    let ordered = if values.iter().any(|v| v.value.windows()) {
+                        last_sort(plan, i)
+                            .map(|keys| {
+                                let written: Vec<String> = keys
+                                    .iter()
+                                    .map(|k| {
+                                        format!(
+                                            "{}{}",
+                                            self.name(&k.column.text),
+                                            if k.descending { " DESC" } else { "" }
+                                        )
+                                    })
+                                    .collect();
+                                format!(" ORDER BY {}", written.join(", "))
                             })
-                            .collect();
-                        format!("SELECT {} FROM {from}", renamed.join(", "))
-                    }
-    
-                    Step::DropMissing { names, .. } => {
-                        let wanted: Vec<String> = if names.is_empty() {
-                            entering[i].columns.iter().map(|(c, _)| c.clone()).collect()
-                        } else {
-                            names.iter().map(|n| n.text.clone()).collect()
-                        };
-                        let tests: Vec<String> = wanted
-                            .iter()
-                            .map(|c| format!("{} IS NOT NULL", self.name(c)))
-                            .collect();
-                        format!("SELECT * FROM {from} WHERE {}", tests.join(" AND "))
-                    }
-    
-                    Step::FillMissing { values, .. } => {
-                        let filled: Vec<String> = entering[i]
-                            .columns
-                            .iter()
-                            .map(|(column, _)| {
-                                match values.iter().find(|v| &v.name.text == column) {
-                                    Some(v) => format!(
-                                        "COALESCE({}, {}) AS {}",
-                                        self.name(column),
-                                        self.expr(&v.value),
-                                        self.name(column)
-                                    ),
-                                    None => self.name(column),
-                                }
-                            })
-                            .collect();
-                        format!("SELECT {} FROM {from}", filled.join(", "))
-                    }
-    
-                    // **Every literal here was worked out by the checker**, which is
-                    // why this is a plain `UNION ALL` over ordinary columns and not
-                    // a dialect's `UNPIVOT`. No pattern is matched, no string is
-                    // split, and nothing in it is specific to an engine.
-                    Step::Lengthen { resolved, .. } => {
-                        let it = resolved.as_ref().expect("the checker resolves every lengthen");
-                        let branches: Vec<String> = it
-                            .rows
-                            .iter()
-                            .map(|row| {
-                                let mut selected: Vec<String> =
-                                    it.keep.iter().map(|c| self.name(c)).collect();
-                                selected.extend(
-                                    row.labels.iter().zip(&it.name_columns).map(|(label, into)| {
-                                        format!("{} AS {}", self.text(label), self.name(into))
-                                    }),
-                                );
-                                selected.extend(
-                                    row.sources.iter().zip(&it.value_columns).map(|(src, into)| {
-                                        format!("{} AS {}", self.name(src), self.name(into))
-                                    }),
-                                );
-                                format!("SELECT {} FROM {from}", selected.join(", "))
-                            })
-                            .collect();
-                        // **Ordered by every column of the result, left to right**,
-                        // which is not a new rule but the one `drop_duplicates`
-                        // already follows. A union promises nothing about row order,
-                        // and the columns that stayed come first, so each original
-                        // row's new rows land together — which is what tidyr spends
-                        // `cols_vary` on.
-                        let ordered: Vec<String> = it
-                            .keep
-                            .iter()
-                            .chain(it.name_columns.iter())
-                            .chain(it.value_columns.iter())
-                            .map(|c| self.name(c))
-                            .collect();
-                        format!("{} ORDER BY {}", branches.join(" UNION ALL "), ordered.join(", "))
-                    }
-    
-                    Step::Widen { name: pattern, value, by, missing, giving, .. } => {
+                            .unwrap_or_default()
+                    } else {
+                        String::new()
+                    };
+                    format!("SELECT {keep}, {} FROM {from}{ordered}", added.join(", "))
+                }
+                Step::Summarize { values, by, .. } => {
+                    let mut selected: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
+                    selected.extend(values.iter().map(|v| {
+                        format!("{} AS {}", self.expr(&v.value), self.name(&v.name.text))
+                    }));
+                    let mut out = format!("SELECT {} FROM {from}", selected.join(", "));
+                    if !by.is_empty() {
                         let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
-                        let labelled: Vec<String> =
-                            pattern.named_parts().iter().map(|c| self.name(c)).collect();
-    
-                        // Which rows belong in a declared column, one test per piece
-                        // of its name. It is the pattern read backwards, by the same
-                        // code `lengthen` reads a column apart with.
-                        let belongs = |made: &str| -> String {
-                            pattern
-                                .read(made)
-                                .expect("the checker read every declared column")
-                                .iter()
-                                .zip(pattern.named_parts())
-                                .map(|(piece, column)| format!("{} = {}", self.name(column), self.text(piece)))
-                                .collect::<Vec<_>>()
-                                .join(" AND ")
-                        };
-    
-                        // **Both refusals are worked out once, before anything is
-                        // pivoted, and they have to be.** A dialect's `PIVOT` takes
-                        // exactly one aggregate, so a `CASE` that counts cannot sit
-                        // inside it; and writing them per column would repeat a
-                        // whole sentence of English in the query for every column
-                        // made. Doing it here also makes the two shapes below behave
-                        // identically, which matters more than either: one verb may
-                        // not refuse in one spelling and shrug in the other.
-                        let cell: Vec<String> =
-                            groups.iter().chain(labelled.iter()).cloned().collect();
-                        let mut guards = Vec::new();
-                        if !giving.is_empty() {
-                            let known: Vec<String> =
-                                giving.iter().map(|m| format!("({})", belongs(&m.text))).collect();
-                            guards.push(format!(
+                        out.push_str(&format!(" GROUP BY {}", groups.join(", ")));
+                        // **The groups come back in order, and they have to.**
+                        // `GROUP BY` promises nothing about row order, so a hash
+                        // aggregation hands them over in whatever order its table
+                        // yields — which differs between two runs of the same
+                        // pipeline, never mind between two hosts. That was found
+                        // by running one sentence in R and in Python and getting
+                        // the same rows in different orders.
+                        //
+                        // A pipeline whose answer reorders itself between runs is
+                        // not predictable, and predictable is the whole promise.
+                        // So the irregularity is made explicit rather than left
+                        // to the engine: groups are ordered by the columns that
+                        // define them. dplyr and pandas both do this, so it is
+                        // also what anyone arriving from either already expects.
+                        out.push_str(&format!(" ORDER BY {}", groups.join(", ")));
+                    }
+                    out
+                }
+                Step::Sort { keys, .. } => {
+                    let ordered: Vec<String> = keys
+                        .iter()
+                        .map(|k| {
+                            format!(
+                                "{}{}",
+                                self.name(&k.column.text),
+                                if k.descending { " DESC" } else { "" }
+                            )
+                        })
+                        .collect();
+                    format!("SELECT * FROM {from} ORDER BY {}", ordered.join(", "))
+                }
+                Step::AddRows { other, .. } => {
+                    // `UNION ALL` rather than `UNION`, because adding rows adds
+                    // rows. Dropping the repeats would be `drop_duplicates`, and
+                    // a verb that quietly did two things is the trap `stack` was
+                    // renamed to escape.
+                    //
+                    // **The columns are written out on both sides rather than
+                    // matched by name.** DuckDB has `UNION ALL BY NAME` for
+                    // that and Spark has nothing, so naming them is what makes
+                    // one query serve both. It is also the more honest query:
+                    // the checker has already refused two tables that do not
+                    // hold the same columns, so the list exists and saying it
+                    // costs nothing. What it buys is that the two sides line up
+                    // by name even where the other table holds them in another
+                    // order, which is exactly what `BY NAME` was doing.
+                    let listed: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(c, _)| self.name(c))
+                        .collect();
+                    let columns = listed.join(", ");
+                    format!(
+                        "SELECT {columns} FROM {from} UNION ALL SELECT {columns} FROM {}",
+                        self.table(&other.text)
+                    )
+                }
+
+                Step::DropDuplicates { .. } => {
+                    // **The same irregularity `summarize` has, and the same
+                    // answer.** `SELECT DISTINCT` promises nothing about the
+                    // order it hands rows back in, so a hash implementation
+                    // returns them in whatever order its table holds, and that
+                    // can differ between engines and between two runs of one.
+                    //
+                    // Its groups are the distinct rows, defined by every column,
+                    // so ordering by every column is the same rule summarize
+                    // follows rather than a second one.
+                    let all: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(c, _)| self.name(c))
+                        .collect();
+                    format!("SELECT DISTINCT * FROM {from} ORDER BY {}", all.join(", "))
+                }
+
+                Step::Rename { values, .. } => {
+                    // The columns are written out rather than renamed in place,
+                    // so the order is the order they were in. `SELECT * EXCLUDE`
+                    // plus the new name would move every renamed column to the
+                    // end, which is a change nobody asked for.
+                    let renamed: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(column, _)| {
+                            match values.iter().find(|v| match &v.value {
+                                Expr::Column(from) => &from.text == column,
+                                _ => false,
+                            }) {
+                                Some(v) => {
+                                    format!("{} AS {}", self.name(column), self.name(&v.name.text))
+                                }
+                                None => self.name(column),
+                            }
+                        })
+                        .collect();
+                    format!("SELECT {} FROM {from}", renamed.join(", "))
+                }
+
+                Step::DropMissing { names, .. } => {
+                    let wanted: Vec<String> = if names.is_empty() {
+                        entering[i].columns.iter().map(|(c, _)| c.clone()).collect()
+                    } else {
+                        names.iter().map(|n| n.text.clone()).collect()
+                    };
+                    let tests: Vec<String> = wanted
+                        .iter()
+                        .map(|c| format!("{} IS NOT NULL", self.name(c)))
+                        .collect();
+                    format!("SELECT * FROM {from} WHERE {}", tests.join(" AND "))
+                }
+
+                Step::FillMissing { values, .. } => {
+                    let filled: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(
+                            |(column, _)| match values.iter().find(|v| &v.name.text == column) {
+                                Some(v) => format!(
+                                    "COALESCE({}, {}) AS {}",
+                                    self.name(column),
+                                    self.expr(&v.value),
+                                    self.name(column)
+                                ),
+                                None => self.name(column),
+                            },
+                        )
+                        .collect();
+                    format!("SELECT {} FROM {from}", filled.join(", "))
+                }
+
+                // **Every literal here was worked out by the checker**, which is
+                // why this is a plain `UNION ALL` over ordinary columns and not
+                // a dialect's `UNPIVOT`. No pattern is matched, no string is
+                // split, and nothing in it is specific to an engine.
+                Step::Lengthen { resolved, .. } => {
+                    let it = resolved
+                        .as_ref()
+                        .expect("the checker resolves every lengthen");
+                    let branches: Vec<String> = it
+                        .rows
+                        .iter()
+                        .map(|row| {
+                            let mut selected: Vec<String> =
+                                it.keep.iter().map(|c| self.name(c)).collect();
+                            selected.extend(row.labels.iter().zip(&it.name_columns).map(
+                                |(label, into)| {
+                                    format!("{} AS {}", self.text(label), self.name(into))
+                                },
+                            ));
+                            selected.extend(row.sources.iter().zip(&it.value_columns).map(
+                                |(src, into)| format!("{} AS {}", self.name(src), self.name(into)),
+                            ));
+                            format!("SELECT {} FROM {from}", selected.join(", "))
+                        })
+                        .collect();
+                    // **Ordered by every column of the result, left to right**,
+                    // which is not a new rule but the one `drop_duplicates`
+                    // already follows. A union promises nothing about row order,
+                    // and the columns that stayed come first, so each original
+                    // row's new rows land together — which is what tidyr spends
+                    // `cols_vary` on.
+                    let ordered: Vec<String> = it
+                        .keep
+                        .iter()
+                        .chain(it.name_columns.iter())
+                        .chain(it.value_columns.iter())
+                        .map(|c| self.name(c))
+                        .collect();
+                    format!(
+                        "{} ORDER BY {}",
+                        branches.join(" UNION ALL "),
+                        ordered.join(", ")
+                    )
+                }
+
+                Step::Widen {
+                    name: pattern,
+                    value,
+                    by,
+                    missing,
+                    giving,
+                    ..
+                } => {
+                    let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
+                    let labelled: Vec<String> =
+                        pattern.named_parts().iter().map(|c| self.name(c)).collect();
+
+                    // Which rows belong in a declared column, one test per piece
+                    // of its name. It is the pattern read backwards, by the same
+                    // code `lengthen` reads a column apart with.
+                    let belongs = |made: &str| -> String {
+                        pattern
+                            .read(made)
+                            .expect("the checker read every declared column")
+                            .iter()
+                            .zip(pattern.named_parts())
+                            .map(|(piece, column)| {
+                                format!("{} = {}", self.name(column), self.text(piece))
+                            })
+                            .collect::<Vec<_>>()
+                            .join(" AND ")
+                    };
+
+                    // **Both refusals are worked out once, before anything is
+                    // pivoted, and they have to be.** A dialect's `PIVOT` takes
+                    // exactly one aggregate, so a `CASE` that counts cannot sit
+                    // inside it; and writing them per column would repeat a
+                    // whole sentence of English in the query for every column
+                    // made. Doing it here also makes the two shapes below behave
+                    // identically, which matters more than either: one verb may
+                    // not refuse in one spelling and shrug in the other.
+                    let cell: Vec<String> = groups.iter().chain(labelled.iter()).cloned().collect();
+                    let mut guards = Vec::new();
+                    if !giving.is_empty() {
+                        let known: Vec<String> = giving
+                            .iter()
+                            .map(|m| format!("({})", belongs(&m.text)))
+                            .collect();
+                        guards.push(format!(
                                 "WHEN NOT ({}) THEN {}({})",
                                 known.join(" OR "),
                                 self.raise,
                                 self.text("this holds a value that `giving` does not list, so widening would drop those rows without saying so. Add it to `giving`, or keep only the rows you meant first")
                             ));
-                        }
-                        if !value.aggregates() {
-                            guards.push(format!(
+                    }
+                    if !value.aggregates() {
+                        guards.push(format!(
                                 "WHEN count(*) OVER (PARTITION BY {}) > 1 THEN {}({})",
                                 cell.join(", "),
                                 self.raise,
@@ -478,206 +520,215 @@ impl Dialect {
                                 // it is the book's prose as much as the engine's.
                                 self.text("two rows want the same cell, and nothing here says which of them wins. Say what to do about that with `value average(...)` or `value first(...)`, or summarize before widening")
                             ));
+                    }
+
+                    // An aggregate in `value` is what answers the second of
+                    // those, so the guarded column holds what it is aggregating
+                    // and the aggregate itself is written around it below.
+                    let inner = match aggregate_argument(value) {
+                        Some(arg) => arg,
+                        None => value.clone(),
+                    };
+                    let held = if guards.is_empty() {
+                        self.expr(&inner)
+                    } else {
+                        format!("CASE {} ELSE {} END", guards.join(" "), self.expr(&inner))
+                    };
+                    let counted = format!("(SELECT *, {held} AS {} FROM {from})", self.name(CELL));
+
+                    let guarded = Expr::Column(Name {
+                        text: CELL.into(),
+                        span: Span::new(0, 0),
+                    });
+                    let aggregate = match value {
+                        Expr::Call {
+                            name: fname, args, ..
+                        } if value.aggregates() => {
+                            if args.is_empty() {
+                                // `row_count()` asks about rows rather than a
+                                // column, and the guarded cell stands in for the
+                                // row so that the guard is still read. `count(*)`
+                                // would name nothing and could be optimized past.
+                                format!("count({})", self.expr(&guarded))
+                            } else {
+                                self.call(fname, std::slice::from_ref(&guarded))
+                            }
                         }
-    
-                        // An aggregate in `value` is what answers the second of
-                        // those, so the guarded column holds what it is aggregating
-                        // and the aggregate itself is written around it below.
-                        let inner = match aggregate_argument(value) {
-                            Some(arg) => arg,
-                            None => value.clone(),
-                        };
-                        let held = if guards.is_empty() {
-                            self.expr(&inner)
+                        // No aggregate was written, so the one value in the cell
+                        // is the answer, and the guard above has already refused
+                        // the case where there is more than one.
+                        _ => format!("max({})", self.expr(&guarded)),
+                    };
+
+                    if giving.is_empty() {
+                        // Nothing was declared, so the columns come from the
+                        // data and only the engine can name them. The checker
+                        // has already refused any step after this one.
+                        let on = if labelled.len() == 1 {
+                            labelled[0].clone()
                         } else {
-                            format!("CASE {} ELSE {} END", guards.join(" "), self.expr(&inner))
-                        };
-                        let counted =
-                            format!("(SELECT *, {held} AS {} FROM {from})", self.name(CELL));
-    
-                        let guarded = Expr::Column(Name { text: CELL.into(), span: Span::new(0, 0) });
-                        let aggregate = match value {
-                            Expr::Call { name: fname, args, .. } if value.aggregates() => {
-                                if args.is_empty() {
-                                    // `row_count()` asks about rows rather than a
-                                    // column, and the guarded cell stands in for the
-                                    // row so that the guard is still read. `count(*)`
-                                    // would name nothing and could be optimized past.
-                                    format!("count({})", self.expr(&guarded))
-                                } else {
-                                    self.call(fname, std::slice::from_ref(&guarded))
+                            let mut parts = Vec::new();
+                            for (i, column) in labelled.iter().enumerate() {
+                                if !pattern.literals[i].is_empty() {
+                                    parts.push(self.text(&pattern.literals[i]));
+                                }
+                                parts.push(column.clone());
+                            }
+                            if let Some(tail) = pattern.literals.last() {
+                                if !tail.is_empty() {
+                                    parts.push(self.text(tail));
                                 }
                             }
-                            // No aggregate was written, so the one value in the cell
-                            // is the answer, and the guard above has already refused
-                            // the case where there is more than one.
-                            _ => format!("max({})", self.expr(&guarded)),
+                            parts.join(" || ")
                         };
-    
-                        if giving.is_empty() {
-                            // Nothing was declared, so the columns come from the
-                            // data and only the engine can name them. The checker
-                            // has already refused any step after this one.
-                            let on = if labelled.len() == 1 {
-                                labelled[0].clone()
-                            } else {
-                                let mut parts = Vec::new();
-                                for (i, column) in labelled.iter().enumerate() {
-                                    if !pattern.literals[i].is_empty() {
-                                        parts.push(self.text(&pattern.literals[i]));
-                                    }
-                                    parts.push(column.clone());
-                                }
-                                if let Some(tail) = pattern.literals.last() {
-                                    if !tail.is_empty() {
-                                        parts.push(self.text(tail));
-                                    }
-                                }
-                                parts.join(" || ")
-                            };
-                            // Only a dialect that can work the value list out for
-                            // itself gets here. `refuses` has already turned this
-                            // sentence away for one that cannot, which is why this
-                            // arm may assume rather than check.
-                            debug_assert!(self.dynamic_pivot, "a dialect without a dynamic pivot refuses this sentence before it is rendered");
-                            format!(
+                        // Only a dialect that can work the value list out for
+                        // itself gets here. `refuses` has already turned this
+                        // sentence away for one that cannot, which is why this
+                        // arm may assume rather than check.
+                        debug_assert!(self.dynamic_pivot, "a dialect without a dynamic pivot refuses this sentence before it is rendered");
+                        format!(
                                 "SELECT * FROM (PIVOT {counted} ON {on} USING {aggregate} GROUP BY {}) ORDER BY {}",
                                 groups.join(", "),
                                 groups.join(", ")
                             )
-                        } else {
-                            let cells: Vec<String> = giving
-                                .iter()
-                                .map(|made| {
-                                    let one = format!(
-                                        "{aggregate} FILTER (WHERE {})",
-                                        belongs(&made.text)
-                                    );
-                                    let filled = match missing {
-                                        Some(f) => format!("COALESCE({one}, {})", self.expr(f)),
-                                        None => one,
-                                    };
-                                    format!("{filled} AS {}", self.name(&made.text))
-                                })
-                                .collect();
-                            format!(
-                                "SELECT {}, {} FROM {counted} GROUP BY {} ORDER BY {}",
-                                groups.join(", "),
-                                cells.join(", "),
-                                groups.join(", "),
-                                groups.join(", ")
-                            )
-                        }
-                    }
-    
-                    Step::Join { other, by, unmatched, .. } => {
-                        let right = self.table(&other.text);
-                        let on: Vec<String> = by
+                    } else {
+                        let cells: Vec<String> = giving
                             .iter()
-                            .map(|k| {
-                                format!("{from}.{} = {right}.{}", self.name(&k.text), self.name(&k.text))
+                            .map(|made| {
+                                let one =
+                                    format!("{aggregate} FILTER (WHERE {})", belongs(&made.text));
+                                let filled = match missing {
+                                    Some(f) => format!("COALESCE({one}, {})", self.expr(f)),
+                                    None => one,
+                                };
+                                format!("{filled} AS {}", self.name(&made.text))
                             })
                             .collect();
-                        let dropped: Vec<String> =
-                            by.iter().map(|k| self.name(&k.text)).collect();
-                        let kind = match unmatched {
-                            Unmatched::This => "LEFT JOIN",
-                            Unmatched::None => "JOIN",
-                            Unmatched::Both => "FULL JOIN",
-                        };
-    
-                        // **A full join has to coalesce the key, and this is where
-                        // the obvious query is silently wrong.** Taking the key from
-                        // this table's side works for every row that this table has.
-                        // A row that exists only in the other table has no left side
-                        // at all, so the key comes back empty while the value is
-                        // sitting in the other table untouched. The column that says
-                        // which rows correspond is the one column that must never be
-                        // empty in the answer.
-                        //
-                        // The other two kinds cannot hit it: `LEFT JOIN` keeps every
-                        // row of this table and `JOIN` keeps only matches, so in
-                        // both the left key is always there.
-                        let left_side = if *unmatched == Unmatched::Both {
-                            entering[i]
-                                .columns
-                                .iter()
-                                .map(|(column, _)| {
-                                    let quoted = self.name(column);
-                                    if by.iter().any(|k| &k.text == column) {
-                                        format!(
-                                            "COALESCE({from}.{quoted}, {right}.{quoted}) AS {quoted}"
-                                        )
-                                    } else {
-                                        format!("{from}.{quoted}")
-                                    }
-                                })
-                                .collect::<Vec<_>>()
-                                .join(", ")
-                        } else {
-                            format!("{from}.*")
-                        };
-    
                         format!(
-                            "SELECT {left_side}, {right}.* {} ({}) FROM {from} {kind} {right} ON {}",
-                        self.exclude,
-                            dropped.join(", "),
-                            on.join(" AND ")
+                            "SELECT {}, {} FROM {counted} GROUP BY {} ORDER BY {}",
+                            groups.join(", "),
+                            cells.join(", "),
+                            groups.join(", "),
+                            groups.join(", ")
                         )
                     }
-                    Step::Take { count, by, .. } => {
-                        if by.is_empty() {
-                            format!("SELECT * FROM {from} LIMIT {count}")
-                        } else {
-                            // **The window carries the sort's own keys**, rather than
-                            // trusting the engine to number rows in the order they
-                            // arrived. DuckDB does happen to, and SQL promises
-                            // nothing about it, which is the difference between a
-                            // query that works and a query that works here. The
-                            // checker has already refused this without a sort before
-                            // it, so there is always something to find.
-                            let keys = last_sort(plan, i)
-                                .map(|keys| {
-                                    keys.iter()
-                                        .map(|k| {
-                                            format!(
-                                                "{}{}",
-                                                self.name(&k.column.text),
-                                                if k.descending { " DESC" } else { "" }
-                                            )
-                                        })
-                                        .collect::<Vec<_>>()
-                                        .join(", ")
-                                })
-                                .expect("a grouped take is only reached after a sort");
-                            let groups: Vec<String> =
-                                by.iter().map(|n| self.name(&n.text)).collect();
-                            // **The order the sort established has to survive the
-                            // window.** Filtering on the row number is a `WHERE`,
-                            // and a `WHERE` promises nothing about what order the
-                            // rows come out in, so without repeating the keys the
-                            // groups come back in whatever order the engine chose.
-                            // The parity harness caught exactly that: R and Python
-                            // ran this sentence and returned the same two rows the
-                            // other way round.
+                }
+
+                Step::Join {
+                    other,
+                    by,
+                    unmatched,
+                    ..
+                } => {
+                    let right = self.table(&other.text);
+                    let on: Vec<String> = by
+                        .iter()
+                        .map(|k| {
                             format!(
+                                "{from}.{} = {right}.{}",
+                                self.name(&k.text),
+                                self.name(&k.text)
+                            )
+                        })
+                        .collect();
+                    let dropped: Vec<String> = by.iter().map(|k| self.name(&k.text)).collect();
+                    let kind = match unmatched {
+                        Unmatched::This => "LEFT JOIN",
+                        Unmatched::None => "JOIN",
+                        Unmatched::Both => "FULL JOIN",
+                    };
+
+                    // **A full join has to coalesce the key, and this is where
+                    // the obvious query is silently wrong.** Taking the key from
+                    // this table's side works for every row that this table has.
+                    // A row that exists only in the other table has no left side
+                    // at all, so the key comes back empty while the value is
+                    // sitting in the other table untouched. The column that says
+                    // which rows correspond is the one column that must never be
+                    // empty in the answer.
+                    //
+                    // The other two kinds cannot hit it: `LEFT JOIN` keeps every
+                    // row of this table and `JOIN` keeps only matches, so in
+                    // both the left key is always there.
+                    let left_side = if *unmatched == Unmatched::Both {
+                        entering[i]
+                            .columns
+                            .iter()
+                            .map(|(column, _)| {
+                                let quoted = self.name(column);
+                                if by.iter().any(|k| &k.text == column) {
+                                    format!(
+                                        "COALESCE({from}.{quoted}, {right}.{quoted}) AS {quoted}"
+                                    )
+                                } else {
+                                    format!("{from}.{quoted}")
+                                }
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    } else {
+                        format!("{from}.*")
+                    };
+
+                    format!(
+                        "SELECT {left_side}, {right}.* {} ({}) FROM {from} {kind} {right} ON {}",
+                        self.exclude,
+                        dropped.join(", "),
+                        on.join(" AND ")
+                    )
+                }
+                Step::Take { count, by, .. } => {
+                    if by.is_empty() {
+                        format!("SELECT * FROM {from} LIMIT {count}")
+                    } else {
+                        // **The window carries the sort's own keys**, rather than
+                        // trusting the engine to number rows in the order they
+                        // arrived. DuckDB does happen to, and SQL promises
+                        // nothing about it, which is the difference between a
+                        // query that works and a query that works here. The
+                        // checker has already refused this without a sort before
+                        // it, so there is always something to find.
+                        let keys = last_sort(plan, i)
+                            .map(|keys| {
+                                keys.iter()
+                                    .map(|k| {
+                                        format!(
+                                            "{}{}",
+                                            self.name(&k.column.text),
+                                            if k.descending { " DESC" } else { "" }
+                                        )
+                                    })
+                                    .collect::<Vec<_>>()
+                                    .join(", ")
+                            })
+                            .expect("a grouped take is only reached after a sort");
+                        let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
+                        // **The order the sort established has to survive the
+                        // window.** Filtering on the row number is a `WHERE`,
+                        // and a `WHERE` promises nothing about what order the
+                        // rows come out in, so without repeating the keys the
+                        // groups come back in whatever order the engine chose.
+                        // The parity harness caught exactly that: R and Python
+                        // ran this sentence and returned the same two rows the
+                        // other way round.
+                        format!(
                                 "SELECT * {} ({rank}) FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY {} ORDER BY {keys}) AS {rank} FROM {from}) WHERE {rank} <= {count} ORDER BY {keys}",
                                 self.exclude,
                                 groups.join(", "),
                                 rank = self.name(RANK)
                             )
-                        }
                     }
-                };
-                parts.push(format!("step{} AS ({body})", i + 1));
-            }
-    
-            format!(
-                "WITH {}\nSELECT * FROM step{}",
-                parts.join(",\n     "),
-                plan.steps.len()
-            )
+                }
+            };
+            parts.push(format!("step{} AS ({body})", i + 1));
         }
+
+        format!(
+            "WITH {}\nSELECT * FROM step{}",
+            parts.join(",\n     "),
+            plan.steps.len()
+        )
+    }
 
     /// An identifier, quoted so that a column called `select` or `순서` is a column.
     /// A text value, quoted so that an apostrophe is an apostrophe and a
@@ -709,7 +760,10 @@ impl Dialect {
     /// is a name exactly as written, so a column really can be called `a.b`, and
     /// splitting one would break it.
     fn table(&self, text: &str) -> String {
-        text.split('.').map(|part| self.name(part)).collect::<Vec<_>>().join(".")
+        text.split('.')
+            .map(|part| self.name(part))
+            .collect::<Vec<_>>()
+            .join(".")
     }
 
     fn expr(&self, e: &Expr) -> String {
@@ -724,11 +778,20 @@ impl Dialect {
             Expr::Decimal { value, .. } => format_decimal(*value),
             Expr::Truth { value, .. } => if *value { "TRUE" } else { "FALSE" }.to_string(),
             Expr::Missing { .. } => "NULL".to_string(),
-    
-            Expr::Arithmetic { op, left, right, .. } => {
-                format!("({} {} {})", self.expr_over(left, over), op, self.expr_over(right, over))
+
+            Expr::Arithmetic {
+                op, left, right, ..
+            } => {
+                format!(
+                    "({} {} {})",
+                    self.expr_over(left, over),
+                    op,
+                    self.expr_over(right, over)
+                )
             }
-            Expr::Compare { op, left, right, .. } => {
+            Expr::Compare {
+                op, left, right, ..
+            } => {
                 let symbol = match op {
                     Compare::Is => "=",
                     Compare::IsNot => "<>",
@@ -737,17 +800,29 @@ impl Dialect {
                     Compare::Greater => ">",
                     Compare::GreaterOrEqual => ">=",
                 };
-                format!("({} {symbol} {})", self.expr_over(left, over), self.expr_over(right, over))
+                format!(
+                    "({} {symbol} {})",
+                    self.expr_over(left, over),
+                    self.expr_over(right, over)
+                )
             }
-            Expr::Logic { op, left, right, .. } => {
+            Expr::Logic {
+                op, left, right, ..
+            } => {
                 let word = match op {
                     Logic::And => "AND",
                     Logic::Or => "OR",
                 };
-                format!("({} {word} {})", self.expr_over(left, over), self.expr_over(right, over))
+                format!(
+                    "({} {word} {})",
+                    self.expr_over(left, over),
+                    self.expr_over(right, over)
+                )
             }
             Expr::Not { inner, .. } => format!("(NOT {})", self.expr_over(inner, over)),
-            Expr::In { left, set, negated, .. } => {
+            Expr::In {
+                left, set, negated, ..
+            } => {
                 let values: Vec<String> = set.iter().map(|v| self.expr_over(v, over)).collect();
                 format!(
                     "({} {}IN ({}))",
@@ -766,7 +841,9 @@ impl Dialect {
             // `LIKE` rather than a dialect's `starts_with`, because it is the one
             // spelling every engine has. The value is escaped, so a `%` someone
             // typed is a percent sign and not "anything at all".
-            Expr::TextTest { op, left, value, .. } => {
+            Expr::TextTest {
+                op, left, value, ..
+            } => {
                 let pattern = match value.as_ref() {
                     Expr::Text { value, .. } => {
                         let escaped = value
@@ -801,7 +878,9 @@ impl Dialect {
             // A conditional is `CASE WHEN` and always was; the grammar's word
             // for it is just the plain one. `ELSE` is left off where nothing was
             // said, which is exactly what makes an unmatched row missing.
-            Expr::When { arms, otherwise, .. } => {
+            Expr::When {
+                arms, otherwise, ..
+            } => {
                 let mut out = String::from("CASE");
                 for (test, value) in arms {
                     out.push_str(&format!(
@@ -875,7 +954,9 @@ impl Dialect {
             // `Over::default()` carries no partition, so a `summarize` reaches
             // this arm and gets a plain call, which is what collapsing a group
             // means.
-            Expr::Call { name: fname, args, .. } => {
+            Expr::Call {
+                name: fname, args, ..
+            } => {
                 let written = self.call(fname, args);
                 if !vocabulary::is_aggregate(fname) || over.partition.is_empty() {
                     return written;
@@ -884,7 +965,7 @@ impl Dialect {
                     over.partition.iter().map(|n| self.name(&n.text)).collect();
                 format!("{written} OVER (PARTITION BY {})", groups.join(", "))
             }
-    
+
             Expr::Window { kind, key, .. } => {
                 let ordering: Vec<String> = match key {
                     // `rank` says what it ranks by, so its own key is the order.
@@ -925,12 +1006,12 @@ impl Dialect {
                 format!("{word}() OVER ({})", clauses.join(" "))
             }
 
-
-    
             // Unreachable in a checked plan: the checker refuses `matching` anywhere
             // but as a whole `keep` condition, and `condition_sql` renders that case
             // before this function is ever reached.
-            Expr::Matching { other, .. } => format!("EXISTS (SELECT 1 FROM {})", self.table(&other.text)),
+            Expr::Matching { other, .. } => {
+                format!("EXISTS (SELECT 1 FROM {})", self.table(&other.text))
+            }
         }
     }
 
@@ -946,7 +1027,13 @@ impl Dialect {
             let right = self.table(&other.text);
             let on: Vec<String> = by
                 .iter()
-                .map(|k| format!("{right}.{} = {from}.{}", self.name(&k.text), self.name(&k.text)))
+                .map(|k| {
+                    format!(
+                        "{right}.{} = {from}.{}",
+                        self.name(&k.text),
+                        self.name(&k.text)
+                    )
+                })
                 .collect();
             format!(
                 "{}EXISTS (SELECT 1 FROM {right} WHERE {})",
@@ -954,7 +1041,7 @@ impl Dialect {
                 on.join(" AND ")
             )
         };
-    
+
         match condition {
             Expr::Matching { other, by, .. } => exists(other, by, false),
             Expr::Not { inner, .. } => match inner.as_ref() {
@@ -987,28 +1074,31 @@ impl Dialect {
             // rather than a fixed number of slots.
             "first_present" => format!(
                 "coalesce({})",
-                args.iter().map(|e| self.expr(e)).collect::<Vec<_>>().join(", ")
+                args.iter()
+                    .map(|e| self.expr(e))
+                    .collect::<Vec<_>>()
+                    .join(", ")
             ),
             // `STRING` rather than `VARCHAR`, and it was measured: Spark refuses a
-        // bare `VARCHAR` because it wants a length, and both engines take
-        // `STRING`. One spelling serves both, so this is not a dialect entry.
-        "year" => format!("year({})", arg(0)),
-        "month" => format!("month({})", arg(0)),
-        "day" => format!("day({})", arg(0)),
-        "hour" => format!("hour({})", arg(0)),
-        "weekday" => self.weekday.replace("{}", &arg(0)),
-        "to_number" => format!("CAST({} AS DOUBLE)", arg(0)),
-        "to_whole" => format!("CAST({} AS BIGINT)", arg(0)),
-        "to_text" => format!("CAST({} AS STRING)", arg(0)),
-        "to_date" => format!("CAST({} AS DATE)", arg(0)),
-        "trim" => format!("trim({})", arg(0)),
-        "characters" => format!("length({})", arg(0)),
-        "replace_text" => format!("replace({}, {}, {})", arg(0), arg(1), arg(2)),
-        "split_text" => format!("split_part({}, {}, {})", arg(0), arg(1), arg(2)),
-        // The one here that is not a call. Both engines spell it as an operator
-        // and both are inclusive at each end.
-        "between" => format!("({} BETWEEN {} AND {})", arg(0), arg(1), arg(2)),
-        "lower" => format!("lower({})", arg(0)),
+            // bare `VARCHAR` because it wants a length, and both engines take
+            // `STRING`. One spelling serves both, so this is not a dialect entry.
+            "year" => format!("year({})", arg(0)),
+            "month" => format!("month({})", arg(0)),
+            "day" => format!("day({})", arg(0)),
+            "hour" => format!("hour({})", arg(0)),
+            "weekday" => self.weekday.replace("{}", &arg(0)),
+            "to_number" => format!("CAST({} AS DOUBLE)", arg(0)),
+            "to_whole" => format!("CAST({} AS BIGINT)", arg(0)),
+            "to_text" => format!("CAST({} AS STRING)", arg(0)),
+            "to_date" => format!("CAST({} AS DATE)", arg(0)),
+            "trim" => format!("trim({})", arg(0)),
+            "characters" => format!("length({})", arg(0)),
+            "replace_text" => format!("replace({}, {}, {})", arg(0), arg(1), arg(2)),
+            "split_text" => format!("split_part({}, {}, {})", arg(0), arg(1), arg(2)),
+            // The one here that is not a call. Both engines spell it as an operator
+            // and both are inclusive at each end.
+            "between" => format!("({} BETWEEN {} AND {})", arg(0), arg(1), arg(2)),
+            "lower" => format!("lower({})", arg(0)),
             "upper" => format!("upper({})", arg(0)),
             other => unreachable!("`{other}` reached the SQL backend without a spelling"),
         }
@@ -1037,11 +1127,14 @@ struct Over<'a> {
 /// that names no column stands for the row, so it gets one.
 fn aggregate_argument(value: &Expr) -> Option<Expr> {
     match value {
-        Expr::Call { name: fname, args, .. } if crate::vocabulary::is_aggregate(fname) => Some(
-            args.first()
-                .cloned()
-                .unwrap_or(Expr::Whole { value: 1, span: Span::new(0, 0) }),
-        ),
+        Expr::Call {
+            name: fname, args, ..
+        } if crate::vocabulary::is_aggregate(fname) => {
+            Some(args.first().cloned().unwrap_or(Expr::Whole {
+                value: 1,
+                span: Span::new(0, 0),
+            }))
+        }
         _ => None,
     }
 }

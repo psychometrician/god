@@ -12,7 +12,7 @@
 \item{...}{Unused.}
 }
 \value{
-The text, invisibly.
+The text.
 }
 \description{
 The pipeline as the grammar's own text

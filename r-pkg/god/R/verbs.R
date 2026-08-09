@@ -728,7 +728,7 @@ as.data.frame.god_pipeline <- function(x, ...) {
 #'
 #' @param x A pipeline.
 #' @param ... Unused.
-#' @return The text, invisibly.
+#' @return The text.
 #' @export
 format.god_pipeline <- function(x, ...) {
   god_written(x)

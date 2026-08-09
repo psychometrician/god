@@ -653,6 +653,10 @@ check_error("all_but wants all its columns inside it",
             lambda: sales >> pick(all_but(col.cost), col.region), "pick(all_but(col.cost, col.region))")
 check_error("take wants a whole number", lambda: sales >> take(2.5), "take(10)")
 check_error("a verb needs a table", lambda: 3 >> take(1), "works on a table")
+check_error("an expression is not a yes or no",
+            lambda: bool(col.revenue == 100), "not a yes or no")
+check("a notebook's probe is not a column",
+      hasattr(col, "_ipython_canary_method_should_not_exist_"), False)
 
 print("\nwhich engine answers")
 
