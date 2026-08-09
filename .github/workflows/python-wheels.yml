@@ -32,6 +32,13 @@ on:
       - "god-cli/**"
       - ".github/workflows/python-wheels.yml"
 
+# Read-only, stated rather than inherited: this workflow builds and tests
+# wheels and pushes nothing anywhere. The other two workflows already say so;
+# this one relied on the repository default, which is a setting rather than a
+# promise.
+permissions:
+  contents: read
+
 jobs:
   wheels:
     name: ${{ matrix.tag }}
