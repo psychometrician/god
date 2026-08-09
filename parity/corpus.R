@@ -155,3 +155,15 @@ sales |> sort(ordered_on) |> add(so_far = running_total(revenue), before = previ
 
 ---
 sales |> add(shout = upper(trim(product)), quiet = lower(trim(product))) |> pick(product, shout, quiet) |> take(2)
+---
+sales |> add_rows(sales) |> summarize(rows = row_count(), total = total(revenue))
+---
+sales |> sort(ordered_on) |> summarize(earliest = first(product), latest = last(product), by = region)
+---
+sales |> summarize(mid = median(revenue), by = region)
+---
+sales |> summarize(kinds = unique_count(product), by = region)
+---
+sales |> add(as_text = to_text(revenue)) |> add(back = to_number(as_text)) |> summarize(t = total(back))
+---
+sales |> add(d = to_date(ordered_on)) |> add(h = hour(d)) |> pick(ordered_on, h) |> sort(ordered_on)

@@ -120,3 +120,15 @@ sales then sort [ordered_on] then add [so_far] as running_total([revenue]), [bef
 
 ---
 sales then add [shout] as upper(trim([product])), [quiet] as lower(trim([product])) then pick [product, shout, quiet] then take 2
+---
+sales then add_rows sales then summarize [rows] as row_count(), [total] as total([revenue])
+---
+sales then sort [ordered_on] then summarize [earliest] as first([product]), [latest] as last([product]) by [region]
+---
+sales then summarize [mid] as median([revenue]) by [region]
+---
+sales then summarize [kinds] as unique_count([product]) by [region]
+---
+sales then add [as_text] as to_text([revenue]) then add [back] as to_number([as_text]) then summarize [t] as total([back])
+---
+sales then add [d] as to_date([ordered_on]) then add [h] as hour([d]) then pick [ordered_on, h] then sort [ordered_on]

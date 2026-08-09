@@ -162,6 +162,15 @@ pub fn check_tables(
     input: &Schema,
     others: &Tables,
 ) -> Result<Checked, Diagnostic> {
+    // The pipeline's own head table is a described table too. `sales then
+    // add_rows sales` used to be refused as "no other table was described",
+    // which told a caller who had just described `sales` to describe it. The
+    // head joins the list under its own name — appended last, so an explicit
+    // description of the same name still wins the lookup.
+    let mut others = others.clone();
+    others.tables.push((plan.source.clone(), input.clone()));
+    let others = &others;
+
     let mut resolved = plan.clone();
     let mut schema = input.clone();
     let mut entering = Vec::with_capacity(plan.steps.len());

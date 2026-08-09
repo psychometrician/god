@@ -305,6 +305,17 @@ fn add_rows_stacks_the_rows_and_keeps_the_repeats() {
 }
 
 #[test]
+fn add_rows_can_name_the_table_at_the_head() {
+    // Doubling a table is a legitimate thing to say, and the head table is a
+    // described table: refusing `sales then add_rows sales` with "no other
+    // table was described" told the caller to do the thing they had just done.
+    let conn = tables();
+    let (_, before) = run(&conn, "sales then take 100");
+    let (_, after) = run(&conn, "sales then add_rows sales");
+    assert_eq!(after.len(), before.len() * 2, "every row, twice");
+}
+
+#[test]
 fn renaming_onto_a_name_the_table_already_has_is_refused() {
     let message = refusal("sales then rename [revenue] as [id]");
     assert!(message.contains("already has a column called `revenue`"), "{message}");

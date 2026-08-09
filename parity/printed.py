@@ -41,7 +41,20 @@ OTHER = Path(__file__).parent / "products.csv"
 
 
 def sentences(path: Path) -> list[str]:
-    return [s.strip() for s in path.read_text().split("\n---\n") if s.strip()]
+    """The sentences in a corpus file, read the way `check.py` reads them.
+
+    Comment lines are dropped here too: three harnesses reading one file three
+    ways is how a comment in the corpus would break two of them and not the
+    third.
+    """
+    out = []
+    for chunk in path.read_text().split("\n---\n"):
+        body = "\n".join(
+            line for line in chunk.splitlines() if not line.lstrip().startswith("#")
+        ).strip()
+        if body:
+            out.append(body)
+    return out
 
 
 def render(sentence: str, backend: str, columns: list[str]) -> str | None:

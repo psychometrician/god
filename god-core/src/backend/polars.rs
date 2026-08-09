@@ -28,7 +28,7 @@
 //! the way `|>` is an operator in R, so the parentheses are doing real work
 //! rather than decorating.
 
-use super::{Backend, Purpose};
+use super::Backend;
 use crate::check::Schema;
 use crate::plan::*;
 
@@ -37,10 +37,6 @@ pub struct Polars;
 impl Backend for Polars {
     fn name(&self) -> &'static str {
         "polars"
-    }
-
-    fn purpose(&self) -> Purpose {
-        Purpose::Read
     }
 
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {
@@ -623,7 +619,12 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "to_number" => format!("{}.cast(pl.Float64)", arg(0)),
         "to_whole" => format!("{}.cast(pl.Int64)", arg(0)),
         "to_text" => format!("{}.cast(pl.String)", arg(0)),
-        "to_date" => format!("{}.cast(pl.Date)", arg(0)),
+        // Not a cast: polars deprecated the string one, and `pl.Date` was the
+        // wrong target anyway. DuckDB reads `to_date` as a timestamp, so
+        // `hour` has an answer there, and a Date here threw the time away in
+        // silence. Found by running the printed code, which is the only way
+        // this class is ever found.
+        "to_date" => format!("{}.str.to_datetime(time_unit=\"us\")", arg(0)),
         "trim" => format!("{}.str.strip_chars()", arg(0)),
         "characters" => format!("{}.str.len_chars()", arg(0)),
         // `literal=True` for the same reason `contains` needs it: the value is
