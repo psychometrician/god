@@ -1,8 +1,8 @@
 # Contributing to god
 
-The grammar parses, checks and compiles. The command line, the launchers and the
-manual do not exist yet, and this document marks which is which rather than
-describing everything as though it were finished.
+The grammar parses, checks and compiles; the command line, both launchers, the
+live manual and the parity harness all exist and run. This document is how the
+pieces fit together, and the commands below are the proof to run.
 
 ---
 
@@ -36,9 +36,9 @@ of it, that is a defect in the comment. Open an issue and it gets rewritten.
 | `god-core/src/check.rs` | Validation and diagnostics. The largest file | ✅ |
 | `god-core/src/vocabulary.rs` | Every word, in one place. Tests enumerate it | ✅ |
 | `god-core/src/backend/` | A plan to text. One module per target | ✅ |
-| `god-cli/src/main.rs` | Text on stdin, backend text on stdout | ⬜ |
-| `r-pkg/god/R/` · `py-pkg/god/god/` | Carrying text in and a table back | ⬜ |
-| `book/` | The manual, where every example executes | ⬜ |
+| `god-cli/src/main.rs` | Text on stdin, backend text on stdout | ✅ |
+| `r-pkg/god/R/` · `py-pkg/god/god/` | Carrying text in and a table back | ✅ |
+| `book/` | The manual, where every example executes | ✅ |
 
 **`god-core` has no runtime dependencies, and keeping it that way is a rule.**
 Turning text into a plan and a plan into text needs no library. Only the test
@@ -102,8 +102,9 @@ Answer three questions in writing before writing code:
    and it probably belongs to the host language.
 3. **Does the name hold up?** Everyday American English, two words maximum joined
    by `_`, no acronyms. If it changes the table's shape, the direction has to be
-   in the name. This is why reshaping is `to_long` and `to_wide`: nobody could
-   remember which of `melt` and `cast` made data taller.
+   in the name. This is why reshaping is `lengthen` and `widen`: the direction
+   is the word, where nobody could remember which of `melt` and `cast` made
+   data taller.
 
 ## Diagnostics
 
@@ -114,8 +115,6 @@ Three kinds, and the difference matters to a caller:
 | **Illegal** | The sentence cannot mean anything | Fatal. Nothing runs |
 | **Unsupported** | Legal, and not built yet | Fatal, and says so |
 | **Assumption** | god chose something you did not say | Warning naming the choice |
-
-`GOD_STRICT=0` downgrades fatal to warning.
 
 **Never accept an argument and silently drop it.** This is the single most common
 way a data tool loses a person's trust: the pipeline ran, the number came out,
@@ -155,41 +154,47 @@ have; it had been showing `is 'West'`, which the grammar refuses, and a
 cargo build --release                     # explicitly; never inferred from a test
 cargo test --release                      # the suite. It links a real engine
 
-Rscript r-pkg/god/tests/test_basic.R      # the R package
-python3 py-pkg/god/tests/test_basic.py    # the Python package
-python3 parity/check.py                   # the two against each other
+Rscript r-pkg/god/tests/test_basic.R      # the R package, and it runs the book guards
+python3 py-pkg/god/tests/test_basic.py    # the Python package, and it runs the harnesses below
 
-Rscript book/check_grammar.R              # every pipeline the book shows, parsed
+python3 parity/check.py                   # the two languages against each other
+python3 parity/vocabulary.py              # both bindings against the engine's own word list
+python3 parity/spark.py                   # the corpus on DuckDB and Spark, tables compared
+python3 parity/printed.py                 # the printed code executed, tables compared
+
+Rscript book/check_grammar.R              # every pipeline and transcript the book shows, run
 Rscript book/check_prose.R                # the book's voice, the half a machine can hold
 Rscript book/check_vocabulary.R           # every word the grammar has, demonstrated by a chunk
-Rscript book/check_refusals.R             # every chunk shown as a refusal actually refuses
+Rscript book/check_refusals.R             # every refusal chunk actually refuses (the R half)
+python3 book/check_refusals.py            # the same promise, kept by the Python half
 python3 book/readability.py               # a report, not a gate
 
-cd book && QUARTO_PYTHON=.venv/bin/python quarto render --to html
+cd book && quarto render --to html
 ```
 
-The book has chapters in both languages, so rendering it needs a Python Quarto
-can drive. One venv, once:
+The book has chapters in both languages, reached through reticulate — no
+Jupyter kernel is involved, so neither `jupyter` nor `QUARTO_PYTHON` is needed.
+One venv, once:
 
 ```bash
 python3 -m venv book/.venv
-book/.venv/bin/pip install jupyter ipykernel pandas duckdb
+book/.venv/bin/pip install pandas duckdb gog jinja2
 ```
 
-It is gitignored and never shipped. `QUARTO_PYTHON` is what points Quarto at it;
-without that, a Python chunk fails with a missing-kernel message that does not
-mention the venv.
+It is gitignored and never shipped. `gog` is for the closing chapter, which
+draws its plots; `jinja2` is what pandas' `.style` needs in two chunks, and
+without it the render dies at chapter 1.
 
 All of these run from the repository root, and none of them needs the engine's
-location given to it: both packages walk up looking for
-`target/release/god-cli` before giving up, so `cargo build --release` really is
-the only setup step. Set `GOD_CLI` to override that.
+location given to it: both packages find `target/release/god-cli` by walking
+up, so `cargo build --release` really is the only setup step. `GOD_CLI`
+outranks every other way the engine is found, in both languages.
 
-`parity/check.py` is the one that matters. It reads fifteen sentences written
-twice, once as text and once as R, and checks three things for each: that R and
-Python produce the same query, that they produce the same table, and that the R
-verbs build the sentence the text form parses. A binding that has drifted shows
-up as a disagreement rather than as a small debt.
+`parity/check.py` is the one that matters. It reads one corpus written three
+ways — as text, as R, as Python — and checks four things for each sentence:
+the two languages produce the same query, they produce the same table, and
+each native spelling builds the very sentence the text form parses. A binding
+that has drifted shows up as a disagreement rather than as a small debt.
 
 `cargo test` passing does not mean `target/release/god-cli` was rebuilt. They are
 separate artifacts. Run `cargo build --release` explicitly, and re-render the

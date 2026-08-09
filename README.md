@@ -215,19 +215,25 @@ long format and would have been the dangerous kind of collision.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ fourteen verbs, fourteen functions |
+| The grammar: parse, check, compile | ✅ fourteen verbs, thirty-one functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
 | The reference manual, live in both languages | ✅ |
-| The teaching order, and packaging | next |
+| Packaging | R installs today, below; Python's wheels are built and PyPI is next |
 
 ## Installing
 
-Not yet. When there is something to install it will be `install.packages("god")`
-in R and `pip install grammar-of-data` in Python — the distribution names differ
-because `god` was taken on PyPI in 2016 by an unrelated package, and **the import
-is `god` in both languages regardless**.
+In R, from R-universe, as a binary — no Rust needed:
+
+```r
+install.packages("god",
+  repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
+```
+
+Python is not released yet. When it is, it will be `pip install grammar-of-data`
+— the distribution names differ because `god` was taken on PyPI in 2016 by an
+unrelated package, and **the import is `god` in both languages regardless**.
 
 ## Related
 

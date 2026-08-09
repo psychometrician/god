@@ -3,9 +3,37 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
-Nothing is released yet, so everything below is unreleased.
+## 0.0.1
 
-## Unreleased
+The first release. On R-universe since 2026-08-08 as `god`, installable as a
+binary with no toolchain. The Python wheels are built and tested in CI; the
+PyPI release, as `grammar-of-data`, is next.
+
+### `add_rows` can name the table at the head
+
+`sales then add_rows sales` used to be refused as "no other table was
+described", which told you to do the thing you had just done. Doubling a table
+is a legitimate thing to say, and the head table now counts as described.
+
+### The engine is found the same way in both languages
+
+The order, everywhere: `GOD_CLI`, then the source tree's own build, then the
+engine bundled with an installed package, then the working directory's tree,
+then the `PATH`. Before this, a bundled copy outranked `GOD_CLI` in both
+languages, R never looked at the `PATH`, and Python looked at it before the
+source tree — so the two languages could quietly run different engines.
+
+### The command line refuses a flag it would have dropped
+
+A second `--as`, a second schema for the head table, or two `--columns` for
+one table is now an error naming the repeat, where the last one used to win in
+silence.
+
+### The polars translation of `to_date` keeps the time
+
+`show_as(..., "polars")` wrote a cast to a date, so a text timestamp lost its
+clock and `hour` on it could not run. It writes `str.to_datetime` now, which
+is what the executing engines already meant.
 
 ### Help pages, so `?keep` answers
 
