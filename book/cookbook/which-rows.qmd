@@ -1,0 +1,139 @@
+---
+title: "Which rows do you want?"
+---
+
+{{< include ../_setup.qmd >}}
+
+Which rows does the question actually need? Half of daily work is narrowing,
+and the recipes here are the narrowings that recur: the top few, the top few
+per group, the latest, the ones above a bar, the ones without a twin. The
+owning chapters are [Keeping rows](../chapters/keeping-rows.qmd) and
+[Sorting and taking](../chapters/sorting-and-taking.qmd).
+
+## The top few
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(revenue)) |> take(5)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.revenue)) >> take(5)
+```
+
+:::
+
+*`sales then sort [revenue] descending then take 5`*
+
+**One verb away.** The bottom few: drop `descending`. The top few of a
+different measure: change the sort key, and nothing else.
+
+## The top one per group
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(revenue)) |> take(1, by = region)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.revenue)) >> take(1, by = col.region)
+```
+
+:::
+
+*`sales then sort [revenue] descending then take 1 by [region]`*
+
+**One verb away.** The top two: `take(2, by = region)`. The *latest* per
+group instead of the largest: sort by `date` instead of `revenue`, which is
+[chapter 5's closing example](../chapters/sorting-and-taking.qmd).
+
+## The rows above a bar
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(quantity >= 5) |> sort(descending(quantity))
+```
+
+### Python
+
+```{python}
+sales >> keep(col.quantity >= 5) >> sort(descending(col.quantity))
+```
+
+:::
+
+*`sales then keep where [quantity] >= 5 then sort [quantity] descending`*
+
+**One verb away.** A bar on a derived number: `add` the number first, then
+keep on it. A bar per group ("orders above their region's average") waits
+for the windowed words in
+[Part V](../chapters/each-row-a-place.qmd); it is one sentence there too.
+
+## The rows without a twin
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> pick(region, product) |> drop_duplicates()
+```
+
+### Python
+
+```{python}
+sales >> pick(col.region, col.product) >> drop_duplicates()
+```
+
+:::
+
+*`sales then pick [region, product] then drop_duplicates`*
+
+Every region-product pairing that occurred, once each. Narrow first, then
+drop: the columns you pick are the definition of what counts as a twin.
+
+**One verb away.** Whole rows, one per group, is a different question with a
+forced honesty in it: `sort` then `take 1 by`, saying which row you mean.
+
+## What this section refuses
+
+"Some rows" is not a question, and the grammar declines to pretend it is.
+The first of each group, with nothing said about order:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> take(1, by = product) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> take(1, by = col.product))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The repair is one sort, and the refusal names it. Every recipe on this page
+that took a first or a top said its order out loud, which is why each of
+them means the same thing on every run, on every engine, this year and
+next.

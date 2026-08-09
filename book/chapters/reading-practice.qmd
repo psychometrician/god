@@ -1,0 +1,218 @@
+---
+title: "Reading practice"
+---
+
+{{< include ../_setup.qmd >}}
+
+Can you read a pipeline you have never seen? That was the preface's day-one
+promise, and this chapter is where it is tested rather than repeated. Eight
+questions follow, each answered by one sentence built only from the words of
+this part. Read each pipeline aloud before you look at its table, then check
+the table against what you said. Nothing here is new; that is the point.
+
+## Which orders were larger than usual?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(revenue >= 200)
+```
+
+### Python
+
+```{python}
+sales >> keep(col.revenue >= 200)
+```
+
+:::
+
+*`sales then keep where [revenue] >= 200`*
+
+Four orders clear the bar, and every region appears at least once, so size
+is not a story about one place.
+
+## What did each region sell, product by product?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(orders = row_count(), revenue = total(revenue), by = c(region, product))
+```
+
+### Python
+
+```{python}
+sales >> summarize(orders = row_count(), revenue = total(col.revenue), by = [col.region, col.product])
+```
+
+:::
+
+*`sales then summarize [orders] as row_count(), [revenue] as total([revenue]) by [region, product]`*
+
+Every combination that occurred gets a row, and one combination is absent:
+no North row mentions Sprocket, because the North never sold one. A grouped
+summary can only report what happened, which is worth remembering when a
+combination you expected is simply not there.
+
+## What does each product sell for?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(price = revenue / quantity) |>
+  summarize(price = average(price), sold = total(quantity), by = product) |>
+  sort(descending(price))
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(price = col.revenue / col.quantity)
+  >> summarize(price = average(col.price), sold = total(col.quantity), by = col.product)
+  >> sort(descending(col.price)))
+```
+
+:::
+
+*`sales then add [price] as [revenue] / [quantity] then summarize [price] as average([price]), [sold] as total([quantity]) by [product] then sort [price] descending`*
+
+Three verbs you know, in an order you can hear: work out each order's unit
+price, average it per product, read the dearest first. The averages come out
+whole because each product held one price all year, which you can verify
+from the table faster than you can doubt it.
+
+## Which two orders cost the most to fulfill?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(descending(cost)) |> take(2)
+```
+
+### Python
+
+```{python}
+sales >> sort(descending(col.cost)) >> take(2)
+```
+
+:::
+
+*`sales then sort [cost] descending then take 2`*
+
+## Who joined the survey before April?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+survey |> keep(joined < "2026-04-01") |> pick(name, region, joined)
+```
+
+### Python
+
+```{python}
+survey >> keep(col.joined < "2026-04-01") >> pick(col.name, col.region, col.joined)
+```
+
+:::
+
+*`survey then keep where [joined] < "2026-04-01" then pick [name, region, joined]`*
+
+The comparison is on text, and it works because these dates are written
+largest unit first; Part III gives you the real date words for every shape
+that is not so cooperative.
+
+## How many countries does each continent hold?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+gapminder |> keep(year == 2007) |> summarize(countries = row_count(), by = continent)
+```
+
+### Python
+
+```{python}
+gapminder >> keep(col.year == 2007) >> summarize(countries = row_count(), by = col.continent)
+```
+
+:::
+
+*`gapminder then keep where [year] is 2007 then summarize [countries] as row_count() by [continent]`*
+
+Same sentence shape as the sales questions, seventeen hundred rows instead
+of fifteen, and nothing about the spelling had to know the difference.
+
+## What was the cheapest order in each region?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> sort(cost) |> take(1, by = region) |> pick(region, product, cost)
+```
+
+### Python
+
+```{python}
+sales >> sort(col.cost) >> take(1, by = col.region) >> pick(col.region, col.product, col.cost)
+```
+
+:::
+
+*`sales then sort [cost] then take 1 by [region] then pick [region, product, cost]`*
+
+The sort has no `descending` this time, so first means smallest. One word's
+absence flipped the question, which is what reading aloud is for.
+
+## How much of its region is each order?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(share = revenue / total(revenue), by = region) |>
+  sort(region, descending(share)) |>
+  pick(region, product, revenue, share)
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(share = col.revenue / total(col.revenue), by = col.region)
+  >> sort(col.region, descending(col.share))
+  >> pick(col.region, col.product, col.revenue, col.share))
+```
+
+:::
+
+*`sales then add [share] as [revenue] / total([revenue]) by [region] then sort [region], [share] descending then pick [region, product, revenue, share]`*
+
+Each region's shares sum to one, and the biggest single share in the table
+belongs to the West's largest order. This is the hardest sentence in the
+chapter, and it is made of a verb from chapter 4 and a word from chapter 8.
+
+## What you just did
+
+Eight questions, no new words. Every sentence was the everyday core doing
+its everyday work, and if you read them aloud, you have now heard the
+grammar more times than you will need to keep it. Reading was recognition.
+The next chapter asks for the harder thing, and it is the last thing this
+part asks of you: writing.

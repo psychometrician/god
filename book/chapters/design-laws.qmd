@@ -1,0 +1,115 @@
+---
+title: "The laws"
+---
+
+{{< include ../_setup.qmd >}}
+
+Every refusal you have met in this book is a consequence, not a policy. Nine
+laws sit under the whole grammar, and each one exists to refuse a specific
+temptation: something another tool does, that costs its users more than it
+gives them. This chapter collects the laws in one place, with the temptation
+beside each, because the vocabulary above them will grow and these will not.
+
+## One word, one meaning
+
+`by` groups, wherever it appears. `as` names, wherever it appears. `where`
+asks, wherever it appears. The temptation is the convenience argument, a
+word that means roughly similar things in different places; the cost is that
+a reader can never again be sure, and checks the manual for the rest of
+their life. You met this law working in the chapter on the small words, and
+it is the reason a verb you have never seen is mostly made of words you
+have.
+
+## One way to say it
+
+No `ascending` beside the default, no `drop` beside `keep`, no `distinct`
+beside `pick` and `drop_duplicates`, no second spelling of anything.
+Synonyms read as generosity and cost every reader a doubt: if both exist,
+they must differ, so what is the difference? Where you catch this grammar
+saying one thing two ways, that is a bug, and the afterword says where to
+report it.
+
+## Say the subject
+
+A condition about a column's name writes `name`; about its kind writes
+`kind`; the column under work in a sweep writes `value`. And where the
+grammar has to decide something you did not say, it prints the decision
+back:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+marks |> widen(name = question, value = mark)
+```
+
+### Python
+
+```{python}
+marks >> widen(name = col.question, value = col.mark)
+```
+
+:::
+
+The line above the table is the law at work: the grouping was assumed, and
+the assumption was said aloud rather than exercised in private. Nothing in
+this grammar decides quietly.
+
+## A step is one step
+
+No value in a step can read a column made beside it, and no name can be
+made twice in one step. The temptation is the one-liner; the cost is a
+hidden pipeline inside the line, where written order silently becomes
+execution order. Chapter 4 stages both refusals.
+
+## Nothing runs until you ask
+
+A pipeline is a plan. Building one costs nothing, printing it runs it, and
+`collect` hands over the table. The temptation this refuses is eager
+execution, where every intermediate step materializes whether or not anyone
+wanted it; the chapter that opens this part shows what the plan buys.
+
+## Every refusal is the grammar's
+
+One checker reads the whole pipeline before anything runs, so every message
+in every language is written by the same voice, names the step you wrote,
+and carries its repair. The temptation is delegating errors to whatever
+engine hits the problem first, which is how a beginner meets a Java stack
+trace with their column name somewhere inside it. The previous chapter is
+this law's whole demonstration.
+
+## The answer is settled
+
+`drop_duplicates` returns a settled order. Windows that walk rows demand a
+`sort` first. A grouped `take` without an order is refused. The temptation
+is "whatever order the engine liked today", which is invisible until the day
+two runs of one pipeline disagree and a test you trusted goes quiet. If an
+answer could vary, the grammar either settles it or asks you to.
+
+## It writes what you could have written
+
+`show_as` renders any pipeline as dplyr, pandas, polars, PySpark, or two
+dialects of SQL, and the printed code is executed by this project's own
+checks, not merely printed. The temptation being refused is on the other
+side of the fence this time: a tool that holds your work hostage to its own
+continued existence. The whole argument for adopting a small grammar stands
+on this exit being real, and it has its own chapter two back.
+
+## Your table stays yours
+
+god has no table type, no session state, and no import format. A pandas
+frame goes in and a pandas frame comes out; an R data frame likewise; a
+Spark frame stays on its cluster. The temptation is the platform move,
+where the price of the grammar is migrating your data into it. There is
+nothing to migrate into, which is also why walking away from god costs one
+`show_as` per pipeline.
+
+## What the laws are for
+
+None of these laws is about data. They are about what a person can retain,
+which is the promise this book opened with: a grammar with no exceptions is
+the only kind that survives a year of not being used. The laws are how the
+promise is enforced against the vocabulary's own growth, and they bind the
+author before they bind you. A proposed word that would break one does not
+get in, however useful its best day looks.

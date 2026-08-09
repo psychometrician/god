@@ -1,0 +1,78 @@
+---
+title: "The verb you know"
+---
+
+You arrive holding another tool's word for it. This appendix is the index
+for that direction: find the name you know, read the god words beside it,
+and follow the link to the chapter that owns the idea. The other appendices
+run the opposite way, from god's sentence outward.
+
+The god column shows words, not whole pipelines, because most of these names
+map to a word plus a place to put it rather than to a verb alone.
+
+## From dplyr
+
+| you know | god says | the chapter |
+|---|---|---|
+| `filter()` | `keep` | [Keeping rows](../chapters/keeping-rows.qmd) |
+| `select()`, `select(-x)` | `pick`, `all_but` | [Choosing columns](../chapters/choosing-columns.qmd) |
+| `mutate()` | `add` | [Adding a column](../chapters/adding-a-column.qmd) |
+| `arrange()`, `desc()` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `group_by()` + `summarise()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `slice_head(n)`, `slice_max()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `distinct()` | `pick` then `drop_duplicates` | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `rename(new = old)` | `rename`, same direction | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `pivot_longer()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
+| `pivot_wider()` | `widen` | [Rows into columns](../chapters/rows-into-columns.qmd) |
+| `left_join()`, `inner_join()` | `join`, `unmatched` | [Another table](../chapters/another-table.qmd) |
+| `semi_join()`, `anti_join()` | `keep(matching(...))`, with `not` | [Has a partner](../chapters/has-a-partner.qmd) |
+| `bind_rows()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `case_when()` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
+| `coalesce()` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
+| `across(starts_with())` | `where`, `name`, `value` | [One value per column](../chapters/one-value-per-column.qmd) |
+| `row_number()`, `min_rank()` | `row_number`, `rank` | [Each row a place](../chapters/each-row-a-place.qmd) |
+| `cumsum()`, `lag()`, `lead()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
+
+## From pandas
+
+| you know | god says | the chapter |
+|---|---|---|
+| `query()`, boolean mask | `keep` | [Keeping rows](../chapters/keeping-rows.qmd) |
+| `[[...]]`, `drop(columns=)` | `pick`, `all_but` | [Choosing columns](../chapters/choosing-columns.qmd) |
+| `assign()` | `add` | [Adding a column](../chapters/adding-a-column.qmd) |
+| `sort_values(ascending=False)` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `groupby().agg()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `head(n)`, `nlargest()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `drop_duplicates()` | `drop_duplicates`, no subset | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `melt()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
+| `pivot_table()`, `pivot()` | `widen` | [Rows into columns](../chapters/rows-into-columns.qmd) |
+| `merge()` | `join` | [Another table](../chapters/another-table.qmd) |
+| `isin()` filter against a table | `matching` | [Has a partner](../chapters/has-a-partner.qmd) |
+| `concat()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `np.select`, nested `where` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
+| `fillna()`, `dropna()` | `fill_missing`, `drop_missing` | [Missing values](../chapters/missing-values.qmd) |
+| `cumsum()`, `shift()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
+
+## From SQL
+
+| you know | god says | the chapter |
+|---|---|---|
+| `WHERE` | `keep` | [Keeping rows](../chapters/keeping-rows.qmd) |
+| `SELECT a, b` | `pick` | [Choosing columns](../chapters/choosing-columns.qmd) |
+| computed column in `SELECT` | `add` | [Adding a column](../chapters/adding-a-column.qmd) |
+| `ORDER BY ... DESC`, `LIMIT` | `sort ... descending`, `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `GROUP BY` with aggregates | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `SELECT DISTINCT` | `pick` then `drop_duplicates` | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `JOIN ... ON` | `join ... by` | [Another table](../chapters/another-table.qmd) |
+| `EXISTS`, `IN (SELECT ...)` | `matching` | [Has a partner](../chapters/has-a-partner.qmd) |
+| `UNION ALL` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `CASE WHEN ... ELSE ... END` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
+| `COALESCE` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
+| `RANK() OVER`, `ROW_NUMBER()` | `rank`, `row_number` | [Each row a place](../chapters/each-row-a-place.qmd) |
+| `SUM() OVER (ORDER BY)`, `LAG` | `running_total`, `previous` | [The total so far](../chapters/the-total-so-far.qmd) |
+
+One absence from all three tables is deliberate. There is no row for your
+tool's way of applying an arbitrary function to a column, because god has no
+word for it: the scalar vocabulary is closed, and the honest translation of
+`apply` is the escape the last table in
+[Appendix E](e-coverage.qmd) points at.

@@ -128,6 +128,8 @@ book:
         - chapters/summarizing-by-group.qmd
         - chapters/renaming-and-repeats.qmd
         - chapters/words-that-repeat.qmd
+        - chapters/reading-practice.qmd
+        - chapters/writing-practice.qmd
 
     - part: parts/shape.qmd
       chapters:
@@ -159,23 +161,33 @@ book:
         - chapters/what-a-column-holds.qmd
         - chapters/one-value-per-column.qmd
 
+    - part: parts/cookbook.qmd
+      chapters:
+        - cookbook/how-much.qmd
+        - cookbook/which-rows.qmd
+
     - part: parts/how-it-works.qmd
       chapters:
         - chapters/nothing-runs-yet.qmd
         - chapters/what-it-wrote.qmd
         - chapters/somewhere-else.qmd
         - chapters/every-refusal.qmd
+        - chapters/design-laws.qmd
 
     # Outside every part, because they belong to all of them: one question
     # answered with most of the vocabulary at once, and then where this grammar
     # stops and the sibling one starts.
     - chapters/a-whole-question.qmd
     - chapters/with-gog.qmd
+    - afterword.qmd
+    - references.qmd
 
   appendices:
     - appendices/a-two-languages.qmd
     - appendices/b-every-word.qmd
     - appendices/c-phrasebook.qmd
+    - appendices/d-the-verb-you-know.qmd
+    - appendices/e-coverage.qmd
 
 # The provenance layer: the grammar's ideas are old, and the book says whose
 # they are. APA because the sibling book uses it, and one style across the two

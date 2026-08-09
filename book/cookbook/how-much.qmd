@@ -1,0 +1,155 @@
+---
+title: "How much is there?"
+---
+
+{{< include ../_setup.qmd >}}
+
+How much of something does the table hold? Every recipe on this page is that
+question wearing different clothes, and every answer is `summarize` with a
+word or two around it. The verbs are Part I's; the chapter that owns the
+arguments is [Summarizing by group](../chapters/summarizing-by-group.qmd).
+
+## How much, in total, per group?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(revenue = total(revenue), by = product)
+```
+
+### Python
+
+```{python}
+sales >> summarize(revenue = total(col.revenue), by = col.product)
+```
+
+:::
+
+*`sales then summarize [revenue] as total([revenue]) by [product]`*
+
+**One verb away.** Group by two things: `by = c(region, product)` in R,
+`by = [col.region, col.product]` in Python. Average instead of total: swap
+`total` for `average`. Count instead of sum: `row_count()`, which takes no
+column at all.
+
+## How much of the whole is each group?
+
+Two steps: collapse to totals, then divide each total by their sum.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  summarize(revenue = total(revenue), by = region) |>
+  add(share = revenue / total(revenue)) |>
+  sort(descending(share))
+```
+
+### Python
+
+```{python}
+(sales
+  >> summarize(revenue = total(col.revenue), by = col.region)
+  >> add(share = col.revenue / total(col.revenue))
+  >> sort(descending(col.share)))
+```
+
+:::
+
+*`sales then summarize [revenue] as total([revenue]) by [region] then add [share] as [revenue] / total([revenue]) then sort [share] descending`*
+
+The `add` uses an aggregate with no `by`, so the divisor spans the whole
+table: each region's total over the grand total. The shares sum to one,
+which is the check to run with your eye before you trust any share column.
+
+**One verb away.** Share within a group instead of the whole: keep the rows
+and move the `by` onto the `add`, which is the idiom
+[the small-words chapter](../chapters/words-that-repeat.qmd) reads aloud.
+
+## How many different values does a column hold?
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> summarize(products = unique_count(product), orders = row_count())
+```
+
+### Python
+
+```{python}
+sales >> summarize(products = unique_count(col.product), orders = row_count())
+```
+
+:::
+
+*`sales then summarize [products] as unique_count([product]), [orders] as row_count()`*
+
+**One verb away.** The values themselves rather than their count:
+`pick` then `drop_duplicates`, from
+[the housekeeping chapter](../chapters/renaming-and-repeats.qmd).
+
+## How much, after a cost comes out?
+
+Make the derived number first, then collapse it like any other column.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(margin = revenue - cost) |>
+  summarize(margin = total(margin), by = region)
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(margin = col.revenue - col.cost)
+  >> summarize(margin = total(col.margin), by = col.region))
+```
+
+:::
+
+*`sales then add [margin] as [revenue] - [cost] then summarize [margin] as total([margin]) by [region]`*
+
+**One verb away.** Only profitable orders in the totals: a
+`keep(margin > 0)` between the two steps, and nothing else moves.
+
+## What this section refuses
+
+The recipe most often reached for and least often meant: a total of a column
+that is not a number.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> summarize(t = total(product), by = region) |> collect()
+```
+
+### Python
+
+```{python}
+try:
+    collect(sales >> summarize(t = total(col.product), by = col.region))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Some tools would concatenate the text, some would error from inside the
+engine, and one famously returns zero. Here the sentence is refused whole,
+with the column's kind named, before anything runs. If the column *should*
+be a number, the conversion words in
+[Part III](../chapters/converting-kinds.qmd) are the repair.

@@ -1,0 +1,61 @@
+---
+title: "What this grammar does not do"
+---
+
+A tool's marketing lists what it has. A manual you can trust also lists what
+it lacks, so here are both directions, measured against dplyr and pandas as
+of god 0.0.1, in August 2026. The first list will shrink as the vocabulary
+grows under its laws; the honest way to read it today is as the price of the
+small grammar the rest of this book sells.
+
+## The gaps, and their exits
+
+Each row names the gap and the exit. The exit is always real: `show_as`
+renders your pipeline in the host tool, and you finish the last step there,
+in code you can read because you watched it being written.
+
+| the gap | what to do today |
+|---|---|
+| Rolling and sliding windows (a seven-day average) | `show_as` the pipeline, add the rolling step in the host |
+| Regular expressions | `starts`, `ends`, `contains`, `replace_text`, `split_text` cover the common cases; regex stays in the host |
+| Arbitrary functions in a cell (`apply`, a lambda) | the scalar vocabulary is closed; the host is the place for host code |
+| List-columns and nested data | god reads a table of plain values; nest and unnest in the host |
+| `widen` with several value columns at once | one `name`, one `value` per `widen`; run it twice and `join` |
+| Joins on anything but equality (ranges, nearest) | equality joins only; inequality joins in the host |
+| Random sampling | refused by the settled-answer law; sample in the host, then hand the table over |
+| The long aggregate shelf (variance, quantiles, weighted means, mode) | nine aggregations; the rest via `show_as` |
+| Row-wise aggregates across many columns | Part VI sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
+| Window frames (`ROWS BETWEEN 3 PRECEDING`) | `running_total`, `previous`, `following` are the whole windowed family today |
+
+Two of these are refusals with a law behind them rather than absences, and
+the distinction matters: sampling and arbitrary functions will not arrive
+later, because the settled-answer law and the closed-cell law refuse them on
+purpose. The others are ordinary absences, candidates like any other word,
+waiting on the growth test every candidate faces.
+
+## What god does that they do not
+
+- **One vocabulary in two languages.** The same sentence, spelled the same,
+  in R and in Python, with the differences confined to the pipe and the
+  column. Nothing else on this list matters more.
+- **The whole pipeline checked before anything runs.** A six-step pipeline
+  with a typo in step five costs nothing and names step five.
+- **Refusals written by one voice, carrying their repair.** Not the engine's
+  stack trace, whichever engine it was.
+- **Assumptions printed back.** Where the grammar decided something you did
+  not say, the decision is on the page.
+- **`matching`: the join that cannot multiply rows**, so the question "has a
+  partner?" is a different word from the act "bring columns in".
+- **The same sentence on five engines.** DuckDB and Spark execute it; dplyr,
+  pandas, polars and PySpark receive it as readable code; a warehouse runs
+  it where the table lives.
+- **An exit that is part of the design.** Leaving god costs one `show_as`
+  per pipeline, which is the strongest promise a small tool can make and
+  the reason its smallness is safe to depend on.
+
+## How this list stays honest
+
+Both halves of this page age, in opposite directions. The plan is the same
+as for every claim in this book: dated, and corrected in public when it
+drifts. If you catch either list out of date, that is a defect worth an
+issue, exactly like a refusal that stopped refusing.

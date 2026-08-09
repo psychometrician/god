@@ -114,7 +114,11 @@ check_prose <- function(dirs = "book") {
               "Jupyter", "RStudio", "Windows", "macOS", "Linux",
               "Anthropic", "Wilkinson", "Codd", "Wickham",
               "Korean", "English", "American", "Law", "Part", "Nine", "Laws",
-              "R's", "Python's", "god's")
+              "R's", "Python's", "god's",
+              # Month names are proper nouns in English, and a cast whose
+              # dates span a year puts them in headings legitimately.
+              "January", "February", "March", "April", "May", "June", "July",
+              "August", "September", "October", "November", "December")
 
   MAX_HEADING <- 8
   MAX_BOLD <- 8

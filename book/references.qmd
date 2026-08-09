@@ -1,0 +1,7 @@
+# References {.unnumbered}
+
+The works this book cites, in one place. The grammar's ideas are old, and
+these are the people whose ideas they are.
+
+::: {#refs}
+:::

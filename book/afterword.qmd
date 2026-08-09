@@ -1,0 +1,63 @@
+# Afterword {.unnumbered}
+
+The preface made one promise in three clauses: read a pipeline aloud on day
+one, write one on day two, and still have it after a year away. If you have
+come through the book, the first clause was settled by Part I's reading
+chapter and the second by its writing chapter, on the same day if you
+wanted. The third clause cannot be settled by a book at all, and this page
+is about being honest with what remains.
+
+## The ten questions
+
+Here is the only exercise this book assigns, and it is the whole test. For
+the next ten working days, bring one question a day from your own data, not
+the cast's, and answer it in one sentence. Small questions count. A total
+you already know from a dashboard is a fine question, because checking a
+known answer is how you learn to trust a new tool with an unknown one.
+
+Two rules make it a fair trial. Write the sentence before opening this book,
+and only then look anything up; recall is the skill, and looking up after an
+attempt strengthens it where looking up before replaces it. And read each
+finished sentence aloud once. By day ten you should be writing sentences
+this book never showed you, which is the only outcome that would prove you
+learned the grammar rather than the examples.
+
+## The year away
+
+Then the real test, which neither you nor this book can hurry: put it down.
+Work takes you where it takes you, and some month next year a table will
+land in front of you again. The measure of this grammar is what happens in
+that minute, before any manual is open: whether *keep the rows where, total
+by, sort, take ten* comes back as a sentence you can say. Everything in the
+design, the closed vocabulary, the one-way spellings, the words that repeat,
+was aimed at that minute. The author cannot be there for it, and that is
+exactly why the laws exist in writing.
+
+## If it breaks, say so
+
+This book made falsifiable claims, on purpose, and you now know enough to
+falsify them. A thing you can say two ways. A refusal that names no repair.
+A sentence that reads differently in the two languages. A page whose two
+tabs disagree. Any of these is a defect, none of them is yours to route
+around, and a report of one is worth more to this project than praise. The
+repository takes issues at <https://github.com/psychometrician/god>, and the
+margin of every page has a link.
+
+The grammar is young, and the version number means what it says. What it
+will not do is grow casually: every word that enters answers to the laws,
+and the vocabulary you learned here is intended to be the vocabulary, not
+this year's draft of it. Stability is a feature you were promised, and it
+binds the road ahead.
+
+## Thanks
+
+dplyr and tidyr showed that data manipulation could read as sentences, and
+god's debt to them is on every page here. DuckDB and Spark do the actual
+work, superbly, for free. The sibling project's book taught this one how to
+be a book. And whoever read this far: the grammar only becomes real when
+somebody says its sentences to a table the author has never seen. That is
+you, tomorrow morning, with the first of ten questions.
+
+::: {.god-motto}
+Say it once. Run it anywhere.
+:::
