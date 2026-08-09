@@ -40,7 +40,7 @@ under it is what the engine returned when this page was built.
 ## The table
 
 Every example in this book runs on a table called `sales`, unless a chapter says
-otherwise. It is five rows, small enough to check the arithmetic by hand.
+otherwise. It is fifteen rows, small enough to check the arithmetic by hand.
 
 ::: {.panel-tabset}
 

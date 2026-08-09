@@ -13,7 +13,8 @@ column is added; the rows just carry on where the first table stopped.
 
 ```{r}
 more <- data.frame(
-  region = "North", product = "Sprocket", revenue = 400, cost = 120,
+  date = "2026-10-30", region = "North", product = "Sprocket",
+  quantity = 20L, revenue = 300, cost = 240,
   stringsAsFactors = FALSE
 )
 
@@ -24,8 +25,8 @@ sales |> add_rows(more) |> take(6)
 
 ```{python}
 more = pd.DataFrame({
-    "region": ["North"], "product": ["Sprocket"],
-    "revenue": [400], "cost": [120],
+    "date": ["2026-10-30"], "region": ["North"], "product": ["Sprocket"],
+    "quantity": [20], "revenue": [300], "cost": [240],
 })
 
 sales >> add_rows(more) >> take(6)

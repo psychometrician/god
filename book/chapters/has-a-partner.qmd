@@ -79,8 +79,8 @@ many it has never reaches the answer.
 
 ```{r}
 restocks <- data.frame(
-  product  = c("Widget", "Widget", "Widget"),
-  quantity = c(10, 20, 30),
+  product   = c("Widget", "Widget", "Widget"),
+  restocked = c(10, 20, 30),
   stringsAsFactors = FALSE
 )
 
@@ -92,8 +92,8 @@ nrow(collect(sales |> join(restocks, by = product, unmatched = "none")))
 
 ```{python}
 restocks = pd.DataFrame({
-    "product":  ["Widget", "Widget", "Widget"],
-    "quantity": [10, 20, 30],
+    "product":   ["Widget", "Widget", "Widget"],
+    "restocked": [10, 20, 30],
 })
 
 print(len(collect(sales >> keep(matching(restocks, by = col.product)))))
