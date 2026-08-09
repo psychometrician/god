@@ -82,6 +82,13 @@ def _query(pipeline: str, tables: dict, source: str):
         connection.register(name, frame)
     try:
         return connection.sql(sql).df()
+    except Exception as e:
+        # One refusal fires from inside the query rather than before it —
+        # `widen` on a name that appears twice — so it arrives as the driver's
+        # error with the grammar's words inside. It leaves here as a
+        # `GodError` like every other refusal: a caller gets one exception
+        # surface, not a tour of the drivers underneath.
+        raise GodError(str(e)) from None
     finally:
         # A name in one pipeline must not be findable by the next. A connection
         # that quietly remembers is one where a typo resolves to last week's data.

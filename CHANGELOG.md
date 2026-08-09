@@ -23,6 +23,13 @@ then the `PATH`. Before this, a bundled copy outranked `GOD_CLI` in both
 languages, R never looked at the `PATH`, and Python looked at it before the
 source tree — so the two languages could quietly run different engines.
 
+### Every refusal in Python is a `GodError`, including the late one
+
+One refusal fires while the query runs rather than before it: `widen` on a
+name that appears twice. It used to arrive as the database driver's own error
+type, so `except GodError` missed it. It arrives as a `GodError` now, with
+the engine's words intact, and one `except` covers every refusal there is.
+
 ### A condition asked for a yes or no refuses, in Python
 
 `col.region == "West"` is a column expression, and Python's `and`, `or`, `in`
