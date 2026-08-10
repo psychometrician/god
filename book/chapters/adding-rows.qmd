@@ -4,8 +4,9 @@ title: "Adding rows from another table"
 
 {{< include ../_setup.qmd >}}
 
-`add_rows` stacks another table underneath this one. Nothing is matched and no
-column is added; the rows just carry on where the first table stopped.
+A late order arrives in a table of its own, so where do its rows go?
+`add_rows` stacks another table underneath this one. Nothing is matched and
+no column is added; the rows just carry on where the first table stopped.
 
 ::: {.panel-tabset}
 
@@ -33,6 +34,8 @@ sales >> add_rows(more) >> take(6)
 ```
 
 :::
+
+*`sales then add_rows more then take 6`*
 
 The other table can even be this one, which is how a table is doubled:
 

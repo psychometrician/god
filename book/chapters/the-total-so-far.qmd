@@ -4,8 +4,9 @@ title: "The total so far"
 
 {{< include ../_setup.qmd >}}
 
-`running_total` adds a column up as it goes down the rows, so each row carries
-the total of everything to that point.
+How much had accumulated by each day? `running_total` adds a column up as it
+goes down the rows, so each row carries the total of everything to that
+point.
 
 ::: {.panel-tabset}
 
@@ -22,6 +23,8 @@ diary >> sort(col.on_) >> add(so_far = running_total(col.x))
 ```
 
 :::
+
+*`diary then sort [on_] then add [so_far] as running_total([x])`*
 
 `by` restarts it for each group, and `previous` and `following` look one row back
 and one row on:

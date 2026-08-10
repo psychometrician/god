@@ -4,8 +4,9 @@ title: "Dates"
 
 {{< include ../_setup.qmd >}}
 
-A date usually arrives as text. `to_date` reads one, and once a column holds a
-date there is a word for each part you might want out of it.
+What year was that, what month, and did it land on a weekday? A date usually
+arrives as text. `to_date` reads one, and once a column holds a date there is
+a word for each part you might want out of it.
 
 ::: {.panel-tabset}
 
@@ -39,6 +40,8 @@ diary = pd.DataFrame({
 ```
 
 :::
+
+*`diary then add [d] as to_date([on_]) then add [year] as year([d]), [month] as month([d]), [weekday] as weekday([d])`*
 
 **`weekday` counts Monday as 1**, wherever you run it. That is the grammar's
 numbering rather than the engine's, and it has to be: asked plainly, one engine

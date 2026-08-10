@@ -4,8 +4,9 @@ title: "Turning columns into rows"
 
 {{< include ../_setup.qmd >}}
 
-A survey usually arrives with a row per person and a column per question. Most
-things you want to ask of it need the opposite shape.
+A survey arrives with a row per person and a column per question, so how do
+you total by question? Most things you want to ask of a wide table need the
+opposite shape.
 
 ::: {.panel-tabset}
 
@@ -33,6 +34,8 @@ answers >> lengthen(col.q1, col.q2, col.q3)
 ```
 
 :::
+
+*`answers then lengthen [q1, q2, q3]`*
 
 The table grew taller, which is what the verb's name says. Direction is in the
 name because the alternative is a pair of words you have to look up every time.

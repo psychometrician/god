@@ -134,8 +134,9 @@ check_promises <- function(book = "book") {
       if (grepl("^\\s*```\\{(r|python)\\}", l)) { inchunk <- TRUE; next }
       if (grepl("^\\s*```\\s*$", l)) { inchunk <- FALSE; next }
       if (!inchunk) next
-      m <- regmatches(l, regexec("^\\s*(?:collect\\(|cat\\(god_written\\(|)\\(?([A-Za-z_][A-Za-z0-9_]*)\\s*(\\|>|>>)", l))[[1]]
-      if (length(m) == 4) heads <- c(heads, m[2])
+      m <- regmatches(l, regexec("^\\s*\\(?(?:collect\\()?\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*(\\|>|>>)", l,
+                                 perl = TRUE))[[1]]
+      if (length(m) == 3) heads <- c(heads, m[2])
     }
   }
   if (length(heads)) {

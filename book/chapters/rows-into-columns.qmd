@@ -4,9 +4,10 @@ title: "Turning rows into columns"
 
 {{< include ../_setup.qmd >}}
 
-`widen` is the inverse, and it reads the same two words the other way. `name`
-points at the column holding column names in both verbs. Here it is being read
-rather than made, and the verb is what says which.
+How do you get the wide table back, one row per student again? `widen` is the
+inverse, and it reads the same two words the other way. `name` points at the
+column holding column names in both verbs. Here it is being read rather than
+made, and the verb is what says which.
 
 ::: {.panel-tabset}
 
@@ -36,6 +37,8 @@ marks >> widen(name = col.question, value = col.mark, by = col.student)
 ```
 
 :::
+
+*`marks then widen name [question], value [mark] by [student]`*
 
 `by` says which columns identify a row. Leaving it out means every column not
 already named, which is usually right and is occasionally a surprise: one column

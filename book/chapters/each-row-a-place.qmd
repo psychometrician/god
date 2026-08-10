@@ -4,8 +4,9 @@ title: "Giving each row a place"
 
 {{< include ../_setup.qmd >}}
 
-`rank` gives every row its place by some column. It is a value like any other, so
-it goes in `add`.
+Who came first, and what happens to second place when there is a tie? `rank`
+gives every row its place by some column. It is a value like any other, so it
+goes in `add`.
 
 The table below has a tie in it on purpose, because the tie is where ranking
 functions differ from each other and where most of the confusion lives.
@@ -38,6 +39,8 @@ races >> add(place = rank(col.score)) >> sort(col.place)
 ```
 
 :::
+
+*`races then add [place] as rank([score]) then sort [place]`*
 
 Read the places down the column: 1, 2, 2, 4. The lowest score is first, the two
 20s **share** second place, and the next value takes fourth. Third place is not

@@ -4,11 +4,11 @@ title: "Choosing by the shape of a name"
 
 {{< include ../_setup.qmd >}}
 
-When a table has a dozen columns and you want the eight scores that begin with
-`q`, naming them one by one is tedious and goes stale the moment a ninth
-arrives. `pick where` takes a question about a column's **name** instead. The
-`survey` table is the case: six respondents, eight score columns, and four
-columns of everything else.
+How do you pick eight score columns without writing eight names? Naming
+columns one by one is tedious in a wide table, and it goes stale the moment
+a ninth score arrives. `pick where` takes a question about a column's
+**name** instead. The `survey` table is the case: six respondents, eight
+score columns, and four columns of everything else.
 
 ::: {.panel-tabset}
 
@@ -29,6 +29,8 @@ survey >> pick(where(name.starts("q")))
 ```
 
 :::
+
+*`survey then pick where (name starts "q")`*
 
 `name` is the word for whichever column is being considered. There are three
 tests you can ask about it, `starts`, `ends` and `contains`, and they join with

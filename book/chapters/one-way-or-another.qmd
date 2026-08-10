@@ -4,7 +4,8 @@ title: "Answering one way or another"
 
 {{< include ../_setup.qmd >}}
 
-`when` asks a question and gives the answer beside it, then asks the next one.
+Is 95 an A or a B, and who decides in which order the rules apply? `when`
+asks a question and gives the answer beside it, then asks the next one.
 
 ::: {.panel-tabset}
 
@@ -32,6 +33,8 @@ pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B", otherwise 
 ```
 
 :::
+
+*`pupils then add [band] as when(([score] >= 90), "A", ([score] >= 70), "B", otherwise "C")`*
 
 The arguments come in pairs: a question, then what it gives. **The first question
 that is true wins**, so the order is part of what the sentence means. Ask the

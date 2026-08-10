@@ -4,7 +4,8 @@ title: "Bringing in another table"
 
 {{< include ../_setup.qmd >}}
 
-`join` adds another table's columns to this one, matching rows by the columns
+The sale knows its product, so who knows the maker? Another table does.
+`join` adds that table's columns to this one, matching rows by the columns
 that say which rows correspond. `products` holds a maker for each product.
 
 ::: {.panel-tabset}
@@ -22,6 +23,8 @@ sales >> join(products, by = col.product) >> pick(col.product, col.maker, col.re
 ```
 
 :::
+
+*`sales then join products by [product] then pick [product, maker, revenue]`*
 
 Leave `by` out and god matches on the column names both tables share, then tells
 you which it chose. It is never silent about a choice you did not make.

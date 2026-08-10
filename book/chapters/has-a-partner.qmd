@@ -4,9 +4,10 @@ title: "Asking whether a row has a partner"
 
 {{< include ../_setup.qmd >}}
 
-Sometimes you do not want the other table's columns. You want to know which of
-your rows appear in it, and keep those. That is a question about a row, so it is
-written as one, and the verb that takes a question is `keep`.
+Which of your rows have a partner in the other table? Sometimes that is the
+whole question: you do not want the other table's columns, only to keep the
+rows that appear in it. That is a question about a row, so it is written as
+one, and the verb that takes a question is `keep`.
 
 ::: {.panel-tabset}
 
@@ -27,6 +28,8 @@ sales >> keep(matching(stocked, by = col.product))
 ```
 
 :::
+
+*`sales then keep where matching(stocked, by [product])`*
 
 Nothing was added. The columns are the ones `sales` started with, and only the
 rows changed, which is why this is not spelled `join`. Negate it and you get
@@ -67,6 +70,8 @@ sales >> keep(matching(stocked))
 ```
 
 :::
+
+*`sales then keep where matching(stocked)`*
 
 There is one thing `matching` guarantees that `join` cannot. If the other table
 has three rows for a product, a join gives you three rows back for each of

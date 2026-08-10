@@ -4,9 +4,9 @@ title: "Choosing by what a column holds"
 
 {{< include ../_setup.qmd >}}
 
-The other thing you can ask about a column without looking at a single row is
-what kind of thing is in it. `kind` is one of `"number"`, `"text"`, `"truth"` or
-`"date"`.
+What kind of thing does a column hold, and can you choose by that alone? It
+is the other question you can ask about a column without looking at a single
+row. `kind` is one of `"number"`, `"text"`, `"truth"` or `"date"`.
 
 ::: {.panel-tabset}
 
@@ -23,6 +23,8 @@ survey >> pick(where(kind == "number"))
 ```
 
 :::
+
+*`survey then pick where (kind is "number")`*
 
 Both questions live in the same `where`, so they join.
 

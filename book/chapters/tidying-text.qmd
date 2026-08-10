@@ -4,7 +4,8 @@ title: "Tidying text"
 
 {{< include ../_setup.qmd >}}
 
-Real tables arrive untidy. These are the words for that.
+What do you do with `"  ann marie  "`? Real tables arrive untidy, and these
+are the words for that.
 
 ::: {.panel-tabset}
 
@@ -40,6 +41,8 @@ messy = pd.DataFrame({
 ```
 
 :::
+
+*`messy then add [name] as trim([raw]) then add [first] as split_text([name], " ", 1), [size] as characters([name]), [fixed] as replace_text([name], "a", "A")`*
 
 `split_text` says which piece it wants, counting from 1, because every value in
 the grammar is one value. Where there is no such piece the answer is empty text

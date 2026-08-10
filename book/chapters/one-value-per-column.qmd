@@ -4,10 +4,11 @@ title: "One value, applied to every column that matches"
 
 {{< include ../_setup.qmd >}}
 
-Writing the same thing for eight columns is eight chances to write it slightly
-differently. `add where` takes the same pattern the last two chapters used and
-one value to apply to each column it matches. Inside that value, `value` stands for the
-column being worked on.
+Why write the same calculation eight times? Repeating a thing for eight
+columns is eight chances to write it slightly differently. `add where` takes
+the same pattern the last two chapters used and one value to apply to each
+column it matches. Inside that value, `value` stands for the column being
+worked on.
 
 ::: {.panel-tabset}
 
@@ -24,6 +25,8 @@ survey >> add(where(name.starts("q"), value * 10))
 ```
 
 :::
+
+*`survey then add where (name starts "q") as (value * 10)`*
 
 The matched columns keep their names. That is not a rule this had to invent:
 `add` already covers making a column and replacing one, so replacing `q1_score`

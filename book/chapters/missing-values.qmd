@@ -4,8 +4,9 @@ title: "Missing values"
 
 {{< include ../_setup.qmd >}}
 
-`drop_missing` drops rows where a named column is missing. With no column named,
-it looks at every column.
+What should a hole in the table mean for your answer? `drop_missing` drops
+rows where a named column is missing. With no column named, it looks at
+every column.
 
 ::: {.panel-tabset}
 
@@ -32,6 +33,8 @@ patchy >> drop_missing(col.revenue)
 ```
 
 :::
+
+*`patchy then drop_missing [revenue]`*
 
 `fill_missing` replaces missing values with something.
 

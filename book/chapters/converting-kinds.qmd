@@ -4,9 +4,10 @@ title: "Saying what something is"
 
 {{< include ../_setup.qmd >}}
 
+The digits are right there in the column, so why refuse to count them?
 Conversions are always written out. Nothing here converts a column on your
-behalf, because a column that quietly changes what it holds is the hardest kind
-of mistake to find later.
+behalf, because a column that quietly changes what it holds is the hardest
+kind of mistake to find later.
 
 ::: {.panel-tabset}
 
@@ -23,6 +24,8 @@ messy >> add(word = to_text(col.n)) >> add(digits = characters(col.word))
 ```
 
 :::
+
+*`messy then add [word] as to_text([n]) then add [digits] as characters([word])`*
 
 **Every conversion begins `to_`**, and nothing else does: `to_number`,
 `to_whole`, `to_text`, `to_date`. Ask for the characters in a number without
