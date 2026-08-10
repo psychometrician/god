@@ -157,6 +157,16 @@ sales
 Both versions above produce exactly this, which is why a pipeline can move
 between a script, a notebook and a warehouse without being rewritten.
 
+A sentence written this way is data, so it can be stored, sent, and read by
+someone who does not write code. `run` takes one and gives back the table, and
+the call is identical in both languages, because there is no pipe glyph and no
+column syntax left to differ. [What it wrote, in a language you
+know](chapters/what-it-wrote.qmd) shows it running.
+
+That split is worth noticing early. Whoever writes a question and whoever runs
+it do not have to be the same person, and only one of them needs a language to
+run it in.
+
 ## The rules this book is held to
 
 The preface makes large claims, so the book binds itself to five rules you can

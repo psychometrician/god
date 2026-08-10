@@ -214,3 +214,55 @@ print(god_sql(
 
 No table is attached and none is needed. The column list is the contract, and
 the same checks run against it before anything is written out.
+
+## When the table is what you want
+
+`god_sql` writes the query and stops. `run` writes it, executes it, and gives
+back the table, starting from a sentence instead of from a pipeline you built
+with verbs.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+run('sales then keep where [region] is "West" then take 3')
+```
+
+### Python
+
+```{python}
+run('sales then keep where [region] is "West" then take 3')
+```
+
+:::
+
+Read what sits inside the parentheses in each tab. It is the same string, to the
+character. Everywhere else in this book the two languages differ in the pipe
+glyph and in how a column is named, and a sentence in the text form has neither
+of those, so nothing is left to respell.
+
+The table at the head of the sentence is looked up where you are calling from,
+which is how `sales` was found here. Pass it by name when it is somewhere else,
+as `run(pipeline, sales = last_quarter)`.
+
+## Who writes it, and who runs it
+
+A sentence is data. It fits in a database cell, a configuration file, a
+spreadsheet column, or a message to a colleague. So the person who writes a
+question and the person who runs it do not have to be the same person.
+
+Someone whose work is reading tables, and who will never write R or Python, can
+still write this one and say whether it asks the right thing:
+
+```
+sales then keep where [region] is "West" then summarize [total] as total([revenue]) by [product]
+```
+
+An analyst calls `run` on it later, or a scheduled job does. The sentence
+crosses that handoff intact, because it is not code in either language, and it
+is still readable by the person who wrote it.
+
+One boundary is worth stating plainly. `run` is an R function and a Python
+function, so calling it needs one of those two languages installed. What travels
+without them is the sentence, not the call around it.
