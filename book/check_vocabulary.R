@@ -19,7 +19,7 @@
 # anything. Those have to appear somewhere in the book, which is what catches a
 # word nobody documented at all.
 
-check_vocabulary <- function(dirs = "book") {
+check_vocabulary <- function(dirs = "book", readme = "README.md") {
   engine <- god_engine_for_vocabulary()
   if (is.na(engine)) {
     cat("SKIP: the engine is not built, so the vocabulary is unchecked\n")
@@ -83,7 +83,27 @@ check_vocabulary <- function(dirs = "book") {
     }
   }
 
-  if (length(missing_run) || length(missing_any)) {
+  # The front page keeps its own copy of the vocabulary, and a hand copy that
+  # no check reads is the copy that rots: the README claimed "nothing has to
+  # keep a second copy in step" while being exactly that copy, and it was
+  # missing seventeen of the grammar words when this was first measured. The
+  # README runs nothing, so appearing anywhere in it is the whole bar.
+  missing_front <- character()
+  if (length(readme) && file.exists(readme)) {
+    front <- paste(readLines(readme, warn = FALSE), collapse = "\n")
+    for (word in words$word) {
+      if (!mentions(word, front)) missing_front <- c(missing_front, word)
+    }
+  }
+
+  if (length(missing_front)) {
+    cat("FAIL: the front page never shows a word the grammar has\n")
+    for (word in missing_front) {
+      cat("  ", word, " is in the vocabulary and appears nowhere in ", readme, "\n", sep = "")
+    }
+  }
+
+  if (length(missing_run) || length(missing_any) || length(missing_front)) {
     if (length(missing_run)) {
       cat("FAIL: the grammar has words this book never runs\n")
       for (word in missing_run) {
@@ -98,11 +118,12 @@ check_vocabulary <- function(dirs = "book") {
       }
     }
     stop(sprintf("check_vocabulary: %d word(s) undocumented",
-                 length(missing_run) + length(missing_any)), call. = FALSE)
+                 length(missing_run) + length(missing_any) + length(missing_front)),
+         call. = FALSE)
   }
 
   cat("PASS: every word the grammar has is demonstrated (",
-      nrow(words), "words,", length(qmds), "files )\n")
+      nrow(words), "words,", length(qmds), "files, and the README names them all )\n")
   invisible(TRUE)
 }
 

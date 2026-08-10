@@ -154,12 +154,21 @@ Monday as 1 wherever it runs
 **The conditional.** `when(question, answer, …, otherwise = )`, where the first
 question that is true wins.
 
-The engine prints this list itself, with `god-cli --vocabulary`, so nothing has
-to keep a second copy of it in step.
+**The structure words**, which are how a sentence holds together: `then` joins
+steps, `where` asks a question, `as` names what a step makes, `by` groups,
+`descending` turns a sort key around, `all_but` inverts a column list,
+`unmatched` says whose rows survive a `join`, and `giving` declares the columns
+a `widen` makes. Choosing columns by rule uses `name`, `value` and `kind`; text
+is tested with `starts`, `ends` and `contains`; and `matching` is the join that
+cannot multiply rows, asking "has a partner?" without bringing any columns in.
 
 **Words where the hosts disagree**, replaced by one that means the same
 everywhere: `is` for equality, `yes` and `no` for truth, `missing` for the absent
 value, `in { … }` for membership, `and` · `or` · `not`.
+
+The engine prints the same list itself, with `god-cli --vocabulary` (the binary
+behind the `god` transcripts on this page), and the project's checks compare
+this section against it, so the copy above cannot quietly fall out of step.
 
 Every one of these is checked against what the name already means elsewhere. A
 word that would read as one thing and do another is renamed, which is why
@@ -211,6 +220,11 @@ sales |>
 **Knowing god is meant to make the tools you already use easier, not to replace
 them.** The edge of the vocabulary is a doorway rather than a wall.
 
+The same translation is callable from inside each language: `show_as` prints a
+pipeline in any of the seven targets, `god_sql` hands back the query for a
+table you describe, and R's `use_engine` points execution at any DBI
+connection, the way a Python pipeline follows its frames to Spark.
+
 ### So how fast is it?
 
 That question has two answers, and keeping them apart is the honest way to ask
@@ -244,8 +258,12 @@ cargo build --release          # the engine and the command line
 cargo test --release           # the core, every backend, and the verbs on DuckDB
 ```
 
-Both packages find `target/release/god-cli` by walking up from where they are
-installed, so neither needs anything configured after a build.
+Both packages find the engine on their own, in the same order: the `GOD_CLI`
+environment variable if set, the source tree's own `target/release/god-cli`, a
+copy bundled inside an installed package, the working directory's tree, and
+finally the `PATH`. So after a source build nothing needs configuring, and on
+Windows, where the file is `god-cli.exe`, both packages know that without
+being told.
 
 ```bash
 Rscript r-pkg/god/tests/test_basic.R     # the R binding, and the book's guards
