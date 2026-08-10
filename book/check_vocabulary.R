@@ -3,8 +3,8 @@
 # Run from the repository root; sourced by the R test suite.
 #
 # **The manual was incomplete and nothing said so.** When the book was split into
-# chapters, five words turned out to appear nowhere in it at all, and seven more
-# appeared only in prose. A sentence can name a verb and still build clean, which
+# chapters, a handful of words turned out to appear nowhere in it at all, and
+# more appeared only in prose. A sentence can name a verb and still build clean, which
 # is the defect no live chunk catches, and the inverse holds too: a grammar can
 # grow a word and no page has to mention it.
 #

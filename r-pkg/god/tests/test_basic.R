@@ -756,7 +756,7 @@ book_guard("every pipeline the book shows, the grammar reads",
 book_guard("the book's voice is consistent",
            "book/check_prose.R", "check_prose")
 # **The manual documenting the whole grammar is a test, not a hope.** When the
-# book was split into chapters, eight words turned out to be demonstrated
+# book was split into chapters, several words turned out to be demonstrated
 # nowhere. Prose can name a verb and still build clean, and a grammar can grow a
 # word without any page mentioning it.
 book_guard("every word the grammar has, the book demonstrates",
