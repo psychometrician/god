@@ -19,15 +19,16 @@ book:
     face built from the grammar's own marks: R's pipe and Python's as the two
     eyes, a pair of parentheses as the nose, and the package name as the mouth.
 
-  # Two names, the human first, the way the sibling book does it. The model is
-  # named as a co-author of the *book* rather than as a tool that helped, because
-  # it wrote the prose, and "with assistance from" would understate that. The
-  # copyright holder is the human either way, and a git commit is a different
-  # claim entirely: that one is about who is answerable for the repository, and
-  # it carries one name.
+  # The human first, then the models, in the order they arrived — the way the
+  # sibling book does it, which carries five. A model is named as a co-author of
+  # the *book* rather than as a tool that helped, because it wrote the prose, and
+  # "with assistance from" would understate that. The copyright holder is the
+  # human either way, and a git commit is a different claim entirely: that one is
+  # about who is answerable for the repository, and it carries one name.
   author:
     - "psychometrician"
     - "Claude Opus 5"
+    - "Claude Fable 5"
 
   # Two dates, and only one of them moves. This is the day the book first went up
   # as a public website, written out in full so no render can change it. Its
@@ -228,6 +229,18 @@ format:
     number-sections: true
     code-link: false
     code-copy: true
+    # Sets every package name in code font, in prose, from a list of names
+    # rather than from three hundred pairs of backticks a writer would have to
+    # remember. The list is measured from the book rather than guessed, and the
+    # filter carries the measurement and the reasoning beside it.
+    #
+    # It sits under `html:` rather than at the top level because that is the
+    # only format this book has. If a PDF is ever added, name the filter again
+    # under `pdf:` instead of hoisting this: a format's `filters:` replaces the
+    # value above it rather than adding to it, so hoisting would silently drop
+    # whatever the other format lists.
+    filters:
+      - package-names.lua
     # Both languages, side by side, everywhere. The whole claim of this book is
     # that the two sentences are the same sentence, and a reader who has to
     # scroll to compare them cannot check that claim. That is why the examples
