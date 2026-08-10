@@ -114,6 +114,33 @@ $input-placeholder-color: $paper-soft;
  * above already uses.
  * ------------------------------------------------------------------------- */
 
+/* A footer is not allowed to expand with the glass. Left alone it ran the
+ * full width of the window, licences at one horizon and icons at the other,
+ * while the writing sat in a column between them. So the contents are held
+ * to the same measure the sibling project's two sites hold theirs to,
+ * centered; the band behind them still spans the window.
+ *
+ * `footer.footer .nav-footer` rather than `.nav-footer`: the framework sets
+ * the side padding with `footer.footer .nav-footer, #quarto-header>nav`,
+ * which is (0,2,1) and beats a bare class. */
+footer.footer .nav-footer {
+  max-width: 1135px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Narrow screens get their gutter back, since there is nothing to line up
+ * with once the layout collapses to one column. */
+@media (max-width: 991.98px) {
+  footer.footer .nav-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
 /* Each licence is one unit. Left to itself the line broke wherever it ran out
  * of room, which put "Apache 2.0." alone on a second line looking like a
  * mistake. As inline blocks the two sentences can only break *between* each
