@@ -121,6 +121,11 @@ book:
     - part: parts/six-verbs.qmd
       chapters:
         - chapters/first-pipeline.qmd
+        # The sibling book's morning shape, adopted where it fits: the whole
+        # vocabulary on one page, right after the first whole pipeline, so a
+        # reader knows how small the thing they are learning is. Appendix B
+        # stays the reference card; this page is the sitting.
+        - chapters/all-of-it-at-once.qmd
         - chapters/keeping-rows.qmd
         - chapters/choosing-columns.qmd
         - chapters/adding-a-column.qmd
@@ -188,6 +193,9 @@ book:
     - appendices/c-phrasebook.qmd
     - appendices/d-the-verb-you-know.qmd
     - appendices/e-coverage.qmd
+    # Added at the end so the letters above keep their letters: prose cites
+    # Appendix B and C by name, and re-lettering them would falsify it.
+    - appendices/f-where-words-stand.qmd
 
 # The provenance layer: the grammar's ideas are old, and the book says whose
 # they are. APA because the sibling book uses it, and one style across the two

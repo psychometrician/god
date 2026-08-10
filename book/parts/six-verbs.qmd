@@ -15,7 +15,9 @@ the point. You have already met every idea in this part, in at least one
 other spelling.
 
 The part runs in one direction. The first chapter shows a whole pipeline, so
-you know what the pieces are for before you meet them one at a time. Five
+you know what the pieces are for before you meet them one at a time, and the
+page after it lays out every word the grammar has, so you know how small the
+whole of it is before you start. Five
 short chapters then take the six verbs, with `sort` and `take` sharing one,
 a seventh adds renaming and dropping repeats, and an eighth gathers the
 small words (`by`, `as`, `where`,

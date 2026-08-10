@@ -181,9 +181,10 @@ write instead, and every refusal in this book is held to that standard.
 Read the tab for the language you write. Glance at the other one when you are
 curious. The explanation under a tabset is written once and covers both.
 
-The next chapters of this part are one verb each, and they share one shape,
-declared on the part page you just passed: a question, the verb that answers
-it, what the verb can vary, then what travels with it and what it refuses.
-They are short, and by the end of them you can answer real questions about a
-table, which is a claim the practice chapters at the end of the part will
-ask you to prove.
+The next page lays out the whole vocabulary at once, so you can see how
+little there is to meet. The teaching chapters after it take the verbs one
+or two at a time, and they share one shape, declared on the part page you
+just passed: a question, the verb that answers it, what the verb can vary,
+then what travels with it and what it refuses. They are short, and by the
+end of them you can answer real questions about a table, which is a claim
+the practice chapters at the end of the part will ask you to prove.

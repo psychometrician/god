@@ -5,7 +5,7 @@ title: "Writing practice"
 {{< include ../_setup.qmd >}}
 
 Reading back a sentence and producing one are different skills, so which one
-do you actually have? Recognition came free with the last eight chapters.
+do you actually have? Recognition came free with the chapters behind you.
 Recall is the day-two promise, it is the one that pays for itself every
 working day, and the only way to get it is the way this chapter is built:
 you write, look, and refine.
@@ -308,7 +308,7 @@ This part made three claims about you, and they are now checkable. Read any
 pipeline in this part aloud, cold. Given a question about one table, name
 the verbs that answer it before typing. And predict, before running, whether
 a sentence will answer or refuse. If any of the three fails, the chapter
-that repairs it is at most eight back, and they are short.
+that repairs it is never far back, and they are all short.
 
 From here the book forks, and both branches are honest. Read on in order,
 and [the next part](../parts/shape.qmd) changes the shape of a table. Or jump to the cookbook near the

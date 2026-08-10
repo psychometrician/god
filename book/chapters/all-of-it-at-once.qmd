@@ -1,0 +1,114 @@
+---
+title: "All of it at once"
+---
+
+{{< include ../_setup.qmd >}}
+
+How much is there to learn? Here is the whole of it, on one page, before you
+meet any of it properly. The pipeline you just read used a handful of these
+words; every pipeline you will ever write uses words from this page and no
+others.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  keep(revenue > 150) |>
+  summarize(sold = total(quantity), by = region) |>
+  sort(descending(sold))
+```
+
+### Python
+
+```{python}
+(sales
+  >> keep(col.revenue > 150)
+  >> summarize(sold = total(col.quantity), by = col.region)
+  >> sort(descending(col.sold)))
+```
+
+
+### run
+
+```{r}
+run('
+  sales
+    then keep where ([revenue] > 150)
+    then summarize [sold] as total([quantity]) by [region]
+    then sort [sold] descending
+')
+```
+
+:::
+
+*`sales then keep where [revenue] > 150 then summarize [sold] as total([quantity]) by [region] then sort [sold] descending`*
+
+One sentence, and it already drew on three of the five shelves below. The
+lists are asked from the engine while this page is built, so what you are
+reading is the vocabulary, not a summary of one.
+
+```{r}
+#| echo: false
+vocabulary <- read.delim(
+  text = system2(god:::god_binary(), "--vocabulary", stdout = TRUE),
+  header = FALSE, col.names = c("kind", "word"), stringsAsFactors = FALSE
+)
+shelf <- function(kind) {
+  paste0("`", vocabulary$word[vocabulary$kind == kind], "`", collapse = " · ")
+}
+```
+
+**The verbs**, each a step that takes a table and gives a table back. The
+next chapters of this part carry the six that do most of the work; the rest
+arrive in the parts that own them.
+
+```{r}
+#| echo: false
+shelf("verb") |> cat()
+```
+
+**The aggregations**, which collapse a group of rows to one answer. They
+live inside `summarize`, and inside `add` when a group's answer should land
+on every row.
+
+```{r}
+#| echo: false
+shelf("aggregate") |> cat()
+```
+
+**The windows**, which answer once per row by looking along the other rows:
+a place, a running total, the value one row back.
+
+```{r}
+#| echo: false
+shelf("window") |> cat()
+```
+
+**The scalar functions**, one value in and one value out: text repairs,
+conversions, the parts of a date, one conditional companion.
+
+```{r}
+#| echo: false
+shelf("scalar") |> cat()
+```
+
+**The grammar words**, the joints that say how the words on either side
+relate. Five of them travel between the verbs so often they get a chapter of
+their own at the end of this part.
+
+```{r}
+#| echo: false
+shelf("word") |> cat()
+```
+
+That is all of it. There is no second list waiting after this one, no
+helper family, and no extra dialect on a cluster: a word that is not on this
+page is not in the grammar, and asking for one gets a refusal that names the
+nearest word that is. The count is the argument. A vocabulary this size can
+be met in a sitting and carried whole, and the rest of this book is those
+shelves taken down one or two words at a time, each with the design decision
+that put it there. When you want this page again as a reference,
+[every word in the grammar](../appendices/b-every-word.qmd) is the same list
+with a map of where each word first runs.

@@ -1,0 +1,73 @@
+---
+title: "Where each word can stand"
+---
+
+{{< include ../_setup.qmd >}}
+
+The vocabulary says what the words are; this page says where they may stand.
+Every seat below is a place in a step that takes a computed value, and the
+grid is asked from the engine while this page is built, from the same table
+its checker answers to, so what you are reading cannot drift from what the
+engine does. The engine's own tests run every cell of it through the parser
+and checker besides, so a cell that moved without its rule moving would fail
+the build before it could mislead this page.
+
+```{r}
+#| echo: false
+cells <- read.delim(
+  text = system2(god:::god_binary(), "--seats", stdout = TRUE),
+  header = FALSE,
+  col.names = c("seat", "shown", "kind", "answer", "note"),
+  stringsAsFactors = FALSE
+)
+cells$note[is.na(cells$note)] <- ""
+seats <- unique(cells$shown)
+grid <- data.frame(
+  `The seat` = paste0("`", seats, "`"),
+  check.names = FALSE
+)
+for (k in c("scalar", "aggregate", "window")) {
+  grid[[k]] <- vapply(seats, function(s) {
+    cells$answer[cells$shown == s & cells$kind == k]
+  }, character(1))
+}
+knitr::kable(grid, row.names = FALSE)
+```
+
+Read a row and you are reading what one seat is for. A **condition** asks one
+row a question, so a scalar can decide it and a group's answer cannot: the
+group's answer does not exist until the rows are chosen. A **value** in `add`
+is the one seat with a row for every kind of answer, which is why a group's
+total can land on every row of its group there, and a running total can walk
+the rows once a `sort` has said in what order. A **group's answer** in
+`summarize` must span its group, so its head is an aggregate and scalars ride
+inside it. An **ordering position** names a column and never an expression,
+in `sort` and inside `rank` alike, because the computed key is one `add`
+away and a second spelling of that `add` is what the refusal declines to be.
+A **filler** and a **cell** each hold one value, and the rows where a
+group's answer would help are reached the same way as everywhere else: make
+it a column first.
+
+Some cells carry one more sentence, and the engine says those too:
+
+```{r}
+#| echo: false
+noted <- cells[cells$note != "", c("shown", "kind", "note")]
+knitr::kable(
+  noted,
+  row.names = FALSE,
+  col.names = c("The seat", "The kind", "What the cell says")
+)
+```
+
+One of those notes is different in kind from the rest, and it is on this
+page because honesty is cheaper than surprise: a window as `fill_missing`'s
+filler is admitted today without being asked for an order, and whether that
+stays is an open question rather than a rule. The cell states what the
+engine does; it does not bless it.
+
+What the grid never says is *useful*. A sentence these seats accept is
+answered however strange it is, because well-formed and worthwhile are
+different judgments belonging to different people: the engine settles the
+first, always, and the second is yours. That split is a law of its own, and
+[the laws](../chapters/design-laws.qmd) show it working beside the rest.

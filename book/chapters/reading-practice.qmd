@@ -313,7 +313,8 @@ run('
 Each region's shares sum to one, and the biggest single share in the table
 sits in the North, where one Gadget order carries nearly half its region.
 This is the hardest sentence in the chapter, and it is made of a verb from
-chapter 4 and a word from chapter 8.
+[adding a column](adding-a-column.qmd) and a word from [the words that
+repeat](words-that-repeat.qmd).
 
 ## What you just did
 

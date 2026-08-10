@@ -41,6 +41,7 @@ pub mod check;
 pub mod diagnostic;
 pub mod parse;
 pub mod plan;
+pub mod seats;
 pub mod vocabulary;
 
 pub use check::{Schema, Type};

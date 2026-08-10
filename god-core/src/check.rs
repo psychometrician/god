@@ -1102,7 +1102,7 @@ fn check_widen(
     let holds = check_expr(value, schema)?;
     if value.windows() {
         return Err(Diagnostic::illegal(
-            "a place is worked out over the rows that are left, so it cannot be what fills a cell. Add it as a column first, then widen",
+            "a place is worked out over the rows that are left, so it cannot be what fills a cell. Make it a column first: `then add [place] as rank([x] descending)`, then widen from that",
             value.span(),
         ));
     }

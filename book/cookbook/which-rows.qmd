@@ -77,7 +77,8 @@ run('
 
 **One verb away.** The top two: `take(2, by = region)`. The *latest* per
 group instead of the largest: sort by `date` instead of `revenue`, which is
-[chapter 5's closing example](../chapters/sorting-and-taking.qmd).
+[the closing example of sorting and
+taking](../chapters/sorting-and-taking.qmd).
 
 ## The rows above a bar
 

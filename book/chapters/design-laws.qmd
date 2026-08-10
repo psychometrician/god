@@ -4,11 +4,12 @@ title: "The laws"
 
 {{< include ../_setup.qmd >}}
 
-Every refusal you have met in this book is a consequence, not a policy. Nine
-laws sit under the whole grammar, and each one exists to refuse a specific
-temptation: something another tool does, that costs its users more than it
-gives them. This chapter collects the laws in one place, with the temptation
-beside each, because the vocabulary above them will grow and these will not.
+Every refusal you have met in this book is a consequence, not a policy. The
+laws on this page sit under the whole grammar, and each one exists to refuse
+a specific temptation: something another tool does, that costs its users more
+than it gives them. This chapter collects the laws in one place, with the
+temptation beside each, because the vocabulary above them will grow and these
+will not.
 
 ## One word, one meaning
 
@@ -108,6 +109,56 @@ Spark frame stays on its cluster. The temptation is the platform move,
 where the price of the grammar is migrating your data into it. There is
 nothing to migrate into, which is also why walking away from god costs one
 `show_as` per pipeline.
+
+## Well-formed is enough
+
+The grammar guarantees that a sentence means one thing. It does not guarantee
+the sentence was worth writing, and it never refuses one for that:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(loud = upper(lower(upper(product)))) |>
+  pick(product, loud) |>
+  take(2)
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(loud = upper(lower(upper(col.product))))
+  >> pick(col.product, col.loud)
+  >> take(2))
+```
+
+
+### run
+
+```{r}
+run('
+  sales
+    then add [loud] as upper(lower(upper([product])))
+    then pick [product, loud]
+    then take 2
+')
+```
+
+:::
+
+Folding a value's case three times is pointless and perfectly well formed,
+and the engine answered it, because pointless is your judgment to make and
+not its. A combination nobody wants today is one somebody means tomorrow,
+and a grammar that vetoed the useless would be imposing taste and calling
+it law. The temptation this law refuses points the other way from all the
+others: not a feature that would cost every reader, but a refusal that
+would. So every no in this grammar stands on one of the laws on this page
+and names what to write instead, never on "nobody would want that". And
+[where each word can stand](../appendices/f-where-words-stand.qmd) is one
+table, asked from the engine, whose every cell the engine's own tests hold.
 
 ## What the laws are for
 

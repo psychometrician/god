@@ -5,6 +5,29 @@ a person using god can see.
 
 ## Unreleased
 
+### The composition rules are one table, and you can ask for it
+
+`god --seats` prints where each kind of function can stand: every seat and
+every kind, stands or refused, with the note the cell carries. The engine's
+own tests run every cell through the parser and checker, so the table cannot
+drift from what the engine does. A new appendix in the book prints the same
+grid, and a new law joins the others: well-formed is enough. A sentence the
+seats accept is answered however strange it is, and a refusal always stands
+on a law and names what to write instead, never on "nobody would want that".
+
+### The whole vocabulary meets you on one early page
+
+Right after the first pipeline, a new chapter lays out every word the
+grammar has, asked from the engine while the page builds, so a new reader
+sees how small the thing they are learning is before meeting it one word at
+a time. The appendix carrying the same list stays as the reference card.
+
+### A refusal now carries its spelling
+
+Filling a `widen` cell with a window function was refused with a direction
+in words alone; the message now writes the repair out: make the place a
+column with `add`, then widen from that.
+
 ### A column named with a space now runs from R
 
 A column called `order date`, written the way R writes any such name, in

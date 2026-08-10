@@ -53,6 +53,10 @@ Options
     --vocabulary       print every word the grammar has, one per line, tagged
                        with what kind of word it is. Nothing else should keep
                        its own copy of this list.
+    --seats            print where each kind of function can stand, one cell
+                       per line: seat, kind, stands or refused, and the note
+                       the cell carries. The book's table is generated from
+                       this, so it cannot drift from the checker.
     --help             this
 
 Examples
@@ -87,6 +91,10 @@ fn main() -> ExitCode {
             print!("{}", vocabulary());
             ExitCode::SUCCESS
         }
+        Err(Failure::Seats) => {
+            print!("{}", seats());
+            ExitCode::SUCCESS
+        }
     }
 }
 
@@ -97,6 +105,35 @@ enum Failure {
     /// Not a failure, and it travels this way because `run` returns one string
     /// and this returns a list. Kept beside `Help` for the same reason.
     Vocabulary,
+    /// The composition table, the same way: where each kind can stand.
+    Seats,
+}
+
+/// Where each kind of function can stand, cell by cell, from the table the
+/// checker's own tests enforce. The book's grid is generated from this for
+/// the reason `vocabulary` gives: a copy kept anywhere else goes stale the
+/// day a cell moves.
+fn seats() -> String {
+    use god_core::seats::{note_for, rule_for, Admission, KINDS, SEATS};
+
+    let mut lines = Vec::new();
+    for &seat in SEATS {
+        for &kind in KINDS {
+            let answer = match rule_for(seat, kind) {
+                Admission::Stands => "stands",
+                Admission::Refused => "refused",
+            };
+            lines.push(format!(
+                "{}\t{}\t{}\t{}\t{}",
+                seat.word(),
+                seat.shown_as(),
+                format!("{kind:?}").to_lowercase(),
+                answer,
+                note_for(seat, kind),
+            ));
+        }
+    }
+    lines.join("\n") + "\n"
 }
 
 /// Every word the grammar has, tagged with its role.
@@ -141,6 +178,7 @@ fn run() -> Result<String, Failure> {
             "--help" | "-h" => return Err(Failure::Help),
             "--needs" => needs_only = true,
             "--vocabulary" => return Err(Failure::Vocabulary),
+            "--seats" => return Err(Failure::Seats),
             "--columns" => {
                 let value = args.next().ok_or_else(|| {
                     Failure::Usage("`--columns` needs a list, like \"region:text,revenue:number\"".into())

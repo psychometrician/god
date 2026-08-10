@@ -312,6 +312,7 @@ an afternoon.
 
 The eight verbs and five small words you now have are the everyday core of
 the grammar, and the preface's promise has reached its first checkpoint:
-day one was reading, and you have been reading for eight chapters. Day two
-is writing, and it starts on the next page. The two practice chapters ahead
-are where this part's claims stop being the book's and start being yours.
+day one was reading, and you have been reading since the first pipeline.
+Day two is writing, and the practice pair ahead closes with it. Those two
+chapters are where this part's claims stop being the book's and start being
+yours.
