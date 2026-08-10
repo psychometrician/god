@@ -27,6 +27,13 @@
 # because a claim nobody can re-run is not evidence.
 !/parity/
 
+# What the README draws. One SVG rather than a pair, because the diagram carries
+# its own tinted ground and so reads on a light page and a dark one alike; a
+# transparent drawing is what forces a second `-dark` copy. The book's own images
+# live under `book/`, which is allowed further down, so this directory holds only
+# what the front page needs.
+!/images/
+
 # The two bindings
 !/r-pkg/
 !/py-pkg/
