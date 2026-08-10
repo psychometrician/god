@@ -102,6 +102,16 @@ check(
     [1.0],
 )
 
+# A name with a space is written col["order date"], and the whole trip has to
+# survive it: the sentence, the schema handed to the engine, and the query.
+# The R launcher shipped a quoting defect exactly here, so both suites pin it.
+spaced = pd.DataFrame({"order date": ["2026-01-02", "2026-01-05"], "total": [40, 90]})
+check(
+    "a column named with a space survives the launcher",
+    list(god.collect(spaced >> god.keep(god.col["order date"] > "2026-01-03"))["total"]),
+    [90],
+)
+
 print("\npandas' own types reach the grammar")
 
 typed = pd.DataFrame(

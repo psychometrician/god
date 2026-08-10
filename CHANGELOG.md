@@ -3,6 +3,16 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
+## Unreleased
+
+### A column named with a space now runs from R
+
+A column called `order date`, written the way R writes any such name, in
+backticks, used to stop with the engine's usage text: the R launcher handed
+the column list to the shell unquoted, so the name split at the space. It is
+quoted now, and a test in each language holds the trip open. Python was
+already correct, and spells such a name `col["order date"]`.
+
 ## 0.0.1
 
 The first release. On R-universe since 2026-08-08 as `god`, installable as a

@@ -251,6 +251,14 @@ check("collect runs it",
 check("converting runs it too",
       is.data.frame(as.data.frame(sales |> take(2))), TRUE)
 
+# A backticked name may hold a space, and the launcher has to carry it whole:
+# `system2` quotes nothing on its own, so the schema used to split at the
+# space and the engine answered with its usage text instead of the rows.
+spaced <- data.frame(`order date` = c("2026-01-02", "2026-01-05"),
+                     total = c(40, 90), check.names = FALSE)
+check("a column named with a space survives the launcher",
+      collect(spaced |> keep(`order date` > "2026-01-03"))$total, 90)
+
 check("the rows are the ones the text form gives",
       collect(sales |> keep(region == "West") |> sort(descending(revenue)) |> take(2))$revenue,
       run("sales then keep where [region] is \"West\" then sort [revenue] descending then take 2")$revenue)

@@ -234,8 +234,12 @@ god_call <- function(args, pipeline) {
   err <- tempfile()
   on.exit(unlink(c(out, err)), add = TRUE)
 
+  # `system2` pastes its arguments into a command line without quoting, so a
+  # column called `order date` used to split the schema at the space and the
+  # engine answered with its usage text. Quoted, a name may hold anything a
+  # data frame allows.
   status <- system2(
-    binary, args,
+    binary, shQuote(args),
     stdout = out, stderr = err,
     input = pipeline
   )
