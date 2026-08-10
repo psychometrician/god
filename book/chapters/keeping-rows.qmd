@@ -138,6 +138,7 @@ collect(sales |> keep(region > 100))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> keep(col.region > 100))
 except GodError as refusal:

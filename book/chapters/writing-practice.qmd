@@ -158,6 +158,7 @@ sales |>
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales
       >> summarize(t = total(col.revenue), by = col.region)
@@ -185,6 +186,7 @@ sales |> keep(region != "East") |> take(2, by = product) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> keep(col.region != "East") >> take(2, by = col.product))
 except GodError as refusal:
@@ -208,6 +210,7 @@ survey |> keep(regoin == "West") |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(survey >> keep(col.regoin == "West"))
 except GodError as refusal:

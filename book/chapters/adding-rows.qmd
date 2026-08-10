@@ -71,6 +71,7 @@ collect(sales |> add_rows(data.frame(region = "North")))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> add_rows(pd.DataFrame({"region": ["North"]})))
 except GodError as refusal:

@@ -184,3 +184,46 @@ $input-placeholder-color: $paper-soft;
     margin-right: 0;
   }
 }
+
+/* Telling a diagnostic apart from the prose around it -------------------------
+ *
+ * The light theme's file carries the reasoning for all of this: why output
+ * wraps, why there are two treatments rather than one, and why the Python half
+ * of a refusal needs a `classes: refusal` marker to be reachable at all.
+ *
+ * What differs here is only the fill. A tint of the hue over *white* is what
+ * the light theme uses, and over this ground it would be a pale rectangle
+ * shouting off the page. These two are the same hues laid over `$ink-bg` at
+ * about a seventh, which separates the block from the prose without turning it
+ * into a panel. The left rules keep the hues themselves, unmixed, because that
+ * is the part carrying the identity.
+ * -------------------------------------------------------------------------- */
+
+.cell-output pre,
+.cell-output pre code {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+/* Fatal: Illegal or Unsupported, and nothing ran. */
+.cell-output-error > pre,
+.refusal .cell-output-stdout > pre {
+  background-color: #2c1d22;
+  border-left: 3px solid #e15759;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 3px 3px 0;
+}
+
+/* An Assumption: the engine answered and is naming what it chose for you. */
+.cell-output-stderr > pre {
+  background-color: #2f241c;
+  border-left: 3px solid #f28e2b;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 3px 3px 0;
+}
+
+.cell-output-error > pre > code,
+.refusal .cell-output-stdout > pre > code,
+.cell-output-stderr > pre > code {
+  background-color: transparent;
+}

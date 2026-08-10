@@ -123,6 +123,7 @@ sales |> take(1, by = region) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> take(1, by = col.region))
 except GodError as refusal:

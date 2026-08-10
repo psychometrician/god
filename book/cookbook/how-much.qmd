@@ -140,6 +140,7 @@ sales |> summarize(t = total(product), by = region) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> summarize(t = total(col.product), by = col.region))
 except GodError as refusal:

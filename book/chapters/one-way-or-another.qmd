@@ -92,6 +92,7 @@ collect(pupils |> add(band = when(score >= 90, "A", otherwise = 0)))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(pupils >> add(band = when(col.score >= 90, "A", otherwise = 0)))
 except GodError as refusal:

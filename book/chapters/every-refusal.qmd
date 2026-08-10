@@ -21,6 +21,7 @@ collect(sales |> keep(reveune > 100))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> keep(col.reveune > 100))
 except GodError as refusal:

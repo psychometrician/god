@@ -69,6 +69,7 @@ collect(patchy |> fill_missing(revenue = "none"))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(patchy >> fill_missing(revenue = "none"))
 except GodError as refusal:

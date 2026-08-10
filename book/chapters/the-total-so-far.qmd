@@ -68,6 +68,7 @@ collect(diary |> add(so_far = running_total(x)))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(diary >> add(so_far = running_total(col.x)))
 except GodError as refusal:

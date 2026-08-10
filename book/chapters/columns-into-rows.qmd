@@ -119,6 +119,7 @@ collect(answers |> lengthen(student, q1))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(answers >> lengthen(col.student, col.q1))
 except GodError as refusal:

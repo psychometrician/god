@@ -93,6 +93,7 @@ collect(twice |> widen(name = question, value = mark, by = student))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     twice = pd.DataFrame({
         "student":  ["ann", "ann"],
@@ -149,6 +150,7 @@ collect(marks |> widen(name = question, value = mark, by = student) |> take(1))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(marks >> widen(name = col.question, value = col.mark, by = col.student) >> take(1))
 except GodError as refusal:

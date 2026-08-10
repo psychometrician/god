@@ -136,6 +136,7 @@ sales |> add(margin = revenue - cost, doubled = margin * 2) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
 except GodError as refusal:

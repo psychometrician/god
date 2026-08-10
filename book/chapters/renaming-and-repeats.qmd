@@ -119,6 +119,7 @@ sales |> rename(region = revenue) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> rename(region = col.revenue))
 except GodError as refusal:

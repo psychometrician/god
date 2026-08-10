@@ -74,6 +74,7 @@ collect(survey |> summarize(where(startsWith(name, "q"), value * 2)))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(survey >> summarize(where(name.starts("q"), value * 2)))
 except GodError as refusal:

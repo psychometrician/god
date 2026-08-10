@@ -181,3 +181,82 @@ $blockquote-font-size:  1rem;
     margin-right: 0;
   }
 }
+
+/* Telling a diagnostic apart from the prose around it -------------------------
+ *
+ * A refusal arrived as unshaded monospace, which put the one thing on the page
+ * that is the engine talking into the same visual register as body text, while
+ * an ordinary source block got a gray box. This book teaches its grammar
+ * through refusals, so that was backwards.
+ *
+ * The wrap is the part that matters most. Quarto renders chunk output as a
+ * bare `<pre><code>`, which scrolls sideways rather than wrapping, so a long
+ * refusal ran off the right edge. What gets cut is the tail, and the tail is
+ * where the message names the spelling that works. `code-overflow: wrap` does
+ * not reach this: it is a Quarto option that styles *source* blocks, and a
+ * diagnostic lands in output.
+ *
+ * Two treatments, because the grammar makes the distinction. Illegal and
+ * Unsupported are fatal and nothing ran; an Assumption is advice and the table
+ * is right there beside it. One color for both would flatten a difference the
+ * book teaches.
+ *
+ * Both tabs of a refusal must look the same, and they do not arrive the same
+ * way. R raises, so Quarto marks its output `cell-output-error`. Python catches
+ * and prints, so its twin lands in `cell-output-stdout`, next to every ordinary
+ * table in the book. The 27 Python refusal chunks carry `classes: refusal`,
+ * which Quarto puts on the *cell* rather than on the output, so the selector
+ * reaches down into it. Tinting stdout without that marker would put a red box
+ * around every table on every page.
+ *
+ * The two hues are the sibling project's engine palette rather than new ones,
+ * so a reader who knows that book reads a refusal the same way in this one.
+ *
+ * Deliberately not a callout box. This is a tint and a left rule on a block
+ * that already existed: no icon, no title bar, nothing to dismiss to keep
+ * reading. The left rule carries the same information as the fill, so the two
+ * kinds stay distinguishable without relying on hue alone.
+ * -------------------------------------------------------------------------- */
+
+.cell-output pre,
+.cell-output pre code {
+  white-space: pre-wrap;
+  /* `break-word` rather than `anywhere`: a diagnostic is prose and breaks at
+   * its spaces, and this is only for the rare token with no space in it, such
+   * as a long column name or a path. `anywhere` splits short words mid-letter
+   * to tighten a line, which reads worse than a slightly ragged edge. */
+  overflow-wrap: break-word;
+}
+
+/* Fatal: Illegal or Unsupported, and nothing ran. */
+.cell-output-error > pre,
+.refusal .cell-output-stdout > pre {
+  background-color: #fceeee;
+  border-left: 3px solid #e15759;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 3px 3px 0;
+}
+
+/* An Assumption: the engine answered and is naming what it chose for you. No
+ * chunk in the book emits one today, so this rule styles nothing yet. The kind
+ * is the grammar's, and a page that grows one will already look right. */
+.cell-output-stderr > pre {
+  background-color: #fef4ea;
+  border-left: 3px solid #f28e2b;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0 3px 3px 0;
+}
+
+/* An unmarked `cell-output-stdout` is left alone on purpose. It is whatever the
+ * chunk printed, which is a table on nearly every page here, and it belongs in
+ * the neutral register plain program output already has. */
+
+/* The `<code>` inside inherits the tint rather than painting its own. Quarto
+ * gives a bare `pre > code` a transparent background already, but saying so
+ * here stops a theme change from putting a gray rectangle inside the tinted
+ * one. */
+.cell-output-error > pre > code,
+.refusal .cell-output-stdout > pre > code,
+.cell-output-stderr > pre > code {
+  background-color: transparent;
+}

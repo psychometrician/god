@@ -233,6 +233,7 @@ sales |> summarize(revenue = revenue, by = region) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> summarize(revenue = col.revenue, by = col.region))
 except GodError as refusal:

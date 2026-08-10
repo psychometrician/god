@@ -148,8 +148,47 @@ check_refusals <- function(dirs = "book") {
          call. = FALSE)
   }
 
+  unmarked <- unmarked_python_refusals(qmds)
+  if (length(unmarked)) {
+    cat("FAIL: Python refusal chunks with no `#| classes: refusal`\n")
+    for (line in unmarked) cat("  ", line, "\n", sep = "")
+    cat("  Without it the twin renders as an ordinary result while the R tab is\n")
+    cat("  shaded as a refusal, so the two tabs of one sentence disagree on the page.\n")
+    stop(sprintf("check_refusals: %d unmarked Python refusal(s)", length(unmarked)),
+         call. = FALSE)
+  }
+
   cat("PASS: every documented refusal refuses (", checked, "chunks )\n")
+  cat("PASS: every Python refusal is marked for the stylesheet\n")
   invisible(TRUE)
+}
+
+# The R half of a refusal raises, so Quarto marks its output `cell-output-error`
+# and the stylesheet can find it. The Python half catches and prints, which lands
+# in `cell-output-stdout` beside every ordinary table in the book. So the Python
+# chunk carries `#| classes: refusal`, which Quarto puts on the cell, and the
+# stylesheet reaches the output through it.
+#
+# **Nothing else can catch a missing one.** The chunk still runs, the message
+# still prints, the render still exits 0, and the only symptom is a tab that is
+# not shaded on a page where its partner is. That is invisible to every other
+# guard here, all of which ask whether something *ran*.
+unmarked_python_refusals <- function(qmds) {
+  out <- character()
+  for (f in qmds) {
+    lines <- readLines(f, warn = FALSE)
+    open <- grep("^\\s*```\\{python\\}\\s*$", lines)
+    for (start in open) {
+      close <- grep("^\\s*```\\s*$", lines)
+      close <- close[close > start]
+      if (!length(close)) next
+      body <- lines[(start + 1L):(close[1] - 1L)]
+      if (!any(grepl("except GodError", body))) next
+      if (any(grepl("^\\s*#\\|\\s*classes:.*\\brefusal\\b", body))) next
+      out <- c(out, sprintf("%s:%d", sub("^.*book/", "", f), start))
+    }
+  }
+  out
 }
 
 # Every `{r}` chunk in a file, with its line, its code, and whether it is marked

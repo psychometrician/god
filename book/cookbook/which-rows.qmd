@@ -125,6 +125,7 @@ sales |> take(1, by = product) |> collect()
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> take(1, by = col.product))
 except GodError as refusal:

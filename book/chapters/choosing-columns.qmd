@@ -106,6 +106,7 @@ collect(sales |> pick(product, reveune))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> pick(col.product, col.reveune))
 except GodError as refusal:

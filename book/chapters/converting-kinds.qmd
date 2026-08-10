@@ -43,6 +43,7 @@ collect(messy |> add(size = characters(n)))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(messy >> add(size = characters(col.n)))
 except GodError as refusal:

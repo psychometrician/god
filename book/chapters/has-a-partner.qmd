@@ -122,6 +122,7 @@ collect(sales |> keep(matching(products, by = product) & revenue > 100))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(sales >> keep(matching(products, by = col.product) & (col.revenue > 100)))
 except GodError as refusal:

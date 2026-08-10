@@ -132,6 +132,7 @@ collect(races |> add(n = row_number()))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(races >> add(n = row_number()))
 except GodError as refusal:
@@ -162,6 +163,7 @@ collect(races |> keep(rank(score) <= 2))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(races >> keep(rank(col.score) <= 2))
 except GodError as refusal:

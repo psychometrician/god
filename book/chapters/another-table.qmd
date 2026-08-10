@@ -89,6 +89,7 @@ collect(sales |> join(overlap, by = product))
 ### Python
 
 ```{python}
+#| classes: refusal
 overlap = pd.DataFrame({"product": ["Widget"], "revenue": [1]})
 
 try:

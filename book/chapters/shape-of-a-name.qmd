@@ -85,6 +85,7 @@ collect(survey |> pick(where(startsWith(name, "zzz"))))
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     collect(survey >> pick(where(name.starts("zzz"))))
 except GodError as refusal:

@@ -174,6 +174,7 @@ show_as(marks |> widen(name = question, value = mark, by = student), "spark")
 ### Python
 
 ```{python}
+#| classes: refusal
 try:
     show_as(marks >> widen(name = col.question, value = col.mark, by = col.student),
             "spark")
