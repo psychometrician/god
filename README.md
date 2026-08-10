@@ -217,6 +217,10 @@ sales |>
   head(10)
 ```
 
+The single quotes around the pipeline keep the shell away from the
+double-quoted text value inside, which is the grammar's one quoting rule, and
+the same wrap passes unchanged to `run` in R and in Python.
+
 **Knowing god is meant to make the tools you already use easier, not to replace
 them.** The edge of the vocabulary is a doorway rather than a wall.
 

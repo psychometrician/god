@@ -136,6 +136,14 @@ mixed |> keep(tolower(Region) == "west")
 mixed >> keep(lower(col.Region) == "west")
 ```
 
+
+### run
+
+```{r}
+run('mixed
+  then keep where (lower([Region]) is "west")')
+```
+
 :::
 
 Folding the case of every name automatically would have been the other option,

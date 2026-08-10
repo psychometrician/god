@@ -49,6 +49,14 @@ sales |> keep(!matching(stocked, by = product))
 sales >> keep(~matching(stocked, by = col.product))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then keep where (not matching(stocked, by [product]))')
+```
+
 :::
 
 `by` works here exactly as it does on `join`, and leaving it out means the same
@@ -67,6 +75,14 @@ sales |> keep(matching(stocked))
 
 ```{python}
 sales >> keep(matching(stocked))
+```
+
+
+### run
+
+```{r}
+run('sales
+  then keep where matching(stocked)')
 ```
 
 :::

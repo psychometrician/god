@@ -72,6 +72,14 @@ races |> add(place = rank(descending(score)))
 races >> add(place = rank(descending(col.score)))
 ```
 
+
+### run
+
+```{r}
+run('races
+  then add [place] as rank([score] descending)')
+```
+
 :::
 
 `by` restarts the numbering inside each group, so every heat gets a winner.
@@ -90,6 +98,15 @@ races |> add(place = rank(descending(score)), by = heat) |> sort(heat, place)
 (races
   >> add(place = rank(descending(col.score)), by = col.heat)
   >> sort(col.heat, col.place))
+```
+
+
+### run
+
+```{r}
+run('races
+  then add [place] as rank([score] descending) by [heat]
+  then sort [heat], [place]')
 ```
 
 :::
@@ -111,6 +128,16 @@ races |> sort(score) |> add(n = row_number()) |> sort(n)
 
 ```{python}
 races >> sort(col.score) >> add(n = row_number()) >> sort(col.n)
+```
+
+
+### run
+
+```{r}
+run('races
+  then sort [score]
+  then add [n] as row_number()
+  then sort [n]')
 ```
 
 :::
@@ -188,6 +215,15 @@ races |> add(place = rank(descending(score))) |> keep(place <= 2)
 races >> add(place = rank(descending(col.score))) >> keep(col.place <= 2)
 ```
 
+
+### run
+
+```{r}
+run('races
+  then add [place] as rank([score] descending)
+  then keep where ([place] <= 2)')
+```
+
 :::
 
 If you only want the top rows and not the place itself, `take` says it in one
@@ -205,6 +241,15 @@ races |> sort(descending(score)) |> take(1, by = heat)
 
 ```{python}
 races >> sort(descending(col.score)) >> take(1, by = col.heat)
+```
+
+
+### run
+
+```{r}
+run('races
+  then sort [score] descending
+  then take 1 by [heat]')
 ```
 
 :::

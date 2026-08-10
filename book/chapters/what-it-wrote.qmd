@@ -299,11 +299,52 @@ character. Everywhere else in this book the two languages differ in the pipe
 glyph and in how a column is named, and a sentence in the text form has neither
 of those, so nothing is left to respell.
 
-The single quotes around the sentence are the transcripts' convention, kept
-for the same reason. A text value inside a sentence is always written with
-double quotes, so wrapping the whole of it in single ones means neither
-language ever needs an escape, and the string on this page pastes into a
-shell, an R script or a Python one unchanged.
+The table at the head of the sentence is looked up where you are calling from,
+which is how `sales` was found here. Pass it by name when it is somewhere else,
+as `run(pipeline, sales = last_quarter)`.
+
+## One rule for quotes
+
+The grammar has exactly one rule about quotes: a text value inside a
+sentence is written with double quotes, always. Every other quote you will
+ever type belongs to your own language, and your language's habits apply.
+Three seats, one rule each:
+
+- **In your own code.** R and Python read `'West'` and `"West"` as the same
+  string, and that stays true here. The grammar receives the value, never
+  the marks around it.
+- **Inside a sentence.** Double quotes only: `[region] is "West"`. The
+  sentence is the grammar's, and the grammar has one spelling.
+- **Around a sentence.** Single quotes, by convention: the double quotes
+  inside then need no escape, in a shell, in R, or in Python.
+
+The first seat is worth seeing once, because the rule about doubles is easy
+to over-apply. In the native spellings, your language's quotes are your
+language's business:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(region == 'West') |> take(2)
+```
+
+### Python
+
+```{python}
+sales >> keep(col.region == 'West') >> take(2)
+```
+
+:::
+
+Both tabs answer, single quotes and all, because by the time the grammar
+sees this sentence the value is `"West"` either way. This book writes double
+quotes in host code as one habit fewer, and nothing depends on it.
+
+Around a sentence, single quotes are the transcripts' convention, kept for
+the same reason everywhere: the double quotes inside then need no escape,
+and the string pastes into a shell, an R script or a Python one unchanged.
 
 Swap the two out of habit and the grammar catches the half that reaches it.
 A text value in single quotes is refused with the spelling named, so the
@@ -335,10 +376,6 @@ string is a syntax error R and Python report themselves, before god is ever
 called. And when a text value genuinely needs an apostrophe, each host has
 its own door. Python's triple quotes, `run('''…''')`, and R's raw string,
 `run(r"(…)")`, both hold either kind of quote unescaped.
-
-The table at the head of the sentence is looked up where you are calling from,
-which is how `sales` was found here. Pass it by name when it is somewhere else,
-as `run(pipeline, sales = last_quarter)`.
 
 ## Who writes it, and who runs it
 

@@ -32,6 +32,8 @@ map to a word plus a place to put it rather than to a verb alone.
 | `across(starts_with())` | `where`, `name`, `value` | [One value per column](../chapters/one-value-per-column.qmd) |
 | `row_number()`, `min_rank()` | `row_number`, `rank` | [Each row a place](../chapters/each-row-a-place.qmd) |
 | `cumsum()`, `lag()`, `lead()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
+| `show_query()` | `show_as`, with seven targets | [What it wrote, in a language you know](../chapters/what-it-wrote.qmd) |
+| `collect()` | `collect`, the same word | [Nothing runs until you ask](../chapters/nothing-runs-yet.qmd) |
 
 ## From pandas
 

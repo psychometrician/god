@@ -52,6 +52,14 @@ patchy |> fill_missing(revenue = 0)
 patchy >> fill_missing(revenue = 0)
 ```
 
+
+### run
+
+```{r}
+run('patchy
+  then fill_missing [revenue] as 0')
+```
+
 :::
 
 The filler has to be the same kind of thing the column holds, or the column would
