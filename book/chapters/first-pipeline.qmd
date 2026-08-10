@@ -128,8 +128,8 @@ time, because a verb never needs to know which verbs came before it.
 
 There is one more fact about the sentence you just read, and it can wait for
 its own chapter: nothing ran until the page asked to see the answer. A
-pipeline is a plan, not a command, and the chapter on laziness at the start
-of Part VII shows what that buys you.
+pipeline is a plan, not a command, and [the chapter on
+laziness](nothing-runs-yet.qmd) shows what that buys you.
 
 ## How to read the rest
 

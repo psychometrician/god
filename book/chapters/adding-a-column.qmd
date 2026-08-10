@@ -81,8 +81,8 @@ does not, for the same reason SQL does not: a step is one step, not a
 sequence hiding inside one. The moment two values in a step can depend on
 each other, the order they are written in starts to matter, and a reader has
 to trace a hidden pipeline inside every line. Two short steps cost you
-nothing at all when the book reaches laziness in Part VII, and they read as
-what they are.
+nothing at all when the book reaches [the chapter on
+laziness](nothing-runs-yet.qmd), and they read as what they are.
 
 ## Replacing a column
 
@@ -113,8 +113,8 @@ session holds is unchanged, the way it always is.
 - `as` names what a step makes, name first, and it means exactly this again
   in `summarize` and in `rename`.
 - The whole expression language rides inside `add`: arithmetic here, and in
-  Part III the text repairs, conversions, dates, and conditionals, all
-  written in this same seat.
+  [the part on values](../parts/values.qmd) the text repairs, conversions,
+  dates, and conditionals, all written in this same seat.
 - `by` can follow an `add` whose value summarizes a group, which turns a
   collapse into a broadcast; the chapter on the small words shows it, and
   share-of-group is the idiom it exists for.

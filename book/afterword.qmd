@@ -2,8 +2,9 @@
 
 The preface made one promise in three clauses: read a pipeline aloud on day
 one, write one on day two, and still have it after a year away. If you have
-come through the book, the first clause was settled by Part I's reading
-chapter and the second by its writing chapter, on the same day if you
+come through the book, the first clause was settled by the
+[reading practice](chapters/reading-practice.qmd) and the second by the
+[writing practice](chapters/writing-practice.qmd), on the same day if you
 wanted. The third clause cannot be settled by a book at all, and this page
 is about being honest with what remains.
 

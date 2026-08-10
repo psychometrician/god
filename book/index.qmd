@@ -88,8 +88,8 @@ You will see it lowercase everywhere in this book, including at the start of a
 sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
-pipeline. Go to [Part I](chapters/first-pipeline.qmd), which is the six
-everyday verbs in eight short chapters, and come back here when you want
+pipeline. Go to [your first pipeline](chapters/first-pipeline.qmd), which
+begins the six everyday verbs, and come back here when you want
 to know why the grammar refuses what it refuses. If you would rather see all of
 it at once first, [Appendix B](appendices/b-every-word.qmd) is every word there
 is, on one page.
@@ -580,17 +580,18 @@ You have worked with data in a table before. You know what a row is, what a
 column is, and what it means to group by something and count. That is the whole
 assumption.
 
-If you are near the start, read the book in order. Part I is the six everyday
-verbs, in eight short chapters, and when you finish it you can answer real
-questions about a table. Nothing before Part I is required, including this preface.
+If you are near the start, read the book in order. [The six
+verbs](parts/six-verbs.qmd) open it, one short chapter at a time, and when
+you finish them you can answer real questions about a table. Nothing before
+them is required, including this preface.
 
 If you have used several of these tools already, you are the other reader this
 book is written for, and you will get more out of it from the back. Appendix
 C is one sentence written out in dplyr, pandas, polars, PySpark and SQL side by
 side, which is the fastest way to see what is being proposed. Appendix B is the
-entire vocabulary on one page. Part VII is where the claims in this preface are
-demonstrated rather than asserted, including the one about a pipeline running
-unchanged on a cluster.
+entire vocabulary on one page. [How god works](parts/how-it-works.qmd) is
+where the claims in this preface are demonstrated rather than asserted,
+including the one about a pipeline running unchanged on a cluster.
 
 You do not need to know dplyr, and you do not need to know pandas. If you know
 one of them, some chapters will read as a vocabulary list, and that is fine. If
@@ -608,7 +609,7 @@ day one and day two. The two are designed to sit next to each other: a question
 usually starts as a table you have to reshape and ends as a picture, so you start
 in god and finish in gog.
 
-[Chapter 29](chapters/with-gog.qmd) shows one question answered end to end
+[The closing chapter](chapters/with-gog.qmd) shows one question answered end to end
 that way. It is worth reading even if you never draw a plot, because it is the
 clearest statement of where this grammar's job ends.
 

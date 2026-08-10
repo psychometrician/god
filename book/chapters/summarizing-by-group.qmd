@@ -205,12 +205,14 @@ One thousand seven hundred rows went in; five came out, one per continent,
 with the count beside each average so the answer carries its own weight of
 evidence. The sentence is the same length it was on fifteen rows, and that is
 the point of the demonstration: nothing about the grammar knows or cares how
-big the table is. Part VII shows the same indifference reaching a warehouse.
+big the table is. [A table that lives somewhere else](somewhere-else.qmd)
+shows the same indifference reaching a warehouse.
 
 ## What travels with it
 
 - `by` is the same word, with the same meaning, that grouped `take` in the
-  last chapter and will group windows in Part V: these rows belong together.
+  last chapter and will group windows in [giving each row a
+  place](each-row-a-place.qmd): these rows belong together.
 - `as` names each answer, name first, exactly as it does in `add`.
 - The nine aggregations reappear inside `add ... by`, where they broadcast a
   group's answer back onto its rows instead of collapsing them; the chapter

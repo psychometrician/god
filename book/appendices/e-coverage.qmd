@@ -24,7 +24,7 @@ in code you can read because you watched it being written.
 | Joins on anything but equality (ranges, nearest) | equality joins only; inequality joins in the host |
 | Random sampling | refused by the settled-answer law; sample in the host, then hand the table over |
 | The long aggregate shelf (variance, quantiles, weighted means, mode) | nine aggregations; the rest via `show_as` |
-| Row-wise aggregates across many columns | Part VI sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
+| Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
 | Window frames (`ROWS BETWEEN 3 PRECEDING`) | `running_total`, `previous`, `following` are the whole windowed family today |
 
 Two of these are refusals with a law behind them rather than absences, and

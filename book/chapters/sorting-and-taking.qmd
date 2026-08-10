@@ -94,8 +94,9 @@ sales >> sort(descending(col.date)) >> take(1, by = col.region) >> pick(col.regi
 
 Sort newest first, take the first row of each region. The dates in this book
 are written `2026-10-02` style, and text in that shape sorts correctly as
-text, which is why no date machinery was needed; Part III introduces the real
-date words for the shapes that do not sort on their own.
+text, which is why no date machinery was needed; [the chapter on
+dates](dates.qmd) introduces the real date words for the shapes that do not
+sort on their own.
 
 ## What travels with it
 
@@ -103,8 +104,8 @@ date words for the shapes that do not sort on their own.
 - `by` after `take` means what `by` means everywhere: do this per group. The
   chapter on the small words returns to it.
 - `take` composes with everything that settles an order, and the windowed
-  words in Part V (`rank`, `row_number`) lean on `sort` in exactly the way
-  `take ... by` does below.
+  words in [giving each row a place](each-row-a-place.qmd) (`rank`,
+  `row_number`) lean on `sort` in exactly the way `take ... by` does below.
 
 ## What it refuses
 

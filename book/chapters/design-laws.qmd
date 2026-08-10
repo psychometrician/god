@@ -61,7 +61,8 @@ this grammar decides quietly.
 No value in a step can read a column made beside it, and no name can be
 made twice in one step. The temptation is the one-liner; the cost is a
 hidden pipeline inside the line, where written order silently becomes
-execution order. Chapter 4 stages both refusals.
+execution order. [Adding a column](adding-a-column.qmd) stages the first
+refusal and names the second, which only the text form can spell.
 
 ## Nothing runs until you ask
 
@@ -89,12 +90,13 @@ answer could vary, the grammar either settles it or asks you to.
 
 ## It writes what you could have written
 
-`show_as` renders any pipeline as dplyr, pandas, polars, PySpark, or two
-dialects of SQL, and the printed code is executed by this project's own
-checks, not merely printed. The temptation being refused is on the other
-side of the fence this time: a tool that holds your work hostage to its own
-continued existence. The whole argument for adopting a small grammar stands
-on this exit being real, and it has its own chapter two back.
+`show_as` renders any pipeline as dplyr, pandas, polars, PySpark, two
+dialects of SQL, or the grammar itself, and the printed code is executed by
+this project's own checks, not merely printed. The temptation being refused
+is on the other side of the fence this time: a tool that holds your work
+hostage to its own continued existence. The whole argument for adopting a
+small grammar stands on this exit being real, and it has [its own
+chapter](what-it-wrote.qmd).
 
 ## Your table stays yours
 

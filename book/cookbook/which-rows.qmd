@@ -80,7 +80,8 @@ sales >> keep(col.quantity >= 5) >> sort(descending(col.quantity))
 **One verb away.** A bar on a derived number: `add` the number first, then
 keep on it. A bar per group ("orders above their region's average") waits
 for the windowed words in
-[Part V](../chapters/each-row-a-place.qmd); it is one sentence there too.
+[giving each row a place](../chapters/each-row-a-place.qmd); it is one
+sentence there too.
 
 ## The rows without a twin
 

@@ -139,6 +139,14 @@ check_prose <- function(dirs = "book") {
 
   bad_bold <- character(0); bad_dash <- character(0); bad_head <- character(0)
   bad_case <- character(0); bad_call <- character(0); bad_idiom <- character(0)
+  bad_number <- character(0)
+
+  # A chapter or part named by number is a claim that rots the day a chapter is
+  # inserted ahead of it, and this book plans to keep inserting them. The
+  # cookbook's arrival renumbered a whole part and left a season's worth of
+  # "Part VII" pointing at the wrong one. Appendix letters stay allowed: they
+  # are pinned by the files' own names, so nothing can shift them.
+  numbered <- "\\bChapters?\\s+[0-9]|\\bParts?\\s+[IVX]+\\b"
 
   for (f in qmds) {
     lines <- readLines(f, warn = FALSE)
@@ -185,6 +193,7 @@ check_prose <- function(dirs = "book") {
         n <- nwords(h)
         # A heading is prose a reader sees, so it is checked for the em dash too.
         if (grepl("—", ungl(strip_code(h)))) bad_dash <- c(bad_dash, where(i))
+        if (grepl(numbered, strip_code(h))) bad_number <- c(bad_number, where(i))
         # Two sentences in a heading is the same defect as an over-long one: the
         # argument has climbed out of the paragraph and into the label. A capital
         # after the stop is what marks a second sentence; requiring it keeps
@@ -211,6 +220,9 @@ check_prose <- function(dirs = "book") {
 
       # --- Em dash ----------------------------------------------------------
       if (grepl("—", ungl(prose))) bad_dash <- c(bad_dash, where(i))
+
+      # --- Chapters and parts named by number -------------------------------
+      if (grepl(numbered, prose)) bad_number <- c(bad_number, where(i))
 
       # --- Idiom ------------------------------------------------------------
       low <- tolower(line)
@@ -262,7 +274,8 @@ check_prose <- function(dirs = "book") {
   }
 
   total <- length(bad_bold) + length(bad_dash) + length(bad_head) +
-    length(bad_case) + length(bad_call) + length(bad_idiom)
+    length(bad_case) + length(bad_call) + length(bad_idiom) +
+    length(bad_number)
 
   report <- function(items, headline, advice) {
     if (!length(items)) return(invisible(NULL))
@@ -284,6 +297,8 @@ check_prose <- function(dirs = "book") {
            "Weave the point into the prose, or let the output show it.")
     report(bad_idiom, "FAIL: idiom does not translate",
            "Say the literal thing.")
+    report(bad_number, "FAIL: a chapter or part named by number",
+           "Link it by title. Numbers shift when a chapter is inserted.")
     stop("check_prose: ", total, " prose inconsistency(ies)")
   }
 

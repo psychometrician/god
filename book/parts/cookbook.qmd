@@ -19,4 +19,5 @@ one tries to teach you that you already know the dish.
 
 If a question of yours is not here, the part has not failed you yet. Write
 the smallest sentence that names the table, and grow it one verb at a time,
-which is what the writing-practice chapter at the end of Part I rehearses.
+which is what [the writing practice](../chapters/writing-practice.qmd)
+rehearses.

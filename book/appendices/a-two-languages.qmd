@@ -5,7 +5,7 @@ title: "The two languages"
 {{< include ../_setup.qmd >}}
 
 A pipeline is the same sentence in both languages.
-[Chapter 1](../chapters/first-pipeline.qmd) showed the two
+[Your first pipeline](../chapters/first-pipeline.qmd) showed the two
 places they differ. This appendix is the rest of it: why the pipe is what it is,
 the two rules Python adds, how R's own habits are read, and what god does to the
 names already in your session.

@@ -6,8 +6,9 @@ title: "How much is there?"
 
 How much of something does the table hold? Every recipe on this page is that
 question wearing different clothes, and every answer is `summarize` with a
-word or two around it. The verbs are Part I's; the chapter that owns the
-arguments is [Summarizing by group](../chapters/summarizing-by-group.qmd).
+word or two around it. Every verb here arrived in [the six
+verbs](../parts/six-verbs.qmd); the chapter that owns the arguments is
+[Summarizing by group](../chapters/summarizing-by-group.qmd).
 
 ## How much, in total, per group?
 
@@ -153,4 +154,4 @@ Some tools would concatenate the text, some would error from inside the
 engine, and one famously returns zero. Here the sentence is refused whole,
 with the column's kind named, before anything runs. If the column *should*
 be a number, the conversion words in
-[Part III](../chapters/converting-kinds.qmd) are the repair.
+[saying what something is](../chapters/converting-kinds.qmd) are the repair.

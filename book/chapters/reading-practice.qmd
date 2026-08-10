@@ -130,8 +130,8 @@ survey >> keep(col.joined < "2026-04-01") >> pick(col.name, col.region, col.join
 *`survey then keep where [joined] < "2026-04-01" then pick [name, region, joined]`*
 
 The comparison is on text, and it works because these dates are written
-largest unit first; Part III gives you the real date words for every shape
-that is not so cooperative.
+largest unit first; [the chapter on dates](dates.qmd) gives you the real
+date words for every shape that is not so cooperative.
 
 ## How many countries does each continent hold?
 

@@ -28,8 +28,8 @@
 #     check_refusals.py's job.
 #
 # Scope. The opening rules bind the teaching chapters: everything listed in
-# `_quarto.yml` between the Part I divider and the Part VII divider, part pages
-# and the two capstones excluded. Reading the span from the file means a new
+# `_quarto.yml` between the six-verbs part page and the how-it-works part
+# page, part pages and the two capstones excluded. Reading the span from the file means a new
 # chapter is under the rules the day it is added, which is the failure this
 # whole file exists for.
 #
@@ -49,7 +49,7 @@ check_promises <- function(book = "book") {
   start <- match("parts/six-verbs.qmd", listed)
   stop_ <- match("parts/how-it-works.qmd", listed)
   if (is.na(start) || is.na(stop_))
-    fail("FAIL: check_promises cannot find the Part I / Part VII dividers in _quarto.yml")
+    fail("FAIL: check_promises cannot find the six-verbs / how-it-works part pages in _quarto.yml")
   teaching <- listed[(start + 1):(stop_ - 1)]
   teaching <- teaching[!grepl("^parts/", teaching)]
 
