@@ -172,6 +172,36 @@ sales >> keep(col.revenue > 150)
 
 :::
 
+## Where `by` does not go
+
+A word that travels still has a boundary, and the boundary is stated rather
+than guessed. `by` means per group, and `sort` already orders every row, so
+the word has nothing to add there and is refused by name. The sentence below
+is the text form, so the call is the same string in both tabs:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+run('sales then sort by [region]')
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    run('sales then sort by [region]')
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message says what `sort` does take, which is the whole of it.
+
 ## Why this matters more than it looks
 
 A vocabulary is easy to learn and easy to lose. What survives a year away is

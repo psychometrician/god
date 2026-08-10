@@ -77,3 +77,33 @@ warehouse table down to one machine is rarely what you meant.
 A pipeline that mixes the two is refused. One query cannot read a table on a
 cluster and a table in your session at the same time, and saying so is better
 than quietly moving one of them.
+
+## When the table is nowhere
+
+The lookups above are spoken about as if they always succeed. When neither
+finds the table, the sentence is refused before any engine is asked, and the
+message says how to hand the table over:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+run('orders then take 1')
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    run('orders then take 1')
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Name a table only where a lookup can find it: the scope you are calling
+from, or the engine a connection points at.

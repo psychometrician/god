@@ -181,3 +181,33 @@ notes >> keep(col.note.contains("100%"))
 
 When the question really is a pattern, it belongs to the host language, a
 boundary the coverage appendix states with the rest of them.
+
+## One word, one seat
+
+`kind` asks about a column, so the `where` that chooses columns is the one
+seat it has. Written into an ordinary row question, it is refused rather
+than guessed at:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> keep(kind == "number"))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> keep(kind == "number"))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message hands the word back to its seat, with the working spelling
+written out.

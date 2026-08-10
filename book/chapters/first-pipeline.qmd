@@ -131,6 +131,35 @@ its own chapter: nothing ran until the page asked to see the answer. A
 pipeline is a plan, not a command, and [the chapter on
 laziness](nothing-runs-yet.qmd) shows what that buys you.
 
+## The first refusal, met on purpose
+
+You will mistype something within the hour, so see now what that costs. A
+`keep` needs a question, and a column on its own is not one:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> keep(revenue))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> keep(col.revenue))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Nothing ran and nothing broke. The message says what stopped and what to
+write instead, and every refusal in this book is held to that standard.
+
 ## How to read the rest
 
 Read the tab for the language you write. Glance at the other one when you are

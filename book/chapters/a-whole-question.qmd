@@ -129,6 +129,32 @@ show_as(returns |>
   sort(place), "sql")
 ```
 
+A misspelling anywhere in those seven steps would have stopped the whole
+sentence before anything ran, with the caret on the step that carries it.
+Here is the grouping mistyped:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(returns |> join(places, by = code) |> summarize(q1 = average(q1), by = aera))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(returns >> join(places, by = col.code)
+            >> summarize(q1 = average(col.q1), by = col.aera))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
 Seven verbs became one query. The query is the proof rather than the point:
 the sentence above it is the version a person can read aloud, and still
 write, a year from now.

@@ -93,6 +93,32 @@ pd.DataFrame({"at": ["2026-01-02 14:30:00"]}) >> add(h = hour(to_date(col.at))) 
 
 :::
 
+## Text is not yet a date
+
+The five words read a date, and text is not one until `to_date` has said so.
+Skip the conversion and the refusal points straight at it:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(diary |> add(y = year(on_)))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(diary >> add(y = year(col.on_)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
 That is the whole date vocabulary: `to_date` reads the text, five words take
 the part you ask for, and the answers agree wherever the sentence runs,
 Monday counting as 1 on every engine.

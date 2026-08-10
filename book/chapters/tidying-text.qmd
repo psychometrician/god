@@ -78,3 +78,33 @@ The same two words also work on a column's *name* rather than on its contents,
 which is how you match names whose capitalization you cannot rely on. That is
 [choosing by what a column holds](what-a-column-holds.qmd), and it needs no
 second spelling of either word.
+
+## A number is not text
+
+The repairs read text, and a number is not text, however much it looks like
+one in a printout. Ask anyway and the refusal names the conversion, which is
+[the next chapter](converting-kinds.qmd)'s subject:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(messy |> add(t = trim(n)))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(messy >> add(t = trim(col.n)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+One kind goes in and the declared kind comes out, with nothing silently
+coerced in between.
