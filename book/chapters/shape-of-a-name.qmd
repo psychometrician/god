@@ -93,3 +93,7 @@ except GodError as refusal:
 ```
 
 :::
+
+An empty choice is refused rather than returned, because a table with no
+columns answers nothing. The message lists what the table does have, which
+is usually the spelling you meant.

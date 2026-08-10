@@ -73,6 +73,6 @@ map to a word plus a place to put it rather than to a verb alone.
 
 One absence from all three tables is deliberate. There is no row for your
 tool's way of applying an arbitrary function to a column, because god has no
-word for it: the scalar vocabulary is closed, and the honest translation of
-`apply` is the escape the last table in
+word for it. The scalar vocabulary is closed, and the honest translation of
+`apply` is the exit the last table in
 [Appendix E](e-coverage.qmd) points at.

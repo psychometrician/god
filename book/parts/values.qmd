@@ -2,9 +2,9 @@
 
 So far a new column has been arithmetic on the ones already there. This part
 is about everything else you can put in one: text you need to clean up, a
-number that arrived as text, a date you want the year out of, a category that
-depends on a condition, and a value that is missing, which is its own subject
-and gets a chapter.
+number that arrived as text, a date you want the year out of, and a category
+that depends on a condition. Missing values are their own subject, and they
+get the closing chapter.
 
 The cell is where grammars usually leak. Most tools keep their verbs small
 and then hand the inside of a column to something larger: a regular

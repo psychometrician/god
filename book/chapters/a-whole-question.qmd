@@ -128,3 +128,7 @@ show_as(returns |>
   add(place = rank(descending(q1))) |>
   sort(place), "sql")
 ```
+
+Seven verbs became one query. The query is the proof rather than the point:
+the sentence above it is the version a person can read aloud, and still
+write, a year from now.

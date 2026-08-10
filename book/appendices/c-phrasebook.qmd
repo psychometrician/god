@@ -124,6 +124,5 @@ names the frame again. SQL puts the steps in an order that is not the order they
 happen in.
 
 This is also the way out. A small vocabulary covers most of what people do and
-never all of it, so when you reach the end of what god can say, you can ask it
-what your pipeline would have been in the tool you already use, and carry on
-there.
+never all of it. When you reach the end of what god can say, ask it what your
+pipeline would have been in the tool you already use, and carry on there.

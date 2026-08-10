@@ -198,3 +198,6 @@ packageVersion("god")
 import god
 god.__version__
 ```
+
+Same number, two idioms, which is this appendix in one line: the differences
+between the languages are spellings, and never the sentence.

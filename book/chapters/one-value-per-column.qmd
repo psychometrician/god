@@ -102,3 +102,7 @@ show_as(survey >> add(where(name.starts("q"), value * 10)), "god")
 ```
 
 :::
+
+The grammar's own printing expands the rule into the columns it matched, so
+what actually ran is on the page rather than implied, which is the honest
+way to hand a sweep to the reader after you.

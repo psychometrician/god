@@ -209,10 +209,10 @@ That is the Rosling chart, and neither package needed a special case to draw it.
 ## What it replaced
 
 Written in the tools this book keeps comparing itself against, those two steps
-need a reshaping function from one package and a plotting system from another,
-each with its own vocabulary, its own idea of what a column reference is, and
-its own rules about which arguments are quoted. The animation usually needs a
-third.
+need a reshaping function from one package and a plotting system from another.
+Each brings its own vocabulary, its own idea of what a column reference is,
+and its own rules about which arguments are quoted. The animation usually
+needs a third.
 
 The saving is not the line count. It is that `summarize` and `play` come from
 the same design, so the second half of the analysis does not ask you to change

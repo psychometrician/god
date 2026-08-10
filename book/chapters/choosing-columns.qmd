@@ -64,8 +64,8 @@ the same word in both languages and in the text form.
 `pick` also settles column order, because the order you name the columns is
 the order the table comes back in. There is no separate rearranging verb: if
 you want `revenue` first, ask for it first. One small consequence is worth
-knowing now: a `pick` is a statement about the table it receives, so a column
-a previous step made is as pickable as one the table arrived with, and a
+knowing now. A `pick` is a statement about the table it receives, so a column
+a previous step made is as pickable as one the table arrived with. And a
 column you picked away is gone for every later step. Each step sees only the
 table the last step handed it.
 

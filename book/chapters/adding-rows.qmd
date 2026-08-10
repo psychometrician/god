@@ -79,3 +79,7 @@ except GodError as refusal:
 ```
 
 :::
+
+The message names the columns one side lacks, so the repair starts with the
+tables rather than with the sentence: make them agree, and the verb has
+nothing left to refuse.

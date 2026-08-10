@@ -154,5 +154,5 @@ except GodError as refusal:
 
 One thing the checker cannot see is a key that repeats. If the other table
 holds two rows for one key, your rows multiply, and that is a fact about the
-rows rather than about the sentence: the checker reads column names and never
-a row, so this one stays yours to know about your data.
+rows rather than about the sentence. The checker reads column names and
+never a row, so this one stays yours to know.

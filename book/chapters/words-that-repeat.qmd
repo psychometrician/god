@@ -181,7 +181,7 @@ survive if there are few of them and they have no exceptions.
 So the test this grammar sets itself is not whether it has a word for
 everything. It is whether a word you learned in one place still means the
 same thing in the next place you meet it. Every part after this one is that
-test being run, and you now hold the working form of the preface's motto: if
+test being run. And you now hold the working form of the preface's motto: if
 you can say something two ways in this grammar, one of them is a bug, and
 the author wants to hear about it. That sentence is not rhetoric. It is the
 standard each of the last seven chapters answered to, from the missing

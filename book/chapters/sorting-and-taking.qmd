@@ -94,7 +94,7 @@ sales >> sort(descending(col.date)) >> take(1, by = col.region) >> pick(col.regi
 
 Sort newest first, take the first row of each region. The dates in this book
 are written `2026-10-02` style, and text in that shape sorts correctly as
-text, which is why no date machinery was needed; [the chapter on
+text, which is why no date machinery was needed. [The chapter on
 dates](dates.qmd) introduces the real date words for the shapes that do not
 sort on their own.
 
@@ -134,7 +134,7 @@ except GodError as refusal:
 :::
 
 A bare `take` is allowed and a grouped one is not, and the asymmetry is the
-honest one. Peeking at some rows of a table is a real thing to want; "the
-first of each group, by no particular order" is not a question, it is a
-coin toss dressed as one, and a tool that answered it would be choosing your
+honest one. Peeking at some rows of a table is a real thing to want. But
+"the first of each group, by no particular order" is not a question: it is
+a coin toss dressed as one. A tool that answered it would be choosing your
 answer for you.

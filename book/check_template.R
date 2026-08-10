@@ -107,8 +107,35 @@ check_template <- function(book = "book") {
          paste(bad, collapse = "\n  "),
          "\n  Either fix the chapter, or stop claiming the template there.")
 
-  cat("PASS: every verb chapter follows the template (", length(chapters),
-      "chapters, ending `What travels with it` then `What it refuses` )\n")
+  # --- The ending rule, for every page --------------------------------------
+  # The verb chapters carry the whole template; every other page still owes
+  # the reader its last sentence. A file whose final non-blank line closes a
+  # fence or a tabset drops them mid-demo, and nine pages did when this was
+  # first measured. Two shapes are endings rather than defects: the
+  # bibliography stub in `references.qmd`, which pandoc fills, and a styled
+  # div holding a line of prose, which is how the afterword hands the motto
+  # back. A tabset is neither: it is a demo with no sentence after it.
+  every <- list.files(book, pattern = "[.]qmd$", recursive = TRUE, full.names = TRUE)
+  every <- every[!grepl("/_", every, fixed = TRUE)]
+  every <- every[basename(every) != "references.qmd"]
+  ends <- character()
+  for (f in every) {
+    ln <- readLines(f, warn = FALSE)
+    last_line <- trimws(tail(ln[nzchar(trimws(ln))], 1))
+    mid_demo <- grepl("^```", last_line)
+    if (!mid_demo && grepl("^:::", last_line)) {
+      opener <- tail(grep("^:::+\\s*\\{", ln, value = TRUE), 1)
+      mid_demo <- length(opener) && grepl("panel-tabset", opener, fixed = TRUE)
+    }
+    if (mid_demo)
+      ends <- c(ends, sprintf("%s ends on `%s`", sub("^.*book/", "", f), last_line))
+  }
+  if (length(ends))
+    fail("FAIL: a page ends mid-demo; the last thing on a page is a sentence:\n  ",
+         paste(ends, collapse = "\n  "))
+
+  cat("PASS: every verb chapter follows the template, and every page ends on prose (",
+      length(chapters), "verb chapters,", length(every), "pages )\n")
   invisible(TRUE)
 }
 
