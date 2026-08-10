@@ -164,9 +164,12 @@ python3 parity/printed.py                 # the printed code executed, tables co
 
 Rscript book/check_grammar.R              # every pipeline and transcript the book shows, run
 Rscript book/check_prose.R                # the book's voice, the half a machine can hold
-Rscript book/check_vocabulary.R           # every word the grammar has, demonstrated by a chunk
+Rscript book/check_vocabulary.R           # every word demonstrated by a chunk, and named in the README
 Rscript book/check_refusals.R             # every refusal chunk actually refuses (the R half)
 python3 book/check_refusals.py            # the same promise, kept by the Python half
+Rscript book/check_tabs.R                 # every tabset holds both languages
+Rscript book/check_template.R             # the verb-chapter shape, and every page ends on prose
+Rscript book/check_promises.R             # the five rules the preface states
 python3 book/readability.py               # a report, not a gate
 
 cd book && quarto render --to html

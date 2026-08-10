@@ -22,7 +22,7 @@
 #     off every page, and the site still returns 200 while looking broken.
 #   * A defect can exist only in the output. A heading numbered `19.0.1`, or an
 #     HTML entity pandoc declined to decode inside a code span, is invisible to
-#     every guard in `book/`, because all four of them read `.qmd`. Thirteen of
+#     every guard in `book/`, because the source guards read `.qmd`. Thirteen of
 #     the first and eight of the second shipped that way. The rendered HTML is
 #     graded here instead.
 #
@@ -83,15 +83,15 @@ jobs:
           ./target/release/god-cli --vocabulary | head -3
 
       # `extra-repositories` belongs on **this** action and not on the one
-      # below, which has no such input. It is where gog comes from: chapter 29
-      # draws with the sibling grammar, and gog is not on CRAN.
+      # below, which has no such input. It is where gog comes from: the closing
+      # chapter draws with the sibling grammar, and gog is not on CRAN.
       - uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
         with:
           use-public-rspm: true
           extra-repositories: https://psychometrician.r-universe.dev
 
-      # `duckdb` is the engine the book runs on and `DBI` is how chapter 26
-      # reaches a warehouse, so both come from the package's own DESCRIPTION.
+      # `duckdb` is the engine the book runs on and `DBI` is how the warehouse
+      # chapter reaches one, so both come from the package's own DESCRIPTION.
       # The rest are the book's and appear in no DESCRIPTION anywhere:
       #
       #   `pkgload`      how every chapter attaches the package from source
@@ -99,11 +99,11 @@ jobs:
       #                  of the book and deliberately not of either package
       #   `knitr`        the engine every chunk runs under
       #   `rmarkdown`    never written in any chapter, and the render dies on
-      #                  chapter 1 without it, because Quarto's knitr engine
-      #                  shells out to it to execute an `{r}` chunk
-      #   `gog`          chapter 29 draws two plots with the sibling grammar,
-      #                  and a chapter that quietly lost its plots would still
-      #                  render and still exit 0
+      #                  the first chapter without it, because Quarto's knitr
+      #                  engine shells out to it to execute an `{r}` chunk
+      #   `gog`          the closing chapter draws two plots with the sibling
+      #                  grammar, and a chapter that quietly lost its plots
+      #                  would still render and still exit 0
       #
       # gog resolves from the r-universe named on the step above, which serves
       # built packages, so it stays one line rather than a second cargo build.
@@ -121,7 +121,7 @@ jobs:
       # so a virtualenv anywhere else is a virtualenv the book will not find.
       #
       # pandas and duckdb are what the Python binding itself declares. gog is
-      # chapter 29's, and it is the published wheel rather than a checkout
+      # the closing chapter's, and it is the published wheel rather than a checkout
       # because the R side is a published build too and the chapter should show
       # one version of the sibling, not two.
       #
@@ -129,7 +129,7 @@ jobs:
       # `.style.hide(axis="index")`, and that accessor is an optional extra of
       # pandas rather than part of it. It is present in a developer's venv
       # because jupyter drags it in, so the book renders here and dies on the
-      # runner at chapter 1 of 40 with an `AttributeError`. It is named here
+      # runner at the first chapter with an `AttributeError`. It is named here
       # rather than inherited.
       #
       # jupyter and ipykernel are deliberately absent, which is what exposed
