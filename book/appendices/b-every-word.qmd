@@ -95,8 +95,8 @@ paste0("`", vocabulary$word[vocabulary$kind == "word"], "`", collapse = " · ") 
 ## Where each word is first used
 
 Each verb and function below links to the page whose running example uses it
-first, in the book's own order. This table is worked out from the chapters
-when the page is built, the same way the lists above come from the engine: a
+first, in the book's own order. The table is worked out from the chapters
+when the page is built, the same way the lists above come from the engine. A
 moved example moves its link, and a word no chapter runs cannot ship at all,
 because a build check refuses the book first.
 
