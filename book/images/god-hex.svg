@@ -12,10 +12,15 @@
 
        The nose was `[ ]` until 2026-08-07 and is now `( )`. The test that
        changed it: a mark on the cover should be one a reader actually types.
-       Measured across the parity corpus, `[` and `]` appear 0 times in R and 7
-       in Python, all of them Python's own list syntax; parentheses appear 224
-       times in R and 232 in Python, because every verb call in both languages
-       has them. -->
+       Measured across the parity corpus on 2026-08-09, `[` and `]` appear 0
+       times in R and 7 in Python, all of them Python's own list syntax;
+       parentheses appear 260 times in R and 268 in Python, because every verb
+       call in both languages has them.
+
+       The corpus grows, so those last two numbers drift and the first two do
+       not. What decided the nose is the *direction*, which no sentence added
+       later can reverse: a reader writing R types a parenthesis constantly and
+       a column bracket never. Re-measure rather than trusting the figures. -->
 
   <defs>
     <!-- R's pipe. The bar is deliberately shorter than the chevron: matched
