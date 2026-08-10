@@ -54,8 +54,10 @@ marks >> widen(name = col.question, value = col.mark)
 ### run
 
 ```{r}
-run('marks
-  then widen name [question], value [mark]')
+run('
+  marks
+    then widen name [question], value [mark]
+')
 ```
 
 :::

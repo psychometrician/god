@@ -76,10 +76,12 @@ diary |>
 ### run
 
 ```{r}
-run('diary
-  then add [on] as to_date([on_])
-  then add [y] as year([on]), [m] as month([on]), [d] as day([on]), [wd] as weekday([on])
-  then pick [on_, y, m, d, wd]')
+run('
+  diary
+    then add [on] as to_date([on_])
+    then add [y] as year([on]), [m] as month([on]), [d] as day([on]), [wd] as weekday([on])
+    then pick [on_, y, m, d, wd]
+')
 ```
 
 :::

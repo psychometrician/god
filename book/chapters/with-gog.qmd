@@ -69,8 +69,10 @@ nations >> take(5)
 ### run
 
 ```{r}
-run('nations
-  then take 5')
+run('
+  nations
+    then take 5
+')
 ```
 
 :::

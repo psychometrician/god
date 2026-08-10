@@ -64,8 +64,10 @@ answers >> lengthen(col.q1, col.q2, col.q3, name = col.question, value = col.mar
 ### run
 
 ```{r}
-run('answers
-  then lengthen [q1, q2, q3] as name [question], value [mark]')
+run('
+  answers
+    then lengthen [q1, q2, q3] as name [question], value [mark]
+')
 ```
 
 :::
@@ -94,9 +96,11 @@ answers >> lengthen(all_but(col.student), name = col.question, value = col.mark)
 ### run
 
 ```{r}
-run('answers
-  then lengthen all_but [student] as name [question], value [mark]
-  then take 3')
+run('
+  answers
+    then lengthen all_but [student] as name [question], value [mark]
+    then take 3
+')
 ```
 
 :::
@@ -122,9 +126,11 @@ answers >> lengthen(where(name.starts("q")), name = col.question, value = col.ma
 ### run
 
 ```{r}
-run('answers
-  then lengthen where (name starts "q") as name [question], value [mark]
-  then take 2')
+run('
+  answers
+    then lengthen where (name starts "q") as name [question], value [mark]
+    then take 2
+')
 ```
 
 :::

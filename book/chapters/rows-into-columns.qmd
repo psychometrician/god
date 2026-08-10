@@ -67,9 +67,11 @@ answers >> lengthen(col.q1, col.q2, col.q3) >> widen()
 ### run
 
 ```{r}
-run('answers
-  then lengthen [q1, q2, q3]
-  then widen')
+run('
+  answers
+    then lengthen [q1, q2, q3]
+    then widen
+')
 ```
 
 :::
@@ -193,9 +195,11 @@ marks |>
 ### run
 
 ```{r}
-run('marks
-  then widen name [question], value [mark] by [student] giving [q1, q2]
-  then add [gain] as ([q2] - [q1])')
+run('
+  marks
+    then widen name [question], value [mark] by [student] giving [q1, q2]
+    then add [gain] as ([q2] - [q1])
+')
 ```
 
 :::

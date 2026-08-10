@@ -26,8 +26,10 @@ sales >> pick(col.product, col.revenue)
 ### run
 
 ```{r}
-run('sales
-  then pick [product, revenue]')
+run('
+  sales
+    then pick [product, revenue]
+')
 ```
 
 :::
@@ -63,8 +65,10 @@ sales >> pick(all_but(col.cost, col.region))
 ### run
 
 ```{r}
-run('sales
-  then pick all_but [cost, region]')
+run('
+  sales
+    then pick all_but [cost, region]
+')
 ```
 
 :::

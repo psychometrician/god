@@ -27,8 +27,10 @@ sales >> summarize(revenue = total(col.revenue), orders = row_count(), by = col.
 ### run
 
 ```{r}
-run('sales
-  then summarize [revenue] as total([revenue]), [orders] as row_count() by [product]')
+run('
+  sales
+    then summarize [revenue] as total([revenue]), [orders] as row_count() by [product]
+')
 ```
 
 :::
@@ -62,8 +64,10 @@ sales >> summarize(revenue = total(col.revenue), by = [col.region, col.product])
 ### run
 
 ```{r}
-run('sales
-  then summarize [revenue] as total([revenue]) by [region, product]')
+run('
+  sales
+    then summarize [revenue] as total([revenue]) by [region, product]
+')
 ```
 
 :::
@@ -88,8 +92,10 @@ sales >> summarize(biggest = largest(col.revenue), average = average(col.cost))
 ### run
 
 ```{r}
-run('sales
-  then summarize [biggest] as largest([revenue]), [average] as average([cost])')
+run('
+  sales
+    then summarize [biggest] as largest([revenue]), [average] as average([cost])
+')
 ```
 
 :::
@@ -169,8 +175,10 @@ sales >> summarize(
 ### run
 
 ```{r}
-run('sales
-  then summarize [cheapest] as smallest([cost]), [dearest] as largest([cost]), [middle] as median([revenue]), [kinds] as unique_count([product]) by [region]')
+run('
+  sales
+    then summarize [cheapest] as smallest([cost]), [dearest] as largest([cost]), [middle] as median([revenue]), [kinds] as unique_count([product]) by [region]
+')
 ```
 
 :::
@@ -204,9 +212,11 @@ sales >> sort(descending(col.revenue)) >> summarize(
 ### run
 
 ```{r}
-run('sales
-  then sort [revenue] descending
-  then summarize [best] as first([product]), [worst] as last([product]) by [region]')
+run('
+  sales
+    then sort [revenue] descending
+    then summarize [best] as first([product]), [worst] as last([product]) by [region]
+')
 ```
 
 :::
@@ -242,10 +252,12 @@ gapminder |>
 ### run
 
 ```{r}
-run('gapminder
-  then keep where ([year] is 2007)
-  then summarize [life] as average([life]), [countries] as row_count() by [continent]
-  then sort [life] descending')
+run('
+  gapminder
+    then keep where ([year] is 2007)
+    then summarize [life] as average([life]), [countries] as row_count() by [continent]
+    then sort [life] descending
+')
 ```
 
 :::

@@ -39,8 +39,10 @@ sales >> summarize(sold = total(col.quantity), by = col.product)
 ### run
 
 ```{r}
-run('sales
-  then summarize [sold] as total([quantity]) by [product]')
+run('
+  sales
+    then summarize [sold] as total([quantity]) by [product]
+')
 ```
 
 :::
@@ -67,9 +69,11 @@ sales >> summarize(sold = total(col.quantity), by = col.product) >> keep(col.sol
 ### run
 
 ```{r}
-run('sales
-  then summarize [sold] as total([quantity]) by [product]
-  then keep where ([sold] < 10)')
+run('
+  sales
+    then summarize [sold] as total([quantity]) by [product]
+    then keep where ([sold] < 10)
+')
 ```
 
 :::
@@ -109,10 +113,12 @@ sales |>
 ### run
 
 ```{r}
-run('sales
-  then add [margin] as ([revenue] - [cost])
-  then summarize [margin] as total([margin]) by [region]
-  then sort [margin] descending')
+run('
+  sales
+    then add [margin] as ([revenue] - [cost])
+    then summarize [margin] as total([margin]) by [region]
+    then sort [margin] descending
+')
 ```
 
 :::
@@ -151,11 +157,13 @@ survey |>
 ### run
 
 ```{r}
-run('survey
-  then add [best] as largest([q1_score]) by [respondent]
-  then pick [name, region, best]
-  then sort [best] descending, [name]
-  then take 3')
+run('
+  survey
+    then add [best] as largest([q1_score]) by [respondent]
+    then pick [name, region, best]
+    then sort [best] descending, [name]
+    then take 3
+')
 ```
 
 :::

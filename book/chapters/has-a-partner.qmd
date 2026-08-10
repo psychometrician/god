@@ -53,8 +53,10 @@ sales >> keep(~matching(stocked, by = col.product))
 ### run
 
 ```{r}
-run('sales
-  then keep where (not matching(stocked, by [product]))')
+run('
+  sales
+    then keep where (not matching(stocked, by [product]))
+')
 ```
 
 :::
@@ -81,8 +83,10 @@ sales >> keep(matching(stocked))
 ### run
 
 ```{r}
-run('sales
-  then keep where matching(stocked)')
+run('
+  sales
+    then keep where matching(stocked)
+')
 ```
 
 :::
@@ -165,9 +169,11 @@ sales >> keep(matching(products, by = col.product)) >> keep(col.revenue > 100)
 ### run
 
 ```{r}
-run('sales
-  then keep where matching(products, by [product])
-  then keep where ([revenue] > 100)')
+run('
+  sales
+    then keep where matching(products, by [product])
+    then keep where ([revenue] > 100)
+')
 ```
 
 :::

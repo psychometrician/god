@@ -56,8 +56,10 @@ patchy >> fill_missing(revenue = 0)
 ### run
 
 ```{r}
-run('patchy
-  then fill_missing [revenue] as 0')
+run('
+  patchy
+    then fill_missing [revenue] as 0
+')
 ```
 
 :::

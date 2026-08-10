@@ -26,9 +26,11 @@ sales >> sort(descending(col.revenue)) >> take(3)
 ### run
 
 ```{r}
-run('sales
-  then sort [revenue] descending
-  then take 3')
+run('
+  sales
+    then sort [revenue] descending
+    then take 3
+')
 ```
 
 :::
@@ -74,8 +76,10 @@ sales >> sort(col.product, descending(col.revenue))
 ### run
 
 ```{r}
-run('sales
-  then sort [product], [revenue] descending')
+run('
+  sales
+    then sort [product], [revenue] descending
+')
 ```
 
 :::
@@ -109,10 +113,12 @@ sales >> sort(descending(col.date)) >> take(1, by = col.region) >> pick(col.regi
 ### run
 
 ```{r}
-run('sales
-  then sort [date] descending
-  then take 1 by [region]
-  then pick [region, date, product]')
+run('
+  sales
+    then sort [date] descending
+    then take 1 by [region]
+    then pick [region, date, product]
+')
 ```
 
 :::

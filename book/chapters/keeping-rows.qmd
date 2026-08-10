@@ -27,8 +27,10 @@ sales >> keep(col.region == "West")
 ### run
 
 ```{r}
-run('sales
-  then keep where ([region] is "West")')
+run('
+  sales
+    then keep where ([region] is "West")
+')
 ```
 
 :::
@@ -63,8 +65,10 @@ sales >> keep((col.revenue >= 150) & (col.cost < 100))
 ### run
 
 ```{r}
-run('sales
-  then keep where (([revenue] >= 150) and ([cost] < 100))')
+run('
+  sales
+    then keep where (([revenue] >= 150) and ([cost] < 100))
+')
 ```
 
 :::
@@ -123,8 +127,10 @@ sales >> keep(~(col.product == "Widget"))
 ### run
 
 ```{r}
-run('sales
-  then keep where (not ([product] is "Widget"))')
+run('
+  sales
+    then keep where (not ([product] is "Widget"))
+')
 ```
 
 :::

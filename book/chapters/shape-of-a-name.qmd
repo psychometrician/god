@@ -32,8 +32,10 @@ survey >> pick(where(name.starts("q")))
 ### run
 
 ```{r}
-run('survey
-  then pick where (name starts "q")')
+run('
+  survey
+    then pick where (name starts "q")
+')
 ```
 
 :::
@@ -62,8 +64,10 @@ survey >> pick(where(name.ends("_score") | (name == "respondent")))
 ### run
 
 ```{r}
-run('survey
-  then pick where ((name ends "_score") or (name is "respondent"))')
+run('
+  survey
+    then pick where ((name ends "_score") or (name is "respondent"))
+')
 ```
 
 :::
@@ -88,8 +92,10 @@ survey >> pick(where(name.contains("q")))
 ### run
 
 ```{r}
-run('survey
-  then pick where (name contains "q")')
+run('
+  survey
+    then pick where (name contains "q")
+')
 ```
 
 :::

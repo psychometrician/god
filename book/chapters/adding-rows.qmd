@@ -57,9 +57,11 @@ sales >> add_rows(sales) >> summarize(rows = row_count())
 ### run
 
 ```{r}
-run('sales
-  then add_rows sales
-  then summarize [rows] as row_count()')
+run('
+  sales
+    then add_rows sales
+    then summarize [rows] as row_count()
+')
 ```
 
 :::

@@ -105,14 +105,16 @@ answers
 ### run
 
 ```{r}
-run('returns
-  then keep where matching(places, by [code])
-  then add [q1] as first_present([q1], [q1_alt])
-  then pick all_but [q1_alt]
-  then join places by [code]
-  then summarize where (name starts "q") as average(value) by [area]
-  then add [place] as rank([q1] descending)
-  then sort [place]')
+run('
+  returns
+    then keep where matching(places, by [code])
+    then add [q1] as first_present([q1], [q1_alt])
+    then pick all_but [q1_alt]
+    then join places by [code]
+    then summarize where (name starts "q") as average(value) by [area]
+    then add [place] as rank([q1] descending)
+    then sort [place]
+')
 ```
 
 :::

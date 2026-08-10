@@ -76,9 +76,11 @@ messy >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw))) >> pick
 ### run
 
 ```{r}
-run('messy
-  then add [shout] as upper(trim([raw])), [quiet] as lower(trim([raw]))
-  then pick [shout, quiet]')
+run('
+  messy
+    then add [shout] as upper(trim([raw])), [quiet] as lower(trim([raw]))
+    then pick [shout, quiet]
+')
 ```
 
 :::

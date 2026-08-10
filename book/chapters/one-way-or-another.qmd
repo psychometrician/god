@@ -59,8 +59,10 @@ pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A", otherwise 
 ### run
 
 ```{r}
-run('pupils
-  then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A", otherwise "C")')
+run('
+  pupils
+    then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A", otherwise "C")
+')
 ```
 
 :::
@@ -87,8 +89,10 @@ pupils >> add(top = when(col.score >= 90, "yes"))
 ### run
 
 ```{r}
-run('pupils
-  then add [top] as when(([score] >= 90), "yes")')
+run('
+  pupils
+    then add [top] as when(([score] >= 90), "yes")
+')
 ```
 
 :::

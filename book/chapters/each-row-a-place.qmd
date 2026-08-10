@@ -76,8 +76,10 @@ races >> add(place = rank(descending(col.score)))
 ### run
 
 ```{r}
-run('races
-  then add [place] as rank([score] descending)')
+run('
+  races
+    then add [place] as rank([score] descending)
+')
 ```
 
 :::
@@ -104,9 +106,11 @@ races |> add(place = rank(descending(score)), by = heat) |> sort(heat, place)
 ### run
 
 ```{r}
-run('races
-  then add [place] as rank([score] descending) by [heat]
-  then sort [heat], [place]')
+run('
+  races
+    then add [place] as rank([score] descending) by [heat]
+    then sort [heat], [place]
+')
 ```
 
 :::
@@ -134,10 +138,12 @@ races >> sort(col.score) >> add(n = row_number()) >> sort(col.n)
 ### run
 
 ```{r}
-run('races
-  then sort [score]
-  then add [n] as row_number()
-  then sort [n]')
+run('
+  races
+    then sort [score]
+    then add [n] as row_number()
+    then sort [n]
+')
 ```
 
 :::
@@ -219,9 +225,11 @@ races >> add(place = rank(descending(col.score))) >> keep(col.place <= 2)
 ### run
 
 ```{r}
-run('races
-  then add [place] as rank([score] descending)
-  then keep where ([place] <= 2)')
+run('
+  races
+    then add [place] as rank([score] descending)
+    then keep where ([place] <= 2)
+')
 ```
 
 :::
@@ -247,9 +255,11 @@ races >> sort(descending(col.score)) >> take(1, by = col.heat)
 ### run
 
 ```{r}
-run('races
-  then sort [score] descending
-  then take 1 by [heat]')
+run('
+  races
+    then sort [score] descending
+    then take 1 by [heat]
+')
 ```
 
 :::
