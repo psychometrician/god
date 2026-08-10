@@ -65,3 +65,13 @@ print((sales >> keep(col.region == "West") >> take(10)).written())
 ```
 
 :::
+
+What the two spellings hand back is identical, and it is the text form: the
+sentence with no pipe glyph and no column syntax left, which is what
+[the next chapter](what-it-wrote.qmd) stores, sends and runs.
+
+Printing is also how a notebook shows a pipeline. In Jupyter, and on every
+page of this book, a pipeline standing at the end of a cell renders as a
+real table rather than as monospaced text. Each binding tells its notebook
+how to display one, so the answer is the same everywhere and only the
+rendering differs.

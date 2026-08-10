@@ -26,6 +26,14 @@ show_as(sales >> keep(col.region == "West") >> take(10), "dplyr")
 
 :::
 
+`show_as` also takes the sentence itself, with any tables passed by name, as
+`show_as('sales then take 3', "dplyr", sales = sales)`; the phrasebook
+appendix is generated that way. And the two languages hand the result back
+differently, on purpose. R prints the code and returns it invisibly, the way
+R's printers behave. Python returns it as a string, for `print` or for
+storing, because printing and returning both made a notebook say everything
+twice.
+
 ::: {.panel-tabset}
 
 ### R
@@ -220,6 +228,50 @@ print(god_sql(
 No table is attached and none is needed. The column list is the contract, and
 the same checks run against it before anything is written out.
 
+## The same engine at the command line
+
+Everything on this page is one binary, `god-cli`, which the transcripts in
+this book shorten to `god`. It reads a sentence and writes text, so it needs
+no R and no Python: give it the columns, and name the target with `--as`.
+
+```
+$ god --columns 'region:text,revenue:number' --as dplyr 'sales then keep where [region] is "West" then take 3'
+sales |>
+  filter((region == "West")) |>
+  head(3)
+```
+
+Wrap the pipeline in single quotes, since a text value inside it uses double
+ones. The pipeline can also arrive on standard input, as
+`god [options] < pipeline.god`, which is the shape a scheduled job wants.
+
+Two smaller questions have flags of their own. `--needs` prints the tables a
+pipeline reads and stops, which is how a launcher knows what to describe
+before describing anything:
+
+```
+$ god --needs 'sales then join products by [product] then take 3'
+sales
+products
+```
+
+And `--vocabulary` prints every word the grammar has, one per line, tagged
+with its kind; [Appendix B](../appendices/b-every-word.qmd) is generated
+from it.
+
+The exit code says what happened, so a script can ask. `0` is an answer, on
+standard output. `1` is a command line the tool could not read, a flag given
+twice included, with the usage on standard error. `2` is a refusal:
+
+```
+$ god --columns 'region:text' --as excel 'sales then take 1'
+illegal: there is no backend called `excel`. There is: sql, spark, dplyr, pandas, polars, pyspark, god
+```
+
+An assumption is the third voice, and it costs nothing. Where the grammar
+decided something you did not say, the note lands on standard error while
+the answer still arrives with exit `0`, so nothing is decided silently.
+
 ## When the table is what you want
 
 `god_sql` writes the query and stops. `run` writes it, executes it, and gives
@@ -261,9 +313,13 @@ Someone whose work is reading tables, and who will never write R or Python, can
 still write this one and say whether it asks the right thing:
 
 ```
-sales then keep where [region] is "West" then summarize [total] as total([revenue]) by [product]
+sales
+  then keep where [region] is "West"          # this quarter's question
+  then summarize [total] as total([revenue]) by [product]
 ```
 
+The `#` starts a comment that runs to the end of its line, here exactly as it
+does in both languages, so a stored sentence can carry its reasoning along.
 An analyst calls `run` on it later, or a scheduled job does. The sentence
 crosses that handoff intact, because it is not code in either language, and it
 is still readable by the person who wrote it.
