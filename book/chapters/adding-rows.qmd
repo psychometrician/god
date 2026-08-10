@@ -1,5 +1,5 @@
 ---
-title: "Adding rows from another table"
+title: "Adding rows"
 ---
 
 {{< include ../_setup.qmd >}}

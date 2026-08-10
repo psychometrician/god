@@ -1,5 +1,5 @@
 ---
-title: "Where this ends, and gog begins"
+title: "With gog"
 ---
 
 {{< include ../_setup.qmd >}}

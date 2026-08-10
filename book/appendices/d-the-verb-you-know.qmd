@@ -20,8 +20,8 @@ map to a word plus a place to put it rather than to a verb alone.
 | `arrange()`, `desc()` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `group_by()` + `summarise()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
 | `slice_head(n)`, `slice_max()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
-| `distinct()` | `pick` then `drop_duplicates` | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
-| `rename(new = old)` | `rename`, same direction | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `distinct()` | `pick` then `drop_duplicates` | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
+| `rename(new = old)` | `rename`, same direction | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `pivot_longer()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
 | `pivot_wider()` | `widen` | [Rows into columns](../chapters/rows-into-columns.qmd) |
 | `left_join()`, `inner_join()` | `join`, `unmatched` | [Another table](../chapters/another-table.qmd) |
@@ -32,7 +32,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `across(starts_with())` | `where`, `name`, `value` | [One value per column](../chapters/one-value-per-column.qmd) |
 | `row_number()`, `min_rank()` | `row_number`, `rank` | [Each row a place](../chapters/each-row-a-place.qmd) |
 | `cumsum()`, `lag()`, `lead()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
-| `show_query()` | `show_as`, with seven targets | [What it wrote, in a language you know](../chapters/what-it-wrote.qmd) |
+| `show_query()` | `show_as`, with seven targets | [What it wrote](../chapters/what-it-wrote.qmd) |
 | `collect()` | `collect`, the same word | [Nothing runs until you ask](../chapters/nothing-runs-yet.qmd) |
 
 ## From pandas
@@ -45,7 +45,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `sort_values(ascending=False)` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `groupby().agg()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
 | `head(n)`, `nlargest()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
-| `drop_duplicates()` | `drop_duplicates`, no subset | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `drop_duplicates()` | `drop_duplicates`, no subset | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `melt()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
 | `pivot_table()`, `pivot()` | `widen` | [Rows into columns](../chapters/rows-into-columns.qmd) |
 | `merge()` | `join` | [Another table](../chapters/another-table.qmd) |
@@ -64,7 +64,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | computed column in `SELECT` | `add` | [Adding a column](../chapters/adding-a-column.qmd) |
 | `ORDER BY ... DESC`, `LIMIT` | `sort ... descending`, `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `GROUP BY` with aggregates | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
-| `SELECT DISTINCT` | `pick` then `drop_duplicates` | [Renaming, and dropping repeats](../chapters/renaming-and-repeats.qmd) |
+| `SELECT DISTINCT` | `pick` then `drop_duplicates` | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `JOIN ... ON` | `join ... by` | [Another table](../chapters/another-table.qmd) |
 | `EXISTS`, `IN (SELECT ...)` | `matching` | [Has a partner](../chapters/has-a-partner.qmd) |
 | `UNION ALL` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |

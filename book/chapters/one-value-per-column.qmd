@@ -1,5 +1,5 @@
 ---
-title: "One value, applied to every column that matches"
+title: "One value per column"
 ---
 
 {{< include ../_setup.qmd >}}

@@ -1,5 +1,5 @@
 ---
-title: "Turning rows into columns"
+title: "Rows into columns"
 ---
 
 {{< include ../_setup.qmd >}}

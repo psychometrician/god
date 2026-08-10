@@ -1,5 +1,5 @@
 ---
-title: "Choosing by what a column holds"
+title: "What a column holds"
 ---
 
 {{< include ../_setup.qmd >}}

@@ -17,8 +17,7 @@ value in this part is written the same way, as a plain named function inside
 `add` or `summarize`, taking columns and giving a column. The words are few
 and closed on purpose: three text tests, a handful of text repairs, four
 conversions that say what they give, five date parts, one conditional. When
-they are not enough, the answer is the exit shown in [What it wrote, in a
-language you know](../chapters/what-it-wrote.qmd), not a pattern language
+they are not enough, the answer is the exit shown in [What it wrote](../chapters/what-it-wrote.qmd), not a pattern language
 smuggled in through a cell.
 
 The order of the chapters is the order the problems arrive in. Text first,

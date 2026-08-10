@@ -1,5 +1,5 @@
 ---
-title: "What it wrote, in a language you know"
+title: "What it wrote"
 ---
 
 {{< include ../_setup.qmd >}}

@@ -1,5 +1,5 @@
 ---
-title: "Choosing by the shape of a name"
+title: "The shape of a name"
 ---
 
 {{< include ../_setup.qmd >}}

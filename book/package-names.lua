@@ -87,16 +87,15 @@ local function split(s)
   return out
 end
 
-return {
-  {
-    -- Top-down, because a node has to be refused *before* its children are
-    -- reached. Bottom-up would rewrite the text first and hand back an element
-    -- that had already lost.
-    traverse = "topdown",
+prose_only = {
+  -- Top-down, because a node has to be refused *before* its children are
+  -- reached. Bottom-up would rewrite the text first and hand back an element
+  -- that had already lost.
+  traverse = "topdown",
 
-    -- Already code. A chunk's source and its output never reach a `Str` filter
-    -- at all, so this is only for the inline spans a writer marked by hand.
-    Code = function(el) return el, false end,
+  -- Already code. A chunk's source and its output never reach a `Str` filter
+  -- at all, so this is only for the inline spans a writer marked by hand.
+  Code = function(el) return el, false end,
 
     -- **There is deliberately no exemption here.** The sibling book's filter
     -- exempts its slogan, because that slogan contains the package name and
@@ -105,11 +104,28 @@ return {
     -- an exemption would guard a case that cannot arise. Add one if the motto
     -- ever takes the name.
 
-    Str = function(el)
-      local out = split(el.text)
-      if out == nil then return nil end
-      -- `false` stops the walk from re-entering what was just built.
-      return out, false
+  Str = function(el)
+    local out = split(el.text)
+    if out == nil then return nil end
+    -- `false` stops the walk from re-entering what was just built.
+    return out, false
+  end,
+}
+
+-- The treatment is for prose, and a title is not prose. Left to walk the
+-- whole document, pandoc applies `Str` to the metadata too, and the book's
+-- own title rendered with the name in code font, in the sidebar and on the
+-- cover, which reads as markup where a reader expects a name. Returning
+-- `false` from a `Meta` handler does not stop that walk, measured rather
+-- than assumed; what does is walking the blocks by hand and telling the
+-- outer traversal it is finished, so the metadata is never entered.
+return {
+  {
+    traverse = "topdown",
+
+    Pandoc = function(doc)
+      doc.blocks = doc.blocks:walk(prose_only)
+      return doc, false
     end,
   },
 }

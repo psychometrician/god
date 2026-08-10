@@ -111,6 +111,18 @@ $blockquote-font-size:  1rem;
  * above already uses.
  * ------------------------------------------------------------------------- */
 
+/* The book's own name in the sidebar arrives through a rendering the
+ * package-names filter reaches as prose, while every other title is
+ * metadata the filter now leaves alone. So the type is undone where it
+ * lands: in a title the name is a name, not markup. */
+.sidebar-title code {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  padding: 0;
+}
+
 /* A footer is not allowed to expand with the glass. Left alone it ran the
  * full width of the window, licences at one horizon and icons at the other,
  * while the writing sat in a column between them. So the contents are held

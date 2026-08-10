@@ -1,5 +1,5 @@
 ---
-title: "Giving each row a place"
+title: "Each row a place"
 ---
 
 {{< include ../_setup.qmd >}}

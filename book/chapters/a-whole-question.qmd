@@ -1,5 +1,5 @@
 ---
-title: "A whole question, answered"
+title: "A whole question"
 ---
 
 {{< include ../_setup.qmd >}}
