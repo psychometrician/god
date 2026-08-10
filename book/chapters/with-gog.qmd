@@ -10,6 +10,16 @@ suppressMessages(library(gog))
 # Gapminder's country panel (CC BY 4.0), vendored beside the book: this render
 # used to fetch it from the sibling book's site, which made one URL the single
 # point of failure for the whole build.
+#
+# The Python gog plots leave a few lines in the render log: "WARNING ...
+# Unable to parse table from raw html block: skipping." The `<table` pandoc
+# finds is a template literal inside gog's own selection script, so there is
+# no table to parse; the parse is skipped and the block passes through whole,
+# which is why every plot still draws. Chunk-level `html-table-processing:
+# none` does not reach reticulate's output on Quarto 1.8.25, measured rather
+# than assumed. The cure is splitting one string literal in gog's runtime,
+# which is the sibling project's change to make. The workflow's log gate
+# matches `WARN:` with its colon, so these lines do not block a publish.
 nations <- read.csv(find_up("book/data/gm_all.csv"))
 ```
 
@@ -158,7 +168,9 @@ So the rule is short. If you want to *look* at it, print it. If you want to
 ## The picture
 
 Now gog. The table goes in, a mark and some channels say what to draw, and the
-sentence reads the way a god pipeline does.
+sentence reads the way a god pipeline does. On the Python side every gog name
+arrives through the module, as `gog.point` and `gog.col`; the section near the
+end of this chapter says why, and why R needs no prefix at all.
 
 ::: {.panel-tabset}
 
@@ -175,6 +187,40 @@ gog.data(top) + gog.bar + gog.x(gog.col.gained) + gog.y(gog.col.country) + gog.c
 ```
 
 :::
+
+## What the gain looked like while it happened
+
+The ranking says who gained. The shape of the gain is a second god sentence,
+one `summarize` with two columns after `by`, and a line per continent:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+trends <- nations |>
+  summarize(life = average(life), by = c(continent, year)) |>
+  sort(year) |>
+  collect()
+
+data(trends) + line + x(year) + y(life) + color(continent)
+```
+
+### Python
+
+```{python}
+trends = collect(nations
+  >> summarize(life = average(col.life), by = [col.continent, col.year])
+  >> sort(col.year))
+
+(gog.data(trends) + gog.line + gog.x(gog.col.year) + gog.y(gog.col.life)
+   + gog.color(gog.col.continent))
+```
+
+:::
+
+Every continent climbs across the half century, and the distance between the
+top line and the bottom one is the story the rest of this page moves through.
 
 ## What the whole world was doing
 
@@ -206,13 +252,121 @@ data(nations) + point + x(gdp, scale = "log") + y(life) +
 That is the Rosling chart, and neither package needed a special case to draw it.
 `play` is a channel like any other, so the year binds the way a color does.
 
+## One panel per continent
+
+`facet` splits a plot into panels, one per value of a column. It joins with
+`|` rather than `+`, because it acts on the whole plot rather than adding a
+channel to it. The moving chart above, five times:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(nations) + point + x(gdp, scale = "log") + y(life) +
+  color(continent) + play(year) | facet(continent)
+```
+
+### Python
+
+```{python}
+(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
+   + gog.color(gog.col.continent) + gog.play(gog.col.year)) | gog.facet(gog.col.continent)
+```
+
+:::
+
+Five panels, one clock. The year advances everywhere at once, so a continent
+that stalls is read against the ones that do not.
+
+## A third position
+
+`z` is the third position, and writing it is what turns a plot into a cube.
+The slice of one year is a god step, and `space` names the viewing angle,
+`turn` and `tilt`, when the default angle hides what you came to see:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+latest <- nations |> keep(year == 2007) |> collect()
+
+data(latest) + point + x(gdp, scale = "log") + y(life) + z(population) +
+  color(continent) + space(turn = -50, tilt = 15)
+```
+
+### Python
+
+```{python}
+latest = collect(nations >> keep(col.year == 2007))
+
+(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
+   + gog.z(gog.col.population) + gog.color(gog.col.continent)
+   + gog.space(turn = -50, tilt = 15))
+```
+
+:::
+
+And `play` is still a channel, so the cube moves the way the flat chart did,
+with nothing taught about the combination:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(nations) + point + x(gdp, scale = "log") + y(life) + z(population) +
+  color(continent) + play(year)
+```
+
+### Python
+
+```{python}
+(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
+   + gog.z(gog.col.population) + gog.color(gog.col.continent)
+   + gog.play(gog.col.year))
+```
+
+:::
+
+## Handing the reader the choice
+
+`brush` lights a region and pushes the rest back, and it removes nothing.
+Bounded in the sentence, it prints with the selection already made; written
+bare, as `+ brush`, it waits for a reader to drag:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(latest) + point + x(gdp, scale = "log") + y(life) +
+  color(continent) + brush(gdp, at = c(20000, 60000))
+```
+
+### Python
+
+```{python}
+(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
+   + gog.color(gog.col.continent) + gog.brush(gog.col.gdp, at = [20000, 60000]))
+```
+
+:::
+
+The countries above twenty thousand dollars sit almost entirely above
+seventy-five years, and everything else stays in view behind them. That is
+the working difference between the two grammars' questions: god's `keep`
+removes rows before the answer, gog's `brush` highlights them inside it, and
+the comparison above needs the context a `keep` would have thrown away.
+
 ## What it replaced
 
-Written in the tools this book keeps comparing itself against, those two steps
-need a reshaping function from one package and a plotting system from another.
-Each brings its own vocabulary, its own idea of what a column reference is,
-and its own rules about which arguments are quoted. The animation usually
-needs a third.
+Written in the tools this book keeps comparing itself against, the page above
+needs a reshaping function from one package and a plotting system from
+another. Each brings its own vocabulary, its own idea of what a column
+reference is, and its own rules about which arguments are quoted. The
+animation usually needs a third package, and the cube and the brush a fourth.
 
 The saving is not the line count. It is that `summarize` and `play` come from
 the same design, so the second half of the analysis does not ask you to change
