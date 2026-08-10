@@ -25,26 +25,21 @@ date-modified: "`r sub(' 0', ' ', format(Sys.Date(), '%B %d, %Y'))`"
 
 # Preface {.unnumbered}
 
-```{r}
-#| include: false
-# **This chunk is what makes the date above a date.** Quarto evaluates inline R
-# in the front matter only when the document holds at least one executable
-# chunk, and this page runs no examples, so without a chunk the expression
-# reaches the page as its own source text and the "Updated" row never appears.
-# `engine: knitr` in the front matter does not substitute for it; that was tried
-# first and the row stayed missing.
-#
-# **It has to sit below the heading, not above it.** Quarto reads the file for
-# its first `#` line to name the chapter, and it does that before knitr has run,
-# so a comment at column 0 inside a fence is a heading as far as that scan is
-# concerned. Put this chunk first and the sidebar is titled with the first line
-# of this comment, the preface takes a number, and all 29 chapters shift by one.
-#
-# Nothing is computed here on purpose. The setup file every chapter includes
-# would do the job, and it attaches the package, starts reticulate and builds
-# seven tables for a page that shows none of them.
-invisible(NULL)
-```
+<!-- The include below has two jobs beyond its tables. Its chunks are what
+make the date above a date: Quarto evaluates inline R in the front matter only
+when the document holds at least one executable chunk, and without one the
+expression reaches the page as its own source text and the "Updated" row never
+appears. And it has to sit below the heading, not above it: Quarto reads the
+file for its first `#` line to name the chapter before knitr has run, so a
+comment at column 0 inside a fence is a heading as far as that scan is
+concerned. Put the preamble first and the sidebar takes its first line as the
+title, the preface takes a number, and every chapter shifts by one. This page
+used to carry a chunk that computed nothing instead, because the preface
+showed no live example; the first pipeline below runs now, in both languages,
+so the full preamble stopped being an extravagance and became the
+requirement. -->
+
+{{< include _setup.qmd >}}
 
 ::: {.god-motto}
 Say it once. Run it anywhere.
@@ -98,7 +93,7 @@ is, on one page.
 
 Here is a pipeline in R.
 
-```r
+```{r}
 sales |>
   keep(region == "West") |>
   add(margin = revenue - cost) |>
@@ -109,7 +104,7 @@ sales |>
 
 Here is the same pipeline in Python.
 
-```python
+```{python}
 (sales
   >> keep(col.region == "West")
   >> add(margin = col.revenue - col.cost)
@@ -121,6 +116,10 @@ Here is the same pipeline in Python.
 Read them aloud and they are one sentence. Keep the rows where the region is
 West. Add a margin column. For each product, total the margin and count the
 orders. Sort by margin, largest first. Take the top ten.
+
+Neither block above is an illustration. Both ran when this page was built,
+and the table under each is the answer that came back. They agree, and every
+example in this book is held to that standard.
 
 ## Two differences
 
@@ -480,9 +479,11 @@ plain word that means one thing everywhere is.
 | `==` or `=` | `is` |
 | `!=` or `<>` | `is not` |
 | `TRUE` / `True` / `true` | `yes` |
+| `FALSE` / `False` / `false` | `no` |
 | `NA` / `None` / `NULL` | `missing` |
 | `%in%` / `.isin()` / `IN` | `in { … }` |
 | `&` and `\|` | `and` and `or` |
+| `!` or `~` or `NOT` | `not` |
 
 `<`, `<=`, `>` and `>=` stay as they are, because those already agree everywhere.
 
@@ -512,8 +513,7 @@ The whole pipeline is read and checked before any of it runs, so a mistake at
 step two is reported as a mistake at step two, with the word underlined:
 
 ```
-illegal: there is no column called `reveune`. Did you mean `revenue`?
-The table has: region, product, revenue, cost, ordered_on
+illegal: there is no column called `reveune`. Did you mean `revenue`? The table has: region, product, revenue, cost, ordered_on
   |
 2 |   then keep where [reveune] > 100
   |                    ^^^^^^^
@@ -572,7 +572,9 @@ Python is next: the packages are built, and when the release lands it will be
 `pip install grammar-of-data`, with `import god` regardless, because the PyPI
 name `god` was taken in 2016 by an unrelated package.
 
-Every example in this book runs, live, in both languages, exactly as printed.
+Every example shown in both languages ran in both when this book was built,
+exactly as printed, and a page whose two tabs disagree is a build the book
+refuses to ship.
 
 ## Who this book is for
 
@@ -587,8 +589,8 @@ them is required, including this preface.
 
 If you have used several of these tools already, you are the other reader this
 book is written for, and you will get more out of it from the back. Appendix
-C is one sentence written out in dplyr, pandas, polars, PySpark and SQL side by
-side, which is the fastest way to see what is being proposed. Appendix B is the
+C is one sentence written out side by side in every dialect god prints, which
+is the fastest way to see what is being proposed. Appendix B is the
 entire vocabulary on one page. [How god works](parts/how-it-works.qmd) is
 where the claims in this preface are demonstrated rather than asserted,
 including the one about a pipeline running unchanged on a cluster.
@@ -615,8 +617,9 @@ clearest statement of where this grammar's job ends.
 
 ## How to read the examples
 
-Every example in this book is written twice, once in R and once in Python, and
-the two sit in tabs above the same explanation. Click the one you write.
+Every example that manipulates data is written twice, once in R and once in
+Python, and the two sit in tabs above the same explanation. Click the one you
+write.
 
 They are not illustrations of each other. Both are executed when the book is
 built, so a tab showing a table is a tab whose code ran, and the two tables come
@@ -624,14 +627,19 @@ back from the same engine. If a sentence ever stopped meaning the same thing in
 the two languages, the tabs would stop agreeing on this page, which is the
 easiest place to notice it.
 
-The chapter before the verbs is the exception, and deliberately so: it is about
-the two places the languages differ, and there the two are not the same sentence.
+The appendix on [the two languages](appendices/a-two-languages.qmd) is the
+exception, and deliberately so: it is about the two places the languages
+differ, and there the two are not the same sentence.
 
 ## The state of this book
 
-The book is being written alongside the grammar, and it grows a chapter at a
-time. A chapter appears here when the verbs it describes exist and run.
+The vocabulary is closed, and every word in it is demonstrated here by a
+chunk that runs. That claim is checked rather than remembered: when the book
+builds, a script asks the engine for its word list and fails the build if
+any word lacks a running example. A second check hands every pipeline the
+book shows outside a chunk to the engine to parse.
 
-That order is deliberate. Prose can name a verb that was never built, and the
-book will still build cleanly, so the only reliable protection is to write the
-chapter after the verb rather than before it.
+Prose can name a verb that was never built and still render cleanly, which
+is why those checks exist. What no script can catch is handled the way the
+coverage appendix promises: dated, and corrected in public when a reader
+catches it out.

@@ -34,8 +34,8 @@ book:
   # as a public website, written out in full so no render can change it. Its
   # partner `date-modified` re-stamps on every build and lives in `index.qmd`'s
   # front matter rather than here: `book:` rejects the key outright, and setting
-  # it at this file's top level would stamp an "Updated" row onto all 29 chapter
-  # pages, when only the landing page is a record of anything. Both labels are
+  # it at this file's top level would stamp an "Updated" row onto every chapter
+  # page, when only the landing page is a record of anything. Both labels are
   # renamed under `language:` below.
   date: "2026-08-07"
 
@@ -54,7 +54,7 @@ book:
     # The center holds a reader count on the published site and nowhere else. It
     # is an image, and the image *is* the counter, so every browser that opens a
     # page fetches it, `localhost` among them. Left in this file it would count
-    # each of the 40 files rendered while writing as a reader. It lives in
+    # every file rendered while writing as a reader. It lives in
     # `_quarto-publish.yml`, which the workflow merges over this one and a local
     # render never loads. That file says the rest.
     right:
@@ -105,8 +105,8 @@ book:
   # teaching order: the six verbs first, because a reader who stops after Part I
   # can already answer real questions, then reshaping, then everything that goes
   # *inside* a verb, then the parts that need more than one table or more than
-  # one row. A reader arriving from another tool can start at Part VII or at the
-  # appendices and work backwards.
+  # one row. A reader arriving from another tool can start at the last part or
+  # at the appendices and work backwards.
   #
   # A chapter arrives **with** the verbs it documents rather than before them.
   # Prose can name anything at all and still build clean, which is the one defect
