@@ -729,14 +729,25 @@ book_guard <- function(label, file, name) {
   # which is what stops each file's standalone runner from firing twice.
   env <- new.env(parent = globalenv())
   source(file, local = env)
-  outcome <- tryCatch({ capture.output(get(name, envir = env)("book")); NULL },
-                      error = function(e) conditionMessage(e))
+  # **`capture.output` wraps the `tryCatch`, not the other way round.** Wrapped
+  # the other way an error unwinds through `capture.output`, which discards
+  # everything the guard printed on its way down, so a failure arrives as its
+  # one-line condition and nothing else. Every guard here names the chunk, the
+  # file and the line in that discarded text. Locally it costs nothing, because
+  # you rerun the guard on its own; in CI there is no second run, and a red job
+  # said only "1 chunk(s) wrong" across a book of 51 files.
+  outcome <- NULL
+  said <- capture.output(
+    outcome <- tryCatch({ get(name, envir = env)("book"); NULL },
+                        error = function(e) conditionMessage(e))
+  )
   if (is.null(outcome)) {
     passed <<- passed + 1
     cat(sprintf("  ok    %s\n", label))
   } else {
     failed <<- failed + 1
     cat(sprintf("  FAIL  %s\n        %s\n", label, outcome))
+    for (line in said) cat("        ", line, "\n", sep = "")
   }
 }
 

@@ -30,10 +30,28 @@ suppressMessages(
   pkgload::load_all(find_up("r-pkg/god"), export_all = FALSE, quiet = TRUE)
 )
 options(width = 76)
+```
 
+```{r}
+#| include: false
+# **Its own chunk, so a missing virtualenv cannot take the tables with it.**
+# Rendering needs this: every chapter's Python tab is reached through
+# reticulate. The book's guards do not, because they read and evaluate the R
+# chunks only.
+#
+# Sharing one chunk with the fixtures meant that anywhere `book/.venv` is absent
+# the preamble stopped on this line and every table below went undefined. The CI
+# job that has no virtualenv reported that as *one* broken chunk rather than
+# twenty, because the R suite's own `sales` was sitting in the global
+# environment and stood in for the book's wherever a chapter asked for it. Only
+# `marks` had no understudy. A guard passing on the wrong table is worse than
+# one failing, and it took a red job on a fresh machine to see it.
 library(reticulate)
 use_virtualenv(find_up("book/.venv"), required = TRUE)
+```
 
+```{r}
+#| include: false
 # The engine announces where it keeps its extensions the first time anything
 # connects to it. Spending that first connection here means the announcement
 # lands in a hidden chunk rather than in the middle of a reader's first example.
