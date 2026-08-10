@@ -15,6 +15,13 @@ unchanged. And when something is wrong, the whole pipeline is checked before
 any of it runs, so a refusal names the step you wrote rather than the middle
 of a query you did not.
 
+![The machine, whole: three spellings build one plan, one checker reads it,
+and every backend writes it out.](../images/pipeline.svg){fig-alt="Three
+spellings of one grammar: R with its pipe, Python with its pipe, and the
+plain text form, all building the same plan. One checker reads the whole plan
+before anything runs. From there the plan is either executed, on DuckDB or
+Spark, or printed as SQL, Spark SQL, dplyr, pandas, polars or PySpark."}
+
 One law holds the part together: **nothing runs until you ask**, and its
 other half is that every refusal is the grammar's. The first half is what makes a pipeline safe to
 build in pieces; the second is what makes an error message worth reading,

@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 250" width="1060" height="250"
+     role="img" aria-labelledby="pipeline-title pipeline-desc">
+  <title id="pipeline-title">How a pipeline is answered</title>
+  <desc id="pipeline-desc">Three spellings of one grammar, R with its pipe, Python with its
+  pipe, and the plain text form, all build the same plan. One checker reads the whole plan
+  before anything runs. From there the plan is either executed, on DuckDB or Spark, or printed
+  as SQL, Spark SQL, dplyr, pandas, polars or PySpark.</desc>
+
+  <!-- The ground is the hex sticker's slate, so one file serves a light and a dark
+       page alike. A tinted panel does not need a second copy of itself the way a
+       transparent diagram does, which is why there is no *-dark.svg beside this. -->
+  <rect width="1060" height="250" rx="18" fill="#b9cfe2"/>
+
+  <defs>
+    <marker id="tip" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#12171c"/>
+    </marker>
+  </defs>
+
+  <!-- The three spellings, drawn identically on purpose. gog's equivalent colors
+       each binding in its language's own hue; here the whole claim is that the
+       three say the same thing, so three different colors would argue against the
+       diagram. Only the glyph in each pill differs, which is the actual difference. -->
+  <g font-family="Menlo,Consolas,monospace" font-size="17" font-weight="600">
+    <rect x="32" y="38"  width="214" height="48" rx="24" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="139" y="68"  text-anchor="middle" fill="#12171c">R  |&gt;</text>
+
+    <rect x="32" y="100" width="214" height="48" rx="24" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="139" y="130" text-anchor="middle" fill="#12171c">Python  &gt;&gt;</text>
+
+    <rect x="32" y="162" width="214" height="48" rx="24" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="139" y="192" text-anchor="middle" fill="#12171c">text  then</text>
+  </g>
+
+  <!-- Three lines converging on one point, which is the sentence the diagram exists
+       to make: the spelling is the only thing that differed. -->
+  <g fill="none" stroke="#12171c" stroke-width="2.4" opacity="0.55">
+    <path d="M246 62  H280 Q296 62  296 78  V124"/>
+    <path d="M246 124 H296"/>
+    <path d="M246 186 H280 Q296 186 296 170 V124"/>
+  </g>
+
+  <g stroke="#12171c" stroke-width="2.6" marker-end="url(#tip)">
+    <line x1="296" y1="124" x2="326" y2="124"/>
+    <line x1="492" y1="124" x2="540" y2="124"/>
+  </g>
+
+  <g font-family="Menlo,Consolas,monospace" font-weight="700">
+    <rect x="336" y="99" width="156" height="50" rx="12" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="414" y="130" text-anchor="middle" font-size="18" fill="#12171c">ONE PLAN</text>
+
+    <!-- Ink rather than white: this is the only box in the picture that is god
+         itself rather than something handed to it or handed back. -->
+    <rect x="548" y="92" width="186" height="64" rx="12" fill="#12171c"/>
+    <text x="641" y="131" text-anchor="middle" font-size="18" fill="#ffffff">ONE CHECKER</text>
+  </g>
+
+  <text x="641" y="182" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
+        font-size="14" font-style="italic" fill="#3c4650">every refusal it can reach,
+    <tspan x="641" dy="17">before anything runs</tspan>
+  </text>
+
+  <g fill="none" stroke="#12171c" stroke-width="2.4" opacity="0.55">
+    <path d="M734 124 H770 Q786 124 786 108 V76"/>
+    <path d="M734 124 H770 Q786 124 786 140 V172"/>
+  </g>
+
+  <g stroke="#12171c" stroke-width="2.6" marker-end="url(#tip)">
+    <line x1="786" y1="76"  x2="820" y2="76"/>
+    <line x1="786" y1="172" x2="820" y2="172"/>
+  </g>
+
+  <!-- The two things a plan can become. Executing needs an engine; printing needs
+       nobody, which is why the second list is the longer one. -->
+  <g>
+    <rect x="828" y="48" width="204" height="56" rx="12" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="930" y="73" text-anchor="middle" font-family="Menlo,Consolas,monospace"
+          font-size="16" font-weight="700" fill="#12171c">EXECUTE</text>
+    <text x="930" y="92" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
+          font-size="13" fill="#3c4650">DuckDB · Spark</text>
+
+    <rect x="828" y="134" width="204" height="76" rx="12" fill="#ffffff" stroke="#12171c" stroke-width="1.6"/>
+    <text x="930" y="159" text-anchor="middle" font-family="Menlo,Consolas,monospace"
+          font-size="16" font-weight="700" fill="#12171c">PRINT</text>
+    <text x="930" y="178" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
+          font-size="13" fill="#3c4650">SQL · Spark SQL · dplyr</text>
+    <text x="930" y="196" text-anchor="middle" font-family="Helvetica,Arial,sans-serif"
+          font-size="13" fill="#3c4650">pandas · polars · PySpark</text>
+  </g>
+</svg>
