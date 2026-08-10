@@ -211,6 +211,7 @@ impl Dialect {
                             let over = Over {
                                 partition: by,
                                 order: last_sort(plan, i),
+                                windowed: true,
                             };
                             // A window writes its own `OVER`, because it needs an
                             // `ORDER BY` inside it that the group alone cannot
@@ -958,12 +959,20 @@ impl Dialect {
                 name: fname, args, ..
             } => {
                 let written = self.call(fname, args);
-                if !vocabulary::is_aggregate(fname) || over.partition.is_empty() {
+                if !vocabulary::is_aggregate(fname) || !over.windowed {
                     return written;
                 }
-                let groups: Vec<String> =
-                    over.partition.iter().map(|n| self.name(&n.text)).collect();
-                format!("{written} OVER (PARTITION BY {})", groups.join(", "))
+                // With no `by` the window is the whole table, and `OVER ()` has
+                // to be said: `add [share] as [x] / total([x])` rendered a bare
+                // aggregate and the engine demanded a `GROUP BY` nobody wrote.
+                // Found by a cookbook recipe, which is what the book is for.
+                if over.partition.is_empty() {
+                    format!("{written} OVER ()")
+                } else {
+                    let groups: Vec<String> =
+                        over.partition.iter().map(|n| self.name(&n.text)).collect();
+                    format!("{written} OVER (PARTITION BY {})", groups.join(", "))
+                }
             }
 
             Expr::Window { kind, key, .. } => {
@@ -1119,6 +1128,12 @@ struct Over<'a> {
     /// The keys of the last `sort` before this step. `row_number` is refused
     /// without one, so this is present whenever it is needed.
     order: Option<&'a [SortKey]>,
+    /// Whether this expression stands where a group's answer is handed back to
+    /// every row (`add`), rather than where groups collapse (`summarize`). An
+    /// aggregate there is a window even with no `by`: the group is the whole
+    /// table, and SQL still has to be told, or the bare aggregate beside plain
+    /// columns is a `GROUP BY` nobody wrote.
+    windowed: bool,
 }
 /// What an aggregate in `widen`'s `value` is working on.
 ///

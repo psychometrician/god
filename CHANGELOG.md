@@ -9,6 +9,34 @@ The first release. On R-universe since 2026-08-08 as `god`, installable as a
 binary with no toolchain. The Python wheels are built and tested in CI; the
 PyPI release, as `grammar-of-data`, is next.
 
+### The book grew from a reference into a book
+
+Every teaching chapter now opens with a question about data and follows its
+first example with the same sentence in the grammar's own words, which the
+build parses. The verb chapters share one declared shape, ending with what
+travels with the verb and what it refuses, live in both languages. Part I
+gained a reading-practice and a writing-practice chapter, the book gained a
+cookbook part organized by question, a chapter collecting the nine design
+laws, an afterword with the only exercise the book assigns, an appendix
+mapping the verb you know in dplyr, pandas or SQL to god's words, and an
+honest appendix of what this grammar does not do, each gap with its exit.
+The examples run on a bigger cast: fifteen orders across a year, a wide
+survey, and Gapminder's 1,704 rows where scale is the lesson. The grammar's
+lineage is now cited on the page, Codd 1970 onward.
+
+### A share of the whole works, in every spelling
+
+`add [share] as [revenue] / total([revenue])`, with no `by`, used to render a
+bare aggregate: the SQL engines demanded a grouping nobody wrote, PySpark
+raised, and with a `by` PySpark and pandas quietly ignored the grouping,
+pandas totaling the whole table where the group was asked. All fixed: the two
+SQL dialects write the window (`OVER ()` for the whole table), PySpark writes
+`.over(Window.partitionBy(...))`, and pandas reaches the group through
+`groupby(...).transform(...)`. One shape pandas genuinely cannot spell, a
+grouped aggregate of an expression, is now refused with the one-step repair
+named, rather than answered wrongly. Two corpus sentences pin all of it, on
+both engines and all three printed targets.
+
 ### `add_rows` can name the table at the head
 
 `sales then add_rows sales` used to be refused as "no other table was

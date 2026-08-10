@@ -24,6 +24,40 @@ fn pupils() -> Connection {
     conn
 }
 
+/// **An aggregate in `add` is a window even with no `by`.** The group is the
+/// whole table, and the SQL still has to say `OVER ()`: the bare aggregate
+/// this used to render made the engine demand a `GROUP BY` nobody wrote.
+/// Found by a cookbook recipe computing a share of the whole.
+#[test]
+fn a_share_of_the_whole_needs_no_by() {
+    let conn = pupils();
+    let (names, rows) = run(
+        &conn,
+        "pupils",
+        "pupils then add [share] as [score] / total([score]) then keep where [share] > 0.4 then pick [name]",
+    );
+    assert_eq!(names, ["name"]);
+    // Worked by hand: the total is 220, and 95 over it is the one share past
+    // 0.4. The float itself stays out of the assertion on purpose; its text
+    // form belongs to the driver.
+    assert_eq!(rows, vec![vec!["ann"]]);
+}
+
+/// The same aggregate under a `by` spans its group instead, and each row keeps
+/// its group's answer.
+#[test]
+fn a_share_of_the_group_takes_the_by() {
+    let conn = pupils();
+    let (_, rows) = run(
+        &conn,
+        "pupils",
+        r#"pupils then add [band] as when([score] >= 90, "A", otherwise "B") then add [share] as [score] / total([score]) by [band] then keep where [share] is 1 then pick [name, band]"#,
+    );
+    // ann is alone in band A, so her share of it is exactly one; bob and cat
+    // split band B and neither reaches it.
+    assert_eq!(rows, vec![vec!["ann", "A"]]);
+}
+
 #[test]
 fn the_first_question_that_is_true_wins() {
     let conn = pupils();

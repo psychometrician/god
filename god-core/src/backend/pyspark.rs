@@ -43,6 +43,13 @@ pub struct PySpark;
 struct Over<'a> {
     partition: &'a [Name],
     order: Option<&'a [SortKey]>,
+    /// Whether this expression stands in an `add`, where an aggregate spans
+    /// its group and every row keeps the answer. Spark spells that
+    /// `.over(Window.partitionBy(...))`, and with no `by` the window is the
+    /// whole frame, `Window.partitionBy()` with nothing inside. Without the
+    /// flag an aggregate in `withColumn` is an analysis error, and one with a
+    /// `by` was silently ignoring the grouping.
+    windowed: bool,
 }
 
 impl Backend for PySpark {
@@ -74,7 +81,7 @@ impl Backend for PySpark {
                 // One `withColumn` per value, which is what a Spark reader
                 // writes and what a chain of them already looks like.
                 Step::Add { values, by, .. } => {
-                    let over = Over { partition: by, order: last_sort(plan, i) };
+                    let over = Over { partition: by, order: last_sort(plan, i), windowed: true };
                     for v in values {
                         calls.push(format!(
                             "withColumn({}, {})",
@@ -124,7 +131,7 @@ impl Backend for PySpark {
                         calls.push(format!(
                             "withColumn({}, F.row_number().over({}))",
                             text(RANK),
-                            window(&Over { partition: by, order: Some(keys) }, &[])
+                            window(&Over { partition: by, order: Some(keys), windowed: false }, &[])
                         ));
                         calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                         calls.push(format!("drop({})", text(RANK)));
@@ -578,6 +585,20 @@ fn expr_over(e: &Expr, over: Over) -> String {
 
 /// How PySpark spells each of the grammar's functions.
 fn call(fname: &str, args: &[Expr], over: Over) -> String {
+    // An aggregate standing in an `add` is a window: the plain spelling below
+    // is rendered first, then given the window its position demands. No
+    // `orderBy` goes in it, because an ordered window would turn `sum` into a
+    // running total, which is a different word in this grammar.
+    if over.windowed && crate::vocabulary::is_aggregate(fname) {
+        let plain = call(fname, args, Over { windowed: false, ..over.clone() });
+        let spec = if over.partition.is_empty() {
+            "Window.partitionBy()".to_string()
+        } else {
+            let groups: Vec<String> = over.partition.iter().map(|n| text(&n.text)).collect();
+            format!("Window.partitionBy({})", groups.join(", "))
+        };
+        return format!("{plain}.over({spec})");
+    }
     let arg = |i: usize| args.get(i).map(|a| expr_over(a, over.clone())).unwrap_or_default();
     match fname {
         // Spark skips the absent value in an aggregate, which is what the

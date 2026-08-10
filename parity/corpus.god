@@ -132,3 +132,7 @@ sales then summarize [kinds] as unique_count([product]) by [region]
 sales then add [as_text] as to_text([revenue]) then add [back] as to_number([as_text]) then summarize [t] as total([back])
 ---
 sales then add [d] as to_date([ordered_on]) then add [h] as hour([d]) then pick [ordered_on, h] then sort [ordered_on]
+---
+sales then add [share] as [revenue] / total([revenue]) then sort [share] descending, [ordered_on] then pick [ordered_on, product, share] then take 3
+---
+sales then add [share] as [revenue] / total([revenue]) by [region] then keep where [share] > 0.35 then sort [region], [share] descending then pick [region, product, share]

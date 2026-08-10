@@ -44,6 +44,46 @@ impl Backend for Pandas {
         "pandas"
     }
 
+    /// A grouped aggregate of an expression, `add ... total([a] * [b]) by`.
+    ///
+    /// pandas reaches a group's answer through one named column, so an
+    /// aggregate built from arithmetic under a `by` has no one-line spelling
+    /// here. Saying so beats rendering `transform` on something that is not a
+    /// column, and the repair is one step: make the expression a column of its
+    /// own, then aggregate that column by the group.
+    fn refuses(&self, plan: &Plan) -> Option<crate::diagnostic::Diagnostic> {
+        for step in &plan.steps {
+            if let Step::Add { values, by, span, .. } = step {
+                if by.is_empty() {
+                    continue;
+                }
+                for v in values {
+                    let mut bad = false;
+                    v.value.walk(&mut |e| {
+                        if let Expr::Call { name, args, .. } = e {
+                            if crate::vocabulary::is_aggregate(name)
+                                && name != "row_count"
+                                && !matches!(args.first(), Some(Expr::Column(_)))
+                            {
+                                bad = true;
+                            }
+                        }
+                    });
+                    if bad {
+                        return Some(crate::diagnostic::Diagnostic::illegal(
+                            "pandas reaches a group's answer through one named column, \
+                             so it cannot spell a grouped aggregate of an expression. \
+                             Make the expression a column in its own `add`, then \
+                             aggregate that column `by` the group",
+                            *span,
+                        ));
+                    }
+                }
+            }
+        }
+        None
+    }
+
     fn render(&self, plan: &Plan, entering: &[Schema]) -> String {
         let mut calls: Vec<String> = Vec::new();
 
@@ -617,6 +657,34 @@ fn inner(e: &Expr, over: Over) -> String {
 
 /// How pandas spells each of the grammar's functions.
 fn call(fname: &str, args: &[Expr], over: Over) -> String {
+    // A grouped aggregate in `add` reaches its column through `groupby` and
+    // hands the answer back with `transform`. The plain method beside other
+    // columns would total the whole table and say nothing about it, which is
+    // the silent wrong answer this whole project refuses to ship. `row_count`
+    // names no column, so it borrows the first grouping key and counts with
+    // `size`; an aggregate of an *expression* under a `by` has no one-line
+    // pandas spelling and `refuses` has already turned it away.
+    if !over.partition.is_empty() && crate::vocabulary::is_aggregate(fname) {
+        let word = match fname {
+            "total" => "sum",
+            "average" => "mean",
+            "median" => "median",
+            "smallest" => "min",
+            "largest" => "max",
+            "first" => "first",
+            "last" => "last",
+            "unique_count" => "nunique",
+            "row_count" => "size",
+            _ => unreachable!("every aggregate has a transform word"),
+        };
+        let groups = list(over.partition);
+        let column = match (fname, args.first()) {
+            ("row_count", _) => text(&over.partition[0].text),
+            (_, Some(Expr::Column(n))) => text(&n.text),
+            _ => unreachable!("refused before rendering"),
+        };
+        return format!("d.groupby({groups})[{column}].transform({})", text(word));
+    }
     let plain = Over::default();
     let arg = |i: usize| args.get(i).map(|a| inner(a, plain)).unwrap_or_default();
     // A window is worked out within the grouping, where there is one, and the
