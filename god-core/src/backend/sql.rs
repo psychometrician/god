@@ -117,7 +117,7 @@ const DUCKDB: Dialect = Dialect {
 };
 
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
-/// out of a manual. Four of these five entries were found by running the
+/// out of a manual. Most of these entries were found by running the
 /// constructs this file emits and reading what came back.
 const SPARK: Dialect = Dialect {
     quote: '`',

@@ -46,7 +46,7 @@ waiting on the growth test every candidate faces.
   not say, the decision is on the page.
 - **`matching`: the join that cannot multiply rows**, so the question "has a
   partner?" is a different word from the act "bring columns in".
-- **The same sentence on five engines.** DuckDB and Spark execute it; dplyr,
+- **The same sentence wherever it goes.** DuckDB and Spark execute it; dplyr,
   pandas, polars and PySpark receive it as readable code; a warehouse runs
   it where the table lives.
 - **An exit that is part of the design.** Leaving god costs one `show_as`
