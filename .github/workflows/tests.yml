@@ -72,8 +72,17 @@ jobs:
       # polars is here for parity/printed.py, which executes the polars
       # rendering of every corpus sentence — the check that caught `to_date`
       # throwing the time away.
+      #
+      # pyarrow is not decoration and is not polars' own dependency. That
+      # harness compares tables by bringing each rendering back to pandas, and
+      # `polars.DataFrame.to_pandas()` goes through Arrow, so without it all 69
+      # polars sentences report "would not run". The suite is written so a skip
+      # is a failure rather than a pass, which is what turned a missing wheel
+      # into a red job instead of a quietly unchecked backend. It is installed
+      # everywhere anything imports pandas *and* polars, which is why this was
+      # invisible until CI ran on a machine that had only what was asked for.
       - name: Python for the suite and the harnesses
-        run: python3 -m pip install --quiet pandas duckdb polars
+        run: python3 -m pip install --quiet pandas duckdb polars pyarrow
 
       - name: The R suite, and the book guards inside it
         run: Rscript r-pkg/god/tests/test_basic.R
