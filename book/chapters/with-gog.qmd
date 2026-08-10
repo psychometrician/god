@@ -168,9 +168,11 @@ So the rule is short. If you want to *look* at it, print it. If you want to
 ## The picture
 
 Now gog. The table goes in, a mark and some channels say what to draw, and the
-sentence reads the way a god pipeline does. On the Python side every gog name
-arrives through the module, as `gog.point` and `gog.col`; the section near the
-end of this chapter says why, and why R needs no prefix at all.
+sentence reads the way a god pipeline does. The table going in is `top`, the
+first twelve rows of the ranking you have already read. On the Python side
+every gog name arrives through the module, as `gog.point` and `gog.col`; the
+section near the end of this chapter says why, and why R needs no prefix at
+all.
 
 ::: {.panel-tabset}
 
@@ -191,7 +193,7 @@ gog.data(top) + gog.bar + gog.x(gog.col.gained) + gog.y(gog.col.country) + gog.c
 ## What the gain looked like while it happened
 
 The ranking says who gained. The shape of the gain is a second god sentence,
-one `summarize` with two columns after `by`, and a line per continent:
+one `summarize` with two columns after `by`:
 
 ::: {.panel-tabset}
 
@@ -203,7 +205,7 @@ trends <- nations |>
   sort(year) |>
   collect()
 
-data(trends) + line + x(year) + y(life) + color(continent)
+trends |> take(5)
 ```
 
 ### Python
@@ -213,6 +215,25 @@ trends = collect(nations
   >> summarize(life = average(col.life), by = [col.continent, col.year])
   >> sort(col.year))
 
+trends >> take(5)
+```
+
+:::
+
+Sixty rows came back, one per continent per year, and the first five are the
+five continents in 1952. A line per continent is then one gog sentence:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(trends) + line + x(year) + y(life) + color(continent)
+```
+
+### Python
+
+```{python}
 (gog.data(trends) + gog.line + gog.x(gog.col.year) + gog.y(gog.col.life)
    + gog.color(gog.col.continent))
 ```
@@ -282,8 +303,7 @@ that stalls is read against the ones that do not.
 ## A third position
 
 `z` is the third position, and writing it is what turns a plot into a cube.
-The slice of one year is a god step, and `space` names the viewing angle,
-`turn` and `tilt`, when the default angle hides what you came to see:
+The slice of one year is a god step:
 
 ::: {.panel-tabset}
 
@@ -292,8 +312,7 @@ The slice of one year is a god step, and `space` names the viewing angle,
 ```{r}
 latest <- nations |> keep(year == 2007) |> collect()
 
-data(latest) + point + x(gdp, scale = "log") + y(life) + z(population) +
-  color(continent) + space(turn = -50, tilt = 15)
+latest |> take(5)
 ```
 
 ### Python
@@ -301,6 +320,27 @@ data(latest) + point + x(gdp, scale = "log") + y(life) + z(population) +
 ```{python}
 latest = collect(nations >> keep(col.year == 2007))
 
+latest >> take(5)
+```
+
+:::
+
+One row per country, 142 in all, and the cube binds three of the columns.
+`space` names the viewing angle, `turn` and `tilt`, for when the default
+angle hides what you came to see:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+data(latest) + point + x(gdp, scale = "log") + y(life) + z(population) +
+  color(continent) + space(turn = -50, tilt = 15)
+```
+
+### Python
+
+```{python}
 (gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
    + gog.z(gog.col.population) + gog.color(gog.col.continent)
    + gog.space(turn = -50, tilt = 15))
