@@ -92,6 +92,58 @@ either side of them are related.
 paste0("`", vocabulary$word[vocabulary$kind == "word"], "`", collapse = " · ") |> cat()
 ```
 
+## Where each word is first used
+
+Each verb and function below links to the page whose running example uses it
+first, in the book's own order. This table is worked out from the chapters
+when the page is built, the same way the lists above come from the engine: a
+moved example moves its link, and a word no chapter runs cannot ship at all,
+because a build check refuses the book first.
+
+```{r}
+#| echo: false
+# The chapter order is _quarto.yml's, teaching pages only; the first
+# executable chunk to use a word, in that order, is where a reader meets it.
+listed <- readLines("../_quarto.yml", warn = FALSE)
+entries <- grep("^\\s*-\\s*(part:\\s*)?[A-Za-z0-9_/-]+\\.qmd\\s*(#.*)?$",
+                listed, value = TRUE)
+entries <- sub("\\s*#.*$", "", sub("^\\s*-\\s*(part:\\s*)?", "", trimws(entries)))
+teaching <- entries[grepl("^(chapters|cookbook)/", entries)]
+
+read_page <- function(f) readLines(file.path("..", f), warn = FALSE)
+chunk_text <- vapply(teaching, function(f) {
+  ln <- read_page(f)
+  keep <- logical(length(ln)); inside <- FALSE
+  for (i in seq_along(ln)) {
+    if (grepl("^\\s*```\\{", ln[i])) { inside <- TRUE; next }
+    if (grepl("^\\s*```\\s*$", ln[i])) { inside <- FALSE; next }
+    keep[i] <- inside
+  }
+  paste(ln[keep], collapse = "\n")
+}, character(1))
+title_of <- vapply(teaching, function(f) {
+  found <- grep("^title:", read_page(f), value = TRUE)[1]
+  gsub('^title:\\s*"?|"?\\s*$', "", found)
+}, character(1))
+
+written <- vocabulary[vocabulary$kind != "word", ]
+home <- vapply(written$word, function(w) {
+  hit <- which(grepl(paste0("\\b", w, "\\b"), chunk_text, perl = TRUE))[1]
+  if (is.na(hit)) "the appendices"
+  else sprintf("[%s](../%s)", title_of[[hit]], teaching[[hit]])
+}, character(1))
+
+knitr::kable(data.frame(
+  Word = paste0("`", written$word, "`"),
+  `First running example` = home,
+  check.names = FALSE
+))
+```
+
+The grammar words are not in the table on purpose: `in`, `is`, `not` and
+their siblings are also words the host languages use, so a scan would
+confidently attribute the wrong page. They are everywhere above instead.
+
 ## That is all of it
 
 There is no second list, no set of helpers, and no dialect that adds a few more
