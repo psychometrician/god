@@ -110,25 +110,36 @@ check_block <- function(block, binary, flags, short) {
         bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(complaint)))
         next
       }
-      pipeline <- command_pipeline(command)
-      if (!is.null(pipeline) && looks_like_pipeline(pipeline)) {
-        checked <- checked + 1L
-        refusal <- god_refusal(binary, pipeline)
-        if (!is.null(refusal)) {
-          bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(refusal)))
-          next
-        }
-      }
       # **Then the command is run, and the page's output has to be the
       # output.** Parsing alone let a transcript through that exits 1: every
       # flag was real and the pipeline parsed, and the command still refused
       # to answer, because `--columns` was missing. So a transcript is
       # executed the way every chunk in the book is, and the lines under the
-      # prompt are compared against what the command printed. A transcript
-      # that means to show a refusal has no convention yet; the first one
+      # prompt are compared against what the command printed.
+      #
+      # A transcript whose shown output opens `illegal:` means to show a
+      # refusal, so the expectation flips whole: exit 2, and the diagnostic
+      # on stderr compared byte for byte, which is what keeps a quoted
+      # message the message the engine prints. An assumption transcript
+      # (exit 0, a note on stderr) has no convention yet; the first one
       # added will fail here, and that is the moment to design one.
       shown <- if (i < ends[[k]]) body[(i + 1L):ends[[k]]] else character(0)
-      ran <- run_transcript(binary, command)
+      refusing <- length(shown) > 0L &&
+        grepl("^(illegal|unsupported):", trimws(shown[[1]]))
+      if (!refusing) {
+        pipeline <- command_pipeline(command)
+        if (!is.null(pipeline) && looks_like_pipeline(pipeline)) {
+          checked <- checked + 1L
+          refusal <- god_refusal(binary, pipeline)
+          if (!is.null(refusal)) {
+            bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(refusal)))
+            next
+          }
+        }
+      } else {
+        checked <- checked + 1L
+      }
+      ran <- run_transcript(binary, command, refusing = refusing)
       if (!is.null(ran$complaint)) {
         bad <- c(bad, sprintf("  %s:%d  %s\n%s", short, at + i - 1L, command, indent(ran$complaint)))
         next
@@ -198,12 +209,22 @@ god_flags <- function(binary) {
   unique(found)
 }
 
-# The transcript, actually run: exit 0 and its stdout, or the complaint.
-run_transcript <- function(binary, command) {
+# The transcript, actually run. An answering one must exit 0 and its stdout is
+# the page's output; a refusing one must exit 2 and the diagnostic on stderr is
+# the page's output. Nothing in between is a transcript the book may show.
+run_transcript <- function(binary, command, refusing = FALSE) {
   tokens <- shell_tokens(command)[-1L]
   out <- tempfile(); err <- tempfile()
   on.exit(unlink(c(out, err)), add = TRUE)
   status <- suppressWarnings(system2(binary, shQuote(tokens), stdout = out, stderr = err))
+  if (refusing) {
+    if (status != 2L) {
+      return(list(complaint = sprintf(
+        "the page shows a refusal, and the command exits %d rather than refusing", status),
+        lines = NULL))
+    }
+    return(list(complaint = NULL, lines = readLines(err, warn = FALSE)))
+  }
   if (status != 0L) {
     return(list(complaint = sprintf(
       "the command exits %d rather than answering:\n%s", status,

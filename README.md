@@ -178,15 +178,17 @@ checking and the error messages; the joining, grouping, sorting and null handlin
 belong to an engine underneath. `god-core` has **no dependencies at all**. It
 turns text into a plan and a plan into text, and neither job needs a library.
 
-Because the whole pipeline is read before anything runs, a bad column is reported
-at step two rather than at step seven, with a caret under the word:
+Because the whole pipeline is read before anything runs, a mistake in step two
+of seven costs nothing and is reported as step two's, with a caret under the
+exact word. This transcript, like every example here, is executed by the
+project's checks:
 
 ```
-illegal: there is no column called `reveune`. Did you mean `revenue`?
-The table has: region, product, revenue, cost, ordered_on
+$ god --columns 'region:text,product:text,revenue:number,cost:number,ordered_on:date' 'sales then keep where [reveune] > 100'
+illegal: there is no column called `reveune`. Did you mean `revenue`? The table has: region, product, revenue, cost, ordered_on
   |
-2 |   then keep where [reveune] > 100
-  |                    ^^^^^^^
+1 | sales then keep where [reveune] > 100
+  |                        ^^^^^^^
 ```
 
 **A column can be called anything**, including a word the grammar uses. Each
