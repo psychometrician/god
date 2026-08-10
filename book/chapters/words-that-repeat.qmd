@@ -58,13 +58,17 @@ its group's answer, which is exactly what a share needs:
 ### R
 
 ```{r}
-sales |> add(share = revenue / total(revenue), by = product) |> pick(product, revenue, share)
+sales |>
+  add(share = revenue / total(revenue), by = product) |>
+  pick(product, revenue, share)
 ```
 
 ### Python
 
 ```{python}
-sales >> add(share = col.revenue / total(col.revenue), by = col.product) >> pick(col.product, col.revenue, col.share)
+(sales
+  >> add(share = col.revenue / total(col.revenue), by = col.product)
+  >> pick(col.product, col.revenue, col.share))
 ```
 
 
@@ -127,13 +131,19 @@ same shape names the result of `rename` and the filler in `fill_missing`.
 ### R
 
 ```{r}
-sales |> add(margin = revenue - cost) |> rename(earned = revenue) |> pick(product, earned, margin)
+sales |>
+  add(margin = revenue - cost) |>
+  rename(earned = revenue) |>
+  pick(product, earned, margin)
 ```
 
 ### Python
 
 ```{python}
-sales >> add(margin = col.revenue - col.cost) >> rename(earned = col.revenue) >> pick(col.product, col.earned, col.margin)
+(sales
+  >> add(margin = col.revenue - col.cost)
+  >> rename(earned = col.revenue)
+  >> pick(col.product, col.earned, col.margin))
 ```
 
 
@@ -192,13 +202,19 @@ own on either.
 ### R
 
 ```{r}
-sales |> add(place = rank(descending(revenue))) |> sort(place) |> pick(product, revenue, place)
+sales |>
+  add(place = rank(descending(revenue))) |>
+  sort(place) |>
+  pick(product, revenue, place)
 ```
 
 ### Python
 
 ```{python}
-sales >> add(place = rank(descending(col.revenue))) >> sort(col.place) >> pick(col.product, col.revenue, col.place)
+(sales
+  >> add(place = rank(descending(col.revenue)))
+  >> sort(col.place)
+  >> pick(col.product, col.revenue, col.place))
 ```
 
 

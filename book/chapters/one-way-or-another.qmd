@@ -18,7 +18,8 @@ pupils <- data.frame(
   stringsAsFactors = FALSE
 )
 
-pupils |> add(band = when(score >= 90, "A", score >= 70, "B", otherwise = "C"))
+pupils |>
+  add(band = when(score >= 90, "A", score >= 70, "B", otherwise = "C"))
 ```
 
 ### Python
@@ -29,7 +30,8 @@ pupils = pd.DataFrame({
     "score": [95, 75, 50],
 })
 
-pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B", otherwise = "C"))
+pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B",
+                          otherwise = "C"))
 ```
 
 :::
@@ -46,13 +48,15 @@ thing you are choosing when you write them in an order:
 ### R
 
 ```{r}
-pupils |> add(band = when(score >= 70, "B", score >= 90, "A", otherwise = "C"))
+pupils |>
+  add(band = when(score >= 70, "B", score >= 90, "A", otherwise = "C"))
 ```
 
 ### Python
 
 ```{python}
-pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A", otherwise = "C"))
+pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A",
+                          otherwise = "C"))
 ```
 
 
@@ -61,7 +65,8 @@ pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A", otherwise 
 ```{r}
 run('
   pupils
-    then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A", otherwise "C")
+    then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A",
+         otherwise "C")
 ')
 ```
 

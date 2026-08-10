@@ -100,13 +100,19 @@ two verbs you already have, plus `by`:
 ### R
 
 ```{r}
-sales |> sort(descending(date)) |> take(1, by = region) |> pick(region, date, product)
+sales |>
+  sort(descending(date)) |>
+  take(1, by = region) |>
+  pick(region, date, product)
 ```
 
 ### Python
 
 ```{python}
-sales >> sort(descending(col.date)) >> take(1, by = col.region) >> pick(col.region, col.date, col.product)
+(sales
+  >> sort(descending(col.date))
+  >> take(1, by = col.region)
+  >> pick(col.region, col.date, col.product))
 ```
 
 

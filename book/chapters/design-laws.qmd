@@ -34,30 +34,22 @@ report it.
 A condition about a column's name writes `name`; about its kind writes
 `kind`; the column under work in a sweep writes `value`. And where the
 grammar has to decide something you did not say, it prints the decision
-back:
+back. The sentence below is written in the text form, so the call is the
+same string in both tabs:
 
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
-marks |> widen(name = question, value = mark)
+#| message: true
+run('marks then widen name [question], value [mark]')
 ```
 
 ### Python
 
 ```{python}
-marks >> widen(name = col.question, value = col.mark)
-```
-
-
-### run
-
-```{r}
-run('
-  marks
-    then widen name [question], value [mark]
-')
+run('marks then widen name [question], value [mark]')
 ```
 
 :::

@@ -62,8 +62,8 @@ run('
 :::
 
 `by` works here exactly as it does on `join`, and leaving it out means the same
-thing: god matches on the column names both tables share and says which it
-chose.
+thing: god matches on the column names both tables share, and the note naming
+its choice arrives beside the answer, as it does for `join`.
 
 ::: {.panel-tabset}
 
@@ -122,7 +122,8 @@ restocks = pd.DataFrame({
 })
 
 print(len(collect(sales >> keep(matching(restocks, by = col.product)))))
-print(len(collect(sales >> join(restocks, by = col.product, unmatched = "none"))))
+print(len(collect(
+    sales >> join(restocks, by = col.product, unmatched = "none"))))
 ```
 
 :::
@@ -144,7 +145,8 @@ collect(sales |> keep(matching(products, by = product) & revenue > 100))
 ```{python}
 #| classes: refusal
 try:
-    collect(sales >> keep(matching(products, by = col.product) & (col.revenue > 100)))
+    collect(sales
+      >> keep(matching(products, by = col.product) & (col.revenue > 100)))
 except GodError as refusal:
     print(refusal)
 ```
@@ -162,7 +164,9 @@ sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
 ### Python
 
 ```{python}
-sales >> keep(matching(products, by = col.product)) >> keep(col.revenue > 100)
+(sales
+  >> keep(matching(products, by = col.product))
+  >> keep(col.revenue > 100))
 ```
 
 

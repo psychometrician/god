@@ -91,7 +91,9 @@ run('
 ### R
 
 ```{r}
-races |> add(place = rank(descending(score)), by = heat) |> sort(heat, place)
+races |>
+  add(place = rank(descending(score)), by = heat) |>
+  sort(heat, place)
 ```
 
 ### Python

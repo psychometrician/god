@@ -30,7 +30,8 @@ sales |>
 (sales
   >> keep(col.region == "West")
   >> add(margin = col.revenue - col.cost)
-  >> summarize(margin = total(col.margin), orders = row_count(), by = col.product)
+  >> summarize(margin = total(col.margin), orders = row_count(),
+               by = col.product)
   >> sort(descending(col.margin)))
 ```
 
@@ -42,7 +43,8 @@ run('
   sales
     then keep where ([region] is "West")
     then add [margin] as ([revenue] - [cost])
-    then summarize [margin] as total([margin]), [orders] as row_count() by [product]
+    then summarize [margin] as total([margin]),
+         [orders] as row_count() by [product]
     then sort [margin] descending
 ')
 ```
@@ -84,8 +86,9 @@ Every example in this book runs on a table called `sales`, unless a chapter
 says otherwise. It is fifteen rows: three regions, four products, a year of
 dates, and for each order a quantity, the revenue, and the cost. Small
 enough to check any total by hand, which you should feel free to do; the
-whole cast of tables this book uses is declared in the preface, and none of
-them will change shape under you between chapters.
+whole cast of tables this book uses is declared in the preface, typed out
+there in full so your session can hold the same rows, and none of them will
+change shape under you between chapters.
 
 ::: {.panel-tabset}
 

@@ -97,7 +97,8 @@ messy |>
 ```{r}
 run('
   messy
-    then add [as_text] as to_text([n]), [rounded] as to_whole((to_number([n]) / 2))
+    then add [as_text] as to_text([n]),
+         [rounded] as to_whole((to_number([n]) / 2))
     then pick [n, as_text, rounded]
 ')
 ```

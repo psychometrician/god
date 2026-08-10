@@ -106,7 +106,8 @@ sales |> summarize(products = unique_count(product), orders = row_count())
 ### Python
 
 ```{python}
-sales >> summarize(products = unique_count(col.product), orders = row_count())
+(sales
+  >> summarize(products = unique_count(col.product), orders = row_count()))
 ```
 
 
@@ -115,7 +116,8 @@ sales >> summarize(products = unique_count(col.product), orders = row_count())
 ```{r}
 run('
   sales
-    then summarize [products] as unique_count([product]), [orders] as row_count()
+    then summarize [products] as unique_count([product]),
+         [orders] as row_count()
 ')
 ```
 

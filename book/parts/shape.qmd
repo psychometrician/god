@@ -19,7 +19,9 @@ back, for the table a person reads rather than the table a pipeline works on.
 
 One law holds the part together: **the same facts, either shape**. Reshaping
 moves values, and it never invents or discards one; where a verb has to
-decide something you did not say, it prints the assumption back, so what it
-chose is on the page rather than in your imagination. A reader arriving from
-tidyr will recognize the job here and not the argument list, and the first
-chapter has a table comparing the two.
+decide something you did not say, it prints the assumption back beside the
+answer, so the choice is said aloud rather than exercised in private, and
+[the laws](../chapters/design-laws.qmd) show the note arriving. A reader
+arriving from tidyr will recognize the job here and not the argument list,
+and the appendix on [the verb you know](../appendices/d-the-verb-you-know.qmd)
+holds the name-for-name map.

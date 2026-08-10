@@ -106,10 +106,13 @@ check_promises <- function(book = "book") {
       }
     }
     if (is.na(first_example)) next               # a chapter may run nothing
-    # The gloss follows the *tabset*, not the R chunk: the Python tab and the
-    # closing `:::` sit between the first chunk and the gloss, so the window
-    # opens at the tabset's closing fence when there is one.
-    after <- ln[first_example:min(length(ln), first_example + 25)]
+    # The gloss follows the *tabset*, not the R chunk: the Python tab, the
+    # run tab and the closing `:::` sit between the first chunk and the
+    # gloss, so the window opens at the tabset's closing fence when there is
+    # one. The fence is searched for across 40 lines because a three-tab
+    # tabset whose long lines are wrapped runs past the 25 that two tabs
+    # needed.
+    after <- ln[first_example:min(length(ln), first_example + 40)]
     closes <- which(grepl("^\\s*:::\\s*$", after))
     anchor <- if (length(closes)) first_example + closes[1] - 1 else first_example
     window <- ln[anchor:min(length(ln), anchor + 10)]

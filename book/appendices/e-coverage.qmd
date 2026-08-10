@@ -43,7 +43,7 @@ waiting on the growth test every candidate faces.
 - **Refusals written by one voice, carrying their repair.** Not the engine's
   stack trace, whichever engine it was.
 - **Assumptions printed back.** Where the grammar decided something you did
-  not say, the decision is on the page.
+  not say, the decision is printed beside the answer.
 - **`matching`: the join that cannot multiply rows**, so the question "has a
   partner?" is a different word from the act "bring columns in".
 - **The same sentence wherever it goes.** DuckDB and Spark execute it; dplyr,

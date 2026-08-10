@@ -14,7 +14,8 @@ pipeline can say so. The dots are part of the name:
 
 ```{r}
 show_as("shop.orders then sort [revenue] descending then take 5",
-        "spark", `shop.orders` = data.frame(product = "Widget", revenue = 10))
+        "spark",
+        `shop.orders` = data.frame(product = "Widget", revenue = 10))
 ```
 
 ### Python
@@ -49,7 +50,8 @@ page runs what it describes:
 ```{r}
 warehouse <- DBI::dbConnect(duckdb::duckdb())
 DBI::dbExecute(warehouse, "CREATE SCHEMA shop")
-DBI::dbExecute(warehouse, "CREATE TABLE shop.orders (region VARCHAR, revenue DOUBLE)")
+DBI::dbExecute(warehouse,
+  "CREATE TABLE shop.orders (region VARCHAR, revenue DOUBLE)")
 DBI::dbExecute(warehouse, "INSERT INTO shop.orders VALUES
                              ('West', 100), ('West', 250), ('East', 400)")
 

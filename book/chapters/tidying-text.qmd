@@ -63,13 +63,17 @@ so they go anywhere a value goes.
 ### R
 
 ```{r}
-messy |> add(shout = upper(trim(raw)), quiet = lower(trim(raw))) |> pick(shout, quiet)
+messy |>
+  add(shout = upper(trim(raw)), quiet = lower(trim(raw))) |>
+  pick(shout, quiet)
 ```
 
 ### Python
 
 ```{python}
-messy >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw))) >> pick(col.shout, col.quiet)
+(messy
+  >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw)))
+  >> pick(col.shout, col.quiet))
 ```
 
 

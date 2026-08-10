@@ -154,7 +154,10 @@ Here is the grouping mistyped:
 
 ```{r}
 #| error: true
-collect(returns |> join(places, by = code) |> summarize(q1 = average(q1), by = aera))
+returns |>
+  join(places, by = code) |>
+  summarize(q1 = average(q1), by = aera) |>
+  collect()
 ```
 
 ### Python

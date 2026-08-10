@@ -52,13 +52,15 @@ what it holds, and they are the same two words the reshaping verbs use.
 ### R
 
 ```{r}
-survey |> summarize(where(endsWith(name, "_score"), average(value)), by = region)
+survey |>
+  summarize(where(endsWith(name, "_score"), average(value)), by = region)
 ```
 
 ### Python
 
 ```{python}
-survey >> summarize(where(name.ends("_score"), average(value)), by = col.region)
+(survey
+  >> summarize(where(name.ends("_score"), average(value)), by = col.region))
 ```
 
 

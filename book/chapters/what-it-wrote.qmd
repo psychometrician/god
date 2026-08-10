@@ -45,7 +45,8 @@ show_as(sales |> summarize(revenue = total(revenue), by = product), "sql")
 ### Python
 
 ```{python}
-show_as(sales >> summarize(revenue = total(col.revenue), by = col.product), "sql")
+show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
+        "sql")
 ```
 
 :::
@@ -67,7 +68,8 @@ show_as(sales |> summarize(revenue = total(revenue), by = product), "spark")
 ### Python
 
 ```{python}
-show_as(sales >> summarize(revenue = total(col.revenue), by = col.product), "spark")
+show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
+        "spark")
 ```
 
 :::
@@ -180,7 +182,8 @@ makes, because its pivot cannot work them out from the data:
 
 ```{r}
 #| error: true
-show_as(marks |> widen(name = question, value = mark, by = student), "spark")
+show_as(marks |> widen(name = question, value = mark, by = student),
+        "spark")
 ```
 
 ### Python
@@ -188,8 +191,9 @@ show_as(marks |> widen(name = question, value = mark, by = student), "spark")
 ```{python}
 #| classes: refusal
 try:
-    show_as(marks >> widen(name = col.question, value = col.mark, by = col.student),
-            "spark")
+    show_as(marks
+      >> widen(name = col.question, value = col.mark, by = col.student),
+      "spark")
 except GodError as refusal:
     print(refusal)
 ```

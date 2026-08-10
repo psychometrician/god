@@ -23,7 +23,8 @@ sales |>
 
 ```{python}
 (sales
-  >> add(margin = col.revenue - col.cost, price = col.revenue / col.quantity)
+  >> add(margin = col.revenue - col.cost,
+         price = col.revenue / col.quantity)
   >> pick(col.product, col.quantity, col.margin, col.price))
 ```
 
@@ -33,7 +34,8 @@ sales |>
 ```{r}
 run('
   sales
-    then add [margin] as ([revenue] - [cost]), [price] as ([revenue] / [quantity])
+    then add [margin] as ([revenue] - [cost]),
+         [price] as ([revenue] / [quantity])
     then pick [product, quantity, margin, price]
 ')
 ```
@@ -173,7 +175,8 @@ sales |> add(margin = revenue - cost, doubled = margin * 2) |> collect()
 ```{python}
 #| classes: refusal
 try:
-    collect(sales >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
+    collect(sales
+      >> add(margin = col.revenue - col.cost, doubled = col.margin * 2))
 except GodError as refusal:
     print(refusal)
 ```

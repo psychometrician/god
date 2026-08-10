@@ -18,8 +18,8 @@ head before typing.
 
 ## First question: what is slow-moving stock?
 
-Say the products that sold fewer than ten units all year. Start smaller than
-the question: totals per product.
+Say the products that sold fewer than fifteen units all year. Start smaller
+than the question: totals per product.
 
 ::: {.panel-tabset}
 
@@ -56,13 +56,15 @@ That is most of the answer already. One `keep` finishes it:
 ### R
 
 ```{r}
-sales |> summarize(sold = total(quantity), by = product) |> keep(sold < 10)
+sales |> summarize(sold = total(quantity), by = product) |> keep(sold < 15)
 ```
 
 ### Python
 
 ```{python}
-sales >> summarize(sold = total(col.quantity), by = col.product) >> keep(col.sold < 10)
+(sales
+  >> summarize(sold = total(col.quantity), by = col.product)
+  >> keep(col.sold < 15))
 ```
 
 
@@ -72,13 +74,13 @@ sales >> summarize(sold = total(col.quantity), by = col.product) >> keep(col.sol
 run('
   sales
     then summarize [sold] as total([quantity]) by [product]
-    then keep where ([sold] < 10)
+    then keep where ([sold] < 15)
 ')
 ```
 
 :::
 
-*`sales then summarize [sold] as total([quantity]) by [product] then keep where [sold] < 10`*
+*`sales then summarize [sold] as total([quantity]) by [product] then keep where [sold] < 15`*
 
 Note where the `keep` went: after the summarize, asking about the new `sold`
 column. A `keep` before it would have asked a different question, about
@@ -235,7 +237,8 @@ sales |> keep(region != "East") |> take(2, by = product) |> collect()
 ```{python}
 #| classes: refusal
 try:
-    collect(sales >> keep(col.region != "East") >> take(2, by = col.product))
+    collect(sales >> keep(col.region != "East")
+      >> take(2, by = col.product))
 except GodError as refusal:
     print(refusal)
 ```

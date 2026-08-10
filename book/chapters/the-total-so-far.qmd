@@ -47,7 +47,8 @@ and one row on:
 ```{r}
 diary |>
   sort(on_) |>
-  add(so_far = running_total(x), before = previous(x), after = following(x), by = g)
+  add(so_far = running_total(x), before = previous(x),
+      after = following(x), by = g)
 ```
 
 ### Python
@@ -66,7 +67,8 @@ diary |>
 run('
   diary
     then sort [on_]
-    then add [so_far] as running_total([x]), [before] as previous([x]), [after] as following([x]) by [g]
+    then add [so_far] as running_total([x]), [before] as previous([x]),
+         [after] as following([x]) by [g]
 ')
 ```
 

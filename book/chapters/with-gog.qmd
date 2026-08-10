@@ -97,7 +97,8 @@ which position that is.
 ```{r}
 gains <- nations |>
   sort(year) |>
-  summarize(started = first(life), ended = last(life), by = c(country, continent)) |>
+  summarize(started = first(life), ended = last(life),
+            by = c(country, continent)) |>
   add(gained = ended - started) |>
   sort(descending(gained))
 
@@ -195,7 +196,8 @@ data(top) + bar + x(gained) + y(country) + color(continent)
 ### Python
 
 ```{python}
-gog.data(top) + gog.bar + gog.x(gog.col.gained) + gog.y(gog.col.country) + gog.color(gog.col.continent)
+(gog.data(top) + gog.bar + gog.x(gog.col.gained) + gog.y(gog.col.country)
+   + gog.color(gog.col.continent))
 ```
 
 :::
@@ -274,8 +276,9 @@ data(nations) + point + x(gdp, scale = "log") + y(life) +
 ### Python
 
 ```{python}
-(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
-   + gog.color(gog.col.continent) + gog.size(gog.col.population) + gog.play(gog.col.year))
+(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log")
+   + gog.y(gog.col.life) + gog.color(gog.col.continent)
+   + gog.size(gog.col.population) + gog.play(gog.col.year))
 ```
 
 :::
@@ -301,8 +304,9 @@ data(nations) + point + x(gdp, scale = "log") + y(life) +
 ### Python
 
 ```{python}
-(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
-   + gog.color(gog.col.continent) + gog.play(gog.col.year)) | gog.facet(gog.col.continent)
+(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log")
+   + gog.y(gog.col.life) + gog.color(gog.col.continent)
+   + gog.play(gog.col.year)) | gog.facet(gog.col.continent)
 ```
 
 :::
@@ -351,9 +355,9 @@ data(latest) + point + x(gdp, scale = "log") + y(life) + z(population) +
 ### Python
 
 ```{python}
-(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
-   + gog.z(gog.col.population) + gog.color(gog.col.continent)
-   + gog.space(turn = -50, tilt = 15))
+(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log")
+   + gog.y(gog.col.life) + gog.z(gog.col.population)
+   + gog.color(gog.col.continent) + gog.space(turn = -50, tilt = 15))
 ```
 
 :::
@@ -373,9 +377,9 @@ data(nations) + point + x(gdp, scale = "log") + y(life) + z(population) +
 ### Python
 
 ```{python}
-(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
-   + gog.z(gog.col.population) + gog.color(gog.col.continent)
-   + gog.play(gog.col.year))
+(gog.data(nations) + gog.point + gog.x(gog.col.gdp, scale = "log")
+   + gog.y(gog.col.life) + gog.z(gog.col.population)
+   + gog.color(gog.col.continent) + gog.play(gog.col.year))
 ```
 
 :::
@@ -398,8 +402,9 @@ data(latest) + point + x(gdp, scale = "log") + y(life) +
 ### Python
 
 ```{python}
-(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log") + gog.y(gog.col.life)
-   + gog.color(gog.col.continent) + gog.brush(gog.col.gdp, at = [20000, 60000]))
+(gog.data(latest) + gog.point + gog.x(gog.col.gdp, scale = "log")
+   + gog.y(gog.col.life) + gog.color(gog.col.continent)
+   + gog.brush(gog.col.gdp, at = [20000, 60000]))
 ```
 
 :::

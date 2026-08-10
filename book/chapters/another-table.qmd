@@ -19,7 +19,9 @@ sales |> join(products, by = product) |> pick(product, maker, revenue)
 ### Python
 
 ```{python}
-sales >> join(products, by = col.product) >> pick(col.product, col.maker, col.revenue)
+(sales
+  >> join(products, by = col.product)
+  >> pick(col.product, col.maker, col.revenue))
 ```
 
 
@@ -37,8 +39,10 @@ run('
 
 *`sales then join products by [product] then pick [product, maker, revenue]`*
 
-Leave `by` out and god matches on the column names both tables share, then tells
-you which it chose. It is never silent about a choice you did not make.
+Leave `by` out and god matches on the column names both tables share, then
+prints the choice back as a note beside the answer, the way [the
+laws](design-laws.qmd) show. It is never silent about a choice you did not
+make.
 
 ::: {.panel-tabset}
 
@@ -84,13 +88,17 @@ with the tables the other way round, so it adds no meaning and gets no word.
 ### R
 
 ```{r}
-sales |> join(products, unmatched = "none") |> summarize(revenue = total(revenue), by = maker)
+sales |>
+  join(products, unmatched = "none") |>
+  summarize(revenue = total(revenue), by = maker)
 ```
 
 ### Python
 
 ```{python}
-sales >> join(products, unmatched = "none") >> summarize(revenue = total(col.revenue), by = col.maker)
+(sales
+  >> join(products, unmatched = "none")
+  >> summarize(revenue = total(col.revenue), by = col.maker))
 ```
 
 
@@ -115,7 +123,8 @@ is refused rather than quietly renamed to something you did not choose.
 
 ```{r}
 #| error: true
-overlap <- data.frame(product = "Widget", revenue = 1, stringsAsFactors = FALSE)
+overlap <- data.frame(product = "Widget", revenue = 1,
+                      stringsAsFactors = FALSE)
 collect(sales |> join(overlap, by = product))
 ```
 

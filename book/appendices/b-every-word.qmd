@@ -45,7 +45,8 @@ A pipeline is a table, then `then`, then one of these, repeated.
 
 ```{r}
 #| echo: false
-paste0("`", vocabulary$word[vocabulary$kind == "verb"], "`", collapse = " · ") |> cat()
+paste0("`", vocabulary$word[vocabulary$kind == "verb"], "`", collapse = " · ") |>
+  cat()
 ```
 
 `keep` and `pick` are the two that choose: rows and columns. `add` and
@@ -59,7 +60,8 @@ These go inside `summarize`, and inside `add` when it carries a `by`.
 
 ```{r}
 #| echo: false
-paste0("`", vocabulary$word[vocabulary$kind == "aggregate"], "`", collapse = " · ") |> cat()
+paste0("`", vocabulary$word[vocabulary$kind == "aggregate"], "`", collapse = " · ") |>
+  cat()
 ```
 
 ## The windows
@@ -70,7 +72,8 @@ what order.
 
 ```{r}
 #| echo: false
-paste0("`", vocabulary$word[vocabulary$kind == "window"], "`", collapse = " · ") |> cat()
+paste0("`", vocabulary$word[vocabulary$kind == "window"], "`", collapse = " · ") |>
+  cat()
 ```
 
 ## The scalar functions
@@ -79,7 +82,8 @@ One row in, one value out. These go anywhere a value goes.
 
 ```{r}
 #| echo: false
-paste0("`", vocabulary$word[vocabulary$kind == "scalar"], "`", collapse = " · ") |> cat()
+paste0("`", vocabulary$word[vocabulary$kind == "scalar"], "`", collapse = " · ") |>
+  cat()
 ```
 
 ## The grammar words
@@ -89,7 +93,8 @@ either side of them are related.
 
 ```{r}
 #| echo: false
-paste0("`", vocabulary$word[vocabulary$kind == "word"], "`", collapse = " · ") |> cat()
+paste0("`", vocabulary$word[vocabulary$kind == "word"], "`", collapse = " · ") |>
+  cat()
 ```
 
 ## Where each word is first used

@@ -57,7 +57,9 @@ answers |> lengthen(q1, q2, q3, name = question, value = mark)
 ### Python
 
 ```{python}
-answers >> lengthen(col.q1, col.q2, col.q3, name = col.question, value = col.mark)
+(answers
+  >> lengthen(col.q1, col.q2, col.q3,
+              name = col.question, value = col.mark))
 ```
 
 
@@ -83,13 +85,17 @@ that identifies a row:
 ### R
 
 ```{r}
-answers |> lengthen(all_but(student), name = question, value = mark) |> take(3)
+answers |>
+  lengthen(all_but(student), name = question, value = mark) |>
+  take(3)
 ```
 
 ### Python
 
 ```{python}
-answers >> lengthen(all_but(col.student), name = col.question, value = col.mark) >> take(3)
+(answers
+  >> lengthen(all_but(col.student), name = col.question, value = col.mark)
+  >> take(3))
 ```
 
 
@@ -113,13 +119,18 @@ columns anywhere else:
 ### R
 
 ```{r}
-answers |> lengthen(where(startsWith(name, "q")), name = question, value = mark) |> take(2)
+answers |>
+  lengthen(where(startsWith(name, "q")), name = question, value = mark) |>
+  take(2)
 ```
 
 ### Python
 
 ```{python}
-answers >> lengthen(where(name.starts("q")), name = col.question, value = col.mark) >> take(2)
+(answers
+  >> lengthen(where(name.starts("q")),
+              name = col.question, value = col.mark)
+  >> take(2))
 ```
 
 
@@ -176,7 +187,9 @@ terms <- data.frame(
   q2_2020 = c(12, 22), q2_2021 = c(13, 23)
 )
 
-terms |> lengthen(all_but(id), name = "{question}_{year}", value = mark) |> take(4)
+terms |>
+  lengthen(all_but(id), name = "{question}_{year}", value = mark) |>
+  take(4)
 ```
 
 ### Python
@@ -188,7 +201,9 @@ terms = pd.DataFrame({
     "q2_2020": [12, 22], "q2_2021": [13, 23],
 })
 
-terms >> lengthen(all_but(col.id), name = "{question}_{year}", value = col.mark) >> take(4)
+(terms
+  >> lengthen(all_but(col.id), name = "{question}_{year}", value = col.mark)
+  >> take(4))
 ```
 
 :::

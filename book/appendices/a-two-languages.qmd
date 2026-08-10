@@ -126,7 +126,9 @@ A set of values is written out, because the grammar has no variables yet and
 will not guess at one.
 
 ```{r}
-sales |> keep(region %in% c("West", "East")) |> summarize(n = row_count(), by = region)
+sales |>
+  keep(region %in% c("West", "East")) |>
+  summarize(n = row_count(), by = region)
 ```
 
 ## The names god takes over

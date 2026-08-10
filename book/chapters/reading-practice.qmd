@@ -50,13 +50,17 @@ is not a story about one place.
 ### R
 
 ```{r}
-sales |> summarize(orders = row_count(), revenue = total(revenue), by = c(region, product))
+sales |>
+  summarize(orders = row_count(), revenue = total(revenue),
+            by = c(region, product))
 ```
 
 ### Python
 
 ```{python}
-sales >> summarize(orders = row_count(), revenue = total(col.revenue), by = [col.region, col.product])
+(sales
+  >> summarize(orders = row_count(), revenue = total(col.revenue),
+               by = [col.region, col.product]))
 ```
 
 
@@ -65,7 +69,8 @@ sales >> summarize(orders = row_count(), revenue = total(col.revenue), by = [col
 ```{r}
 run('
   sales
-    then summarize [orders] as row_count(), [revenue] as total([revenue]) by [region, product]
+    then summarize [orders] as row_count(), [revenue] as total([revenue])
+         by [region, product]
 ')
 ```
 
@@ -96,7 +101,8 @@ sales |>
 ```{python}
 (sales
   >> add(price = col.revenue / col.quantity)
-  >> summarize(price = average(col.price), sold = total(col.quantity), by = col.product)
+  >> summarize(price = average(col.price), sold = total(col.quantity),
+               by = col.product)
   >> sort(descending(col.price)))
 ```
 
@@ -107,7 +113,8 @@ sales |>
 run('
   sales
     then add [price] as ([revenue] / [quantity])
-    then summarize [price] as average([price]), [sold] as total([quantity]) by [product]
+    then summarize [price] as average([price]), [sold] as total([quantity])
+         by [product]
     then sort [price] descending
 ')
 ```
@@ -165,7 +172,9 @@ survey |> keep(joined < "2026-04-01") |> pick(name, region, joined)
 ### Python
 
 ```{python}
-survey >> keep(col.joined < "2026-04-01") >> pick(col.name, col.region, col.joined)
+(survey
+  >> keep(col.joined < "2026-04-01")
+  >> pick(col.name, col.region, col.joined))
 ```
 
 
@@ -194,13 +203,17 @@ date words for every shape that is not so cooperative.
 ### R
 
 ```{r}
-gapminder |> keep(year == 2007) |> summarize(countries = row_count(), by = continent)
+gapminder |>
+  keep(year == 2007) |>
+  summarize(countries = row_count(), by = continent)
 ```
 
 ### Python
 
 ```{python}
-gapminder >> keep(col.year == 2007) >> summarize(countries = row_count(), by = col.continent)
+(gapminder
+  >> keep(col.year == 2007)
+  >> summarize(countries = row_count(), by = col.continent))
 ```
 
 
@@ -234,7 +247,10 @@ sales |> sort(cost) |> take(1, by = region) |> pick(region, product, cost)
 ### Python
 
 ```{python}
-sales >> sort(col.cost) >> take(1, by = col.region) >> pick(col.region, col.product, col.cost)
+(sales
+  >> sort(col.cost)
+  >> take(1, by = col.region)
+  >> pick(col.region, col.product, col.cost))
 ```
 
 
@@ -295,8 +311,9 @@ run('
 *`sales then add [share] as [revenue] / total([revenue]) by [region] then sort [region], [share] descending then pick [region, product, revenue, share]`*
 
 Each region's shares sum to one, and the biggest single share in the table
-belongs to the West's largest order. This is the hardest sentence in the
-chapter, and it is made of a verb from chapter 4 and a word from chapter 8.
+sits in the North, where one Gadget order carries nearly half its region.
+This is the hardest sentence in the chapter, and it is made of a verb from
+chapter 4 and a word from chapter 8.
 
 ## What you just did
 

@@ -108,7 +108,8 @@ Here is the same pipeline in Python.
 (sales
   >> keep(col.region == "West")
   >> add(margin = col.revenue - col.cost)
-  >> summarize(margin = total(col.margin), orders = row_count(), by = col.product)
+  >> summarize(margin = total(col.margin), orders = row_count(),
+               by = col.product)
   >> sort(descending(col.margin))
   >> take(10))
 ```
@@ -150,7 +151,11 @@ written as plain text, and it is the same grammar.
 ```
 sales
   then keep where [region] is "West"
-  then summarize [margin] as total([margin]) by [product]
+  then add [margin] as [revenue] - [cost]
+  then summarize [margin] as total([margin]),
+       [orders] as row_count() by [product]
+  then sort [margin] descending
+  then take 10
 ```
 
 Both versions above produce exactly this, which is why a pipeline can move
@@ -208,6 +213,103 @@ Every example in this book runs on the same few tables, declared here once.
 The cast is closed. A new table costs you attention, so when a chapter needs a
 special shape (two rows that collide, a table with one column) it builds the
 smallest table that shows it, and returns to the cast in the next example.
+
+The three tables that carry most pages are typed out below in full, so your
+session can hold the same rows this book computes from. The rest of the cast
+is smaller, and each of those tables is written out in the chapter that
+introduces it.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales <- data.frame(
+  date     = c("2025-11-03", "2025-11-17", "2025-12-05", "2025-12-22",
+               "2026-01-09", "2026-01-26", "2026-02-14", "2026-03-03",
+               "2026-04-11", "2026-05-06", "2026-06-19", "2026-07-08",
+               "2026-08-24", "2026-09-15", "2026-10-02"),
+  region   = c("West", "East", "West", "North", "East", "West", "North",
+               "East", "West", "North", "East", "West", "North", "East",
+               "West"),
+  product  = c("Widget", "Gadget", "Doohickey", "Widget", "Widget",
+               "Gadget", "Doohickey", "Doohickey", "Widget", "Gadget",
+               "Sprocket", "Sprocket", "Widget", "Gadget", "Widget"),
+  quantity = c(4L, 2L, 3L, 6L, 8L, 5L, 2L, 5L, 2L, 4L, 10L, 6L, 3L, 1L, 5L),
+  revenue  = c(100, 120, 120, 150, 200, 300, 80, 200, 50, 240, 150, 90, 75,
+               60, 125),
+  cost     = c(40, 80, 75, 60, 80, 200, 50, 125, 20, 160, 120, 72, 30, 40,
+               50),
+  stringsAsFactors = FALSE
+)
+
+products <- data.frame(
+  product = c("Widget", "Gadget", "Doohickey", "Gizmo"),
+  maker   = c("Acme", "Globex", "Initech", "Initrode"),
+  stringsAsFactors = FALSE
+)
+
+survey <- data.frame(
+  respondent = 1:6,
+  name       = c("ana", "ben", "cal", "dee", "eli", "fay"),
+  region     = c("West", "East", "North", "West", "East", "North"),
+  joined     = c("2026-01-12", "2026-02-03", "2026-02-27", "2026-03-15",
+                 "2026-04-01", "2026-04-22"),
+  q1_score   = c(4L, 5L, 3L, 4L, 2L, 5L),
+  q2_score   = c(2L, 5L, 5L, 3L, 4L, 4L),
+  q3_score   = c(5L, 4L, 2L, 5L, 3L, 4L),
+  q4_score   = c(3L, 3L, 4L, 2L, 5L, 5L),
+  q5_score   = c(4L, 2L, 5L, 4L, 4L, 3L),
+  q6_score   = c(5L, 5L, 3L, 3L, 2L, 4L),
+  q7_score   = c(2L, 4L, 4L, 5L, 3L, 5L),
+  q8_score   = c(3L, 5L, 2L, 4L, 5L, 4L)
+)
+```
+
+### Python
+
+```{python}
+sales = pd.DataFrame({
+    "date":     ["2025-11-03", "2025-11-17", "2025-12-05", "2025-12-22",
+                 "2026-01-09", "2026-01-26", "2026-02-14", "2026-03-03",
+                 "2026-04-11", "2026-05-06", "2026-06-19", "2026-07-08",
+                 "2026-08-24", "2026-09-15", "2026-10-02"],
+    "region":   ["West", "East", "West", "North", "East", "West", "North",
+                 "East", "West", "North", "East", "West", "North", "East",
+                 "West"],
+    "product":  ["Widget", "Gadget", "Doohickey", "Widget", "Widget",
+                 "Gadget", "Doohickey", "Doohickey", "Widget", "Gadget",
+                 "Sprocket", "Sprocket", "Widget", "Gadget", "Widget"],
+    "quantity": [4, 2, 3, 6, 8, 5, 2, 5, 2, 4, 10, 6, 3, 1, 5],
+    "revenue":  [100, 120, 120, 150, 200, 300, 80, 200, 50, 240, 150, 90,
+                 75, 60, 125],
+    "cost":     [40, 80, 75, 60, 80, 200, 50, 125, 20, 160, 120, 72, 30,
+                 40, 50],
+})
+
+products = pd.DataFrame({
+    "product": ["Widget", "Gadget", "Doohickey", "Gizmo"],
+    "maker":   ["Acme", "Globex", "Initech", "Initrode"],
+})
+
+survey = pd.DataFrame({
+    "respondent": [1, 2, 3, 4, 5, 6],
+    "name":       ["ana", "ben", "cal", "dee", "eli", "fay"],
+    "region":     ["West", "East", "North", "West", "East", "North"],
+    "joined":     ["2026-01-12", "2026-02-03", "2026-02-27", "2026-03-15",
+                   "2026-04-01", "2026-04-22"],
+    "q1_score":   [4, 5, 3, 4, 2, 5],
+    "q2_score":   [2, 5, 5, 3, 4, 4],
+    "q3_score":   [5, 4, 2, 5, 3, 4],
+    "q4_score":   [3, 3, 4, 2, 5, 5],
+    "q5_score":   [4, 2, 5, 4, 4, 3],
+    "q6_score":   [5, 5, 3, 3, 2, 4],
+    "q7_score":   [2, 4, 4, 5, 3, 5],
+    "q8_score":   [3, 5, 2, 4, 5, 4],
+})
+```
+
+:::
 
 ## Why there is another one of these
 
@@ -570,12 +672,18 @@ In R, from R-universe, as a binary with nothing else to set up:
 
 ```r
 install.packages("god",
-  repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
+  repos = c("https://psychometrician.r-universe.dev",
+            "https://cloud.r-project.org"))
 ```
+
+Then `library(god)` attaches the verbs, and every example in this book runs
+as printed.
 
 Python is next: the packages are built, and when the release lands it will be
 `pip install grammar-of-data`, with `import god` regardless, because the PyPI
-name `god` was taken in 2016 by an unrelated package.
+name `god` was taken in 2016 by an unrelated package. The examples in this
+book use `from god import *`; `import god` works too, with a prefix on every
+name.
 
 Every example shown in both languages ran in both when this book was built,
 exactly as printed, and a page whose two tabs disagree is a build the book

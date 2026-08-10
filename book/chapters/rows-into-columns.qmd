@@ -44,7 +44,8 @@ marks >> widen(name = col.question, value = col.mark, by = col.student)
 already named, which is usually right and is occasionally a surprise: one column
 you had forgotten about makes every row distinct, and the table comes back as
 tall as it went in. The grammar tells you what it assumed rather than deciding
-quietly.
+quietly: a note arrives beside the answer, and [the laws](design-laws.qmd)
+show one arriving.
 
 Because the two verbs are inverses and share their defaults, the round trip is a
 sentence with no arguments in it at all:
@@ -111,11 +112,12 @@ try:
         "question": ["q1", "q1"],
         "mark":     [1, 9],
     })
-    collect(twice >> widen(name = col.question, value = col.mark, by = col.student))
+    collect(twice
+      >> widen(name = col.question, value = col.mark, by = col.student))
 except GodError as refusal:
-    # This refusal is raised by the engine as the query runs, and the binding
-    # hands it over as a `GodError` like every other one. The words are the
-    # grammar's, wrapped in the engine's report.
+    # This refusal is raised by the engine as the query runs, and the
+    # binding hands it over as a `GodError` like every other one. The words
+    # are the grammar's, wrapped in the engine's report.
     print(refusal)
 ```
 
@@ -135,7 +137,9 @@ twice |> widen(name = question, value = average(mark), by = student)
 ### Python
 
 ```{python}
-twice >> widen(name = col.question, value = average(col.mark), by = col.student)
+(twice
+  >> widen(name = col.question, value = average(col.mark),
+           by = col.student))
 ```
 
 :::
@@ -155,7 +159,10 @@ and is not allowed to be the middle of one:
 
 ```{r}
 #| error: true
-collect(marks |> widen(name = question, value = mark, by = student) |> take(1))
+marks |>
+  widen(name = question, value = mark, by = student) |>
+  take(1) |>
+  collect()
 ```
 
 ### Python
@@ -163,7 +170,9 @@ collect(marks |> widen(name = question, value = mark, by = student) |> take(1))
 ```{python}
 #| classes: refusal
 try:
-    collect(marks >> widen(name = col.question, value = col.mark, by = col.student) >> take(1))
+    collect(marks
+      >> widen(name = col.question, value = col.mark, by = col.student)
+      >> take(1))
 except GodError as refusal:
     print(refusal)
 ```

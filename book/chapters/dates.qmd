@@ -68,7 +68,8 @@ diary |>
 ```{python}
 (diary
   >> add(on = to_date(col.on_))
-  >> add(y = year(col.on), m = month(col.on), d = day(col.on), wd = weekday(col.on))
+  >> add(y = year(col.on), m = month(col.on), d = day(col.on),
+         wd = weekday(col.on))
   >> pick(col.on_, col.y, col.m, col.d, col.wd))
 ```
 
@@ -79,7 +80,8 @@ diary |>
 run('
   diary
     then add [on] as to_date([on_])
-    then add [y] as year([on]), [m] as month([on]), [d] as day([on]), [wd] as weekday([on])
+    then add [y] as year([on]), [m] as month([on]), [d] as day([on]),
+         [wd] as weekday([on])
     then pick [on_, y, m, d, wd]
 ')
 ```
@@ -94,13 +96,17 @@ no hour in it, so on the dates above it answers zero rather than refusing.
 ### R
 
 ```{r}
-data.frame(at = "2026-01-02 14:30:00") |> add(h = hour(to_date(at))) |> pick(at, h)
+data.frame(at = "2026-01-02 14:30:00") |>
+  add(h = hour(to_date(at))) |>
+  pick(at, h)
 ```
 
 ### Python
 
 ```{python}
-pd.DataFrame({"at": ["2026-01-02 14:30:00"]}) >> add(h = hour(to_date(col.at))) >> pick(col.at, col.h)
+(pd.DataFrame({"at": ["2026-01-02 14:30:00"]})
+  >> add(h = hour(to_date(col.at)))
+  >> pick(col.at, col.h))
 ```
 
 :::
