@@ -1,6 +1,12 @@
 project:
   type: book
   output-dir: _book
+  # The cast's CSVs publish beside the book, so `god_table("sales")` in either
+  # language fetches the same rows every rendered table was computed from. One
+  # copy, served from the site, is what keeps a reader's table and the page's
+  # table the same table.
+  resources:
+    - data/
 
 book:
   title: "god: A Grammar of Data"

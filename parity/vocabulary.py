@@ -41,6 +41,7 @@ PYTHON_ONLY = {
     "run": "the text form",
     "show_as": "the text form",
     "god_sql": "the text form",
+    "god_table": "the book's tables, fetched by name from the published site",
 }
 
 # The launcher names R exports beside its verbs, for the same reason.
@@ -51,7 +52,7 @@ PYTHON_ONLY = {
 # nothing said; R has no such object, and a warehouse connection is a `DBI`
 # handle somebody has to hand over. The sentences and every word in them are
 # identical either way, which is what may not differ.
-R_EXTRA = {"collect", "run", "show_as", "god_sql", "use_engine"}
+R_EXTRA = {"collect", "run", "show_as", "god_sql", "god_table", "use_engine"}
 
 
 def engine_vocabulary() -> dict[str, set[str]]:

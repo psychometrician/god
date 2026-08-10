@@ -31,6 +31,7 @@ export(use_engine)
 export(run)
 export(show_as)
 export(god_sql)
+export(god_table)
 
 # A pipeline is deferred, so it needs to say what it is when printed, and to
 # become a table when something asks it to.

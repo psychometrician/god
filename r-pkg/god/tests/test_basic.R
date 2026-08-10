@@ -849,5 +849,20 @@ local({
   check("the whole name is not one identifier",      grepl("`sch.orders`", joined, fixed = TRUE), FALSE)
 })
 
+
+# --- god_table(): the book's tables, fetched by name -------------------------
+# Binding plumbing rather than a word of the grammar. The offline checks always
+# run; the fetch itself is never in the suite, because a suite has to pass on a
+# laptop with no network. The sibling package ships `book_table` for its own
+# book, and the two names differ on purpose: loaded together, neither masks
+# the other's tables.
+local({
+  refusal <- tryCatch(god_table(42), error = function(e) conditionMessage(e))
+  check("god_table refuses a non-name",        is.character(refusal), TRUE)
+  check("and the message names the helper",    grepl("god_table", refusal, fixed = TRUE), TRUE)
+  check("the tables come from the published book",
+        god:::god_book_data_url, "https://psychometrician.github.io/god-book/data/")
+})
+
 cat(sprintf("\n%d passed, %d failed\n", passed, failed))
 if (failed > 0) quit(status = 1)

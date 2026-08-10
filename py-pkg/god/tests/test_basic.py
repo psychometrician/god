@@ -807,5 +807,18 @@ check_error("a dot with nothing after it says so",
             lambda: god.show_as("shop. then take 1", "sql", **{"shop": pd.DataFrame({"a": [1]})}),
             "names a table in parts")
 
+
+# --- god_table(): the book's tables, fetched by name -------------------------
+# Binding plumbing rather than a word of the grammar. The offline checks always
+# run; the fetch itself is never in the suite, because a suite has to pass on a
+# laptop with no network. The sibling package ships book_table for its own
+# book, and the two names differ on purpose: loaded together, neither masks
+# the other's tables.
+check("the tables come from the published book",
+      god.tables.GOD_BOOK_DATA_URL,
+      "https://psychometrician.github.io/god-book/data/")
+check_error("god_table with something that is not a name",
+            lambda: god.god_table(42), "god_table")
+
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)

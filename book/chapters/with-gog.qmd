@@ -20,15 +20,15 @@ suppressMessages(library(gog))
 # than assumed. The cure is splitting one string literal in gog's runtime,
 # which is the sibling project's change to make. The workflow's log gate
 # matches `WARN:` with its colon, so these lines do not block a publish.
-nations <- read.csv(find_up("book/data/gm_all.csv"))
+nations <- read.csv(find_up("book/data/gapminder.csv"))
 ```
 
 ```{python}
 #| include: false
 import gog
-_data = next(p / "book" / "data" / "gm_all.csv"
+_data = next(p / "book" / "data" / "gapminder.csv"
              for p in (pathlib.Path.cwd(), *pathlib.Path.cwd().parents)
-             if (p / "book" / "data" / "gm_all.csv").exists())
+             if (p / "book" / "data" / "gapminder.csv").exists())
 nations = pd.read_csv(_data)
 ```
 

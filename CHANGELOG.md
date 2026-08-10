@@ -5,6 +5,15 @@ a person using god can see.
 
 ## Unreleased
 
+### The book's tables, one call away
+
+`god_table("sales")` fetches any table from the book's cast, in either
+language, from the copies published beside the book itself — so the rows in
+your session are the rows every page was computed from, and nothing ships
+stale inside a package. The helper is deliberately not named the way the
+sibling package names its own: the two are meant to be loaded together, and
+neither should mask the other's tables.
+
 ### The composition rules are one table, and you can ask for it
 
 `god --seats` prints where each kind of function can stand: every seat and

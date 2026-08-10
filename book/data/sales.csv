@@ -1,0 +1,16 @@
+"date","region","product","quantity","revenue","cost"
+"2025-11-03","West","Widget",4,100,40
+"2025-11-17","East","Gadget",2,120,80
+"2025-12-05","West","Doohickey",3,120,75
+"2025-12-22","North","Widget",6,150,60
+"2026-01-09","East","Widget",8,200,80
+"2026-01-26","West","Gadget",5,300,200
+"2026-02-14","North","Doohickey",2,80,50
+"2026-03-03","East","Doohickey",5,200,125
+"2026-04-11","West","Widget",2,50,20
+"2026-05-06","North","Gadget",4,240,160
+"2026-06-19","East","Sprocket",10,150,120
+"2026-07-08","West","Sprocket",6,90,72
+"2026-08-24","North","Widget",3,75,30
+"2026-09-15","East","Gadget",1,60,40
+"2026-10-02","West","Widget",5,125,50

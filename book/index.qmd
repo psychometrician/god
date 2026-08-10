@@ -310,6 +310,19 @@ survey = pd.DataFrame({
 
 :::
 
+Typing them in is one road. The other is one call: every table in the cast
+is published beside this book, and `god_table` fetches one by name, in
+either language, so the rows in your session are the rows every page here
+computed from.
+
+```r
+sales <- god_table("sales")
+```
+
+```python
+sales = god_table("sales")
+```
+
 ## Why there is another one of these
 
 You have probably met at least one tool for this already. Here is one operation,

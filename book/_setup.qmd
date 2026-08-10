@@ -156,7 +156,7 @@ diary <- data.frame(
 # The one table too large to check by eye, for the moments a verb has to
 # prove it survives scale. 1,704 rows: Gapminder's country panel, CC BY 4.0,
 # vendored beside the book so a render needs no network.
-gapminder <- read.csv(find_up("book/data/gm_all.csv"), stringsAsFactors = FALSE)
+gapminder <- read.csv(find_up("book/data/gapminder.csv"), stringsAsFactors = FALSE)
 ```
 
 ```{python}
@@ -240,6 +240,6 @@ diary = pd.DataFrame({
 
 # The R block's walk, respelled: the same file, found the same way.
 _data_dir = next(p for p in (_here, *_here.parents)
-                 if (p / "book" / "data" / "gm_all.csv").exists())
-gapminder = pd.read_csv(_data_dir / "book" / "data" / "gm_all.csv")
+                 if (p / "book" / "data" / "gapminder.csv").exists())
+gapminder = pd.read_csv(_data_dir / "book" / "data" / "gapminder.csv")
 ```
