@@ -11,9 +11,13 @@
 #
 # Four assertions, over every tabset in every chapter:
 #   1. A `.panel-tabset` holds exactly the labels `### R` then `### Python`,
-#      in that order.
+#      in that order, with one optional third label, `### run`: the text form
+#      of the same sentence, in the one call both languages spell identically.
+#      A run tab holds exactly one `{r}` chunk and that chunk calls `run('`,
+#      so the third tab cannot quietly become a second R tab.
 #   2. A tabset that runs R runs Python too: executable `{r}` chunks and
-#      `{python}` chunks appear in matched, non-zero counts.
+#      `{python}` chunks appear in matched, non-zero counts, the run tab's
+#      own chunk set aside.
 #   3. A refusal shown in R (`#| error: true`) is shown in Python in the same
 #      tabset (`except GodError`), and the Python side prints what it caught.
 #   4. No Python tab anywhere catches bare `Exception`. `GodError` is the one
@@ -48,15 +52,32 @@ check_tabs <- function(book = "book") {
       body <- ln[start:end]
 
       labels <- trimws(grep("^\\s*### ", body, value = TRUE))
-      if (!identical(labels, c("### R", "### Python"))) {
+      has_run <- identical(labels, c("### R", "### Python", "### run"))
+      if (!identical(labels, c("### R", "### Python")) && !has_run) {
         bad <- c(bad, sprintf(
-          "  %s:%d tabs are (%s); every tabset is `### R` then `### Python`",
+          "  %s:%d tabs are (%s); a tabset is `### R` then `### Python`, with `### run` allowed third",
           short, start, paste(labels, collapse = ", ")))
         next
       }
 
-      r_chunks <- sum(grepl("^\\s*```\\{r\\}", body))
-      py_chunks <- sum(grepl("^\\s*```\\{python\\}", body))
+      main <- body
+      if (has_run) {
+        at <- grep("^\\s*### run\\s*$", body)[1]
+        run_part <- body[at:length(body)]
+        main <- body[1:(at - 1L)]
+        run_chunks <- sum(grepl("^\\s*```\\{r\\}", run_part))
+        if (run_chunks != 1L ||
+            sum(grepl("^\\s*```\\{python\\}", run_part)) != 0L ||
+            !any(grepl("run('", run_part, fixed = TRUE))) {
+          bad <- c(bad, sprintf(
+            "  %s:%d the run tab holds one `{r}` chunk calling `run('...')`, and this one does not",
+            short, start))
+          next
+        }
+      }
+
+      r_chunks <- sum(grepl("^\\s*```\\{r\\}", main))
+      py_chunks <- sum(grepl("^\\s*```\\{python\\}", main))
       if (r_chunks == 0 || r_chunks != py_chunks) {
         bad <- c(bad, sprintf(
           "  %s:%d %d R chunk(s) against %d Python; a sentence appears in both or in neither",

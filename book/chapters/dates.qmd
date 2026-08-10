@@ -72,6 +72,16 @@ diary |>
   >> pick(col.on_, col.y, col.m, col.d, col.wd))
 ```
 
+
+### run
+
+```{r}
+run('diary
+  then add [on] as to_date([on_])
+  then add [y] as year([on]), [m] as month([on]), [d] as day([on]), [wd] as weekday([on])
+  then pick [on_, y, m, d, wd]')
+```
+
 :::
 
 `hour` is the fifth, and it wants a value that carries a time. A plain date has

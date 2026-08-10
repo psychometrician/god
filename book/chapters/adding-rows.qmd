@@ -53,6 +53,15 @@ sales |> add_rows(sales) |> summarize(rows = row_count())
 sales >> add_rows(sales) >> summarize(rows = row_count())
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add_rows sales
+  then summarize [rows] as row_count()')
+```
+
 :::
 
 Both tables need the same columns. A column on one side only is refused rather

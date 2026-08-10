@@ -26,6 +26,15 @@ sales |> sort(descending(revenue)) |> take(5)
 sales >> sort(descending(col.revenue)) >> take(5)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then sort [revenue] descending
+  then take 5')
+```
+
 :::
 
 *`sales then sort [revenue] descending then take 5`*
@@ -47,6 +56,15 @@ sales |> sort(descending(revenue)) |> take(1, by = region)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(1, by = col.region)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then sort [revenue] descending
+  then take 1 by [region]')
 ```
 
 :::
@@ -73,6 +91,15 @@ sales |> keep(quantity >= 5) |> sort(descending(quantity))
 sales >> keep(col.quantity >= 5) >> sort(descending(col.quantity))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then keep where ([quantity] >= 5)
+  then sort [quantity] descending')
+```
+
 :::
 
 *`sales then keep where [quantity] >= 5 then sort [quantity] descending`*
@@ -97,6 +124,15 @@ sales |> pick(region, product) |> drop_duplicates()
 
 ```{python}
 sales >> pick(col.region, col.product) >> drop_duplicates()
+```
+
+
+### run
+
+```{r}
+run('sales
+  then pick [region, product]
+  then drop_duplicates')
 ```
 
 :::

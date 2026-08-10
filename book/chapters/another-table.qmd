@@ -22,6 +22,15 @@ sales |> join(products, by = product) |> pick(product, maker, revenue)
 sales >> join(products, by = col.product) >> pick(col.product, col.maker, col.revenue)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then join products by [product]
+  then pick [product, maker, revenue]')
+```
+
 :::
 
 *`sales then join products by [product] then pick [product, maker, revenue]`*
@@ -41,6 +50,15 @@ sales |> join(products) |> take(2)
 
 ```{python}
 sales >> join(products) >> take(2)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then join products
+  then take 2')
 ```
 
 :::
@@ -69,6 +87,15 @@ sales |> join(products, unmatched = "none") |> summarize(revenue = total(revenue
 
 ```{python}
 sales >> join(products, unmatched = "none") >> summarize(revenue = total(col.revenue), by = col.maker)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then join products unmatched "none"
+  then summarize [revenue] as total([revenue]) by [maker]')
 ```
 
 :::

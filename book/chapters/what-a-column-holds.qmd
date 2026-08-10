@@ -22,6 +22,14 @@ survey |> pick(where(kind == "number"))
 survey >> pick(where(kind == "number"))
 ```
 
+
+### run
+
+```{r}
+run('survey
+  then pick where (kind is "number")')
+```
+
 :::
 
 *`survey then pick where (kind is "number")`*
@@ -42,6 +50,14 @@ survey |> pick(where(kind == "number" & startsWith(name, "q")))
 survey >> pick(where((kind == "number") & name.starts("q")))
 ```
 
+
+### run
+
+```{r}
+run('survey
+  then pick where ((kind is "number") and (name starts "q"))')
+```
+
 :::
 
 Put it with `summarize` and you have the sentence people reach for most: average
@@ -59,6 +75,14 @@ survey |> summarize(where(kind == "number", average(value)))
 
 ```{python}
 survey >> summarize(where(kind == "number", average(value)))
+```
+
+
+### run
+
+```{r}
+run('survey
+  then summarize where (kind is "number") as average(value)')
 ```
 
 :::
@@ -136,6 +160,14 @@ survey |> keep(startsWith(region, "W"))
 
 ```{python}
 survey >> keep(col.region.starts("W"))
+```
+
+
+### run
+
+```{r}
+run('survey
+  then keep where ([region] starts "W")')
 ```
 
 :::

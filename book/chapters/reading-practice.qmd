@@ -26,6 +26,14 @@ sales |> keep(revenue >= 200)
 sales >> keep(col.revenue >= 200)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then keep where ([revenue] >= 200)')
+```
+
 :::
 
 *`sales then keep where [revenue] >= 200`*
@@ -47,6 +55,14 @@ sales |> summarize(orders = row_count(), revenue = total(revenue), by = c(region
 
 ```{python}
 sales >> summarize(orders = row_count(), revenue = total(col.revenue), by = [col.region, col.product])
+```
+
+
+### run
+
+```{r}
+run('sales
+  then summarize [orders] as row_count(), [revenue] as total([revenue]) by [region, product]')
 ```
 
 :::
@@ -80,6 +96,16 @@ sales |>
   >> sort(descending(col.price)))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [price] as ([revenue] / [quantity])
+  then summarize [price] as average([price]), [sold] as total([quantity]) by [product]
+  then sort [price] descending')
+```
+
 :::
 
 *`sales then add [price] as [revenue] / [quantity] then summarize [price] as average([price]), [sold] as total([quantity]) by [product] then sort [price] descending`*
@@ -105,6 +131,15 @@ sales |> sort(descending(cost)) |> take(2)
 sales >> sort(descending(col.cost)) >> take(2)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then sort [cost] descending
+  then take 2')
+```
+
 :::
 
 *`sales then sort [cost] descending then take 2`*
@@ -123,6 +158,15 @@ survey |> keep(joined < "2026-04-01") |> pick(name, region, joined)
 
 ```{python}
 survey >> keep(col.joined < "2026-04-01") >> pick(col.name, col.region, col.joined)
+```
+
+
+### run
+
+```{r}
+run('survey
+  then keep where ([joined] < "2026-04-01")
+  then pick [name, region, joined]')
 ```
 
 :::
@@ -149,6 +193,15 @@ gapminder |> keep(year == 2007) |> summarize(countries = row_count(), by = conti
 gapminder >> keep(col.year == 2007) >> summarize(countries = row_count(), by = col.continent)
 ```
 
+
+### run
+
+```{r}
+run('gapminder
+  then keep where ([year] is 2007)
+  then summarize [countries] as row_count() by [continent]')
+```
+
 :::
 
 *`gapminder then keep where [year] is 2007 then summarize [countries] as row_count() by [continent]`*
@@ -170,6 +223,16 @@ sales |> sort(cost) |> take(1, by = region) |> pick(region, product, cost)
 
 ```{python}
 sales >> sort(col.cost) >> take(1, by = col.region) >> pick(col.region, col.product, col.cost)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then sort [cost]
+  then take 1 by [region]
+  then pick [region, product, cost]')
 ```
 
 :::
@@ -199,6 +262,16 @@ sales |>
   >> add(share = col.revenue / total(col.revenue), by = col.region)
   >> sort(col.region, descending(col.share))
   >> pick(col.region, col.product, col.revenue, col.share))
+```
+
+
+### run
+
+```{r}
+run('sales
+  then add [share] as ([revenue] / total([revenue])) by [region]
+  then sort [region], [share] descending
+  then pick [region, product, revenue, share]')
 ```
 
 :::

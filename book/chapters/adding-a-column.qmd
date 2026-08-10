@@ -27,6 +27,15 @@ sales |>
   >> pick(col.product, col.quantity, col.margin, col.price))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [margin] as ([revenue] - [cost]), [price] as ([revenue] / [quantity])
+  then pick [product, quantity, margin, price]')
+```
+
 :::
 
 *`sales then add [margin] as [revenue] - [cost], [price] as [revenue] / [quantity] then pick [product, quantity, margin, price]`*
@@ -73,6 +82,17 @@ sales |>
   >> sort(descending(col.margin)))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [margin] as ([revenue] - [cost])
+  then add [doubled] as ([margin] * 2)
+  then keep where ([margin] > 50)
+  then sort [margin] descending')
+```
+
 :::
 
 This is worth meeting early if you are arriving from dplyr or pandas, because
@@ -101,6 +121,15 @@ sales |> add(revenue = revenue * 2) |> pick(product, revenue)
 
 ```{python}
 sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then add [revenue] as ([revenue] * 2)
+  then pick [product, revenue]')
 ```
 
 :::

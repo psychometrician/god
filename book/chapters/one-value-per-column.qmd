@@ -24,6 +24,14 @@ survey |> add(where(startsWith(name, "q"), value * 10))
 survey >> add(where(name.starts("q"), value * 10))
 ```
 
+
+### run
+
+```{r}
+run('survey
+  then add where (name starts "q") as (value * 10)')
+```
+
 :::
 
 *`survey then add where (name starts "q") as (value * 10)`*
@@ -49,6 +57,14 @@ survey |> summarize(where(endsWith(name, "_score"), average(value)), by = region
 
 ```{python}
 survey >> summarize(where(name.ends("_score"), average(value)), by = col.region)
+```
+
+
+### run
+
+```{r}
+run('survey
+  then summarize where (name ends "_score") as average(value) by [region]')
 ```
 
 :::

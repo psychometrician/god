@@ -63,6 +63,15 @@ answers |> lengthen(q1, q2, q3) |> widen()
 answers >> lengthen(col.q1, col.q2, col.q3) >> widen()
 ```
 
+
+### run
+
+```{r}
+run('answers
+  then lengthen [q1, q2, q3]
+  then widen')
+```
+
 :::
 
 ## When two rows want the same cell
@@ -178,6 +187,15 @@ marks |>
  >> widen(name = col.question, value = col.mark, by = col.student,
           giving = [col.q1, col.q2])
  >> add(gain = col.q2 - col.q1))
+```
+
+
+### run
+
+```{r}
+run('marks
+  then widen name [question], value [mark] by [student] giving [q1, q2]
+  then add [gain] as ([q2] - [q1])')
 ```
 
 :::

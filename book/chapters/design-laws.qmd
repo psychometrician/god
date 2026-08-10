@@ -50,6 +50,14 @@ marks |> widen(name = question, value = mark)
 marks >> widen(name = col.question, value = col.mark)
 ```
 
+
+### run
+
+```{r}
+run('marks
+  then widen name [question], value [mark]')
+```
+
 :::
 
 The line above the table is the law at work: the grouping was assumed, and

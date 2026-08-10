@@ -26,6 +26,14 @@ sales |> summarize(revenue = total(revenue), by = product)
 sales >> summarize(revenue = total(col.revenue), by = col.product)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [revenue] as total([revenue]) by [product]')
+```
+
 :::
 
 *`sales then summarize [revenue] as total([revenue]) by [product]`*
@@ -59,6 +67,16 @@ sales |>
   >> sort(descending(col.share)))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [revenue] as total([revenue]) by [region]
+  then add [share] as ([revenue] / total([revenue]))
+  then sort [share] descending')
+```
+
 :::
 
 *`sales then summarize [revenue] as total([revenue]) by [region] then add [share] as [revenue] / total([revenue]) then sort [share] descending`*
@@ -85,6 +103,14 @@ sales |> summarize(products = unique_count(product), orders = row_count())
 
 ```{python}
 sales >> summarize(products = unique_count(col.product), orders = row_count())
+```
+
+
+### run
+
+```{r}
+run('sales
+  then summarize [products] as unique_count([product]), [orders] as row_count()')
 ```
 
 :::
@@ -115,6 +141,15 @@ sales |>
 (sales
   >> add(margin = col.revenue - col.cost)
   >> summarize(margin = total(col.margin), by = col.region))
+```
+
+
+### run
+
+```{r}
+run('sales
+  then add [margin] as ([revenue] - [cost])
+  then summarize [margin] as total([margin]) by [region]')
 ```
 
 :::

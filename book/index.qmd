@@ -621,6 +621,12 @@ Every example that manipulates data is written twice, once in R and once in
 Python, and the two sit in tabs above the same explanation. Click the one you
 write.
 
+Many tabsets carry a third tab, `run`. It holds the same sentence a third
+way: the grammar's own text form, inside the one call that is spelled
+identically in both languages. The sentence in it is the engine's canonical
+printing of the pipeline beside it, and the chunk runs like any other, so
+all three tabs answer with the same table.
+
 They are not illustrations of each other. Both are executed when the book is
 built, so a tab showing a table is a tab whose code ran, and the two tables come
 back from the same engine. If a sentence ever stopped meaning the same thing in

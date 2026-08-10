@@ -35,6 +35,14 @@ sales |> summarize(total = total(revenue), by = product)
 sales >> summarize(total = total(col.revenue), by = col.product)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [total] as total([revenue]) by [product]')
+```
+
 :::
 
 *`sales then summarize [total] as total([revenue]) by [product]`*
@@ -57,6 +65,15 @@ sales |> add(share = revenue / total(revenue), by = product) |> pick(product, re
 sales >> add(share = col.revenue / total(col.revenue), by = col.product) >> pick(col.product, col.revenue, col.share)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [share] as ([revenue] / total([revenue])) by [product]
+  then pick [product, revenue, share]')
+```
+
 :::
 
 Read a product's rows and their shares sum to one: each row's revenue over
@@ -77,6 +94,15 @@ sales |> sort(descending(revenue)) |> take(1, by = product)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(1, by = col.product)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then sort [revenue] descending
+  then take 1 by [product]')
 ```
 
 :::
@@ -104,6 +130,16 @@ sales |> add(margin = revenue - cost) |> rename(earned = revenue) |> pick(produc
 sales >> add(margin = col.revenue - col.cost) >> rename(earned = col.revenue) >> pick(col.product, col.earned, col.margin)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [margin] as ([revenue] - [cost])
+  then rename [earned] as [revenue]
+  then pick [product, earned, margin]')
+```
+
 :::
 
 ## `all_but` turns a list inside out
@@ -123,6 +159,14 @@ sales |> pick(all_but(cost, region))
 
 ```{python}
 sales >> pick(all_but(col.cost, col.region))
+```
+
+
+### run
+
+```{r}
+run('sales
+  then pick all_but [cost, region]')
 ```
 
 :::
@@ -147,6 +191,16 @@ sales |> add(place = rank(descending(revenue))) |> sort(place) |> pick(product, 
 sales >> add(place = rank(descending(col.revenue))) >> sort(col.place) >> pick(col.product, col.revenue, col.place)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then add [place] as rank([revenue] descending)
+  then sort [place]
+  then pick [product, revenue, place]')
+```
+
 :::
 
 ## `where` asks a question
@@ -168,6 +222,14 @@ sales |> keep(revenue > 150)
 
 ```{python}
 sales >> keep(col.revenue > 150)
+```
+
+
+### run
+
+```{r}
+run('sales
+  then keep where ([revenue] > 150)')
 ```
 
 :::

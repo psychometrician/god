@@ -28,6 +28,14 @@ survey >> take(2)
 survey >> pick(where(name.starts("q")))
 ```
 
+
+### run
+
+```{r}
+run('survey
+  then pick where (name starts "q")')
+```
+
 :::
 
 *`survey then pick where (name starts "q")`*
@@ -50,6 +58,14 @@ survey |> pick(where(endsWith(name, "_score") | name == "respondent"))
 survey >> pick(where(name.ends("_score") | (name == "respondent")))
 ```
 
+
+### run
+
+```{r}
+run('survey
+  then pick where ((name ends "_score") or (name is "respondent"))')
+```
+
 :::
 
 `contains` is the third test, for a mark that sits in the middle of a name:
@@ -66,6 +82,14 @@ survey |> pick(where(grepl("q", name)))
 
 ```{python}
 survey >> pick(where(name.contains("q")))
+```
+
+
+### run
+
+```{r}
+run('survey
+  then pick where (name contains "q")')
 ```
 
 :::

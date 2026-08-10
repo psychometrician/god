@@ -34,6 +34,17 @@ sales |>
   >> sort(descending(col.margin)))
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then keep where ([region] is "West")
+  then add [margin] as ([revenue] - [cost])
+  then summarize [margin] as total([margin]), [orders] as row_count() by [product]
+  then sort [margin] descending')
+```
+
 :::
 
 *`sales then keep where [region] is "West" then add [margin] as [revenue] - [cost] then summarize [margin] as total([margin]), [orders] as row_count() by [product] then sort [margin] descending`*

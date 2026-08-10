@@ -23,6 +23,14 @@ sales |> summarize(revenue = total(revenue), orders = row_count(), by = product)
 sales >> summarize(revenue = total(col.revenue), orders = row_count(), by = col.product)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [revenue] as total([revenue]), [orders] as row_count() by [product]')
+```
+
 :::
 
 *`sales then summarize [revenue] as total([revenue]), [orders] as row_count() by [product]`*
@@ -50,6 +58,14 @@ sales |> summarize(revenue = total(revenue), by = c(region, product))
 sales >> summarize(revenue = total(col.revenue), by = [col.region, col.product])
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [revenue] as total([revenue]) by [region, product]')
+```
+
 :::
 
 Without `by`, the whole table is one group, and the answer is one row:
@@ -66,6 +82,14 @@ sales |> summarize(biggest = largest(revenue), average = average(cost))
 
 ```{python}
 sales >> summarize(biggest = largest(col.revenue), average = average(col.cost))
+```
+
+
+### run
+
+```{r}
+run('sales
+  then summarize [biggest] as largest([revenue]), [average] as average([cost])')
 ```
 
 :::
@@ -141,6 +165,14 @@ sales >> summarize(
 )
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then summarize [cheapest] as smallest([cost]), [dearest] as largest([cost]), [middle] as median([revenue]), [kinds] as unique_count([product]) by [region]')
+```
+
 :::
 
 `first` and `last` answer by position, so a sort in front of them decides
@@ -166,6 +198,15 @@ sales >> sort(descending(col.revenue)) >> summarize(
   worst = last(col.product),
   by = col.region
 )
+```
+
+
+### run
+
+```{r}
+run('sales
+  then sort [revenue] descending
+  then summarize [best] as first([product]), [worst] as last([product]) by [region]')
 ```
 
 :::
@@ -195,6 +236,16 @@ gapminder |>
   >> keep(col.year == 2007)
   >> summarize(life = average(col.life), countries = row_count(), by = col.continent)
   >> sort(descending(col.life)))
+```
+
+
+### run
+
+```{r}
+run('gapminder
+  then keep where ([year] is 2007)
+  then summarize [life] as average([life]), [countries] as row_count() by [continent]
+  then sort [life] descending')
 ```
 
 :::

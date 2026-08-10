@@ -72,6 +72,15 @@ messy |> add(shout = upper(trim(raw)), quiet = lower(trim(raw))) |> pick(shout, 
 messy >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw))) >> pick(col.shout, col.quiet)
 ```
 
+
+### run
+
+```{r}
+run('messy
+  then add [shout] as upper(trim([raw])), [quiet] as lower(trim([raw]))
+  then pick [shout, quiet]')
+```
+
 :::
 
 The same two words also work on a column's *name* rather than on its contents,

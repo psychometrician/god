@@ -145,6 +145,15 @@ sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
 sales >> keep(matching(products, by = col.product)) >> keep(col.revenue > 100)
 ```
 
+
+### run
+
+```{r}
+run('sales
+  then keep where matching(products, by [product])
+  then keep where ([revenue] > 100)')
+```
+
 :::
 
 The two `keep` steps read as one sentence: first the rows with a partner,
