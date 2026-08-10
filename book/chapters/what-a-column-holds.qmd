@@ -152,3 +152,32 @@ The tests are the same words in both languages. What differs is how a column's
 name is reached, which is the same difference as everywhere else: R writes a bare
 name and Python writes `col.name`, so R spells this with base R's `startsWith`
 and Python with a method.
+
+## A percent sign is a percent sign
+
+The three tests read text literally, with no pattern language hiding inside.
+R borrows `grepl`'s shape to ask the question, and the reading is still the
+grammar's: the marks that regular expressions treat as instructions, `%` and
+`.` among them, here only ever mean themselves.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+notes <- data.frame(note = c("grew 100% this year", "flat since March"),
+                    stringsAsFactors = FALSE)
+notes |> keep(grepl("100%", note))
+```
+
+### Python
+
+```{python}
+notes = pd.DataFrame({"note": ["grew 100% this year", "flat since March"]})
+notes >> keep(col.note.contains("100%"))
+```
+
+:::
+
+When the question really is a pattern, it belongs to the host language, a
+boundary the coverage appendix states with the rest of them.

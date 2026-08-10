@@ -137,7 +137,7 @@ of owning them.
 
 ## When the engine says no
 
-Writing means meeting refusals, so meet three on purpose. Each is the
+Writing means meeting refusals, so meet four on purpose. Each is the
 grammar keeping a promise from an earlier chapter, and each message carries
 its own repair.
 
@@ -219,6 +219,34 @@ except GodError as refusal:
 ```
 
 :::
+
+Last, a habit carried in from another tool is refused by name, with the
+grammar's own word offered in its place. This one is written in the text
+form, so the call is the same string in both tabs:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+run('survey then pick except [q1_score]')
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    run('survey then pick except [q1_score]')
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+`exclude`, `drop`, `omit` and `without` are met the same way, each one
+answering with `all_but`.
 
 None of these cost you anything. Nothing ran, nothing half-completed, and in
 each case the message is shorter than the documentation you did not have to

@@ -99,3 +99,60 @@ except GodError as refusal:
 ```
 
 :::
+
+Two more refusals guard the key itself, because a join that could never match
+would come back empty and look like a fact about your data. The key must hold
+the same kind of thing in both tables:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+codes <- data.frame(product = c(1, 2), code = c("A", "B"))
+collect(sales |> join(codes, by = product))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+codes = pd.DataFrame({"product": [1, 2], "code": ["A", "B"]})
+
+try:
+    collect(sales >> join(codes, by = col.product))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+And the key must exist on both sides, with the usual suggestion when it is
+only a spelling away:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> join(products, by = maker))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> join(products, by = col.maker))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+One thing the checker cannot see is a key that repeats. If the other table
+holds two rows for one key, your rows multiply, and that is a fact about the
+rows rather than about the sentence: the checker reads column names and never
+a row, so this one stays yours to know about your data.
