@@ -7,8 +7,8 @@ title: "The two languages"
 A pipeline is the same sentence in both languages.
 [Your first pipeline](../chapters/first-pipeline.qmd) showed the two
 places they differ. This appendix is the rest of it: why the pipe is what it is,
-the two rules Python adds, how R's own habits are read, and what god does to the
-names already in your session.
+the three rules Python adds, how R's own habits are read, and what god does to
+the names already in your session.
 
 Everything else in the book is written once, with a tab for each language,
 because everywhere else the two really are the same sentence.
@@ -30,10 +30,29 @@ which is a wrong answer with no error attached.
 it looks in your session, so a bare `revenue` is unambiguous there. Python has no
 such hook, so a column says that it is one.
 
-## Two rules Python adds
+A name that is not a Python identifier is still a column. Write it in
+brackets, `col["order date"]`, and it is the same expression the dot would
+have made:
 
-Neither comes from the grammar, and this book states them here rather than
-letting you find them in an error message.
+```{python}
+orders = pd.DataFrame({"order date": ["2026-01-02", "2026-01-05"],
+                       "total": [40, 90]})
+orders >> keep(col["order date"] > "2026-01-03")
+```
+
+R's spelling for the same name is its own, backticks, and R removes them
+before god ever sees the name:
+
+```{r}
+orders <- data.frame(`order date` = c("2026-01-02", "2026-01-05"),
+                     total = c(40, 90), check.names = FALSE)
+orders |> keep(`order date` > "2026-01-03")
+```
+
+## Three rules Python adds
+
+None of them comes from the grammar, and this book states them here rather
+than letting you find them in an error message.
 
 Comparisons joined by `&` need parentheses, because `&` binds more tightly than
 `==` in Python. Negation is `~`, because `not` is a keyword whose result Python
@@ -57,6 +76,22 @@ sales >> keep(col.region.is_in(["West", "East"]))
 Write the values as a list when the order matters to you. A set works too, and
 gets sorted before it is written, because Python's hashing changes between runs
 and the same pipeline has to read the same way every time.
+
+The third rule is a refusal rather than a spelling. Python's own `and`, `or`,
+`in` and `if` all ask a value to become one plain yes or no, and a column
+expression refuses, because its honest answer is one per row:
+
+```{python}
+#| classes: refusal
+try:
+    if col.revenue > 150:
+        print("large")
+except GodError as refusal:
+    print(refusal)
+```
+
+The message names `&`, `|` and `~` at the moment you reach the wrong
+spelling, which is earlier than a wrong answer would have told you.
 
 One word used to be on this list and no longer is. The marker that inverts a
 `pick` was `except`, which Python had to spell `except_`, because `except` is a
@@ -149,3 +184,17 @@ sales_by_product = god.collect(
 Or bring in one of them and reach for the other by name. The failure is loud if
 you forget: god's verbs have no idea what a gog column is, so a mixed-up pipeline
 stops rather than guessing.
+
+## Asking which god you have
+
+Each language answers in its own idiom, and a release is refused when the two
+would disagree.
+
+```{r}
+packageVersion("god")
+```
+
+```{python}
+import god
+god.__version__
+```
