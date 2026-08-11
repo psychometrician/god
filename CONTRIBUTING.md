@@ -170,6 +170,7 @@ python3 book/check_refusals.py            # the same promise, kept by the Python
 Rscript book/check_tabs.R                 # every tabset holds both languages
 Rscript book/check_template.R             # the verb-chapter shape, and every page ends on prose
 Rscript book/check_promises.R             # the five rules the preface states
+Rscript book/check_render.R               # the rendered book, for the defects only output has
 python3 book/readability.py               # a report, not a gate
 
 cd book && quarto render --to html

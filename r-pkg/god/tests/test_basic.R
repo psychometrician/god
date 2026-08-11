@@ -862,6 +862,14 @@ book_guard("every verb chapter follows the template",
            "book/check_template.R", "check_template")
 book_guard("the book keeps the rules its preface states",
            "book/check_promises.R", "check_promises")
+# **The only guard that reads the render rather than the source.** Every other
+# one reads `.qmd`, so the defects pandoc and Quarto introduce on the way out
+# were caught by the publishing workflow alone, which is the far side of the
+# push that publishes them. It skips, loudly, where there is no render or where
+# the render is older than the sources, because grading a stale one is grading a
+# book nobody has.
+book_guard("the rendered book carries no defect its sources hide",
+           "book/check_render.R", "check_render")
 
 # **A guard nobody runs is worse than no guard, because it reads as coverage.**
 # `check_vocabulary.R` sat on disk, complete and invoked by nothing, and looked
