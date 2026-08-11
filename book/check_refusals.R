@@ -27,6 +27,16 @@
 # the one written down below rather than a list of what refusals look like.
 
 check_refusals <- function(dirs = "book") {
+  # A chapter's chunks are evaluated below for their side effects, and one
+  # side effect a guard must never keep is opening windows. A gog plot
+  # printed outside a notebook writes a temp page and hands it to the
+  # system browser, so the chapter that draws with the sibling opened
+  # seven tabs on every run of this file; the render itself never does,
+  # because knitr embeds the plot instead of printing it. The browser is a
+  # no-op for this function's lifetime, and whatever it was is restored.
+  was <- options(browser = function(url) invisible(url))
+  on.exit(options(was), add = TRUE)
+
   qmds <- unlist(lapply(dirs, function(d)
     list.files(d, pattern = "[.]qmd$", recursive = TRUE, full.names = TRUE)))
   # The same rule the other guards apply: `_book/` is output, and a
