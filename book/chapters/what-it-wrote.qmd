@@ -180,6 +180,13 @@ single way to chain steps, so the idiom that does chain is `.assign` and
 `.loc[lambda d: ...]`, and a column inside either of those has to name the frame
 again. The grammar says `[margin]` once.
 
+One R dialect is missing from the list on purpose, and the reason is meaning
+rather than effort. Idiomatic data.table works by reference: `:=` changes
+the table in place, so pasted code would quietly modify your data, which no
+god pipeline may ever do. A faithful translation would have to open with
+`copy()` and stop reading like the data.table its users write, and a
+translation neither side recognizes serves nobody.
+
 Where an engine cannot say what a sentence means, you get a refusal rather than
 a query that says something close. Spark has to be told which columns a `widen`
 makes, because its pivot cannot work them out from the data:
