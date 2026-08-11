@@ -1,0 +1,40 @@
+{
+ "date": "2026-08-10",
+ "machine": "macOS arm64, 10 cores, 16 GB",
+ "data": "NYC TLC yellow-taxi trips, 2024-01 through 2024-06, consolidated",
+ "rows": 20332093,
+ "join_table": "the 265-row taxi-zone lookup",
+ "reps": "median of 3 timed runs after one warmup; loads excluded",
+ "threads": {
+  "duckdb": 10,
+  "polars": 10,
+  "data.table": 5,
+  "pandas": 1,
+  "dplyr": 1
+ },
+ "versions": {
+  "duckdb": "1.5.5",
+  "dplyr": "1.2.1",
+  "data.table": "1.18.4",
+  "pandas": "3.0.5",
+  "polars": "1.43.2",
+  "god": "0.0.1"
+ },
+ "ops": {
+  "q1_filter_group": "filter three ways, then group by payment type",
+  "q2_big_group": "group by zone, hour and date: 1.2 million groups, top 5",
+  "q3_derive_median": "derive tip share, median by passenger count",
+  "q4_join_group": "join the zones table, revenue by borough",
+  "q5_topn_per_group": "top-3 tips per zone: sort, then take 3 by zone",
+  "q6_capstone": "filter, derive, join, group, rank within borough, top 2"
+ },
+ "tools": {
+  "god_r": "god (R)",
+  "god_py": "god (Python)",
+  "dplyr": "dplyr",
+  "datatable": "data.table",
+  "pandas": "pandas",
+  "polars": "polars, eager",
+  "polars_lazy": "polars, lazy"
+ }
+}

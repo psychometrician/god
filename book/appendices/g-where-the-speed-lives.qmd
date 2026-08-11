@@ -1,0 +1,121 @@
+---
+title: "Where the speed lives"
+---
+
+{{< include ../_setup.qmd >}}
+
+A benchmark of god against another tool is really a benchmark of god's
+engine against that tool, because god's own work ends when the query is
+written. So this page refuses to blur the two. The half that belongs to god
+is measured live, while this page is built. The half that belongs to the
+engines is a dated record, run once on real data with the date printed
+beside it, because a speed table without its date is a rumor.
+
+## The grammar's toll, clocked on this render
+
+What god costs is compiling a pipeline: reading the sentence, checking it
+against the columns, writing the query. That cost is fixed per pipeline
+rather than per row, and rather than assert it, this page measures it while
+rendering, on a five-step sentence:
+
+```{r}
+sentence <- paste(
+  'sales then keep where [revenue] > 100',
+  'then add [margin] as ([revenue] - [cost])',
+  'then summarize [margin] as total([margin]) by [region]',
+  'then sort [margin] descending then take 5')
+columns <- "region:text,product:text,quantity:number,revenue:number,cost:number"
+
+timings <- vapply(1:50, function(i) {
+  started <- Sys.time()
+  god_sql(sentence, columns)
+  as.numeric(Sys.time() - started)
+}, 0)
+
+cat(sprintf("%.1f milliseconds per pipeline, on the machine that built this page",
+            median(timings) * 1000))
+```
+
+A hundred rows and a hundred million compile in the same time, because the
+compiler reads the sentence and the column names, never the data.
+Everything after that belongs to the engine.
+
+## The engines' race, on record
+
+The record below was measured on 2026-08-10: six operations on twenty
+million real rows of New York taxi trips, from a simple filter-and-group to
+a seven-step capstone that filters, derives, joins, groups, ranks within
+each borough and takes the top two. Seven implementations were run, and
+every answer was proven identical across all seven before any time was
+read. A benchmark whose answers are not first proven equal measures
+nothing. The numbers are read from the measurement files, not typed, so
+this table cannot drift from what was measured.
+
+```{r}
+#| echo: false
+bench <- normalizePath(file.path(dirname(find_up("book/_quarto.yml")), "bench/2026-08-10"))
+meta <- jsonlite::fromJSON(file.path(bench, "meta.json"))
+tools <- names(meta$tools)
+runs <- lapply(tools, function(t) jsonlite::fromJSON(file.path(bench, paste0(t, ".json"))))
+names(runs) <- tools
+ops <- names(meta$ops)
+grid <- data.frame(`The operation` = unlist(meta$ops[ops]), check.names = FALSE)
+for (t in tools) {
+  grid[[meta$tools[[t]]]] <-
+    sprintf("%.2f", vapply(ops, function(o) runs[[t]]$ops[[o]]$median_s, 0))
+}
+totals <- c("all six together",
+            vapply(tools, function(t)
+              sprintf("%.2f", sum(vapply(ops, function(o) runs[[t]]$ops[[o]]$median_s, 0))),
+              ""))
+grid <- rbind(grid, setNames(as.list(totals), names(grid)))
+knitr::kable(grid, row.names = FALSE,
+             caption = sprintf("Median seconds over %s rows, %s. %s.",
+                               format(meta$rows, big.mark = ","),
+                               meta$date, meta$machine))
+```
+
+```{r}
+#| echo: false
+versions <- paste(sprintf("%s %s", names(meta$versions), unlist(meta$versions)),
+                  collapse = ", ")
+threads <- paste(sprintf("%s on %s", names(meta$threads), unlist(meta$threads)),
+                 collapse = ", ")
+knitr::kable(data.frame(
+  What = c("Versions", "Threads, as shipped", "Method"),
+  Detail = c(versions, threads, meta$reps),
+  check.names = FALSE
+))
+```
+
+## What the table says, read honestly
+
+The engine is the story, not the language. The fastest columns above are
+god through DuckDB and polars run lazily, one reached from R and text, one
+from Python, and the slowest gap in the whole table is not between the two
+languages people argue about: pandas and dplyr finish within a half second
+of each other, and R's own data.table beats both. Whoever hands their rows
+to a columnar engine wins, from either language. The folk ranking of
+languages is a decade out of date; the ranking that holds is a ranking of
+engines.
+
+Both spellings of polars are shown on purpose. The eager style people
+type interactively and the lazy style that lets the planner fuse steps
+differ by more than four times here. A table that showed only one of them
+would be marketing.
+
+god's two columns are one engine. The same sentences, the same DuckDB,
+identical answers; the R side hands a frame across the boundary more
+cheaply than the Python side, and that boundary is the whole difference.
+What the grammar itself adds is the toll clocked live above, in either
+language.
+
+And the number that matters most is not a time. Seven implementations,
+six operations, twenty million rows, identical answers, checked before the
+clock was trusted. Speed varies by machine and by release; that agreement
+is the part this book stakes its name on.
+
+The record ages, and it says so: the date sits in the caption, the
+libraries move, and a number this page shows is a photograph rather than a
+law. When you want today's number for your own engine, ask `show_as` for
+the exact query this grammar writes, and measure it where your data lives.

@@ -5,6 +5,18 @@ a person using god can see.
 
 ## Unreleased
 
+### The book measures where the speed lives
+
+A new appendix holds the performance question to the framing the preface
+states: the grammar's own toll is clocked live while the page is built,
+about five milliseconds per pipeline, and beside it sits a dated record
+of six operations on twenty million real taxi rows across god, dplyr,
+data.table, pandas and both spellings of polars, every answer proven
+identical across all seven implementations before any time was read.
+The numbers are read from the committed measurement files, never typed,
+and the page says plainly that the record ages: the engine is the
+story, not the language.
+
 ### Python pipelines on large frames run about three times faster
 
 The binding hands a pandas frame to the engine as an Arrow table now,

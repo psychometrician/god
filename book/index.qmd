@@ -670,10 +670,14 @@ or Spark a query and steps out of the way. So a comparison of god against polars
 is really DuckDB against polars, and reporting it as god's number would take
 credit, or blame, for somebody else's engine.
 
-That is why this book has no benchmark table. The claim it makes instead is
-narrower: the grammar costs almost nothing to put in front of an engine, and your
-query reaches that engine unchanged. If you want to know how fast an answer comes
-back, measure the engine, and ask `show_as` for the exact query to measure.
+The claim this book makes is therefore narrow: the grammar costs almost
+nothing to put in front of an engine, and your query reaches that engine
+unchanged. [Where the speed lives](appendices/g-where-the-speed-lives.qmd)
+holds a measurement to exactly that framing, in two halves that are never
+blurred: the grammar's own toll is clocked live while these pages are built,
+and the engines' race beside it is a dated record that keeps the credit
+where it belongs. For today's number on your own engine, ask `show_as` for
+the exact query and measure it where your data lives.
 
 Speed was never the goal here. The goal is that you can still write a pipeline a
 year after the last one.
