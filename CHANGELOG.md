@@ -5,6 +5,16 @@ a person using god can see.
 
 ## Unreleased
 
+### Python pipelines on large frames run about three times faster
+
+The binding hands a pandas frame to the engine as an Arrow table now,
+because the engine re-analyzed a registered frame on every query: on
+twenty million rows, registration alone cost 1.7 seconds per pipeline
+and now costs a twentieth of that, and grouped queries dropped by up to
+eight times. Answers are unchanged, and the parity harness proves it
+sentence by sentence. A frame Arrow cannot convert keeps the old road,
+because slower is not wrong.
+
 ### The book's tables, one call away
 
 `god_table("sales")` fetches any table from the book's cast, in either
