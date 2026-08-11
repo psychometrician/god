@@ -11,11 +11,13 @@ suppressMessages(library(gog))
 # vendored beside the book: this render used to fetch it from the sibling
 # book's site, which made one URL the single point of failure for the build.
 #
-# The Python gog plots leave a few lines in the render log: "WARNING ...
-# Unable to parse table from raw html block: skipping." The `<table` pandoc
-# finds is a template literal inside gog's own selection script, so there is
-# no table to parse; the parse is skipped and the block passes through whole,
-# which is why every plot still draws. Chunk-level `html-table-processing:
+# The three interactive plots leave six lines in the render log, one per tab:
+# "WARNING ... Unable to parse table from raw html block: skipping." Both
+# languages emit it rather than Python alone, counted in the rendered page.
+# The `<table` pandoc finds is a template literal inside gog's own selection
+# script, so there is no table to parse; the parse is skipped and the block
+# passes through whole, which is why every plot still draws and why this
+# page's own tables keep their styling. Chunk-level `html-table-processing:
 # none` does not reach reticulate's output on Quarto 1.8.25, measured rather
 # than assumed. The cure is splitting one string literal in gog's runtime,
 # which is the sibling project's change to make. The workflow's log gate
