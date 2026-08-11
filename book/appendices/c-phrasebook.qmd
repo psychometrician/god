@@ -110,6 +110,36 @@ for (language in c("sql", "spark", "dplyr", "pandas", "polars", "pyspark")) {
 }
 ```
 
+## A whole pipeline, all seven
+
+The sentence above is two steps, chosen to stay readable. The translation
+does not thin as a pipeline grows, and a technical reader deciding whether
+to trust that should see it on a hard case. Six steps this time: a join, a
+computed column, a grouped total, a sort, a rank, and a cut. The seventh
+answer is the grammar's own text form, which is what `show_as` prints when
+you ask for `"god"`, and it is the one spelling that runs anywhere.
+
+```{r}
+#| echo: false
+#| output: asis
+long <- paste(
+  "sales",
+  "then join products by [product]",
+  "then add [margin] as [revenue] - [cost]",
+  "then summarize [margin] as total([margin]) by [maker]",
+  "then sort [margin] descending",
+  "then add [place] as rank([margin] descending)",
+  "then take 3"
+)
+for (language in c("god", "sql", "spark", "dplyr", "pandas", "polars", "pyspark")) {
+  cat("### `", language, "`\n\n```\n", sep = "")
+  invisible(capture.output(
+    text <- show_as(long, language, sales = sales, products = products)
+  ))
+  cat(paste(text, collapse = "\n"), "\n```\n\n", sep = "")
+}
+```
+
 ## What the table is showing
 
 Read down a column and you are reading one library's idea of how a pipeline is

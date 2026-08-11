@@ -203,6 +203,7 @@ book:
     # Appendix B and C by name, and re-lettering them would falsify it.
     - appendices/f-where-words-stand.qmd
     - appendices/g-where-the-speed-lives.qmd
+    - appendices/h-the-machine-underneath.qmd
 
 # The provenance layer: the grammar's ideas are old, and the book says whose
 # they are. APA because the sibling book uses it, and one style across the two

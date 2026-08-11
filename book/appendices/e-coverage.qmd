@@ -26,6 +26,7 @@ in code you can read because you watched it being written.
 | The long aggregate shelf (variance, quantiles, weighted means, mode) | nine aggregations; the rest via `show_as` |
 | Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
 | Window frames (`ROWS BETWEEN 3 PRECEDING`) | `running_total`, `previous`, `following` are the whole windowed family today |
+| Reading a file into a pipeline (`scan_csv`, `scan_parquet`) | read it in the host and hand the frame over; for data that outgrows the machine, [somewhere else](../chapters/somewhere-else.qmd) |
 
 Two of these are refusals with a law behind them rather than absences, and
 the distinction matters: sampling and arbitrary functions will not arrive

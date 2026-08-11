@@ -5,6 +5,20 @@ a person using god can see.
 
 ## Unreleased
 
+### The book answers the technical reader
+
+A new appendix, the machine underneath, answers the four questions a
+technical evaluator asks: where the work happens (an engine, handed the
+whole pipeline as one query), when it runs (one surface, always lazy),
+who optimizes it (the engine's planner, which is the point of arriving
+whole), and what happens when data outgrows the machine (the frame is
+the ceiling on one machine; the warehouse and cluster path is the
+answer at scale, and the missing file-scan is recorded honestly in the
+coverage appendix). The phrasebook also gains a hard case: one
+six-step pipeline, a join through a rank, written out in full in all
+seven of `show_as`'s targets, so the claim that translation does not
+thin with complexity is shown rather than stated.
+
 ### Asking a pipeline a table's question now refuses, in R
 
 `nrow(pipeline)`, `names(pipeline)`, `pipeline$column` and both bracket

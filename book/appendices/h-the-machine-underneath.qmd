@@ -1,0 +1,97 @@
+---
+title: "The machine underneath"
+---
+
+{{< include ../_setup.qmd >}}
+
+This appendix answers the questions a technical reader asks of any table
+tool: where the work happens, when it happens, who optimizes it, and what
+happens when the data outgrows the machine. The short answer to all four is
+one sentence: god compiles, and an engine executes.
+
+## One engine does the work
+
+A pipeline here is compiled into a single query, about five milliseconds of
+work, and the query is executed by software built for executing queries:
+DuckDB on this machine, Spark SQL or a warehouse wherever
+[Somewhere else](../chapters/somewhere-else.qmd) points. god never touches a
+row. It owns the sentence, the checking, and the writing out; the scanning,
+joining and grouping are the engine's, which is why
+[the appendix on speed](g-where-the-speed-lives.qmd) credits the engine by
+name.
+
+The whole pipeline reaches the engine as one query, never a step at a time:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+show_as(sales |>
+  keep(region == "West") |>
+  add(margin = revenue - cost) |>
+  summarize(margin = total(margin), by = product) |>
+  sort(descending(margin)) |>
+  take(10), "sql")
+```
+
+### Python
+
+```{python}
+show_as(sales
+  >> keep(col.region == "West")
+  >> add(margin = col.revenue - col.cost)
+  >> summarize(margin = total(col.margin), by = col.product)
+  >> sort(descending(col.margin))
+  >> take(10), "sql")
+```
+
+:::
+
+Five steps, one text. The engine sees the whole question before it reads a
+single row.
+
+## Always lazy, one surface
+
+Some tools keep two interfaces: an eager one that runs each step as it is
+typed, and a lazy one that plans. god has one, and it is the lazy one. A
+verb returns a plan, printing runs it, and `collect` hands over the table,
+which is the whole of
+[Nothing runs until you ask](../chapters/nothing-runs-yet.qmd). There is no
+eager mode to be caught in by accident, and the difference is not cosmetic:
+an engine given steps one at a time cannot plan across them. The dated
+record in [the appendix on speed](g-where-the-speed-lives.qmd) carries an
+eager and a lazy spelling of the same library, and the gap between them is
+the price of running step by step.
+
+## What the engine optimizes
+
+Because the query arrives whole, the planning belongs to the engine: which
+filter to push into which scan, which join to run first, which columns never
+to read at all. Those are decades of database work, and god's job is to stay
+out of their way. The steps it writes are flattened by the engine into one
+plan, so a pipeline of eight steps is not eight passes over the data.
+Nothing about this needed a word in the vocabulary, which is the point: the
+grammar buys the optimizer by handing over text.
+
+## When the data outgrows the machine
+
+Two sizes of big, two answers.
+
+A table bigger than memory, held as a frame: the engine can spill its work
+to disk, but a pipeline here begins at a table the host already holds, so on
+one machine the frame itself is the ceiling. god has no word for reading a
+file into a pipeline, and [the coverage appendix](e-coverage.qmd) records
+that gap beside the others, with what to do today.
+
+A table bigger than the machine: that is what
+[Somewhere else](../chapters/somewhere-else.qmd) is for. The table stays in
+the warehouse or on the cluster, the sentence goes there as text, and no
+data moves at all. At that size the honest question is not whether one
+process can stream one file, and the grammar's answer is to run where the
+data lives.
+
+One more property falls out of compiling to text: everything above is
+inspectable. `show_as` prints the exact query the engine will run, and the
+same pipeline in five libraries beside it, so nothing on this page is taken
+on faith.
