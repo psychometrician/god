@@ -51,6 +51,14 @@ show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
 
 :::
 
+The query has a shape a hand would not choose, and the shape is deliberate.
+Each `then` becomes one named step in a `WITH` chain, so the sentence and
+the query match line for line, and a longer pipeline is more named steps
+rather than a deeper nest. A person would fuse steps and name them after
+their meaning; a machine's first duty is that you can check its work. The
+engine flattens the chain into one plan before reading a row, so the shape
+costs nothing at run time.
+
 ## The same sentence, on a cluster
 
 `"sql"` is the query for the engine on your machine. `"spark"` is the same
