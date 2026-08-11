@@ -76,17 +76,17 @@ a grammar of graphics, and the two are named the same way for the same reason.
 
 It is written lowercase, always, the way dplyr and pandas and npm are. Nobody
 writes DPLYR. No claim of any other kind is made by the letters, and none is
-intended: it is three initials that happened to spell a word, kept because the
-sibling naming is what makes the pair legible.
+intended. They are three initials that happened to spell a word, kept because
+the sibling naming is what makes the pair legible.
 
 You will see it lowercase everywhere in this book, including at the start of a
 sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
-pipeline: [install god](#installing-it), then go to
+pipeline. [Install god](#installing-it), then go to
 [your first pipeline](chapters/first-pipeline.qmd), which begins the six
-everyday verbs, and come back here when you want to know why the grammar
-refuses what it refuses. If you would rather see all of it at once first,
+everyday verbs. Come back here when you want to know why the grammar refuses
+what it refuses. If you would rather see all of it at once first,
 [Appendix B](appendices/b-every-word.qmd) is every word there is, on one page.
 
 ## One sentence, twice
@@ -131,8 +131,8 @@ The two versions differ in two things.
 
 No word in the vocabulary is spelled differently in the two languages. Every
 verb, every marker, every argument name is the same in both, and that is meant
-literally rather than approximately: one word used to break it, and it was
-renamed rather than excused.
+literally rather than approximately. One word broke it once, and it was renamed
+rather than excused.
 
 What is left is not vocabulary but syntax, and all of it is Python's own. This
 book states it here rather than letting you find it in an error message.
@@ -210,9 +210,10 @@ Every example in this book runs on the same few tables, declared here once.
   one table you cannot check by eye, for the moments a verb has to prove it
   survives scale.
 
-The cast is closed. A new table costs you attention, so when a chapter needs a
-special shape (two rows that collide, a table with one column) it builds the
-smallest table that shows it, and returns to the cast in the next example.
+The cast is closed, because a new table costs you attention. When a chapter
+needs a special shape, such as two rows that collide or a table with one
+column, it builds the smallest table that shows it. The next example returns to
+the cast.
 
 The three tables that carry most pages are typed out below in full, so your
 session can hold the same rows this book computes from. The rest of the cast
@@ -311,10 +312,10 @@ survey = pd.DataFrame({
 
 :::
 
-Typing them in is one road. The other is one call: every table in the cast
-is published beside this book, and `god_table` fetches one by name, in
-either language, so the rows in your session are the rows every page here
-computed from.
+Typing them in is one way. The other is one call. Every table in the cast is
+published beside this book, and `god_table` fetches one by name in either
+language, so the rows in your session are the rows every page here computed
+from.
 
 ```r
 sales <- god_table("sales")
@@ -354,7 +355,7 @@ the query language that became SQL, stated it in its title in 1974
 [@chamberlin1974]. Little has been added since except window functions and the
 two directions of reshaping, and the pattern behind `summarize ... by` had a
 name, split-apply-combine, before this project existed [@wickham2011]. What
-changes every few years is the syntax, not the operations: pandas
+changes every few years is the syntax, not the operations. pandas
 [@mckinney2010] and dplyr [@wickham2023dplyr; @wickham2019tidyverse] are the
 two homes this vocabulary answers to, and the shape its tables arrive in has a
 name and a paper of its own [@wickham2014tidy].
@@ -374,7 +375,7 @@ DuckDB, and nobody will have to invent new words to reach whatever replaces it.
 What that list does not cross is a language. Every one of those backends is
 reached from R, so a person who opens a Python notebook starts again from the
 beginning. That gap is the whole of what this project is aimed at, and it is the
-reason a sixth spelling is worth anybody's afternoon.
+reason a sixth spelling is worth learning.
 
 ## Where this one came from
 
@@ -391,7 +392,7 @@ has to happen in Databricks.
 
 I have tried to learn pandas more than once, and PySpark more than once. Each
 time I learned it, and each time, about a week later, most of the syntax was gone
-again. Not the ideas. The ideas are the same fifteen operations in every tool.
+again. Not the ideas. The ideas are the same in every tool.
 What I lost was which method, in which order, taking which argument.
 
 That is twenty years of pattern, not one bad month. pandas, data.table, polars,
@@ -494,7 +495,7 @@ sentence, and the reason several useful things are deliberately missing.
 It also sets what counts as success, which is worth saying plainly because it is
 not what a feature list would suggest. No vocabulary this small covers everything
 anyone does with data, and this one is not trying to. Covering enough of it, in a
-form that stays learned, is the win. What happens when you
+form that stays learned, is what this one is for. What happens when you
 reach the edge is the next thing this preface talks about.
 
 ## *A* grammar, not *the* grammar
@@ -528,17 +529,17 @@ will write on either side. They also work at the other scale, which is the
 sibling sticker's own logic: the pipes join one step to the *next*, and the
 parentheses hold what happens *inside* one.
 
-The column brackets were on the cover until they were measured. Across the
-sentences this book is tested against, `[` and `]` appear *not once* in R, and
-the handful of times they appear in Python they are Python's own list syntax
+The column brackets are not on the cover, and a measurement is the reason.
+Across the sentences this book is tested against, `[` and `]` appear *not once*
+in R. The few times they appear in Python, they are Python's own list syntax
 rather than anything god asks for. They are the plain text form's way of naming a
 column, which is a real job, and it is not a job most readers will ever see. A
 cover should carry a mark its reader types.
 
-A full stop was considered for the nose and rejected for the opposite reason:
-you would type it, and this book argues at some length that joining steps with a
-dot is the thing god was built to avoid. A cover should not say the opposite of
-its book.
+A full stop was considered for the nose and rejected for the opposite reason.
+You would type it, and this book argues at some length that joining steps with
+a dot is the thing god was built to avoid. A cover should not say the opposite
+of its book.
 
 ## What this grammar borrows, and from where
 
@@ -548,8 +549,8 @@ grouping and its two reshaping directions are all recognizable from there, and
 where god differs it is usually because it had to say the same thing in two
 languages at once.
 
-One further idea comes from **Hangeul**, the Korean alphabet designed in 1443, by
-way of this project's sibling, and it is one idea rather than a theme: parts that
+One further idea comes from **Hangeul**, the Korean alphabet designed in 1443,
+by way of this project's sibling. It is one idea rather than a theme: parts that
 combine the same way every time are easy to read and easy to write. That is the
 whole of the borrowing, and nothing else about the alphabet is claimed here.
 
@@ -657,7 +658,7 @@ god. Fitting a model, running a test, drawing a plot, writing a file: those are
 things R and Python already do well, and a grammar that tried to absorb them
 would stop being small enough to read.
 
-### So how fast is it?
+### How fast is it?
 
 The question has two answers, and keeping them apart is the honest way to ask it.
 
@@ -667,18 +668,18 @@ row, so it does not grow with your data. A hundred rows and a hundred million
 rows compile in the same time.
 
 Everything after that belongs to the engine you pointed god at. It hands DuckDB
-or Spark a query and steps out of the way. So a comparison of god against polars
+or Spark a query and does nothing else. So a comparison of god against polars
 is really DuckDB against polars, and reporting it as god's number would take
 credit, or blame, for somebody else's engine.
 
 The claim this book makes is therefore narrow: the grammar costs almost
 nothing to put in front of an engine, and your query reaches that engine
 unchanged. [Where the speed lives](appendices/g-where-the-speed-lives.qmd)
-holds a measurement to exactly that framing, in two halves that are never
-blurred: the grammar's own toll is clocked live while these pages are built,
-and the engines' race beside it is a dated record that keeps the credit
-where it belongs. For today's number on your own engine, ask `show_as` for
-the exact query and measure it where your data lives.
+holds a measurement made to exactly that framing, in two halves that are
+never mixed. The grammar's own cost is timed live while these pages are
+built. The engine timings beside it are a dated record, so each engine is
+credited with its own result. For today's number on your own engine, ask
+`show_as` for the exact query and measure it where your data lives.
 
 Speed was never the goal here. The goal is that you can still write a pipeline a
 year after the last one.
@@ -724,8 +725,8 @@ them is required, including this preface.
 
 If you have used several of these tools already, you are the other reader this
 book is written for, and you will get more out of it from the back. Appendix
-C is one sentence written out side by side in every dialect god prints, which
-is the fastest way to see what is being proposed. Appendix B is the
+C writes the same pipelines out side by side in every dialect god prints,
+which is the fastest way to see what is being proposed. Appendix B is the
 entire vocabulary on one page. [How god works](parts/how-it-works.qmd) is
 where the claims in this preface are demonstrated rather than asserted,
 including the one about a pipeline running unchanged on a cluster.
@@ -742,9 +743,9 @@ drawing is a different grammar with a different vocabulary.
 That grammar exists, and it is this project's sibling.
 [gog](https://psychometrician.github.io/gog-book/) is a grammar of graphics
 built on the same discipline, by the same author, with the same promise about
-day one and day two. The two are designed to sit next to each other: a question
-usually starts as a table you have to reshape and ends as a picture, so you start
-in god and finish in gog.
+day one and day two. The two are designed to sit next to each other. A question
+usually starts as a table you have to reshape and ends as a picture, so you
+start in god and finish in gog.
 
 [The closing chapter](chapters/with-gog.qmd) shows one question answered end to end
 that way. It is worth reading even if you never draw a plot, because it is the
@@ -764,8 +765,8 @@ all three tabs answer with the same table.
 
 The tabs are not illustrations of each other. Every tab is executed when the
 book is built, so a tab showing a table is a tab whose code ran, and the
-tables come back from the same engine. If a sentence ever stopped meaning the
-same thing in the two languages, or the text form drifted from either, the
+tables come back from the same engine. Suppose a sentence stopped meaning the
+same thing in the two languages, or the text form drifted from either. The
 tabs would stop agreeing on this page, which is the easiest place to notice
 it.
 
