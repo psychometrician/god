@@ -3,7 +3,12 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
-## Unreleased
+## 0.1.0
+
+On PyPI as [`grammar-of-data`](https://pypi.org/project/grammar-of-data/):
+`pip install grammar-of-data`, then `import god`. The same version ships on
+R-universe as `god`. Everything below landed between the first release and
+this one.
 
 ### A window can no longer fill a hole
 

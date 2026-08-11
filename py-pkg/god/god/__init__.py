@@ -138,4 +138,4 @@ __all__ = [
 # release gate compares it against the other three — `pyproject.toml`, the
 # workspace `Cargo.toml`, and R's `DESCRIPTION` — because a manifest check alone
 # cannot see this one go stale.
-__version__ = "0.0.1"
+__version__ = "0.1.0"

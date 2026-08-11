@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 # differ: `god` was taken on PyPI in 2016 by an unrelated package. Every example
 # and every chapter says `import god` regardless.
 name = "grammar-of-data"
-version = "0.0.1"
+version = "0.1.0"
 description = "A grammar of data: one vocabulary for tables, in R, Python and SQL"
 readme = "README.md"
 requires-python = ">=3.10"
