@@ -17,6 +17,19 @@ knit_print.god_pipeline <- function(x, ...) {
   knitr::knit_print(collect(x), ...)
 }
 
+# A drawing inside a rendered document is the picture, not the ladder.
+#
+# **This is the one place the medium is chosen for the reader**, and it is chosen
+# by asking where they are rather than by an argument: a console gets text
+# because that is what the rest of a session looks like, and a page gets the
+# drawing because a page can hold one. Nobody has to say which.
+knit_print.god_steps <- function(x, ...) {
+  # `asis_output` rather than a fenced block: the SVG is markup and has to reach
+  # the page as markup. It carries its own stylesheet, including the dark half,
+  # so nothing about the document's theme reaches inside it.
+  knitr::asis_output(format(x, "svg"))
+}
+
 .onLoad <- function(libname, pkgname) {
   # Registered here rather than declared in `NAMESPACE`, because knitr is a
   # suggested package and not a required one: somebody who has never installed it
@@ -26,6 +39,10 @@ knit_print.god_pipeline <- function(x, ...) {
   if (requireNamespace("knitr", quietly = TRUE)) {
     registerS3method(
       "knit_print", "god_pipeline", knit_print.god_pipeline,
+      envir = asNamespace("knitr")
+    )
+    registerS3method(
+      "knit_print", "god_steps", knit_print.god_steps,
       envir = asNamespace("knitr")
     )
   }

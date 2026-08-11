@@ -190,6 +190,54 @@ check("show_as describes every table a join names",
       show_as("sales then join products by [product] then take 3"),
       "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)")
 
+cat("\nwhat a pipeline does to the table, drawn\n")
+
+# **Nothing here runs the pipeline**, and that is the point of the feature: the
+# grammar reads the whole sentence against the columns before anything executes,
+# so the drawing is available while the answer is not.
+
+steps <- show_steps("sales then summarize [gross] as total([revenue]) by [region]")
+
+check("a column the step makes is marked",
+      grepl("+gross", format(steps, "text"), fixed = TRUE),
+      TRUE)
+check("and the ones it takes away are marked where they leave",
+      grepl("-product", format(steps, "text"), fixed = TRUE),
+      TRUE)
+
+# **The drawing resolves the same names `show_as` does**, because both ask the
+# one lookup. A join names a second table, and the drawing gives it a row of its
+# own under the step that reads it.
+check("a table joining in gets a row of its own",
+      grepl("└ products", format(show_steps("sales then join products by [product]"), "text"), fixed = TRUE),
+      TRUE)
+
+# **A refused sentence is still drawn**, which is the thing an error message on
+# its own cannot do: it says how far the pipeline got, and where the column went.
+refused <- format(
+  show_steps("sales then summarize [g] as total([revenue]) by [region] then keep where [product] is \"x\""),
+  "text"
+)
+check("a refused sentence is drawn as far as it checked",
+      grepl("+g", refused, fixed = TRUE),
+      TRUE)
+check("and carries the refusal under the words that stopped it",
+      grepl("^^", refused, fixed = TRUE),
+      TRUE)
+
+# **The console gets the ladder and a page gets the picture**, and neither is an
+# argument anybody passes: the method that draws is registered for knitr only.
+check("the picture is a whole document",
+      substr(format(steps, "svg"), 1, 5),
+      "<svg ")
+check("printing a drawing prints the ladder, not the picture",
+      any(grepl("summarize", capture.output(print(steps)), fixed = TRUE)),
+      TRUE)
+check("a way of drawing that does not exist is refused",
+      tryCatch({ format(steps, "picture"); "no refusal" },
+               error = function(e) "refused"),
+      "refused")
+
 cat("\nthe verbs write the grammar's own sentence\n")
 
 # **Asserted on the text rather than on the rows**, deliberately. A verb's whole

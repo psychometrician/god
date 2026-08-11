@@ -40,6 +40,7 @@ PYTHON_ONLY = {
     "collect": "materializing, which is a launcher word rather than a verb",
     "run": "the text form",
     "show_as": "the text form",
+    "show_steps": "what a pipeline does to the table, drawn; a launcher word rather than a verb",
     "god_sql": "the text form",
     "god_table": "the book's tables, fetched by name from the published site",
 }
@@ -52,7 +53,7 @@ PYTHON_ONLY = {
 # nothing said; R has no such object, and a warehouse connection is a `DBI`
 # handle somebody has to hand over. The sentences and every word in them are
 # identical either way, which is what may not differ.
-R_EXTRA = {"collect", "run", "show_as", "god_sql", "god_table", "use_engine"}
+R_EXTRA = {"collect", "run", "show_as", "show_steps", "god_sql", "god_table", "use_engine"}
 
 
 def engine_vocabulary() -> dict[str, set[str]]:

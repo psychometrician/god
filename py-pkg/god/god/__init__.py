@@ -24,7 +24,7 @@ configuration file, the same grammar is written as text and `run` executes it.
 """
 
 from .columns import Expr, col
-from .run import GodError, god_sql, run, show_as
+from .run import GodError, god_sql, run, show_as, show_steps
 from .tables import god_table
 from .verbs import (
     add,
@@ -129,7 +129,7 @@ __all__ = [
     # Materializing. Nothing runs until the answer is wanted.
     "collect",
     # The text form, for where there is no host language to bind into.
-    "run", "show_as", "god_sql",
+    "run", "show_as", "show_steps", "god_sql",
     # The book's tables, fetched by name from the published site.
     "god_table",
     "GodError", "Expr",

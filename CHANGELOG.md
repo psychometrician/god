@@ -5,6 +5,36 @@ a person using god can see.
 
 ## Unreleased
 
+### See what a pipeline does to the table, before it runs
+
+`show_steps` draws a pipeline step by step: the table as it stands once
+each step has run, with the columns that step makes marked and the ones
+it takes away marked where they leave. Nothing executes — the grammar
+already reads the whole sentence against the columns before anything
+runs, and this is that reading, drawn.
+
+A second table gets a row of its own under the step that reads it, so a
+join shows what crossed over and what matched, and the three ways a
+second table can take part are drawn apart: a join brings columns and
+may multiply the rows, a `matching` brings nothing and can only remove
+them, `add_rows` brings rows and leaves the columns alone.
+
+**A sentence god refuses is still drawn**, as far as it checked, with
+the refusal under the words that stopped it. So when a column is missing
+because an earlier step took it away, the drawing shows where it went —
+which is the question an error message on its own cannot answer.
+
+At a console it prints as text. Inside a notebook or a rendered document
+it draws itself instead, and neither is something you ask for.
+
+```r
+sales |> join(products, by = id) |> summarize(gross = total(revenue), by = region) |> show_steps()
+```
+
+```python
+god.show_steps(sales >> god.join(products, by=col.id))
+```
+
 ### The book answers the technical reader
 
 A new appendix, the machine underneath, answers the four questions a

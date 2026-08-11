@@ -25,7 +25,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-__all__ = ["run", "show_as", "god_sql", "GodError"]
+__all__ = ["run", "show_as", "show_steps", "god_sql", "GodError"]
 
 
 class GodError(Exception):
@@ -50,7 +50,7 @@ def run(pipeline: str, **tables):
 
     for source in sources:
         if source not in tables:
-            found = _look_up(source)
+            found = _look_up(source, _asked_from())
             if found is None:
                 found = _in_catalog(source)
             if found is None:
@@ -209,15 +209,89 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
     **This returns rather than prints.** A notebook and a prompt both show what
     an expression evaluates to, so printing as well would show it twice.
     """
+    args, sentence = _asking(pipeline, tables, _asked_from())
+    return _Written(_call(args + ["--as", as_], sentence))
+
+
+class _Steps:
+    """What a pipeline does to the table, drawn.
+
+    **Two ways to look at one drawing, and the reader's surroundings pick.** A
+    prompt gets the ladder, because that is what the rest of a session looks
+    like; a notebook or a rendered page gets the picture, because a page can hold
+    one. Neither is an argument anybody has to pass.
+
+    ``.text`` and ``.svg`` reach either one outright, for writing to a file.
+    """
+
+    __slots__ = ("_args", "_sentence", "_drawn")
+
+    def __init__(self, args: list[str], sentence: str):
+        self._args = args
+        self._sentence = sentence
+        # Drawn when it is asked for, and once. Somebody who only ever looks at
+        # the ladder should not pay for a picture nobody sees.
+        self._drawn: dict[str, str] = {}
+
+    def _draw(self, way: str) -> str:
+        if way not in self._drawn:
+            self._drawn[way] = _call(self._args + ["--draw", way], self._sentence)
+        return self._drawn[way]
+
+    @property
+    def text(self) -> str:
+        """The ladder, as one string."""
+        return self._draw("text")
+
+    @property
+    def svg(self) -> str:
+        """The picture, as one string. It carries its own stylesheet."""
+        return self._draw("svg")
+
+    def __repr__(self) -> str:
+        # The drawing ends in a newline, as a file should. A prompt adds one of
+        # its own, so showing it here would leave a blank line under every
+        # ladder.
+        return self.text.rstrip("\n")
+
+    def _repr_html_(self) -> str:
+        # Jupyter and Quarto both look for this before falling back to ``repr``.
+        # The picture is markup and reaches the page as markup; at an ordinary
+        # prompt nothing looks for it and the ladder still answers.
+        return self.svg
+
+
+def show_steps(pipeline, **tables) -> _Steps:
+    """What a pipeline does to the table, step by step.
+
+    **Nothing runs.** The grammar checks the whole sentence against the columns
+    before anything is executed, so this is a picture of what would happen, drawn
+    from the same reading that would refuse a column that is not there.
+
+    Every step shows the table as it stands once that step has run, with the
+    columns it makes marked and the ones it takes away marked where they leave. A
+    second table gets a row of its own under the step that reads it, so a join
+    shows what crossed over and what matched. A sentence the grammar refuses is
+    still drawn, as far as it checked, with the refusal under the words that
+    stopped it — which is the question an error message on its own cannot answer.
+    """
+    args, sentence = _asking(pipeline, tables, _asked_from())
+    return _Steps(args, sentence)
+
+
+def _asking(pipeline, tables: dict, caller) -> tuple[list[str], str]:
+    """Which tables does this pipeline read, and how are they described?
+
+    **Shared by everything that asks the grammar about a pipeline rather than
+    running it.** The callers used to carry a copy each, and a copy of a lookup is
+    how one of them ends up resolving a table the other does not.
+    """
     # A pipeline built from the native verbs already carries its tables and
     # knows what they are called, so there is nothing to look up.
     from .verbs import Pipeline
 
     if isinstance(pipeline, Pipeline):
-        return _Written(_call(
-            _columns_args(pipeline.tables, pipeline.source) + ["--as", as_],
-            pipeline.written(),
-        ))
+        return _columns_args(pipeline.tables, pipeline.source), pipeline.written()
 
     # The same lookup ``run`` does, and for the same reason: since ``join``, a
     # sentence can name more than one table, so every name the grammar reports
@@ -225,7 +299,7 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
     sources = _needs(pipeline)
     for source in sources:
         if source not in tables:
-            found = _look_up(source)
+            found = _look_up(source, caller)
             if found is None:
                 found = _in_catalog(source)
             if found is None:
@@ -233,7 +307,7 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
                     f"the pipeline reads a table called `{source}`, and there is no such table here"
                 )
             tables[source] = found
-    return _Written(_call(_columns_args(tables, sources[0]) + ["--as", as_], pipeline))
+    return _columns_args(tables, sources[0]), pipeline
 
 
 def god_sql(pipeline: str, columns: str) -> str:
@@ -341,18 +415,30 @@ def _walk_up(start: Path) -> str | None:
 # -- finding the table ------------------------------------------------------
 
 
-def _look_up(name: str):
-    """Find a frame in the caller's scope.
+def _look_up(name: str, caller):
+    """Find a frame in the scope that asked for it.
 
-    Two frames up: past this function and past the ``run`` that called it. Locals
-    first and then globals, which is the order Python itself resolves a name.
+    **The frame is handed in rather than counted back to**, and that is not
+    fussiness. This used to walk a fixed two frames — past itself and past the
+    ``run`` that called it — which is correct exactly as long as nobody puts a
+    function in between. Factoring the table lookup out so two callers could
+    share it did put one in between, and every name went unfound. Passing the
+    frame is how R's side has always done it, and it cannot come apart the same
+    way.
+
+    Locals first and then globals, which is the order Python itself resolves a
+    name.
     """
+    if caller is None:
+        return None
+    return caller.f_locals.get(name, caller.f_globals.get(name))
+
+
+def _asked_from():
+    """The frame that called the function calling this."""
     frame = inspect.currentframe()
     try:
-        caller = frame.f_back.f_back
-        if caller is None:
-            return None
-        return caller.f_locals.get(name, caller.f_globals.get(name))
+        return frame.f_back.f_back
     finally:
         del frame
 

@@ -203,6 +203,52 @@ check(
     "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)",
 )
 
+print("\nwhat a pipeline does to the table, drawn")
+
+# **Nothing here runs the pipeline**, and that is the point of the feature: the
+# grammar reads the whole sentence against the columns before anything executes,
+# so the drawing is available while the answer is not.
+
+_steps = god.show_steps("sales then summarize [gross] as total([revenue]) by [region]")
+
+check("a column the step makes is marked", "+gross" in _steps.text, True)
+check(
+    "and the ones it takes away are marked where they leave",
+    "-product" in _steps.text,
+    True,
+)
+
+# **The drawing resolves the same names `show_as` does**, because both ask the
+# one lookup. A join names a second table, and the drawing gives it a row of its
+# own under the step that reads it.
+check(
+    "a table joining in gets a row of its own",
+    "└ products" in god.show_steps("sales then join products by [product]").text,
+    True,
+)
+
+# **A refused sentence is still drawn**, which is the thing an error message on
+# its own cannot do: it says how far the pipeline got, and where the column went.
+_refused = god.show_steps(
+    'sales then summarize [g] as total([revenue]) by [region] then keep where [product] is "x"'
+).text
+check("a refused sentence is drawn as far as it checked", "+g" in _refused, True)
+check(
+    "and carries the refusal under the words that stopped it", "^^" in _refused, True
+)
+
+# **A prompt gets the ladder and a page gets the picture**, and neither is an
+# argument anybody passes: the notebook asks for HTML and nothing else does.
+check("the picture is a whole document", _steps.svg.startswith("<svg "), True)
+check("the page hook is the picture", _steps._repr_html_(), _steps.svg)
+check("the prompt gets the ladder", repr(_steps), _steps.text.rstrip("\n"))
+check("and it does not end on a blank line", repr(_steps).endswith("\n"), False)
+
+_out = io.StringIO()
+with contextlib.redirect_stdout(_out):
+    god.show_steps("sales then take 1")
+check("show_steps prints nothing of its own", _out.getvalue(), "")
+
 print("\nthe verbs write the grammar's own sentence")
 
 # **Asserted on the text rather than on the rows**, deliberately. A verb's whole

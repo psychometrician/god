@@ -160,25 +160,83 @@ god_connection <- function() {
 #' @return The text, invisibly, after printing it.
 #' @export
 show_as <- function(pipeline, as = "dplyr", ...) {
-  tables <- list(...)
+  asked <- god_asking(pipeline, list(...), parent.frame())
+  text <- god_call(c(asked$args, "--as", as), asked$sentence)
+  cat(text)
+  invisible(text)
+}
 
+#' What a pipeline does to the table, step by step
+#'
+#' **Nothing runs.** The grammar checks the whole sentence against the columns
+#' before anything is executed, so this is a picture of what would happen, drawn
+#' from the same reading that would refuse a column that is not there.
+#'
+#' Every step shows the table as it stands once that step has run, with the
+#' columns it makes marked and the ones it takes away marked where they leave. A
+#' second table gets a row of its own under the step that reads it, so a join
+#' shows what crossed over and what matched. A sentence the grammar refuses is
+#' still drawn, as far as it checked, with the refusal under the words that
+#' stopped it — which is the question an error message on its own cannot answer.
+#'
+#' @param pipeline The pipeline, as text or as one built from the verbs.
+#' @param ... Tables, named, if the one at the head is not in scope.
+#' @return An object that prints as a ladder at the console and draws itself
+#'   inside a rendered document. `format(x, "svg")` gives the picture as text,
+#'   for writing to a file.
+#' @export
+show_steps <- function(pipeline, ...) {
+  structure(
+    god_asking(pipeline, list(...), parent.frame()),
+    class = "god_steps"
+  )
+}
+
+#' @export
+print.god_steps <- function(x, ...) {
+  drawn <- format(x, "text")
+  # R reads the engine's output a line at a time and joins it, which drops the
+  # last newline. Without this the prompt comes back on the bottom rung of the
+  # ladder.
+  cat(drawn)
+  if (!endsWith(drawn, "\n")) cat("\n")
+  invisible(x)
+}
+
+#' The drawing as text
+#'
+#' @param x A drawing, from [show_steps()].
+#' @param as `"text"` for the ladder, `"svg"` for the picture.
+#' @param ... Unused.
+#' @return The drawing, as one string.
+#' @export
+format.god_steps <- function(x, as = "text", ...) {
+  # The engine says which ways of drawing there are, and refuses the rest. A
+  # list here would be a second copy of one, and the second copy is the one that
+  # goes stale.
+  god_call(c(.subset2(x, "args"), "--draw", as), .subset2(x, "sentence"))
+}
+
+# Which tables does this pipeline read, and how are they described to the
+# grammar?
+#
+# **Shared by everything that asks the grammar about a pipeline rather than
+# running it.** The two callers used to carry a copy each, and a copy of a lookup
+# is how one of them ends up resolving a table the other does not.
+god_asking <- function(pipeline, tables, here) {
   # A pipeline built from the native verbs already carries its tables and knows
   # what they are called, so there is nothing to look up.
   if (inherits(pipeline, "god_pipeline")) {
-    text <- god_call(
-      c(columns_args(.subset2(pipeline, "tables"), .subset2(pipeline, "source")),
-        "--as", as),
-      god_written(pipeline)
-    )
-    cat(text)
-    return(invisible(text))
+    return(list(
+      args = columns_args(.subset2(pipeline, "tables"), .subset2(pipeline, "source")),
+      sentence = god_written(pipeline)
+    ))
   }
 
   # The same lookup `run` does, and for the same reason: since `join`, a
   # sentence can name more than one table, so every name the grammar reports
   # is resolved rather than only the head.
   sources <- god_needs(pipeline)
-  here <- parent.frame()
   for (source in sources) {
     if (!source %in% names(tables)) {
       found <- mget(source, envir = here, ifnotfound = list(NULL))[[1]]
@@ -194,9 +252,7 @@ show_as <- function(pipeline, as = "dplyr", ...) {
       tables[[source]] <- found
     }
   }
-  text <- god_call(c(columns_args(tables, sources[[1]]), "--as", as), pipeline)
-  cat(text)
-  invisible(text)
+  list(args = columns_args(tables, sources[[1]]), sentence = pipeline)
 }
 
 #' The query a pipeline becomes
