@@ -71,10 +71,12 @@ teaching chapter, and reading it aloud is not a ritual for its own sake: it
 is the retention promise being rehearsed. A sentence you can say is a
 sentence you can still say after a year away.
 
-The gloss is not decoration, and it is not pseudocode. The text form is a
-real spelling of the grammar, for the places that have neither R nor Python
-to bind into: a database cell, a configuration file, a stored pipeline. In
-it, `then` is the pipe, pronounced. A column rides in square brackets,
+The gloss is not decoration, and it is not pseudocode. The text form is the
+grammar's main spelling, the one `run` takes, and the one this book points a
+new reader at first. It is also the only spelling that still means something
+where there is neither R nor Python: a database cell, a configuration file, a
+stored pipeline. In it, `then` is the pipe, pronounced. A column rides in
+square brackets,
 `[margin]`, so that any name at all can be a column. And because it is real,
 this book's build hands every gloss on every page to the engine and refuses
 to publish if one stops parsing. A gloss cannot rot into wishful thinking;

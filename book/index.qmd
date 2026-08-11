@@ -47,8 +47,8 @@ Say it once. Run it anywhere.
 
 god is one data-manipulation engine written in [Rust](https://www.rust-lang.org/),
 callable from [R](https://www.r-project.org/) and
-[Python](https://www.python.org/); where you have neither, the same pipeline
-runs as plain text. Its vocabulary is plain everyday English, and its shape comes from
+[Python](https://www.python.org/). You write your pipeline as a sentence, and
+the same sentence works in both. Its vocabulary is plain everyday English, and its shape comes from
 [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/),
 which are the tools that got this right.
 
@@ -89,9 +89,26 @@ everyday verbs. Come back here when you want to know why the grammar refuses
 what it refuses. If you would rather see all of it at once first,
 [Appendix B](appendices/b-every-word.qmd) is every word there is, on one page.
 
-## One sentence, twice
+## One sentence, three ways
 
-Here is a pipeline in R.
+The main way to write a pipeline in god is to say it. `run` takes the sentence,
+gives back the table, and is spelled exactly the same in R and in Python.
+
+```{r}
+run('sales
+       then keep where [region] is "West"
+       then add [margin] as [revenue] - [cost]
+       then summarize [margin] as total([margin]),
+            [orders] as row_count() by [product]
+       then sort [margin] descending
+       then take 10')
+```
+
+Read it aloud and it is a sentence. Keep the rows where the region is West. Add
+a margin column. For each product, total the margin and count the orders. Sort
+by margin, largest first. Take the top ten.
+
+If you already write R, the same sentence has a pipe spelling.
 
 ```{r}
 sales |>
@@ -102,7 +119,7 @@ sales |>
   take(10)
 ```
 
-Here is the same pipeline in Python.
+And if you already write Python, so does it there.
 
 ```{python}
 (sales
@@ -114,17 +131,23 @@ Here is the same pipeline in Python.
   >> take(10))
 ```
 
-Read them aloud and they are one sentence. Keep the rows where the region is
-West. Add a margin column. For each product, total the margin and count the
-orders. Sort by margin, largest first. Take the top ten.
+None of the three is an illustration. All three ran when this page was built,
+and the table under each is the answer that came back.
 
-Neither block above is an illustration. Both ran when this page was built,
-and the table under each is the answer that came back. They agree, and every
-example in this book is held to that standard.
+**A matter of taste.** Which one you write is exactly that, and there is
+nothing you can reach with a pipe that you cannot say in a sentence. Both pipe
+spellings work by turning your code into the sentence above and handing that to
+the engine. Anything you can pipe, you can say.
+
+**Start with `run`.** If this kind of work is new to you, it is the shortest
+thing to learn, it is identical in both languages, and it is the one spelling
+that still means something where there is no R or Python at all. The pipe
+flavors are here for readers who already think in dplyr or pandas, and who
+would rather not change hands to use this.
 
 ## Two differences
 
-The two versions differ in two things.
+The two pipe versions differ from each other in two things.
 
 - **The pipe.** R uses its native `|>`. Python uses `>>`.
 - **The column.** R writes a bare name, `revenue`. Python writes `col.revenue`.
@@ -142,11 +165,13 @@ value is one of several is `col.region.is_in([...])`, and asking whether one is
 missing is `col.cost.is_missing()`, because Python's `in` cannot be reached by an
 object at all.
 
-## A third place to write it
+## A sentence with no host
 
-Some places have no language to bind into: a database cell, a configuration file,
-a pipeline that was stored or generated rather than typed. There the grammar is
-written as plain text, and it is the same grammar.
+A sentence is data. That is the one reason to prefer it that is not about
+taste. Some places
+have no language to bind into: a database cell, a configuration file, a
+pipeline that was stored or generated rather than typed. All of them can hold
+one of these, and it is the same grammar sitting there.
 
 ```
 sales
@@ -158,13 +183,13 @@ sales
   then take 10
 ```
 
-Both versions above produce exactly this, which is why a pipeline can move
+Both pipe versions above produce exactly this, which is why a pipeline can move
 between a script, a notebook and a warehouse without being rewritten.
 
-A sentence written this way is data, so it can be stored, sent, and read by
-someone who does not write code. `run` takes one and gives back the table, and
-the call is identical in both languages, because there is no pipe glyph and no
-column syntax left to differ. [What it wrote](chapters/what-it-wrote.qmd) shows it running.
+Where there is no R or Python, the sentence is still the sentence, but
+something has to run it for you. `god-cli` reads one and writes the query for
+your engine, which you then run where your data already is. [What it
+wrote](chapters/what-it-wrote.qmd) shows both routes.
 
 That split is worth noticing early. Whoever writes a question and whoever runs
 it do not have to be the same person, and only one of them needs a language to

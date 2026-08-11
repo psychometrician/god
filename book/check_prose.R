@@ -169,6 +169,10 @@ check_prose <- function(dirs = "book") {
     # which is the same blind spot that hides a quarter of the hits in any
     # line-based grep over this book.
     b_open <- FALSE; b_start <- NA_integer_; b_text <- ""; b_item <- FALSE
+    # A run-in label may also open a *paragraph*, not only a list item, so the
+    # check has to know where a paragraph begins. A blank line sets this; the
+    # first line of the body counts as one too.
+    b_para <- FALSE; at_para <- TRUE
 
     for (i in seq_along(lines)) {
       line <- lines[i]
@@ -243,14 +247,22 @@ check_prose <- function(dirs = "book") {
       }
 
       # --- Bolded sentences -------------------------------------------------
-      # A short bold run-in label may open a *list item*, with the terminal
-      # period inside the bold. That is a layout device, and it is the only
-      # carve-out: a bold label opening an ordinary paragraph is emphasis and
-      # goes. Anything longer, or anywhere else, is a sentence wearing bold, and
-      # a bolded sentence reads as a box.
+      # A short bold run-in label may open a *list item* or a *paragraph*, with
+      # the terminal period inside the bold. Those are the two carve-outs, and
+      # they are one device in two places. Anything longer than MAX_BOLD, or a
+      # bold run starting anywhere other than the front, is a sentence wearing
+      # bold, and a bolded sentence reads as a box.
+      #
+      # The paragraph spelling was blessed on 2026-08-11, after it turned out to
+      # be a house pattern about fifteen times over. This check allowed it only
+      # by accident before then: a label of three words or fewer never tripped
+      # the terminal-period test, so the short ones passed and the rest failed.
       if (!nzchar(trimws(line))) {           # a blank line ends a paragraph, so
         b_open <- FALSE; b_text <- ""        # an unmatched `**` cannot run away
+        at_para <- TRUE
       } else {
+        starts_para <- at_para
+        at_para <- FALSE
         # `strsplit` drops trailing empty fields, so a line *ending* in `**`
         # comes back one segment short and the closing delimiter is never seen.
         # The run then stays open and swallows the next line. Count the
@@ -268,14 +280,17 @@ check_prose <- function(dirs = "book") {
               n <- nwords(b_text)
               punct <- grepl("[.!?]\\s+[A-Z]", b_text) ||
                 (grepl("[.!?]$", trimws(b_text)) && n > 3L)
-              if ((n > MAX_BOLD || punct) && !(b_item && n <= MAX_BOLD))
+              if ((n > MAX_BOLD || punct) && !((b_item || b_para) && n <= MAX_BOLD))
                 bad_bold <- c(bad_bold, sprintf("  %s:%d  [%dw] **%s**",
                                                 short, b_start, n, trimws(b_text)))
               b_open <- FALSE; b_text <- ""
             } else {
               b_open <- TRUE; b_start <- i; b_text <- ""
-              # A run-in label is the first bold on a list-item line.
+              # A run-in label is the first bold on a list-item line, or the
+              # first bold on the opening line of a paragraph, where nothing at
+              # all precedes the `**`.
               b_item <- (j == 1L) && grepl("^\\s*([-*+]|[0-9]+\\.)\\s+$", segs[1])
+              b_para <- (j == 1L) && starts_para && !nzchar(segs[1])
             }
           }
         }
