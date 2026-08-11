@@ -53,6 +53,49 @@ pub enum Ink {
     Caret,
 }
 
+impl Ink {
+    /// Every kind, so a check can walk them rather than restate them.
+    ///
+    /// **An emitter that has never been told how to draw one of these should
+    /// fail loudly rather than draw it as ordinary text.** A list written down
+    /// in the emitter would agree with itself and with nothing else; this is the
+    /// list, and the test that walks it fails the day a kind is added and left
+    /// unstyled.
+    pub const ALL: &'static [Ink] = &[
+        Ink::Rail,
+        Ink::Source,
+        Ink::Step,
+        Ink::Table,
+        Ink::Column,
+        Ink::Added,
+        Ink::Dropped,
+        Ink::Key,
+        Ink::Kind,
+        Ink::Note,
+        Ink::Warn,
+        Ink::Caret,
+    ];
+
+    /// The class an emitter styles this with. One word, and the same word in the
+    /// stylesheet, so the two cannot be spelled differently.
+    pub fn class(self) -> &'static str {
+        match self {
+            Ink::Rail => "rail",
+            Ink::Source => "source",
+            Ink::Step => "step",
+            Ink::Table => "table",
+            Ink::Column => "column",
+            Ink::Added => "added",
+            Ink::Dropped => "dropped",
+            Ink::Key => "key",
+            Ink::Kind => "kind",
+            Ink::Note => "note",
+            Ink::Warn => "warn",
+            Ink::Caret => "caret",
+        }
+    }
+}
+
 /// One line of the drawing.
 #[derive(Debug, Clone)]
 pub struct Row {

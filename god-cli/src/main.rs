@@ -47,10 +47,10 @@ Options
                        Types: text, number, truth, date. Anything else is read
                        as a type the grammar has no opinion about.
     --as <backend>     what to write out. Default: sql
-    --draw             draw what the pipeline does to the table, step by step,
-                       and run nothing. A sentence that will not check is drawn
-                       as far as it checked, with the refusal under the words
-                       that stopped it.
+    --draw <way>       draw what the pipeline does to the table, step by step,
+                       and run nothing. `text` for a terminal, `svg` for a page.
+                       A sentence that will not check is drawn as far as it
+                       checked, with the refusal under the words that stopped it.
     --needs            print the table this pipeline reads, and stop. A launcher
                        asks this first, so it knows which table to describe
                        without having to read the pipeline itself.
@@ -175,14 +175,26 @@ fn run() -> Result<String, Failure> {
     let mut wanted: Option<String> = None;
     let mut pipeline: Option<String> = None;
     let mut needs_only = false;
-    let mut drawing = false;
+    let mut drawing: Option<String> = None;
 
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--help" | "-h" => return Err(Failure::Help),
             "--needs" => needs_only = true,
-            "--draw" => drawing = true,
+            "--draw" => {
+                if drawing.is_some() {
+                    return Err(Failure::Usage(
+                        "`--draw` was given twice, and this takes one".into(),
+                    ));
+                }
+                drawing = Some(args.next().ok_or_else(|| {
+                    Failure::Usage(format!(
+                        "`--draw` needs a way of drawing. There is: {}",
+                        god_core::draw::ways().join(", ")
+                    ))
+                })?)
+            }
             "--vocabulary" => return Err(Failure::Vocabulary),
             "--seats" => return Err(Failure::Seats),
             "--columns" => {
@@ -288,13 +300,13 @@ fn run() -> Result<String, Failure> {
     // in a picture either way, because a pipeline that will not run is exactly
     // when someone wants to see how far it got. The assumptions are not repeated
     // on stderr: they are drawn, on the band that made them.
-    if drawing {
+    if let Some(way) = drawing {
         if wanted.is_some() {
             return Err(Failure::Usage(
                 "`--draw` and `--as` answer different questions, so this takes one or the other. `--as` writes the pipeline out in another language; `--draw` shows what it does to the table".into(),
             ));
         }
-        return god_core::draw_tables(&pipeline, &schema, &others)
+        return god_core::draw_tables(&pipeline, &schema, &others, &way)
             .map_err(|d| Failure::Refused(d.render(&pipeline)));
     }
 

@@ -124,7 +124,28 @@ pub fn compile_tables(
 /// the refusal under the words that stopped it. A person looking at a pipeline
 /// that will not run wants to know how far it got, and that is the one question
 /// a message on its own cannot answer.
-pub fn draw_tables(source: &str, schema: &Schema, others: &check::Tables) -> Result<String, Diagnostic> {
+pub fn draw_tables(
+    source: &str,
+    schema: &Schema,
+    others: &check::Tables,
+    way: &str,
+) -> Result<String, Diagnostic> {
     let plan = parse::parse(source)?;
-    Ok(draw::ladder(&plan, source, schema, others))
+    match way {
+        "text" => Ok(draw::ladder(&plan, source, schema, others)),
+        "svg" => Ok(draw::picture(&plan, source, schema, others)),
+        other => {
+            let suggestion = diagnostic::nearest(other, draw::ways().to_vec())
+                .map(|s| format!(" Did you mean `{s}`?"))
+                .unwrap_or_default();
+            Err(Diagnostic {
+                kind: diagnostic::Kind::Illegal,
+                message: format!(
+                    "there is no way of drawing called `{other}`.{suggestion} There is: {}",
+                    draw::ways().join(", ")
+                ),
+                span: None,
+            })
+        }
+    }
 }

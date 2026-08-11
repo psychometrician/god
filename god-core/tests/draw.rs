@@ -8,6 +8,7 @@
 //! grammar already owns, and a golden file a person reads.
 
 use god_core::check::{Schema, Tables, Type};
+use god_core::draw::scene::Ink;
 use god_core::{draw, parse};
 
 /// The corpus's tables, which are the ones `parity/sales.csv` and
@@ -38,6 +39,16 @@ fn ladder(sentence: &str) -> String {
     let plan = parse::parse(sentence)
         .unwrap_or_else(|d| panic!("`{sentence}` will not parse: {}", d.message));
     draw::ladder(&plan, sentence, &sales(), &others())
+}
+
+fn picture(sentence: &str) -> String {
+    let plan = parse::parse(sentence).expect("parses");
+    draw::picture(&plan, sentence, &sales(), &others())
+}
+
+fn scene(sentence: &str) -> draw::Scene {
+    let plan = parse::parse(sentence).expect("parses");
+    draw::ladder::build(&plan, sentence, &sales(), &others())
 }
 
 const CORPUS: &str = include_str!("../../parity/corpus.god");
@@ -171,6 +182,66 @@ fn a_refused_sentence_is_drawn_as_far_as_it_checked() {
         drawn.contains("there is no column called `product`"),
         "and the refusal itself:\n{drawn}"
     );
+}
+
+/// **The picture draws every piece of rail the ladder builds.**
+///
+/// The two emitters agree on three box-drawing glyphs, and the picture turns
+/// them into strokes rather than letters so they join between lines. That
+/// agreement is the one place the split between layout and emission can go
+/// quietly wrong: a fourth glyph would come out of the picture as *nothing*, and
+/// a missing piece of rail is not something a reader notices is missing.
+#[test]
+fn the_picture_draws_every_rail_the_ladder_builds() {
+    for sentence in corpus() {
+        for row in &scene(sentence).rows {
+            for cell in row.cells.iter().filter(|c| c.ink == Ink::Rail) {
+                assert!(
+                    draw::svg::draws_rail(&cell.text),
+                    "`{sentence}` builds its rail from `{}`, which the picture would draw as nothing",
+                    cell.text
+                );
+            }
+        }
+    }
+}
+
+/// **Nothing the ladder puts on the page is missing from the picture.**
+///
+/// One `<text>` per cell that is not rail, counted rather than eyeballed. An
+/// emitter that skipped a kind of ink — because a `match` grew an arm that falls
+/// through — would produce a picture that still looks finished.
+#[test]
+fn the_picture_draws_every_cell_the_ladder_places() {
+    for sentence in corpus() {
+        let drawn = scene(sentence);
+        let expected: usize = drawn
+            .rows
+            .iter()
+            .map(|r| r.cells.iter().filter(|c| c.ink != Ink::Rail).count())
+            .sum();
+        assert_eq!(
+            picture(sentence).matches("<text ").count(),
+            expected,
+            "`{sentence}` places {expected} runs of text and the picture draws a different number"
+        );
+    }
+}
+
+/// The picture is a whole document and the same one every time.
+#[test]
+fn the_picture_is_closed_and_repeatable() {
+    for sentence in corpus() {
+        let drawn = picture(sentence);
+        assert!(drawn.starts_with("<svg "), "`{sentence}` did not open a document");
+        assert!(drawn.trim_end().ends_with("</svg>"), "`{sentence}` did not close one");
+        assert_eq!(
+            drawn.matches("<text ").count(),
+            drawn.matches("</text>").count(),
+            "`{sentence}` left a run of text open"
+        );
+        assert_eq!(drawn, picture(sentence), "`{sentence}` drew two different pictures");
+    }
 }
 
 /// The whole corpus, drawn, against a file a person has read.

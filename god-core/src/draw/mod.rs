@@ -22,6 +22,7 @@
 
 pub mod ladder;
 pub mod scene;
+pub mod svg;
 pub mod text;
 
 pub use scene::{Ink, Scene};
@@ -37,4 +38,21 @@ use crate::plan::Plan;
 /// out.
 pub fn ladder(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> String {
     text::render(&ladder::build(plan, source, schema, others))
+}
+
+/// The same ladder, drawn.
+///
+/// **The same scene, so the two cannot disagree.** Whatever the text says about
+/// where a column sits, the picture puts it there, because neither of them
+/// decides: the layout was settled before either was asked.
+pub fn picture(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> String {
+    svg::render(&ladder::build(plan, source, schema, others))
+}
+
+/// The two ways to look at the same drawing.
+///
+/// Named here so nothing else keeps a copy — a launcher offering a third would
+/// be offering something that does not exist.
+pub fn ways() -> &'static [&'static str] {
+    &["text", "svg"]
 }

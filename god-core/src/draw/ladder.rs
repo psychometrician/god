@@ -35,14 +35,42 @@ const TRIBUTARY: u16 = 6;
 /// How far right the column strip is allowed to be pushed. A step written out
 /// longer than this keeps its strip on the line below rather than shoving every
 /// other strip across the page.
-const LABEL_CAP: u16 = 48;
+///
+/// **Every strip starting at one column is what makes the drawing readable
+/// downward** — a reader scans the same place on every line to see what the
+/// table holds — and the cap is what stops one long `summarize` from buying that
+/// alignment with a page of white space.
+const LABEL_CAP: u16 = 40;
 /// How many columns a strip shows before it starts counting instead.
 const CHIP_CAP: usize = 12;
 
 /// One column, as it is about to be drawn.
+///
+/// The kind is kept apart from the name rather than written into it, because a
+/// picture wants to draw them differently: the name is what a reader is looking
+/// for and the kind is what they check once. Set side by side with no gap, the
+/// text ladder shows `revenue:number` either way.
 struct Chip {
     text: String,
+    kind: Option<String>,
     ink: Ink,
+}
+
+impl Chip {
+    fn plain(text: impl Into<String>, ink: Ink) -> Self {
+        Chip { text: text.into(), kind: None, ink }
+    }
+
+    fn holding(text: impl Into<String>, kind: crate::check::Type, ink: Ink) -> Self {
+        Chip {
+            text: text.into(),
+            kind: match kind.word() {
+                "" => None,
+                word => Some(format!(":{word}")),
+            },
+            ink,
+        }
+    }
 }
 
 /// Check the pipeline and lay it out — including when the check refuses.
@@ -289,26 +317,18 @@ fn slice(source: &str, span: Span) -> Option<&str> {
 }
 
 /// Every column of a table, with nothing marked, and what each one holds.
+///
+/// **The kind is said where it is news and nowhere else.** On every chip of
+/// every band it would double the width of the drawing to repeat something that
+/// has not changed since the line above. It belongs on the table you start from,
+/// and on a column a step has just made, because those are the two places a
+/// reader has not been told.
 fn chips_of(schema: &Schema) -> Vec<Chip> {
     schema
         .columns
         .iter()
-        .map(|(name, kind)| Chip { text: with_kind(name, *kind), ink: Ink::Column })
+        .map(|(name, kind)| Chip::holding(name, *kind, Ink::Column))
         .collect()
-}
-
-/// `revenue:number`, or bare where the grammar has no opinion about the type.
-///
-/// **Said where it is news and nowhere else.** A kind on every chip of every
-/// band would double the width of the drawing to repeat something that has not
-/// changed since the line above. It is worth saying about the table you start
-/// from, and about a column a step has just made, because those are the two
-/// places a reader has not been told.
-fn with_kind(name: &str, kind: crate::check::Type) -> String {
-    match kind.word() {
-        "" => name.to_string(),
-        word => format!("{name}:{word}"),
-    }
 }
 
 /// The columns of a table that is arriving, with the ones that matched marked.
@@ -323,9 +343,9 @@ fn chips_from(their: &Schema, keys: &[String]) -> Vec<Chip> {
         .iter()
         .map(|(name, kind)| {
             if keys.iter().any(|k| k == name) {
-                Chip { text: format!("={name}"), ink: Ink::Key }
+                Chip::plain(format!("={name}"), Ink::Key)
             } else {
-                Chip { text: with_kind(name, *kind), ink: Ink::Column }
+                Chip::holding(name, *kind, Ink::Column)
             }
         })
         .collect()
@@ -339,11 +359,11 @@ fn chips_between(before: &Schema, after: &Schema, keys: &[String]) -> (Vec<Chip>
         .iter()
         .map(|(name, kind)| {
             if before.get(name).is_none() {
-                Chip { text: format!("+{}", with_kind(name, *kind)), ink: Ink::Added }
+                Chip::holding(format!("+{name}"), *kind, Ink::Added)
             } else if keys.iter().any(|k| k == name) {
-                Chip { text: format!("={name}"), ink: Ink::Key }
+                Chip::plain(format!("={name}"), Ink::Key)
             } else {
-                Chip { text: name.clone(), ink: Ink::Column }
+                Chip::plain(name.clone(), Ink::Column)
             }
         })
         .collect();
@@ -352,7 +372,7 @@ fn chips_between(before: &Schema, after: &Schema, keys: &[String]) -> (Vec<Chip>
         .columns
         .iter()
         .filter(|(name, _)| after.get(name).is_none())
-        .map(|(name, _)| Chip { text: format!("-{name}"), ink: Ink::Dropped })
+        .map(|(name, _)| Chip::plain(format!("-{name}"), Ink::Dropped))
         .collect();
 
     (kept, gone)
@@ -390,6 +410,11 @@ fn put_chips(scene: &mut Scene, mut row: RowBuilder, chips: Vec<Chip>) {
         }
         first = false;
         row = row.put(chip.text, chip.ink);
+        // No gap: the kind sits against the name, so the two cells read as
+        // `revenue:number` in text and can be drawn apart in a picture.
+        if let Some(kind) = chip.kind {
+            row = row.put(kind, Ink::Kind);
+        }
     }
     scene.push(row.done());
 }
@@ -425,7 +450,7 @@ fn cap(chips: Vec<Chip>) -> Vec<Chip> {
     }
 
     if let Some(at) = marker {
-        out.insert(at, Chip { text: format!("({elided} more)"), ink: Ink::Note });
+        out.insert(at, Chip::plain(format!("({elided} more)"), Ink::Note));
     }
     out
 }
