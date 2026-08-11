@@ -32,35 +32,12 @@ in a tool you already know — `show_as(pipeline, "pandas")`, or `"polars"`,
 
 ## Installing
 
-The distribution is `grammar-of-data` and the import is `god` — the PyPI name
-`god` was taken in 2016 by an unrelated package, and a distribution name and
-an import name are independent. Until the PyPI release lands, install a wheel
-built from the repository at <https://github.com/psychometrician/god>, which
-carries the engine inside it.
+```bash
+pip install grammar-of-data
+```
 
-## What is here
-
-| File | Owns |
-|---|---|
-| `god/verbs.py` | The fourteen verbs. Each builds a sentence and decides nothing |
-| `god/columns.py` | How Python names a column: `col.region`, and the expressions it grows |
-| `god/run.py` | The text form, finding the engine, and running the query |
-| `setup.py` | Packs the engine into the wheel, and tags the wheel for the platform the engine was built for |
-
-**Any decision at all** lives in the grammar, not here. This package finds a
-frame, hands over some text, runs the query it gets back, and returns a native
-frame.
-
-## What was checked about Python's operators
-
-- **`|>` is impossible.** It does not tokenize, and Python's operator set is
-  fixed by the grammar. No import hook fakes it, because that breaks the editor
-  support a front end exists to provide.
-- **`>>` is available.** Neither pandas nor polars defines `__rshift__`, so a
-  bare frame falls through to `__rrshift__`. Verified by running it.
-- **`|` is refused.** Both define `__or__`, and `frame | verb` never reaches
-  the verb — it does an elementwise or and returns a frame of `True`. A silent
-  wrong answer is the one outcome this project will not ship.
+Then `import god`. The wheel carries its own engine, so there is nothing else
+to install.
 
 The manual, live in both languages, is at
 <https://psychometrician.github.io/god-book/>.

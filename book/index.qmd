@@ -696,11 +696,16 @@ install.packages("god",
 Then `library(god)` attaches the verbs, and every example in this book runs
 as printed.
 
-Python is next: the packages are built, and when the release lands it will be
-`pip install grammar-of-data`, with `import god` regardless, because the PyPI
-name `god` was taken in 2016 by an unrelated package. The examples in this
-book use `from god import *`; `import god` works too, with a prefix on every
-name.
+In Python, from PyPI, one wheel per platform with the engine inside:
+
+```bash
+pip install grammar-of-data
+```
+
+The install name and the import name differ, because `god` was taken on PyPI
+in 2016 by an unrelated package: you install `grammar-of-data` and write
+`import god`. The examples in this book use `from god import *`; `import god`
+works too, with a prefix on every name.
 
 Every example shown in both languages ran in both when this book was built,
 exactly as printed, and a page whose two tabs disagree is a build the book

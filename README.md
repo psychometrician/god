@@ -111,7 +111,7 @@ same person.
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
 | The reference manual, live in both languages | ✅ |
-| Packaging | R installs today, below; Python's wheels are built and PyPI is next |
+| Packaging: R-universe and PyPI | ✅ |
 
 ## Install
 
@@ -122,7 +122,12 @@ install.packages("god",
   repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
-Python is not released yet. When it is, it will be `pip install grammar-of-data`.
+In Python, from PyPI, one wheel per platform with the engine inside:
+
+```bash
+pip install grammar-of-data
+```
+
 The distribution names differ because `god` was taken on PyPI in 2016 by an
 unrelated package, and **the import is `god` in both languages regardless**.
 
