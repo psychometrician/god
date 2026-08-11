@@ -235,8 +235,11 @@ the same checks run against it before anything is written out.
 ## The same engine at the command line
 
 Everything on this page is one binary, `god-cli`, which the transcripts in
-this book shorten to `god`. It reads a sentence and writes text, so it needs
-no R and no Python: give it the columns, and name the target with `--as`.
+this book shorten to `god`. Both installed packages carry a copy, and the
+repository builds one with `cargo build --release`; put it on your `PATH`
+and the transcripts run as shown. It reads a sentence and writes text, so it
+needs no R and no Python: give it the columns, and name the target with
+`--as`.
 
 ```
 $ god --columns 'region:text,revenue:number' --as dplyr 'sales then keep where [region] is "West" then take 3'

@@ -231,8 +231,8 @@ run('
 
 *`gapminder then keep where [year] is 2007 then summarize [countries] as row_count() by [continent]`*
 
-Same sentence shape as the sales questions, seventeen hundred rows instead
-of fifteen, and nothing about the spelling had to know the difference.
+Same sentence shape as the sales questions, 1,704 rows instead of fifteen,
+and nothing about the spelling had to know the difference.
 
 ## What was the cheapest order in each region?
 

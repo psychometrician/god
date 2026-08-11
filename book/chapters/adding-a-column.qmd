@@ -53,9 +53,11 @@ arrived with.
 ## The name goes first
 
 `as` is the word that names what was made, and the name comes first: new name,
-then the value. That is the order assignment reads in almost every language,
-and it is the same order `rename` and `summarize` will use, so there is one
-direction to remember across the whole grammar rather than one per verb.
+then the value. In R and Python you type `=`, and it is playing `as`'s part;
+the text form writes the word out. That is the order assignment reads in
+almost every language, and it is the same order `rename` and `summarize`
+will use, so there is one direction to remember across the whole grammar
+rather than one per verb.
 
 ## A step is one step
 
@@ -107,8 +109,9 @@ does not, for the same reason SQL does not: a step is one step, not a
 sequence hiding inside one. The moment two values in a step can depend on
 each other, the order they are written in starts to matter, and a reader has
 to trace a hidden pipeline inside every line. Two short steps cost you
-nothing at all when the book reaches [the chapter on
-laziness](nothing-runs-yet.qmd), and they read as what they are.
+nothing now: no step runs until the whole pipeline is asked for, which is
+[the chapter on laziness](nothing-runs-yet.qmd), so the two become one
+query. And they read as what they are.
 
 ## Replacing a column
 
@@ -153,8 +156,9 @@ session holds is unchanged, the way it always is.
   [the part on values](../parts/values.qmd) the text repairs, conversions,
   dates, and conditionals, all written in this same seat.
 - `by` can follow an `add` whose value summarizes a group, which turns a
-  collapse into a broadcast; the chapter on the small words shows it, and
-  share-of-group is the idiom it exists for.
+  collapse into a broadcast: the group's one answer written onto every row
+  of the group. The chapter on the small words shows it, and share-of-group
+  is the idiom it exists for.
 
 ## What it refuses
 
@@ -184,7 +188,8 @@ except GodError as refusal:
 :::
 
 The message does not stop at no: it names the two-step spelling that works.
-The same law has a second face the text form can reach, making one name twice
-in a single step, and it is refused with the same directness, because a
-column silently thrown away is work silently thrown away. If you remember
-that a step is one step, you will never meet either message again.
+The same law refuses a second mistake that only the text form can spell,
+making one name twice in a single step, and it is refused with the same
+directness, because a column silently thrown away is work silently thrown
+away. If you remember that a step is one step, you will never meet either
+message again.

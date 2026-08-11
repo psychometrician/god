@@ -15,12 +15,15 @@ without bringing anything in. `add_rows` stacks a second table underneath.
 The order is deliberate: first the verb everyone arrives wanting, then the
 verb that keeps the first one honest, then the one that is simpler than both.
 
-One law holds the part together: **a join must not multiply rows behind you**. If the other table has three rows for a product, a join hands back
-three rows for each of yours, and nothing about the result says so. That is
-not a defect of joins; it is what a join is. The reason `matching` exists is
-that it cannot do this: a question about partnership returns each of your
-rows once or not at all, however many partners it found. The distinction is
-worth the chapter it gets.
+One fact holds the part together, and it is yours to watch rather than the
+grammar's to enforce: **a join can multiply your rows**. If the other table
+has three rows for a product, a join hands back three rows for each of
+yours, and nothing about the result says so. That is not a defect of joins;
+it is what a join is, and the checker reads columns rather than rows, so it
+cannot warn you. The reason `matching` exists is that it cannot do this: a
+question about partnership returns each of your rows once or not at all,
+however many partners it found. The distinction is worth the chapter it
+gets.
 
 The cast is built for this part. `sales` holds a product that `products` has
 never heard of, and `products` lists one that never sold, so every join in

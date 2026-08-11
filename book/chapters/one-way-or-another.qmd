@@ -129,5 +129,5 @@ except GodError as refusal:
 Python has a conditional of its own, and it is worth saying why god does not use
 it. Writing `"A" if col.score >= 90 else "B"` would decide the answer once, while
 the pipeline was being built, and throw the question away. Nothing would report a
-problem. R has no such expression at all. So the word is `when` in both, and it
-is the same word in the text form.
+problem. R's `if` wants a single yes or no, so a column of answers is an error
+there. So the word is `when` in both, and it is the same word in the text form.

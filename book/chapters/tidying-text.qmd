@@ -45,8 +45,9 @@ messy = pd.DataFrame({
 *`messy then add [name] as trim([raw]) then add [first] as split_text([name], " ", 1), [size] as characters([name]), [fixed] as replace_text([name], "a", "A")`*
 
 `split_text` says which piece it wants, counting from 1, because every value in
-the grammar is one value. Where there is no such piece the answer is empty text
-rather than missing, so `bob` gives back `bob`.
+the grammar is one value. A value with no separator is all one piece, so asking
+`bob` for piece 1 gives back `bob`. Asking it for piece 2 finds no such piece,
+and the answer is empty text rather than missing.
 
 `replace_text` looks for the text itself, not for a pattern, so nothing in it is
 special. `characters` counts characters; it is not called `length`, because R's

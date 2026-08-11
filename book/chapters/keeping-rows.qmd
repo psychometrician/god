@@ -74,8 +74,9 @@ run('
 :::
 
 Python needs the parentheses and R does not, because Python's `&` binds more
-tightly than its `==`; that rule is Python's, not the grammar's, and the
-preface's list of Python's own rules is the whole of that subject.
+tightly than its `==`. That rule is Python's rather than the grammar's: the
+preface holds the short list of rules Python brings of its own, and that
+list is the whole of the subject.
 
 ## The words where the hosts disagree
 

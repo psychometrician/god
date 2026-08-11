@@ -43,9 +43,11 @@ len(collect(answer))
 
 :::
 
-In R this matters for more than speed. `sort` and `keep` are names other packages
-use too, and a pipeline handed to the wrong `sort` has no meaning there, so it
-stops instead of returning a plausible answer.
+In R this matters for more than speed. `sort` and `keep` are names other
+packages use too, so a pipeline can land in some other package's `sort` by
+mistake. A pipeline is not a table, so the stranger's `sort` has no meaning
+for it, and the call stops rather than returning a plausible answer from the
+wrong tool.
 
 You can also see what the verbs wrote, which is the text form, and it is the same
 sentence in both languages.
@@ -66,8 +68,11 @@ print((sales >> keep(col.region == "West") >> take(10)).written())
 
 :::
 
-What the two spellings hand back is identical, and it is the text form: the
-sentence with no pipe glyph and no column syntax left, which is what
+The two calls answer with the same bytes, and only their names differ:
+`format` is the word R already owns for turning a thing into text, and
+Python's `format` means something else, so its method says what it gives.
+What comes back is the text form: the sentence with no pipe glyph and no
+column syntax left, which is what
 [the next chapter](what-it-wrote.qmd) stores, sends and runs.
 
 Printing is also how a notebook shows a pipeline. In Jupyter, and on every

@@ -89,8 +89,9 @@ The `add` uses an aggregate with no `by`, so the divisor spans the whole
 table: each region's total over the grand total. The shares sum to one,
 which is the check to run with your eye before you trust any share column.
 
-**One verb away.** Share within a group instead of the whole: keep the rows
-and move the `by` onto the `add`, which is the idiom
+**One verb away.** Share within a group instead of the whole: leave the
+`summarize` out, so every row stays a row, and put the `by` on the `add`,
+which is the idiom
 [the small-words chapter](../chapters/words-that-repeat.qmd) reads aloud.
 
 ## How many different values does a column hold?

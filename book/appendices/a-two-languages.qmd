@@ -98,6 +98,13 @@ One word used to be on this list and no longer is. The marker that inverts a
 keyword here. It is `all_but` in both languages now, and in the text form. No
 word in the vocabulary is spelled differently in the two languages.
 
+Two host-side calls do differ, and neither is a word of the vocabulary.
+Asking a pipeline for its text form is `format(p)` in R and `p.written()` in
+Python: `format` is the word R already owns for turning a thing into text,
+and Python's `format` means something else, so its method says what it
+gives. And `show_as` prints in R while it returns in Python, for the
+notebook reason [What it wrote](../chapters/what-it-wrote.qmd) explains.
+
 ## R's habits, in the grammar's words
 
 The grammar has one spelling for each idea, and some of R's spellings are not it.

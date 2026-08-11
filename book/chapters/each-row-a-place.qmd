@@ -43,7 +43,7 @@ races >> add(place = rank(col.score)) >> sort(col.place)
 *`races then add [place] as rank([score]) then sort [place]`*
 
 Read the places down the column: 1, 2, 2, 4. The lowest score is first, the two
-20s **share** second place, and the next value takes fourth. Third place is not
+20s *share* second place, and the next value takes fourth. Third place is not
 awarded, because two rows already stand ahead of the 50.
 
 The `sort` at the end is doing real work. Adding a column says nothing about what

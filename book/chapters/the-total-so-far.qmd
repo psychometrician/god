@@ -102,4 +102,7 @@ except GodError as refusal:
 :::
 
 `rank` is the exception, because its argument *is* the order: `rank(x)` says what
-it goes by, so it needs no sort in front of it.
+it goes by, so it needs no sort in front of it. The three words this chapter
+added never get that shortcut: a total so far, the value before, the value
+after, and all three begin with `sort` saying in what order the rows are
+read.

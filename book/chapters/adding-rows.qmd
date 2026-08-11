@@ -19,7 +19,7 @@ more <- data.frame(
   stringsAsFactors = FALSE
 )
 
-sales |> add_rows(more) |> take(6)
+sales |> add_rows(more) |> sort(descending(date)) |> take(3)
 ```
 
 ### Python
@@ -30,12 +30,15 @@ more = pd.DataFrame({
     "quantity": [20], "revenue": [300], "cost": [240],
 })
 
-sales >> add_rows(more) >> take(6)
+sales >> add_rows(more) >> sort(descending(col.date)) >> take(3)
 ```
 
 :::
 
-*`sales then add_rows more then take 6`*
+*`sales then add_rows more then sort [date] descending then take 3`*
+
+The `sort` is there so the page can show the stacking worked: newest first,
+and the late order is the first row of the answer.
 
 The other table can even be this one, which is how a table is doubled:
 

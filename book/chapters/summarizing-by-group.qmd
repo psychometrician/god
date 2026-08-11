@@ -278,7 +278,7 @@ run('
 
 *`gapminder then keep where [year] is 2007 then summarize [life] as average([life]), [countries] as row_count() by [continent] then sort [life] descending`*
 
-One thousand seven hundred rows went in; five came out, one per continent,
+Gapminder's 1,704 rows went in; five came out, one per continent,
 with the count beside each average so the answer carries its own weight of
 evidence. The sentence is the same length it was on fifteen rows, and that is
 the point of the demonstration: nothing about the grammar knows or cares how
@@ -293,7 +293,7 @@ shows the same indifference reaching a warehouse.
 - `as` names each answer, name first, exactly as it does in `add`.
 - The nine aggregations reappear inside `add ... by`, where they broadcast a
   group's answer back onto its rows instead of collapsing them; the chapter
-  on the small words shows the share-of-group idiom that buys.
+  on the small words shows the share-of-group idiom this buys.
 
 ## What it refuses
 

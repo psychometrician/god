@@ -105,10 +105,11 @@ run('
 
 :::
 
-A conversion that cannot be made is not a silent missing value in either
-language. The engine underneath decides what to do with `to_number("abc")`, and
-this is one of the few places where what you get depends on where the pipeline
-ran.
+A conversion that cannot be made is the one answer this grammar does not own.
+`to_number("abc")` goes to the engine underneath, and engines disagree: one
+stops with an error, another hands back a missing value. It is one of the few
+places where the answer depends on where the pipeline ran, and the honest
+sentence is exactly that one.
 
 ## Between two ends
 

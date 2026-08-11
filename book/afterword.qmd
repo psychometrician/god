@@ -44,7 +44,9 @@ around, and a report of one is worth more to this project than praise. The
 repository takes issues at <https://github.com/psychometrician/god>, and the
 margin of every page has a link.
 
-The grammar is young, and the version number means what it says. What it
+The grammar is young, and the version number, 0.0.1 as
+[the coverage appendix](appendices/e-coverage.qmd) records, means what it
+says. What it
 will not do is grow casually: every word that enters answers to the laws,
 and the vocabulary you learned here is intended to be the vocabulary, not
 this year's draft of it. Stability is a feature you were promised, and it

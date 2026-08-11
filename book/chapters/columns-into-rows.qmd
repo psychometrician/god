@@ -248,3 +248,6 @@ readings >> lengthen(all_but(col.site), name = "{medium}_{value}")
 
 Four columns became one column saying which medium, and two columns holding the
 two measures.
+
+[The next chapter](rows-into-columns.qmd) is this one in reverse: `widen`
+turns rows back into columns, with the same two words flowing the other way.

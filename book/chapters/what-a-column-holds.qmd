@@ -161,7 +161,7 @@ word.
 
 ## Why you have to write `name`
 
-The same three words also test what is **inside** a column, and there the subject
+The same three words also test what is *inside* a column, and there the subject
 is the column itself.
 
 ::: {.panel-tabset}

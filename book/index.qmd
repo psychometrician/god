@@ -47,8 +47,8 @@ Say it once. Run it anywhere.
 
 god is one data-manipulation engine written in [Rust](https://www.rust-lang.org/),
 callable from [R](https://www.r-project.org/) and
-[Python](https://www.python.org/), and readable as itself wherever there is
-neither. Its vocabulary is plain everyday English, and its shape comes from
+[Python](https://www.python.org/); where you have neither, the same pipeline
+runs as plain text. Its vocabulary is plain everyday English, and its shape comes from
 [dplyr](https://dplyr.tidyverse.org/) and [tidyr](https://tidyr.tidyverse.org/),
 which are the tools that got this right.
 
@@ -64,10 +64,10 @@ column, group and summarize, sort the result, and take the first ten. Each step
 takes a table and returns a table, so you can read a pipeline from top to bottom
 and stop anywhere.
 
-Most of what anyone does to a table is ordinary: keep some rows, add a column,
-group and count, sort, join a second table, reshape it. god is for that work,
-every day, in whichever of the two languages you happen to be in. It is not for
-the exotic case, and the chapter on what it refuses says so.
+Most of what anyone does to a table is ordinary work of exactly that kind,
+plus a join and a reshape. god is for that work, every day, in whichever of
+the two languages you happen to be in. It is not for the exotic case, and the
+chapter on what it refuses says so.
 
 ## About the name
 
@@ -83,11 +83,11 @@ You will see it lowercase everywhere in this book, including at the start of a
 sentence.
 
 You do not have to read this preface. Nothing in it is needed to write a
-pipeline. Go to [your first pipeline](chapters/first-pipeline.qmd), which
-begins the six everyday verbs, and come back here when you want
-to know why the grammar refuses what it refuses. If you would rather see all of
-it at once first, [Appendix B](appendices/b-every-word.qmd) is every word there
-is, on one page.
+pipeline: [install god](#installing-it), then go to
+[your first pipeline](chapters/first-pipeline.qmd), which begins the six
+everyday verbs, and come back here when you want to know why the grammar
+refuses what it refuses. If you would rather see all of it at once first,
+[Appendix B](appendices/b-every-word.qmd) is every word there is, on one page.
 
 ## One sentence, twice
 
@@ -201,7 +201,8 @@ Every example in this book runs on the same few tables, declared here once.
   sale of a product nobody lists; the mismatch is kept on purpose, for the
   chapters on joining.
 - `survey`: the wide one. Six respondents, eight score columns, and four
-  columns of everything else, which is what choosing columns by name is for.
+  columns of everything else, which is what choosing columns by the shape of
+  a name is for.
 - `answers` and `marks`: the same facts twice, once wide and once long, for
   the chapters on reshaping.
 - `messy` and `diary`: text that needs repair, and dates that need reading.
@@ -528,7 +529,7 @@ sibling sticker's own logic: the pipes join one step to the *next*, and the
 parentheses hold what happens *inside* one.
 
 The column brackets were on the cover until they were measured. Across the
-sentences this book is tested against, `[` and `]` appear **not once** in R, and
+sentences this book is tested against, `[` and `]` appear *not once* in R, and
 the handful of times they appear in Python they are Python's own list syntax
 rather than anything god asks for. They are the plain text form's way of naming a
 column, which is a real job, and it is not a job most readers will ever see. A
@@ -756,11 +757,12 @@ identically in both languages. The sentence in it is the engine's canonical
 printing of the pipeline beside it, and the chunk runs like any other, so
 all three tabs answer with the same table.
 
-They are not illustrations of each other. Both are executed when the book is
-built, so a tab showing a table is a tab whose code ran, and the two tables come
-back from the same engine. If a sentence ever stopped meaning the same thing in
-the two languages, the tabs would stop agreeing on this page, which is the
-easiest place to notice it.
+The tabs are not illustrations of each other. Every tab is executed when the
+book is built, so a tab showing a table is a tab whose code ran, and the
+tables come back from the same engine. If a sentence ever stopped meaning the
+same thing in the two languages, or the text form drifted from either, the
+tabs would stop agreeing on this page, which is the easiest place to notice
+it.
 
 The appendix on [the two languages](appendices/a-two-languages.qmd) is the
 exception, and deliberately so: it is about the two places the languages
@@ -777,4 +779,4 @@ book shows outside a chunk to the engine to parse.
 Prose can name a verb that was never built and still render cleanly, which
 is why those checks exist. What no script can catch is handled the way the
 coverage appendix promises: dated, and corrected in public when a reader
-catches it out.
+finds the mistake.

@@ -78,6 +78,15 @@ check_refusals <- function(dirs = "book") {
     for (found in ls(shared)) assign(found, get(found, envir = shared), envir = chapter)
     last <- max(which(vapply(chunks, function(c) c$tolerates, logical(1))))
 
+    # Chunks are evaluated from the file's own directory, because that is
+    # knitr's rule and a chapter is allowed to read a file by a path relative
+    # to itself. Evaluating from the repository root quietly broke the first
+    # chapter that did. The restore is immediate rather than `on.exit`,
+    # because the next file's path is relative to where this loop stands.
+    owd <- getwd()
+    on.exit(setwd(owd), add = TRUE)
+    setwd(dirname(f))
+
     for (i in seq_len(last)) {
       chunk <- chunks[[i]]
       code <- chunk$code[nzchar(trimws(chunk$code))]
@@ -126,6 +135,8 @@ check_refusals <- function(dirs = "book") {
       quiet <- c(quiet, sprintf("%s (%s): %s", where, outcome,
                                 paste(trimws(code), collapse = " ")))
     }
+
+    setwd(owd)
   }
 
   if (!checked) {

@@ -194,8 +194,8 @@ run('
 ## `descending` reverses an ordering
 
 It is a modifier on a column, in a position where an ordering is being given. So
-it reads the same on `sort` and inside `rank`, and it needs no argument of its
-own on either.
+it reads the same on `sort` and inside `rank`, and beyond the column it marks,
+it has no options of its own on either.
 
 ::: {.panel-tabset}
 

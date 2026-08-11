@@ -96,7 +96,7 @@ no hour in it, so on the dates above it answers zero rather than refusing.
 ### R
 
 ```{r}
-data.frame(at = "2026-01-02 14:30:00") |>
+data.frame(at = c("2026-01-02 14:30:00", "2026-01-02")) |>
   add(h = hour(to_date(at))) |>
   pick(at, h)
 ```
@@ -104,7 +104,7 @@ data.frame(at = "2026-01-02 14:30:00") |>
 ### Python
 
 ```{python}
-(pd.DataFrame({"at": ["2026-01-02 14:30:00"]})
+(pd.DataFrame({"at": ["2026-01-02 14:30:00", "2026-01-02"]})
   >> add(h = hour(to_date(col.at)))
   >> pick(col.at, col.h))
 ```

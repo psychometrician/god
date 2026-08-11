@@ -170,6 +170,20 @@ for _up in (_here, *_here.parents):
         break
 import pandas as pd
 pd.set_option("display.width", 76)
+
+# The R side prints a whole double bare (165, never 165.0) and rounds to
+# seven significant digits, so the Python tabs are told to print the same
+# way: a page that says the tabs agree should not show 165.0 under that
+# sentence. NaN keeps pandas' own spelling; the difference from R's NA is a
+# real difference between the languages, not a display choice.
+def god_float(v):
+    if v != v:
+        return "NaN"
+    if abs(v) < 1e15 and v == int(v):
+        return f"{v:.0f}"
+    return f"{v:.7g}"
+
+pd.set_option("display.float_format", god_float)
 from god import *
 
 # The same fifteen rows as the R block above, in the same order, and they must

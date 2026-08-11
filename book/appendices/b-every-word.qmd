@@ -51,8 +51,9 @@ paste0("`", vocabulary$word[vocabulary$kind == "verb"], "`", collapse = " · ") 
 
 `keep` and `pick` are the two that choose: rows and columns. `add` and
 `summarize` are the two that make a column: one per row, and one per group.
-`sort` and `take` order and cut. Everything after those six is either a second
-table, a missing value, or a change of shape.
+`sort` and `take` order and cut. Everything after those six is a second
+table, a missing value, a change of shape, or the housekeeping pair that
+renames a column and drops repeated rows.
 
 ## The aggregations
 

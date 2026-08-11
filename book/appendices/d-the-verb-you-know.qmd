@@ -45,6 +45,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `sort_values(ascending=False)` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `groupby().agg()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
 | `head(n)`, `nlargest()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `rename(columns={"old": "new"})` | `rename`, the other direction | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `drop_duplicates()` | `drop_duplicates`, no subset | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `melt()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
 | `pivot_table()`, `pivot()` | `widen` | [Rows into columns](../chapters/rows-into-columns.qmd) |
@@ -71,7 +72,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `CASE WHEN ... ELSE ... END` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
 | `COALESCE` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
 | `RANK() OVER`, `ROW_NUMBER()` | `rank`, `row_number` | [Each row a place](../chapters/each-row-a-place.qmd) |
-| `SUM() OVER (ORDER BY)`, `LAG` | `running_total`, `previous` | [The total so far](../chapters/the-total-so-far.qmd) |
+| `SUM() OVER (ORDER BY)`, `LAG`, `LEAD` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
 
 One absence from all three tables is deliberate. There is no row for your
 tool's way of applying an arbitrary function to a column, because god has no

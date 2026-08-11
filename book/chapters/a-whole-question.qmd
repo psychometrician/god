@@ -9,7 +9,7 @@ meet them and not how anyone uses them. Here is a question that needs most of
 the book.
 
 The table is a set of survey returns. Each respondent answered three questions,
-some answers are missing, a backup file filled in some of the gaps, and the
+some answers are missing, a backup file fills one of the gaps, and the
 regions have long names that a lookup table holds.
 
 ::: {.panel-tabset}
@@ -59,16 +59,17 @@ places = pd.DataFrame({
 
 ```{python}
 #| echo: false
-returns.style.hide(axis="index")
+returns.style.hide(axis="index").format(
+    god_float, subset=["q1", "q2", "q3", "q1_alt"])
 ```
 
 :::
 
-The question is this. For each area we have a name for, what did the average
+The question is this. For each area the lookup names, what did the average
 answer to each question look like, and which area scored highest on question
 one?
 
-Getting there takes seven steps, and each one is a verb from this chapter.
+Getting there takes seven steps, and each one is a verb from this book.
 
 ::: {.panel-tabset}
 
@@ -119,7 +120,8 @@ run('
 
 :::
 
-Read it aloud and it is the question. Keep the rows matching a place we know.
+Read it aloud and it is the question. Keep the rows matching a place the
+lookup knows.
 Take the backup answer for question one where the first is missing. Drop the
 backup column. Bring in the area names. For each area, average every column whose
 name starts with `q`. Rank the areas by question one, highest first. Sort by that
@@ -173,6 +175,6 @@ except GodError as refusal:
 
 :::
 
-Seven verbs became one query. The query is the proof rather than the point:
+Seven steps became one query. The query is the proof rather than the point:
 the sentence above it is the version a person can read aloud, and still
 write, a year from now.

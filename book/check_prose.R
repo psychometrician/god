@@ -72,6 +72,9 @@ check_prose <- function(dirs = "book") {
     "falls back", "leaves the other alone",
     "tells apart", "tell apart", "told apart", "telling apart",
     "tells them apart", "tell them apart",
+    "catches it out", "catch it out", "catching out",
+    "trips people up", "trip people up", "trips you up", "trip you up",
+    "tripped up",
     # Not an idiom but a fixed shape, and worth making mechanical: it is always
     # ambiguous (does "three times shorter" mean a third, or three times as
     # long?) and translators split on it. The literal form is "less than a third
@@ -139,14 +142,19 @@ check_prose <- function(dirs = "book") {
 
   bad_bold <- character(0); bad_dash <- character(0); bad_head <- character(0)
   bad_case <- character(0); bad_call <- character(0); bad_idiom <- character(0)
-  bad_number <- character(0)
+  bad_number <- character(0); bad_hbold <- character(0)
 
   # A chapter or part named by number is a claim that rots the day a chapter is
   # inserted ahead of it, and this book plans to keep inserting them. The
   # cookbook's arrival renumbered a whole part and left a season's worth of
   # "Part VII" pointing at the wrong one. Appendix letters stay allowed: they
   # are pinned by the files' own names, so nothing can shift them.
-  numbered <- "\\bChapters?\\s+[0-9]|\\bParts?\\s+[IVX]+\\b"
+  #
+  # `chapter` matches in either case, because "a verb from chapter 4" rots
+  # exactly as fast as "Chapter 4" and the lowercase form walked past the
+  # first version of this rule. `Part` stays capital only: lowercase "parts"
+  # beside a roman numeral is usually the pronoun ("the parts I read").
+  numbered <- "\\b[Cc]hapters?\\s+[0-9]|\\bParts?\\s+[IVX]+\\b"
 
   for (f in qmds) {
     lines <- readLines(f, warn = FALSE)
@@ -194,6 +202,9 @@ check_prose <- function(dirs = "book") {
         # A heading is prose a reader sees, so it is checked for the em dash too.
         if (grepl("—", ungl(strip_code(h)))) bad_dash <- c(bad_dash, where(i))
         if (grepl(numbered, strip_code(h))) bad_number <- c(bad_number, where(i))
+        # A heading is already prominent, so bold inside one emphasizes
+        # nothing; italic keeps its contrastive job there and stays legal.
+        if (grepl("\\*\\*", strip_code(h))) bad_hbold <- c(bad_hbold, where(i))
         # Two sentences in a heading is the same defect as an over-long one: the
         # argument has climbed out of the paragraph and into the label. A capital
         # after the stop is what marks a second sentence; requiring it keeps
@@ -275,7 +286,7 @@ check_prose <- function(dirs = "book") {
 
   total <- length(bad_bold) + length(bad_dash) + length(bad_head) +
     length(bad_case) + length(bad_call) + length(bad_idiom) +
-    length(bad_number)
+    length(bad_number) + length(bad_hbold)
 
   report <- function(items, headline, advice) {
     if (!length(items)) return(invisible(NULL))
@@ -299,6 +310,8 @@ check_prose <- function(dirs = "book") {
            "Say the literal thing.")
     report(bad_number, "FAIL: a chapter or part named by number",
            "Link it by title. Numbers shift when a chapter is inserted.")
+    report(bad_hbold, "FAIL: bold inside a heading",
+           "A heading is already prominent. Italic for contrastive stress; otherwise plain.")
     stop("check_prose: ", total, " prose inconsistency(ies)")
   }
 
