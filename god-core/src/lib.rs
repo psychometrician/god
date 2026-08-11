@@ -39,6 +39,7 @@
 pub mod backend;
 pub mod check;
 pub mod diagnostic;
+pub mod draw;
 pub mod parse;
 pub mod plan;
 pub mod seats;
@@ -113,4 +114,17 @@ pub fn compile_tables(
         schema: checked.schema,
         assumptions: checked.assumptions,
     })
+}
+
+/// Read a pipeline and draw what it does to the table, without running it.
+///
+/// **The only failure here is a sentence that cannot be read at all.** Where the
+/// words parse but the pipeline does not check, the drawing is the answer rather
+/// than the error: it shows the steps that did check, the columns they leave, and
+/// the refusal under the words that stopped it. A person looking at a pipeline
+/// that will not run wants to know how far it got, and that is the one question
+/// a message on its own cannot answer.
+pub fn draw_tables(source: &str, schema: &Schema, others: &check::Tables) -> Result<String, Diagnostic> {
+    let plan = parse::parse(source)?;
+    Ok(draw::ladder(&plan, source, schema, others))
 }

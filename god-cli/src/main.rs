@@ -47,6 +47,10 @@ Options
                        Types: text, number, truth, date. Anything else is read
                        as a type the grammar has no opinion about.
     --as <backend>     what to write out. Default: sql
+    --draw             draw what the pipeline does to the table, step by step,
+                       and run nothing. A sentence that will not check is drawn
+                       as far as it checked, with the refusal under the words
+                       that stopped it.
     --needs            print the table this pipeline reads, and stop. A launcher
                        asks this first, so it knows which table to describe
                        without having to read the pipeline itself.
@@ -171,12 +175,14 @@ fn run() -> Result<String, Failure> {
     let mut wanted: Option<String> = None;
     let mut pipeline: Option<String> = None;
     let mut needs_only = false;
+    let mut drawing = false;
 
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--help" | "-h" => return Err(Failure::Help),
             "--needs" => needs_only = true,
+            "--draw" => drawing = true,
             "--vocabulary" => return Err(Failure::Vocabulary),
             "--seats" => return Err(Failure::Seats),
             "--columns" => {
@@ -276,6 +282,21 @@ fn run() -> Result<String, Failure> {
         others.push((table.clone(), read_schema(list)?));
     }
     let others = god_core::check::Tables::new(others);
+
+    // **The drawing answers a different question and so it takes a different
+    // route.** Every other path here ends in a refusal or a query; this one ends
+    // in a picture either way, because a pipeline that will not run is exactly
+    // when someone wants to see how far it got. The assumptions are not repeated
+    // on stderr: they are drawn, on the band that made them.
+    if drawing {
+        if wanted.is_some() {
+            return Err(Failure::Usage(
+                "`--draw` and `--as` answer different questions, so this takes one or the other. `--as` writes the pipeline out in another language; `--draw` shows what it does to the table".into(),
+            ));
+        }
+        return god_core::draw_tables(&pipeline, &schema, &others)
+            .map_err(|d| Failure::Refused(d.render(&pipeline)));
+    }
 
     let compiled = god_core::compile_tables(&pipeline, &schema, &others, wanted.as_deref().unwrap_or("sql"))
         .map_err(|d| Failure::Refused(d.render(&pipeline)))?;

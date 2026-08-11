@@ -24,124 +24,132 @@ impl Backend for God {
     fn render(&self, plan: &Plan, _entering: &[Schema]) -> String {
         let mut lines = vec![plan.source.clone()];
         for step in &plan.steps {
-            let body = match step {
-                Step::Keep { condition, .. } => format!("keep where {}", expr(condition)),
+            lines.push(format!("  then {}", step_text(step)));
+        }
+        lines.join("\n")
+    }
+}
 
-                Step::Pick { names, all_but, .. } => format!(
-                    "pick {}{}",
+/// One step, in the words it is written with.
+///
+/// **The ladder drawing labels its bands with this, rather than with a spelling
+/// of its own.** Two renderings of the same step is two things to keep in step,
+/// and the one that drifts is the one nobody runs the round trip against.
+pub(crate) fn step_text(step: &Step) -> String {
+    match step {
+        Step::Keep { condition, .. } => format!("keep where {}", expr(condition)),
+
+        Step::Pick { names, all_but, .. } => format!(
+            "pick {}{}",
+            if *all_but { "all_but " } else { "" },
+            columns(names)
+        ),
+
+        Step::Add { values, by, .. } => {
+            format!("add {}{}", assignments(values), grouping(by))
+        }
+
+        Step::Summarize { values, by, .. } => {
+            format!("summarize {}{}", assignments(values), grouping(by))
+        }
+
+        Step::Sort { keys, .. } => {
+            let written: Vec<String> = keys
+                .iter()
+                .map(|k| {
+                    format!(
+                        "[{}]{}",
+                        k.column.text,
+                        if k.descending { " descending" } else { "" }
+                    )
+                })
+                .collect();
+            format!("sort {}", written.join(", "))
+        }
+
+        Step::Take { count, by, .. } => {
+            format!("take {count}{}", grouping(by))
+        }
+
+        Step::AddRows { other, .. } => format!("add_rows {}", other.text),
+
+        Step::DropDuplicates { .. } => "drop_duplicates".to_string(),
+
+        Step::Rename { values, .. } => format!("rename {}", assignments(values)),
+
+        Step::DropMissing { names, .. } => {
+            if names.is_empty() {
+                "drop_missing".to_string()
+            } else {
+                format!("drop_missing {}", columns(names))
+            }
+        }
+
+        Step::FillMissing { values, .. } => {
+            format!("fill_missing {}", assignments(values))
+        }
+
+        Step::Lengthen { names, all_but, condition, name, value, .. } => {
+            let chosen = match condition {
+                Some(c) => format!("where {}", expr(c)),
+                None => format!(
+                    "{}{}",
                     if *all_but { "all_but " } else { "" },
                     columns(names)
                 ),
-
-                Step::Add { values, by, .. } => {
-                    format!("add {}{}", assignments(values), grouping(by))
-                }
-
-                Step::Summarize { values, by, .. } => {
-                    format!("summarize {}{}", assignments(values), grouping(by))
-                }
-
-                Step::Sort { keys, .. } => {
-                    let written: Vec<String> = keys
-                        .iter()
-                        .map(|k| {
-                            format!(
-                                "[{}]{}",
-                                k.column.text,
-                                if k.descending { " descending" } else { "" }
-                            )
-                        })
-                        .collect();
-                    format!("sort {}", written.join(", "))
-                }
-
-                Step::Take { count, by, .. } => {
-                    format!("take {count}{}", grouping(by))
-                }
-
-                Step::AddRows { other, .. } => format!("add_rows {}", other.text),
-
-                Step::DropDuplicates { .. } => "drop_duplicates".to_string(),
-
-                Step::Rename { values, .. } => format!("rename {}", assignments(values)),
-
-                Step::DropMissing { names, .. } => {
-                    if names.is_empty() {
-                        "drop_missing".to_string()
-                    } else {
-                        format!("drop_missing {}", columns(names))
-                    }
-                }
-
-                Step::FillMissing { values, .. } => {
-                    format!("fill_missing {}", assignments(values))
-                }
-
-                Step::Lengthen { names, all_but, condition, name, value, .. } => {
-                    let chosen = match condition {
-                        Some(c) => format!("where {}", expr(c)),
-                        None => format!(
-                            "{}{}",
-                            if *all_but { "all_but " } else { "" },
-                            columns(names)
-                        ),
-                    };
-                    // The naming clause is printed only where it says something
-                    // the default does not, so a sentence that took the defaults
-                    // comes back out as the sentence that was written.
-                    let mut said = Vec::new();
-                    if name.quoted || name.named_parts() != ["name"] {
-                        said.push(format!("name {}", name.text()));
-                    }
-                    if let Some(v) = value {
-                        said.push(format!("value [{}]", v.text));
-                    }
-                    if said.is_empty() {
-                        format!("lengthen {chosen}")
-                    } else {
-                        format!("lengthen {chosen} as {}", said.join(", "))
-                    }
-                }
-
-                Step::Widen { name, value, by, missing, giving, .. } => {
-                    // `by` is always printed, even where the caller left it out,
-                    // because the checker has settled it by then and what was
-                    // assumed on someone's behalf is worth their seeing. Same
-                    // reason `join` prints the key it worked out.
-                    let mut out = format!("widen name {}, value {}", name.text(), expr(value));
-                    if !by.is_empty() {
-                        out.push_str(&format!(" by {}", columns(by)));
-                    }
-                    if let Some(filler) = missing {
-                        out.push_str(&format!(" missing {}", expr(filler)));
-                    }
-                    if !giving.is_empty() {
-                        out.push_str(&format!(" giving {}", columns(giving)));
-                    }
-                    out
-                }
-
-                Step::Join { other, by, unmatched, .. } => {
-                    // The key is always printed, even where the caller left it
-                    // out, because by the time a plan reaches a backend the
-                    // checker has settled it. Printing the settled sentence is
-                    // how someone sees what was assumed on their behalf.
-                    let matched = if by.is_empty() {
-                        String::new()
-                    } else {
-                        format!(" by {}", columns(by))
-                    };
-                    let survivors = if *unmatched == Unmatched::This {
-                        String::new()
-                    } else {
-                        format!(" unmatched \"{}\"", unmatched.word())
-                    };
-                    format!("join {}{matched}{survivors}", other.text)
-                }
             };
-            lines.push(format!("  then {body}"));
+            // The naming clause is printed only where it says something
+            // the default does not, so a sentence that took the defaults
+            // comes back out as the sentence that was written.
+            let mut said = Vec::new();
+            if name.quoted || name.named_parts() != ["name"] {
+                said.push(format!("name {}", name.text()));
+            }
+            if let Some(v) = value {
+                said.push(format!("value [{}]", v.text));
+            }
+            if said.is_empty() {
+                format!("lengthen {chosen}")
+            } else {
+                format!("lengthen {chosen} as {}", said.join(", "))
+            }
         }
-        lines.join("\n")
+
+        Step::Widen { name, value, by, missing, giving, .. } => {
+            // `by` is always printed, even where the caller left it out,
+            // because the checker has settled it by then and what was
+            // assumed on someone's behalf is worth their seeing. Same
+            // reason `join` prints the key it worked out.
+            let mut out = format!("widen name {}, value {}", name.text(), expr(value));
+            if !by.is_empty() {
+                out.push_str(&format!(" by {}", columns(by)));
+            }
+            if let Some(filler) = missing {
+                out.push_str(&format!(" missing {}", expr(filler)));
+            }
+            if !giving.is_empty() {
+                out.push_str(&format!(" giving {}", columns(giving)));
+            }
+            out
+        }
+
+        Step::Join { other, by, unmatched, .. } => {
+            // The key is always printed, even where the caller left it
+            // out, because by the time a plan reaches a backend the
+            // checker has settled it. Printing the settled sentence is
+            // how someone sees what was assumed on their behalf.
+            let matched = if by.is_empty() {
+                String::new()
+            } else {
+                format!(" by {}", columns(by))
+            };
+            let survivors = if *unmatched == Unmatched::This {
+                String::new()
+            } else {
+                format!(" unmatched \"{}\"", unmatched.word())
+            };
+            format!("join {}{matched}{survivors}", other.text)
+        }
     }
 }
 

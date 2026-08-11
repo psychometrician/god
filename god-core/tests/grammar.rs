@@ -168,6 +168,33 @@ fn every_verb_parses() {
     );
 }
 
+/// Every verb the grammar declares must draw a band.
+///
+/// **This lives here rather than beside the drawing's own tests because the
+/// table of sentences lives here.** A second copy of it would go stale the day a
+/// verb is added, which is the failure this whole file exists to prevent, and a
+/// drawing that quietly omits a step is the worst kind of wrong: it looks
+/// finished.
+#[test]
+fn every_verb_draws_a_band() {
+    let others = god_core::check::Tables::new([(
+        "products",
+        Schema::new([("region", Type::Text)]),
+    )]);
+
+    for (verb, sentence) in verb_sentences() {
+        let plan = parse::parse(sentence).expect("the sentence for this verb parses");
+        let drawn = god_core::draw::ladder(&plan, sentence, &schema(), &others);
+        let bands = drawn.lines().filter(|l| l.starts_with('├') || l.starts_with('└')).count();
+        assert_eq!(
+            bands,
+            plan.steps.len(),
+            "`{verb}` has {} steps and the drawing shows {bands} of them:\n{drawn}",
+            plan.steps.len()
+        );
+    }
+}
+
 /// No word may hold two roles.
 ///
 /// A name that is a verb in one place and a function in another is a rule a
