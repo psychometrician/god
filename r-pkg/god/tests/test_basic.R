@@ -486,8 +486,25 @@ check("an anti join keeps exactly the others",
       unique(collect(sales |> keep(!matching(catalog, by = product)))$product),
       "Gadget")
 check("the table travels with the pipeline",
-      "catalog" %in% names((sales |> keep(matching(catalog, by = product)))$tables),
+      "catalog" %in% names(.subset2(sales |> keep(matching(catalog, by = product)), "tables")),
       TRUE)
+
+# **A pipeline refuses a table's questions.** R's own answer for each would
+# be NULL or the plan's internals, silently; `sum(p$revenue)` would be 0.
+# Python raises a TypeError for the same misuse without being asked, so the
+# two languages fail the same slip the same loud way.
+check_error("a column cannot be taken from a plan",
+            (sales |> take(1))$revenue,
+            "collect")
+check_error("a plan has no row count",
+            nrow(sales |> take(1)),
+            "collect")
+check_error("a plan does not name its columns",
+            names(sales |> take(1)),
+            "collect")
+check_error("a plan cannot be subset",
+            (sales |> take(1))[1, ],
+            "collect")
 check("the key can be left to the shared names",
       nrow(collect(sales |> keep(matching(catalog)))), 3L)
 check("a filtering join adds no columns",

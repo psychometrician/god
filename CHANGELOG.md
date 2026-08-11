@@ -3,6 +3,20 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
+## Unreleased
+
+### Asking a pipeline a table's question now refuses, in R
+
+`nrow(pipeline)`, `names(pipeline)`, `pipeline$column` and both bracket
+forms used to answer `NULL`, or worse: `names` handed back the plan's own
+internals, and `sum(pipeline$revenue)` was 0, a plausible number computed
+from a question that never ran. Each now refuses and names the repair,
+which is always the same word: `collect` first, then ask the table.
+Python has always stopped the same slip with its own `TypeError`, so the
+two languages now fail it the same loud way. The chapter on laziness
+shows the refusal and closes with the rule in one sentence: display runs
+a pipeline for free; anything else asks with `collect`.
+
 ## 0.1.0
 
 On PyPI as [`grammar-of-data`](https://pypi.org/project/grammar-of-data/):

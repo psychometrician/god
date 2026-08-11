@@ -39,6 +39,15 @@ S3method(print, god_pipeline)
 S3method(format, god_pipeline)
 S3method(as.data.frame, god_pipeline)
 
+# And it refuses a table's questions, because R's answer for each would be
+# NULL or the plan's internals, silently. The repair is always the same word:
+# collect.
+S3method("$", god_pipeline)
+S3method("[[", god_pipeline)
+S3method("[", god_pipeline)
+S3method(dim, god_pipeline)
+S3method(names, god_pipeline)
+
 # `descending`, `all_but`, `where` and `name` are grammar rather than functions,
 # and are never
 # called: they are read out of the expression the caller wrote, the same way

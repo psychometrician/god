@@ -49,6 +49,21 @@ mistake. A pipeline is not a table, so the stranger's `sort` has no meaning
 for it, and the call stops rather than returning a plausible answer from the
 wrong tool.
 
+Forgetting `collect` is covered by the same protection. Ask a plan a table's
+question, `nrow(answer)`, `names(answer)`, `answer$revenue`, and R's own
+answer for each would be NULL, and NULL flows onward: `sum(answer$revenue)`
+would be 0, with no complaint anywhere. So a pipeline refuses the question
+and names the repair:
+
+```{r}
+#| error: true
+answer$revenue
+```
+
+Python needs no guard built for this. A pipeline there has no length, no
+brackets and no iteration, so the same slip stops itself, with the
+language's own error.
+
 You can also see what the verbs wrote, which is the text form, and it is the same
 sentence in both languages.
 
@@ -80,3 +95,6 @@ page of this book, a pipeline standing at the end of a cell renders as a
 real table rather than as monospaced text. Each binding tells its notebook
 how to display one, so the answer is the same everywhere and only the
 rendering differs.
+
+The whole rule is one sentence. Display runs a pipeline for free; anything
+else asks with `collect`.

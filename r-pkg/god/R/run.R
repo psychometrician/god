@@ -166,7 +166,8 @@ show_as <- function(pipeline, as = "dplyr", ...) {
   # what they are called, so there is nothing to look up.
   if (inherits(pipeline, "god_pipeline")) {
     text <- god_call(
-      c(columns_args(pipeline$tables, pipeline$source), "--as", as),
+      c(columns_args(.subset2(pipeline, "tables"), .subset2(pipeline, "source")),
+        "--as", as),
       god_written(pipeline)
     )
     cat(text)

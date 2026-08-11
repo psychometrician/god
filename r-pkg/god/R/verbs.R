@@ -98,13 +98,15 @@ god_use_table <- function(pipeline, name, other) {
   if (!is.data.frame(other)) {
     stop(sprintf("`%s` is not a table", name), call. = FALSE)
   }
-  if (!is.null(pipeline$tables[[name]]) && !identical(pipeline$tables[[name]], other)) {
+  tables <- .subset2(pipeline, "tables")
+  if (!is.null(tables[[name]]) && !identical(tables[[name]], other)) {
     stop(
       sprintf("this pipeline already reads a different table called `%s`", name),
       call. = FALSE
     )
   }
-  pipeline$tables[[name]] <- other
+  tables[[name]] <- other
+  pipeline[["tables"]] <- tables
   pipeline
 }
 
@@ -372,7 +374,9 @@ add_rows <- function(.data, other) {
   if (!is.data.frame(other)) {
     stop(sprintf("`%s` is not a table", name), call. = FALSE)
   }
-  pipeline$tables[[name]] <- other
+  tables <- .subset2(pipeline, "tables")
+  tables[[name]] <- other
+  pipeline[["tables"]] <- tables
   god_step(pipeline, sprintf("add_rows %s", name))
 }
 
@@ -622,7 +626,7 @@ god_not_a_table <- function(data, expr, verb) {
 }
 
 god_step <- function(pipeline, text) {
-  pipeline$steps <- c(pipeline$steps, text)
+  pipeline[["steps"]] <- c(.subset2(pipeline, "steps"), text)
   pipeline
 }
 
@@ -691,8 +695,13 @@ god_grouping <- function(names) {
 }
 
 # The pipeline as the grammar's own text, which is what gets handed over.
+#
+# Fields are read with `.subset2` here and everywhere inside the package,
+# because `$` and `[[` on a pipeline refuse: they are the reader's mistake
+# surface, and the package must not depend on the door it locked.
 god_written <- function(pipeline) {
-  paste(c(pipeline$source, paste0("  then ", pipeline$steps)), collapse = "\n")
+  paste(c(.subset2(pipeline, "source"),
+          paste0("  then ", .subset2(pipeline, "steps"))), collapse = "\n")
 }
 
 # -- materializing -----------------------------------------------------------
@@ -710,7 +719,8 @@ collect <- function(pipeline) {
   if (!inherits(pipeline, "god_pipeline")) {
     stop("`collect` runs a god pipeline, and this is not one", call. = FALSE)
   }
-  god_query(god_written(pipeline), pipeline$tables, pipeline$source)
+  god_query(god_written(pipeline),
+            .subset2(pipeline, "tables"), .subset2(pipeline, "source"))
 }
 
 #' @export
@@ -732,4 +742,63 @@ as.data.frame.god_pipeline <- function(x, ...) {
 #' @export
 format.god_pipeline <- function(x, ...) {
   god_written(x)
+}
+
+# A pipeline is a plan, and a plan answers no question a table answers. Left
+# alone, R would answer anyway: `$` and `[[` on the underlying list return
+# NULL, `names` returns the plan's own internals as if they were columns,
+# `dim` returns NULL so `nrow` does too, and NULL propagates —
+# `sum(p$revenue)` is 0, a plausible number computed from a question that
+# never ran. Python stops the same misuse with a TypeError of its own
+# accord; in R only the object can say so, and these methods are it saying
+# so. The package reads its own fields with `.subset2`, which does not
+# dispatch here, so the door is locked from the outside only.
+god_not_yet_a_table <- function(asked, repair) {
+  stop(
+    sprintf(
+      "a pipeline is a plan for a table, and %s. Nothing has run yet: %s",
+      asked, repair
+    ),
+    call. = FALSE
+  )
+}
+
+#' @export
+`$.god_pipeline` <- function(x, name) {
+  god_not_yet_a_table(
+    sprintf("`$%s` asks the plan for a column", name),
+    sprintf("`collect(pipeline)$%s` asks the table it makes", name)
+  )
+}
+
+#' @export
+`[[.god_pipeline` <- function(x, ...) {
+  god_not_yet_a_table(
+    "`[[` asks the plan for a column",
+    "collect the pipeline first, then take the column from the table"
+  )
+}
+
+#' @export
+`[.god_pipeline` <- function(x, ...) {
+  god_not_yet_a_table(
+    "`[` asks the plan for rows or columns",
+    "collect the pipeline first, then subset the table"
+  )
+}
+
+#' @export
+dim.god_pipeline <- function(x) {
+  god_not_yet_a_table(
+    "a plan has no rows or columns to count",
+    "`nrow(collect(pipeline))` counts the table it makes"
+  )
+}
+
+#' @export
+names.god_pipeline <- function(x) {
+  god_not_yet_a_table(
+    "a plan does not hold its answer's column names",
+    "`names(collect(pipeline))` names the table it makes"
+  )
 }

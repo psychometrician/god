@@ -502,6 +502,15 @@ check_error("matching cannot be half of a bigger question",
 check_error("matching needs a table rather than a value",
             lambda: keep(matching("catalog")), "needs another table")
 
+# **A pipeline refuses a table's questions before collect.** Python does this
+# of its own accord — a Pipeline has no len, no [] and no iteration — and the
+# suite pins it because R had to build the same loudness by hand: there, the
+# language's own answer was NULL, silently.
+check_error("a plan has no length", lambda: len(sales >> take(1)), "Pipeline")
+check_error("a plan cannot be subscripted",
+            lambda: (sales >> take(1))["revenue"], "Pipeline")
+check_error("a plan does not iterate", lambda: list(sales >> take(1)), "Pipeline")
+
 print("\ndates, and looking along the rows")
 
 diary = pd.DataFrame({
