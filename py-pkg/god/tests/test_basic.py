@@ -187,6 +187,17 @@ with contextlib.redirect_stdout(_out):
     god.show_as('sales then take 1', "sql")
 check("show_as prints nothing of its own", _out.getvalue(), "")
 
+# **Every table a join names is described**, not only the head. The second is
+# found in scope the way the first is, because `show_as` resolves the same
+# names `run` does; describing the head alone left the grammar refusing a
+# sentence the caller could run.
+products = pd.DataFrame({"product": ["Widget", "Gadget"], "maker": ["Acme", "Bolt"]})
+check(
+    "show_as describes every table a join names",
+    god.show_as("sales then join products by [product] then take 3").strip(),
+    "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)",
+)
+
 print("\nthe verbs write the grammar's own sentence")
 
 # **Asserted on the text rather than on the rows**, deliberately. A verb's whole

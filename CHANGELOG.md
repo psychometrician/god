@@ -5,6 +5,15 @@ a person using god can see.
 
 ## Unreleased
 
+### `show_as` on a sentence that names two tables
+
+Asking for the translation of a text pipeline with a `join` in it used to fail
+in both languages — R stopped on an error about a condition, Python with a
+refusal that described only the head table. `show_as` now finds every table the
+sentence names, the way `run` always did: in your scope, passed by name, or,
+where an engine has been given, described by the engine that holds it. A
+pipeline built from the verbs was never affected.
+
 ### The book measures where the speed lives
 
 A new appendix holds the performance question to the framing the preface

@@ -174,6 +174,19 @@ check("show_as returns invisibly",
       withVisible(show_as("sales then take 1", "sql"))$visible,
       FALSE)
 
+# **Every table a join names is described**, not only the head. The second is
+# found in scope the way the first is, because `show_as` resolves the same
+# names `run` does; treating the grammar's answer as one name broke on the
+# first sentence that had two.
+products <- data.frame(
+  product = c("Widget", "Gadget"),
+  maker   = c("Acme", "Bolt"),
+  stringsAsFactors = FALSE
+)
+check("show_as describes every table a join names",
+      show_as("sales then join products by [product] then take 3"),
+      "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)")
+
 cat("\nthe verbs write the grammar's own sentence\n")
 
 # **Asserted on the text rather than on the rows**, deliberately. A verb's whole

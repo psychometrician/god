@@ -209,8 +209,8 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
     **This returns rather than prints.** A notebook and a prompt both show what
     an expression evaluates to, so printing as well would show it twice.
     """
-    # A pipeline built from the native verbs already carries its table and knows
-    # what it is called, so there is nothing to look up.
+    # A pipeline built from the native verbs already carries its tables and
+    # knows what they are called, so there is nothing to look up.
     from .verbs import Pipeline
 
     if isinstance(pipeline, Pipeline):
@@ -219,15 +219,21 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
             pipeline.written(),
         ))
 
-    source = _needs(pipeline)[0]
-    frame = tables.get(source)
-    if frame is None:
-        frame = _look_up(source)
-    if frame is None:
-        raise GodError(
-            f"the pipeline reads a table called `{source}`, and there is no such table here"
-        )
-    return _Written(_call(["--columns", _columns_of(frame), "--as", as_], pipeline))
+    # The same lookup ``run`` does, and for the same reason: since ``join``, a
+    # sentence can name more than one table, so every name the grammar reports
+    # is resolved rather than only the head.
+    sources = _needs(pipeline)
+    for source in sources:
+        if source not in tables:
+            found = _look_up(source)
+            if found is None:
+                found = _in_catalog(source)
+            if found is None:
+                raise GodError(
+                    f"the pipeline reads a table called `{source}`, and there is no such table here"
+                )
+            tables[source] = found
+    return _Written(_call(_columns_args(tables, sources[0]) + ["--as", as_], pipeline))
 
 
 def god_sql(pipeline: str, columns: str) -> str:

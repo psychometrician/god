@@ -162,10 +162,9 @@ god_connection <- function() {
 show_as <- function(pipeline, as = "dplyr", ...) {
   tables <- list(...)
 
-  # A pipeline built from the native verbs already carries its table and knows
-  # what it is called, so there is nothing to look up.
+  # A pipeline built from the native verbs already carries its tables and knows
+  # what they are called, so there is nothing to look up.
   if (inherits(pipeline, "god_pipeline")) {
-    tables[[pipeline$source]] <- pipeline$table
     text <- god_call(
       c(columns_args(pipeline$tables, pipeline$source), "--as", as),
       god_written(pipeline)
@@ -174,17 +173,27 @@ show_as <- function(pipeline, as = "dplyr", ...) {
     return(invisible(text))
   }
 
-  source <- god_needs(pipeline)
-  if (!source %in% names(tables)) {
-    tables[[source]] <- mget(source, envir = parent.frame(), ifnotfound = list(NULL))[[1]]
+  # The same lookup `run` does, and for the same reason: since `join`, a
+  # sentence can name more than one table, so every name the grammar reports
+  # is resolved rather than only the head.
+  sources <- god_needs(pipeline)
+  here <- parent.frame()
+  for (source in sources) {
+    if (!source %in% names(tables)) {
+      found <- mget(source, envir = here, ifnotfound = list(NULL))[[1]]
+      if (is.null(found)) {
+        found <- god_in_engine(source)
+      }
+      if (is.null(found)) {
+        stop(
+          sprintf("the pipeline reads a table called `%s`, and there is no such table here", source),
+          call. = FALSE
+        )
+      }
+      tables[[source]] <- found
+    }
   }
-  if (is.null(tables[[source]])) {
-    stop(
-      sprintf("the pipeline reads a table called `%s`, and there is no such table here", source),
-      call. = FALSE
-    )
-  }
-  text <- god_call(c("--columns", columns_of(tables[[source]]), "--as", as), pipeline)
+  text <- god_call(c(columns_args(tables, sources[[1]]), "--as", as), pipeline)
   cat(text)
   invisible(text)
 }
