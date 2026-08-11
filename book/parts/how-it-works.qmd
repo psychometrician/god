@@ -11,9 +11,11 @@ itself back in a language you already use, which is the way out when the
 vocabulary does not cover what you need, and the reason adopting a small
 grammar is safe: the exit is part of the design. A table that lives in a
 warehouse can be read where it sits, and the same sentence runs there
-unchanged. And when something is wrong, the whole pipeline is checked before
-any of it runs, so a refusal names the step you wrote rather than the middle
-of a query you did not.
+unchanged. Any pipeline will also draw what it does to the table, step by step,
+before it runs any of it, which is where you find out that the column you are
+missing was taken away four lines up. And when something is wrong, the whole
+pipeline is checked before any of it runs, so a refusal names the step you
+wrote rather than the middle of a query you did not.
 
 ![The machine, whole: three spellings build one plan, one checker reads it,
 and every backend writes it out.](../images/pipeline.svg){fig-alt="Three

@@ -234,6 +234,13 @@ pipeline in any of the seven targets, `god_sql` hands back the query for a
 table you describe, and R's `use_engine` points execution at any DBI
 connection, the way a Python pipeline follows its frames to Spark.
 
+**`show_steps` draws what a pipeline does to the table**, step by step, without
+running any of it: the columns each step makes, the ones it takes away, and what
+a second table sends across when you join one. A sentence god refuses is drawn
+too, as far as it checked, with the refusal under the words that stopped it. So
+when a column is missing because an earlier step removed it, the drawing shows
+where it went.
+
 ### So how fast is it?
 
 That question has two answers, and keeping them apart is the honest way to ask

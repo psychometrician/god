@@ -182,6 +182,11 @@ book:
         - chapters/nothing-runs-yet.qmd
         - chapters/what-it-wrote.qmd
         - chapters/somewhere-else.qmd
+        # Third of the three ways to look at a pipeline that has not run, and
+        # last because its refusal picture hands straight to the chapter after
+        # it. The two before it show the sentence and the query; this one shows
+        # the table.
+        - chapters/what-it-does.qmd
         - chapters/every-refusal.qmd
         - chapters/design-laws.qmd
 

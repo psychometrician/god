@@ -169,39 +169,50 @@ impl Svg {
     /// The dark half is a media query inside the file rather than something the
     /// page decides, so the picture answers to the reader's own setting and to
     /// nothing else that happens to be on the page with it.
+    ///
+    /// **Every selector begins `svg`, and that is not tidiness.** A picture set
+    /// inline in a page keeps its `<style>` in the page's own stylesheet, where
+    /// a bare `.table` would reach every table on it — and `table` is a class
+    /// name in the framework most pages are built with. Scoped, the rules can
+    /// only ever reach a picture.
+    ///
+    /// `max-width` is the other half of living on a page: a wide pipeline is
+    /// wider than a column of prose, and without this it would run off the side
+    /// rather than scale to fit.
     fn style(&mut self) {
         self.raw(&format!(
             "<style>\
-             text{{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:{FONT_PX}px;white-space:pre}}\
-             .ground{{fill:#fbfaf8}}\
-             .band{{fill:#1a1a18;opacity:.028}}\
-             .rail{{stroke:#cbc7bf;stroke-width:1.5;fill:none;stroke-linecap:square}}\
-             .source{{fill:#1a1a18;font-weight:600}}\
-             .step{{fill:#26251f}}\
-             .table{{fill:#1a1a18;font-weight:600}}\
-             .column{{fill:#57544c}}\
-             .kind{{fill:#a5a096}}\
-             .added{{fill:#1c7a4a;font-weight:600}}\
-             .dropped{{fill:#a8514a;text-decoration:line-through}}\
-             .key{{fill:#3062a8;font-weight:600}}\
-             .note{{fill:#8b867e}}\
-             .warn{{fill:#8a6410}}\
-             .caret{{fill:#a8514a;font-weight:600}}\
+             svg{{max-width:100%;height:auto}}\
+             svg text{{font-family:ui-monospace,SFMono-Regular,'SF Mono',Menlo,Consolas,'DejaVu Sans Mono',monospace;font-size:{FONT_PX}px;white-space:pre}}\
+             svg .ground{{fill:#fbfaf8}}\
+             svg .band{{fill:#1a1a18;opacity:.028}}\
+             svg .rail{{stroke:#cbc7bf;stroke-width:1.5;fill:none;stroke-linecap:square}}\
+             svg .source{{fill:#1a1a18;font-weight:600}}\
+             svg .step{{fill:#26251f}}\
+             svg .table{{fill:#1a1a18;font-weight:600}}\
+             svg .column{{fill:#57544c}}\
+             svg .kind{{fill:#a5a096}}\
+             svg .added{{fill:#1c7a4a;font-weight:600}}\
+             svg .dropped{{fill:#a8514a;text-decoration:line-through}}\
+             svg .key{{fill:#3062a8;font-weight:600}}\
+             svg .note{{fill:#8b867e}}\
+             svg .warn{{fill:#8a6410}}\
+             svg .caret{{fill:#a8514a;font-weight:600}}\
              @media (prefers-color-scheme:dark){{\
-             .ground{{fill:#17181b}}\
-             .band{{fill:#ffffff;opacity:.035}}\
-             .rail{{stroke:#3d4046}}\
-             .source{{fill:#eceae5}}\
-             .step{{fill:#dedbd4}}\
-             .table{{fill:#eceae5}}\
-             .column{{fill:#b3afa6}}\
-             .kind{{fill:#6e6a63}}\
-             .added{{fill:#5cc78c}}\
-             .dropped{{fill:#e2908a}}\
-             .key{{fill:#7fabf2}}\
-             .note{{fill:#7e7a73}}\
-             .warn{{fill:#d7a54c}}\
-             .caret{{fill:#e2908a}}\
+             svg .ground{{fill:#17181b}}\
+             svg .band{{fill:#ffffff;opacity:.035}}\
+             svg .rail{{stroke:#3d4046}}\
+             svg .source{{fill:#eceae5}}\
+             svg .step{{fill:#dedbd4}}\
+             svg .table{{fill:#eceae5}}\
+             svg .column{{fill:#b3afa6}}\
+             svg .kind{{fill:#6e6a63}}\
+             svg .added{{fill:#5cc78c}}\
+             svg .dropped{{fill:#e2908a}}\
+             svg .key{{fill:#7fabf2}}\
+             svg .note{{fill:#7e7a73}}\
+             svg .warn{{fill:#d7a54c}}\
+             svg .caret{{fill:#e2908a}}\
              }}</style>"
         ));
     }
@@ -236,10 +247,38 @@ mod tests {
         svg.style();
         for ink in Ink::ALL {
             assert!(
-                svg.out.contains(&format!(".{}{{", ink.class())),
+                svg.out.contains(&format!("svg .{}{{", ink.class())),
                 "`{}` is a kind of ink with no rule in the stylesheet, so it would \
                  be drawn as whatever the default happens to be",
                 ink.class()
+            );
+        }
+    }
+
+    /// **A picture set inline in a page shares that page's stylesheet.**
+    ///
+    /// So a rule written `.table{...}` here would reach every table on the page,
+    /// and `table` is a class name the framework most pages use already has.
+    /// Every selector is scoped to a picture, and this is what says so.
+    #[test]
+    fn no_rule_can_reach_out_of_a_picture() {
+        let mut svg = Svg { out: String::new() };
+        svg.style();
+        let sheet = svg.out;
+        let body = sheet
+            .split_once("<style>")
+            .and_then(|(_, rest)| rest.split_once("</style>"))
+            .map(|(body, _)| body)
+            .expect("a stylesheet");
+        for rule in body.split('}').filter(|r| r.contains('{')) {
+            let selector = rule.rsplit('{').next_back().unwrap().trim();
+            if selector.is_empty() || selector.starts_with('@') {
+                continue;
+            }
+            assert!(
+                selector.starts_with("svg"),
+                "`{selector}` is not scoped to a picture, so inline on a page it \
+                 would style the page"
             );
         }
     }

@@ -1,0 +1,223 @@
+---
+title: "What it does to the table"
+---
+
+{{< include ../_setup.qmd >}}
+
+A pipeline is a plan, and a plan can be looked at. The previous chapters showed
+two ways to look at one: the sentence it wrote, and the query it becomes.
+`show_steps` shows a third thing, which is what the table itself is doing.
+
+::: {.column-body-outset}
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  add(margin = revenue - cost) |>
+  keep(margin > 50) |>
+  take(3) |>
+  show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(
+  sales
+  >> add(margin = col.revenue - col.cost)
+  >> keep(col.margin > 50)
+  >> take(3)
+)
+```
+
+:::
+:::
+
+Nothing ran. The grammar reads a whole sentence against the table's columns
+before any of it executes, which is the rule the rest of this part is built on,
+and the drawing is that reading rather than a second one.
+
+## What the marks mean
+
+Read a drawing downward. The first line is the table you start from, and every
+line after it is one step, showing the table as it stands once that step has
+run.
+
+To the right of each step is what the table holds at that point. A column the
+step **makes** carries a `+`. A column the step **takes away** carries a `-`,
+and it appears on the line of the step that removed it, not later. Everything
+else is a column that was already there and still is.
+
+The type is written beside a column in two places only: on the table you start
+from, and on a column a step has just made. Those are the two places you have
+not been told yet. Repeating it on every line would double the width of the
+drawing to say nothing new.
+
+## Where a column went
+
+The question this answers most often is where a column has gone. `summarize`
+is where they usually go.
+
+::: {.column-body-outset}
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  summarize(gross = total(revenue), by = region) |>
+  show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> summarize(gross = total(col.revenue), by = col.region))
+```
+
+:::
+:::
+
+One line makes `gross`, and the same line takes away everything that was not
+grouped by. That is `summarize`'s whole behavior, and it is the thing readers
+are most often surprised by. Here you can see it happen instead of finding out
+later.
+
+The note underneath says what became of the rows. It appears only where you
+could not have guessed: that `keep` returns fewer rows is not news, so no line
+says it, but `summarize` collapsing a table to one row per group is worth
+saying once.
+
+## A second table
+
+A table that arrives partway down gets a line of its own, indented under the
+step that reads it.
+
+::: {.column-body-outset}
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> join(products, by = product) |> show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> join(products, by = col.product))
+```
+
+:::
+:::
+
+Three things are worth reading here. The column both tables matched on carries
+an `=`, and it carries it **twice**, once in each table's row: it is on both
+sides and it arrives once, not as two columns with invented names. The column
+that crossed over carries a `+`, the same mark any new column gets. And the
+last line says the rows may multiply, because they may: whether `products`
+holds a product name more than once is a fact about the data, and the grammar
+has read the column names without reading a single row.
+
+## What a second table sends
+
+Not every second table sends columns. `matching` reads one and brings nothing
+back.
+
+::: {.column-body-outset}
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(matching(products, by = product)) |> show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> keep(matching(products, by = col.product)))
+```
+
+:::
+:::
+
+Compare the last line with the join above. A join *may multiply* the rows; a
+`matching` never can, because it only decides which rows to keep. Those two
+sentences read almost the same and mean different things, and confusing them is
+the most common mistake anyone makes with two tables. The drawing says which
+one you wrote.
+
+`add_rows` is the third case, and it sends rows rather than columns: the two
+tables already hold the same columns, so nothing arrives and the table only
+gets longer.
+
+## A sentence that will not run
+
+A sentence the grammar refuses is still drawn, as far as it checked.
+
+::: {.column-body-outset}
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  summarize(gross = total(revenue), by = region) |>
+  keep(product == "Widget") |>
+  show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(
+  sales
+  >> summarize(gross = total(col.revenue), by = col.region)
+  >> keep(col.product == "Widget")
+)
+```
+
+:::
+:::
+
+The refusal says `product` is not a column, and it is right: two lines above,
+`summarize` took it away. The message alone tells you the column is missing.
+The drawing tells you where it went, which is the part you need in order to fix
+it.
+
+This is the one place `show_steps` differs from every other way of looking at a
+pipeline. It draws rather than raising, so a sentence you are still writing can
+be looked at while it is wrong.
+
+## At a console and on a page
+
+The drawing has two forms and you do not choose between them. At a console it
+prints as text, because that is what the rest of a session looks like. In a
+notebook, or on a page like this one, it draws itself, because a page can hold
+a picture.
+
+Ask for one outright when you want to keep it, with `format` in R and the
+matching name in Python.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+cat(format(show_steps(sales |> take(2)), "text"))
+```
+
+### Python
+
+```{python}
+print(show_steps(sales >> take(2)).text)
+```
+
+:::
+
+The picture is one file with its own colors inside it, so saving it and sending
+it to somebody gives them the drawing you saw. `format(x, "svg")` in R, and
+`.svg` in Python, hand you that file as text.
