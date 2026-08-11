@@ -19,8 +19,7 @@ dependencies = ["duckdb>=1.0", "pandas>=2.0"]
 where = ["."]
 include = ["god*"]
 
-# The engine, which `setup.py` copies in at build time. Without this the wheel
-# is built and the binary is silently left out of it, because setuptools ships
-# Python files and nothing else unless told otherwise.
-[tool.setuptools.package-data]
-god = ["bin/*"]
+# The engine reaches the wheel through `setup.py`, which copies it straight
+# into the built tree after `build_py` runs. It is deliberately not listed as
+# package data: that route depends on the backend's collection rules, and a
+# setuptools upgrade changed them once and shipped five engine-less wheels.

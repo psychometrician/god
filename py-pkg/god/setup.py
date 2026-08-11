@@ -27,6 +27,7 @@ from pathlib import Path
 
 from setuptools import setup
 from setuptools.command.build_py import build_py
+from setuptools.dist import Distribution
 
 try:  # setuptools >= 70 moved it; older installs still have the wheel package
     from setuptools.command.bdist_wheel import bdist_wheel
@@ -69,13 +70,40 @@ def engine() -> Path:
 
 class BuildWithEngine(build_py):
     def run(self) -> None:
+        # The engine goes into the *built* tree, after setuptools has copied
+        # the Python files, never into the source tree for package-data to
+        # collect. The collection route broke without a line of this package
+        # changing: the build backend is installed fresh and unpinned into
+        # every isolated build, and a newer setuptools began refusing files
+        # under a directory it reads as an undeclared package ("Package
+        # 'god.bin' is absent from the `packages` configuration"), so five
+        # wheels built green one week and engine-less the next. A file placed
+        # directly in build_lib is in the wheel by construction, whatever the
+        # collector thinks of it.
+        super().run()
         source = engine()
-        destination = HERE / "god" / "bin"
+        destination = Path(self.build_lib) / "god" / "bin"
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, destination / EXE)
         (destination / EXE).chmod(0o755)
         print(f"god: carrying the engine from {source}")
-        super().run()
+
+
+class BinaryDistribution(Distribution):
+    """A distribution that says so.
+
+    ``root_is_pure = False`` alone stopped being enough: a newer setuptools
+    reads a distribution with no extension modules as pure anyway, and files
+    a pure build under ``.data/purelib/`` inside the wheel instead of at its
+    root. Installs still worked, but every check that looks for
+    ``god/bin/god-cli`` at the root of the archive stopped finding it.
+    Declaring the distribution binary here is the documented way to say what
+    this wheel is, and it puts the tree back at the root for old and new
+    setuptools alike.
+    """
+
+    def has_ext_modules(self):
+        return True
 
 
 class PlatformWheel(bdist_wheel):
@@ -107,4 +135,7 @@ class PlatformWheel(bdist_wheel):
         return "py3", "none", os.environ.get("GOD_WHEEL_PLAT") or platform
 
 
-setup(cmdclass={"build_py": BuildWithEngine, "bdist_wheel": PlatformWheel})
+setup(
+    cmdclass={"build_py": BuildWithEngine, "bdist_wheel": PlatformWheel},
+    distclass=BinaryDistribution,
+)
