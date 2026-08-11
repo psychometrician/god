@@ -10,6 +10,15 @@ not travel any further down the pipeline.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then pick [product, revenue]
+')
+```
+
 ### R
 
 ```{r}
@@ -20,16 +29,6 @@ sales |> pick(product, revenue)
 
 ```{python}
 sales >> pick(col.product, col.revenue)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then pick [product, revenue]
-')
 ```
 
 :::
@@ -49,6 +48,15 @@ Wrap the names in `all_but`:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then pick all_but [cost, region]
+')
+```
+
 ### R
 
 ```{r}
@@ -59,16 +67,6 @@ sales |> pick(all_but(cost, region))
 
 ```{python}
 sales >> pick(all_but(col.cost, col.region))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then pick all_but [cost, region]
-')
 ```
 
 :::

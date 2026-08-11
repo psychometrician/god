@@ -11,6 +11,17 @@ once.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add [margin] as ([revenue] - [cost]),
+         [price] as ([revenue] / [quantity])
+    then pick [product, quantity, margin, price]
+')
+```
+
 ### R
 
 ```{r}
@@ -26,18 +37,6 @@ sales |>
   >> add(margin = col.revenue - col.cost,
          price = col.revenue / col.quantity)
   >> pick(col.product, col.quantity, col.margin, col.price))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add [margin] as ([revenue] - [cost]),
-         [price] as ([revenue] / [quantity])
-    then pick [product, quantity, margin, price]
-')
 ```
 
 :::
@@ -68,6 +67,18 @@ its own, and the pipeline says what it does in the order it does it:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add [margin] as ([revenue] - [cost])
+    then add [doubled] as ([margin] * 2)
+    then keep where ([margin] > 50)
+    then sort [margin] descending
+')
+```
+
 ### R
 
 ```{r}
@@ -86,19 +97,6 @@ sales |>
   >> add(doubled = col.margin * 2)
   >> keep(col.margin > 50)
   >> sort(descending(col.margin)))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add [margin] as ([revenue] - [cost])
-    then add [doubled] as ([margin] * 2)
-    then keep where ([margin] > 50)
-    then sort [margin] descending
-')
 ```
 
 :::
@@ -120,6 +118,16 @@ you would expect, because the old value is on the table when the step begins:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add [revenue] as ([revenue] * 2)
+    then pick [product, revenue]
+')
+```
+
 ### R
 
 ```{r}
@@ -130,17 +138,6 @@ sales |> add(revenue = revenue * 2) |> pick(product, revenue)
 
 ```{python}
 sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add [revenue] as ([revenue] * 2)
-    then pick [product, revenue]
-')
 ```
 
 :::

@@ -11,6 +11,16 @@ called, and `drop_duplicates` removes exact repeats.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then rename [earned] as [revenue]
+    then pick [product, earned]
+')
+```
+
 ### R
 
 ```{r}
@@ -21,17 +31,6 @@ sales |> rename(earned = revenue) |> pick(product, earned)
 
 ```{python}
 sales >> rename(earned = col.revenue) >> pick(col.product, col.earned)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then rename [earned] as [revenue]
-    then pick [product, earned]
-')
 ```
 
 :::
@@ -84,6 +83,16 @@ meant has its own honest spelling. The distinct values of a column are a
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then pick [region, product]
+    then drop_duplicates
+')
+```
+
 ### R
 
 ```{r}
@@ -94,17 +103,6 @@ sales |> pick(region, product) |> drop_duplicates()
 
 ```{python}
 sales >> pick(col.region, col.product) >> drop_duplicates()
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then pick [region, product]
-    then drop_duplicates
-')
 ```
 
 :::

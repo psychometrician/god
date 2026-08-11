@@ -61,6 +61,16 @@ so they go anywhere a value goes.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  messy
+    then add [shout] as upper(trim([raw])), [quiet] as lower(trim([raw]))
+    then pick [shout, quiet]
+')
+```
+
 ### R
 
 ```{r}
@@ -75,17 +85,6 @@ messy |>
 (messy
   >> add(shout = upper(trim(col.raw)), quiet = lower(trim(col.raw)))
   >> pick(col.shout, col.quiet))
-```
-
-
-### run
-
-```{r}
-run('
-  messy
-    then add [shout] as upper(trim([raw])), [quiet] as lower(trim([raw]))
-    then pick [shout, quiet]
-')
 ```
 
 :::

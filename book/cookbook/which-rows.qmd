@@ -14,6 +14,16 @@ owning chapters are [Keeping rows](../chapters/keeping-rows.qmd) and
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue] descending
+    then take 5
+')
+```
+
 ### R
 
 ```{r}
@@ -24,17 +34,6 @@ sales |> sort(descending(revenue)) |> take(5)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(5)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [revenue] descending
-    then take 5
-')
 ```
 
 :::
@@ -48,6 +47,16 @@ different measure: change the sort key, and nothing else.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue] descending
+    then take 1 by [region]
+')
+```
+
 ### R
 
 ```{r}
@@ -58,17 +67,6 @@ sales |> sort(descending(revenue)) |> take(1, by = region)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(1, by = col.region)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [revenue] descending
-    then take 1 by [region]
-')
 ```
 
 :::
@@ -84,6 +82,16 @@ taking](../chapters/sorting-and-taking.qmd).
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where ([quantity] >= 5)
+    then sort [quantity] descending
+')
+```
+
 ### R
 
 ```{r}
@@ -94,17 +102,6 @@ sales |> keep(quantity >= 5) |> sort(descending(quantity))
 
 ```{python}
 sales >> keep(col.quantity >= 5) >> sort(descending(col.quantity))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where ([quantity] >= 5)
-    then sort [quantity] descending
-')
 ```
 
 :::
@@ -121,6 +118,16 @@ sentence there too.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then pick [region, product]
+    then drop_duplicates
+')
+```
+
 ### R
 
 ```{r}
@@ -131,17 +138,6 @@ sales |> pick(region, product) |> drop_duplicates()
 
 ```{python}
 sales >> pick(col.region, col.product) >> drop_duplicates()
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then pick [region, product]
-    then drop_duplicates
-')
 ```
 
 :::

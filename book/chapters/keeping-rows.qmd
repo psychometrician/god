@@ -11,6 +11,15 @@ is yes.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where ([region] is "West")
+')
+```
+
 ### R
 
 ```{r}
@@ -21,16 +30,6 @@ sales |> keep(region == "West")
 
 ```{python}
 sales >> keep(col.region == "West")
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where ([region] is "West")
-')
 ```
 
 :::
@@ -49,6 +48,15 @@ larger orders that were still cheap to fulfill:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where (([revenue] >= 150) and ([cost] < 100))
+')
+```
+
 ### R
 
 ```{r}
@@ -59,16 +67,6 @@ sales |> keep(revenue >= 150 & cost < 100)
 
 ```{python}
 sales >> keep((col.revenue >= 150) & (col.cost < 100))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where (([revenue] >= 150) and ([cost] < 100))
-')
 ```
 
 :::
@@ -112,6 +110,15 @@ both:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where (not ([product] is "Widget"))
+')
+```
+
 ### R
 
 ```{r}
@@ -122,16 +129,6 @@ sales |> keep(!(product == "Widget"))
 
 ```{python}
 sales >> keep(~(col.product == "Widget"))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where (not ([product] is "Widget"))
-')
 ```
 
 :::

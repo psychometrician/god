@@ -10,6 +10,15 @@ row. `kind` is one of `"number"`, `"text"`, `"truth"` or `"date"`.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  survey
+    then pick where (kind is "number")
+')
+```
+
 ### R
 
 ```{r}
@@ -22,16 +31,6 @@ survey |> pick(where(kind == "number"))
 survey >> pick(where(kind == "number"))
 ```
 
-
-### run
-
-```{r}
-run('
-  survey
-    then pick where (kind is "number")
-')
-```
-
 :::
 
 *`survey then pick where (kind is "number")`*
@@ -39,6 +38,15 @@ run('
 Both questions live in the same `where`, so they join.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  survey
+    then pick where ((kind is "number") and (name starts "q"))
+')
+```
 
 ### R
 
@@ -52,22 +60,21 @@ survey |> pick(where(kind == "number" & startsWith(name, "q")))
 survey >> pick(where((kind == "number") & name.starts("q")))
 ```
 
-
-### run
-
-```{r}
-run('
-  survey
-    then pick where ((kind is "number") and (name starts "q"))
-')
-```
-
 :::
 
 Put it with `summarize` and you have the sentence people reach for most: average
 every number, whatever the numbers happen to be called.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  survey
+    then summarize where (kind is "number") as average(value)
+')
+```
 
 ### R
 
@@ -79,16 +86,6 @@ survey |> summarize(where(kind == "number", average(value)))
 
 ```{python}
 survey >> summarize(where(kind == "number", average(value)))
-```
-
-
-### run
-
-```{r}
-run('
-  survey
-    then summarize where (kind is "number") as average(value)
-')
 ```
 
 :::
@@ -130,6 +127,15 @@ same way.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  mixed
+    then keep where (lower([Region]) is "west")
+')
+```
+
 ### R
 
 ```{r}
@@ -140,16 +146,6 @@ mixed |> keep(tolower(Region) == "west")
 
 ```{python}
 mixed >> keep(lower(col.Region) == "west")
-```
-
-
-### run
-
-```{r}
-run('
-  mixed
-    then keep where (lower([Region]) is "west")
-')
 ```
 
 :::
@@ -166,6 +162,15 @@ is the column itself.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  survey
+    then keep where ([region] starts "W")
+')
+```
+
 ### R
 
 ```{r}
@@ -176,16 +181,6 @@ survey |> keep(startsWith(region, "W"))
 
 ```{python}
 survey >> keep(col.region.starts("W"))
-```
-
-
-### run
-
-```{r}
-run('
-  survey
-    then keep where ([region] starts "W")
-')
 ```
 
 :::

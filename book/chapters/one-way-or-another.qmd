@@ -45,6 +45,16 @@ thing you are choosing when you write them in an order:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  pupils
+    then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A",
+         otherwise "C")
+')
+```
+
 ### R
 
 ```{r}
@@ -59,17 +69,6 @@ pupils >> add(band = when(col.score >= 70, "B", col.score >= 90, "A",
                           otherwise = "C"))
 ```
 
-
-### run
-
-```{r}
-run('
-  pupils
-    then add [band] as when(([score] >= 70), "B", ([score] >= 90), "A",
-         otherwise "C")
-')
-```
-
 :::
 
 `ann` scored 95, met the first question that was asked, and got a B.
@@ -77,6 +76,15 @@ run('
 Leave out `otherwise` and a row that matched nothing is missing:
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  pupils
+    then add [top] as when(([score] >= 90), "yes")
+')
+```
 
 ### R
 
@@ -88,16 +96,6 @@ pupils |> add(top = when(score >= 90, "yes"))
 
 ```{python}
 pupils >> add(top = when(col.score >= 90, "yes"))
-```
-
-
-### run
-
-```{r}
-run('
-  pupils
-    then add [top] as when(([score] >= 90), "yes")
-')
 ```
 
 :::

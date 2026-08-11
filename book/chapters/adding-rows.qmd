@@ -44,6 +44,16 @@ The other table can even be this one, which is how a table is doubled:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add_rows sales
+    then summarize [rows] as row_count()
+')
+```
+
 ### R
 
 ```{r}
@@ -54,17 +64,6 @@ sales |> add_rows(sales) |> summarize(rows = row_count())
 
 ```{python}
 sales >> add_rows(sales) >> summarize(rows = row_count())
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add_rows sales
-    then summarize [rows] as row_count()
-')
 ```
 
 :::

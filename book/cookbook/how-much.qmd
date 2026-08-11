@@ -14,6 +14,15 @@ verbs](../parts/six-verbs.qmd); the chapter that owns the arguments is
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [revenue] as total([revenue]) by [product]
+')
+```
+
 ### R
 
 ```{r}
@@ -24,16 +33,6 @@ sales |> summarize(revenue = total(revenue), by = product)
 
 ```{python}
 sales >> summarize(revenue = total(col.revenue), by = col.product)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [revenue] as total([revenue]) by [product]
-')
 ```
 
 :::
@@ -50,6 +49,17 @@ column at all.
 Two steps: collapse to totals, then divide each total by their sum.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then summarize [revenue] as total([revenue]) by [region]
+    then add [share] as ([revenue] / total([revenue]))
+    then sort [share] descending
+')
+```
 
 ### R
 
@@ -69,18 +79,6 @@ sales |>
   >> sort(descending(col.share)))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [revenue] as total([revenue]) by [region]
-    then add [share] as ([revenue] / total([revenue]))
-    then sort [share] descending
-')
-```
-
 :::
 
 *`sales then summarize [revenue] as total([revenue]) by [region] then add [share] as [revenue] / total([revenue]) then sort [share] descending`*
@@ -98,6 +96,16 @@ which is the idiom
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [products] as unique_count([product]),
+         [orders] as row_count()
+')
+```
+
 ### R
 
 ```{r}
@@ -109,17 +117,6 @@ sales |> summarize(products = unique_count(product), orders = row_count())
 ```{python}
 (sales
   >> summarize(products = unique_count(col.product), orders = row_count()))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [products] as unique_count([product]),
-         [orders] as row_count()
-')
 ```
 
 :::
@@ -136,6 +133,16 @@ Make the derived number first, then collapse it like any other column.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add [margin] as ([revenue] - [cost])
+    then summarize [margin] as total([margin]) by [region]
+')
+```
+
 ### R
 
 ```{r}
@@ -150,17 +157,6 @@ sales |>
 (sales
   >> add(margin = col.revenue - col.cost)
   >> summarize(margin = total(col.margin), by = col.region))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add [margin] as ([revenue] - [cost])
-    then summarize [margin] as total([margin]) by [region]
-')
 ```
 
 :::

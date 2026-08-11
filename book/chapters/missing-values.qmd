@@ -40,6 +40,15 @@ patchy >> drop_missing(col.revenue)
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  patchy
+    then fill_missing [revenue] as 0
+')
+```
+
 ### R
 
 ```{r}
@@ -50,16 +59,6 @@ patchy |> fill_missing(revenue = 0)
 
 ```{python}
 patchy >> fill_missing(revenue = 0)
-```
-
-
-### run
-
-```{r}
-run('
-  patchy
-    then fill_missing [revenue] as 0
-')
 ```
 
 :::

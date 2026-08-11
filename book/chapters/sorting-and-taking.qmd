@@ -10,6 +10,16 @@ order, and `take` keeps the first few of them.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue] descending
+    then take 3
+')
+```
+
 ### R
 
 ```{r}
@@ -20,17 +30,6 @@ sales |> sort(descending(revenue)) |> take(3)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(3)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [revenue] descending
-    then take 3
-')
 ```
 
 :::
@@ -60,6 +59,15 @@ second breaks its ties, and so on down.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then sort [product], [revenue] descending
+')
+```
+
 ### R
 
 ```{r}
@@ -70,16 +78,6 @@ sales |> sort(product, descending(revenue))
 
 ```{python}
 sales >> sort(col.product, descending(col.revenue))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [product], [revenue] descending
-')
 ```
 
 :::
@@ -97,6 +95,17 @@ two verbs you already have, plus `by`:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then sort [date] descending
+    then take 1 by [region]
+    then pick [region, date, product]
+')
+```
+
 ### R
 
 ```{r}
@@ -113,18 +122,6 @@ sales |>
   >> sort(descending(col.date))
   >> take(1, by = col.region)
   >> pick(col.region, col.date, col.product))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [date] descending
-    then take 1 by [region]
-    then pick [region, date, product]
-')
 ```
 
 :::

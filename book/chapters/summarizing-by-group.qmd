@@ -11,6 +11,16 @@ columns that say which rows go together.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [revenue] as total([revenue]),
+         [orders] as row_count() by [product]
+')
+```
+
 ### R
 
 ```{r}
@@ -24,17 +34,6 @@ sales |>
 (sales
   >> summarize(revenue = total(col.revenue), orders = row_count(),
                by = col.product))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [revenue] as total([revenue]),
-         [orders] as row_count() by [product]
-')
 ```
 
 :::
@@ -52,6 +51,15 @@ the data gets a row:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [revenue] as total([revenue]) by [region, product]
+')
+```
+
 ### R
 
 ```{r}
@@ -66,21 +74,21 @@ sales |> summarize(revenue = total(revenue), by = c(region, product))
                by = [col.region, col.product]))
 ```
 
+:::
+
+Without `by`, the whole table is one group, and the answer is one row:
+
+::: {.panel-tabset}
 
 ### run
 
 ```{r}
 run('
   sales
-    then summarize [revenue] as total([revenue]) by [region, product]
+    then summarize [biggest] as largest([revenue]),
+         [average] as average([cost])
 ')
 ```
-
-:::
-
-Without `by`, the whole table is one group, and the answer is one row:
-
-::: {.panel-tabset}
 
 ### R
 
@@ -93,17 +101,6 @@ sales |> summarize(biggest = largest(revenue), average = average(cost))
 ```{python}
 (sales
   >> summarize(biggest = largest(col.revenue), average = average(col.cost)))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [biggest] as largest([revenue]),
-         [average] as average([cost])
-')
 ```
 
 :::
@@ -155,6 +152,17 @@ column holds.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [cheapest] as smallest([cost]),
+         [dearest] as largest([cost]), [middle] as median([revenue]),
+         [kinds] as unique_count([product]) by [region]
+')
+```
+
 ### R
 
 ```{r}
@@ -179,24 +187,23 @@ sales >> summarize(
 )
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [cheapest] as smallest([cost]),
-         [dearest] as largest([cost]), [middle] as median([revenue]),
-         [kinds] as unique_count([product]) by [region]
-')
-```
-
 :::
 
 `first` and `last` answer by position, so a sort in front of them decides
 which row they mean:
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue] descending
+    then summarize [best] as first([product]), [worst] as last([product])
+         by [region]
+')
+```
 
 ### R
 
@@ -218,18 +225,6 @@ sales >> sort(descending(col.revenue)) >> summarize(
 )
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [revenue] descending
-    then summarize [best] as first([product]), [worst] as last([product])
-         by [region]
-')
-```
-
 :::
 
 ## The same sentence at scale
@@ -240,6 +235,18 @@ hand: `gapminder`, the cast's large table, holding a half century of
 countries and years.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  gapminder
+    then keep where ([year] is 2007)
+    then summarize [life] as average([life]), [countries] as row_count()
+         by [continent]
+    then sort [life] descending
+')
+```
 
 ### R
 
@@ -259,19 +266,6 @@ gapminder |>
   >> summarize(life = average(col.life), countries = row_count(),
                by = col.continent)
   >> sort(descending(col.life)))
-```
-
-
-### run
-
-```{r}
-run('
-  gapminder
-    then keep where ([year] is 2007)
-    then summarize [life] as average([life]), [countries] as row_count()
-         by [continent]
-    then sort [life] descending
-')
 ```
 
 :::

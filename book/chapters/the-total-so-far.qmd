@@ -10,6 +10,16 @@ point.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  diary
+    then sort [on_]
+    then add [so_far] as running_total([x])
+')
+```
+
 ### R
 
 ```{r}
@@ -22,17 +32,6 @@ diary |> sort(on_) |> add(so_far = running_total(x))
 diary >> sort(col.on_) >> add(so_far = running_total(col.x))
 ```
 
-
-### run
-
-```{r}
-run('
-  diary
-    then sort [on_]
-    then add [so_far] as running_total([x])
-')
-```
-
 :::
 
 *`diary then sort [on_] then add [so_far] as running_total([x])`*
@@ -41,6 +40,17 @@ run('
 and one row on:
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  diary
+    then sort [on_]
+    then add [so_far] as running_total([x]), [before] as previous([x]),
+         [after] as following([x]) by [g]
+')
+```
 
 ### R
 
@@ -58,18 +68,6 @@ diary |>
  >> sort(col.on_)
  >> add(so_far = running_total(col.x), before = previous(col.x),
         after = following(col.x), by = col.g))
-```
-
-
-### run
-
-```{r}
-run('
-  diary
-    then sort [on_]
-    then add [so_far] as running_total([x]), [before] as previous([x]),
-         [after] as following([x]) by [g]
-')
 ```
 
 :::

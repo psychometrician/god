@@ -12,6 +12,15 @@ worked on.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  survey
+    then add where (name starts "q") as (value * 10)
+')
+```
+
 ### R
 
 ```{r}
@@ -22,16 +31,6 @@ survey |> add(where(startsWith(name, "q"), value * 10))
 
 ```{python}
 survey >> add(where(name.starts("q"), value * 10))
-```
-
-
-### run
-
-```{r}
-run('
-  survey
-    then add where (name starts "q") as (value * 10)
-')
 ```
 
 :::
@@ -49,6 +48,15 @@ what it holds, and they are the same two words the reshaping verbs use.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  survey
+    then summarize where (name ends "_score") as average(value) by [region]
+')
+```
+
 ### R
 
 ```{r}
@@ -61,16 +69,6 @@ survey |>
 ```{python}
 (survey
   >> summarize(where(name.ends("_score"), average(value)), by = col.region))
-```
-
-
-### run
-
-```{r}
-run('
-  survey
-    then summarize where (name ends "_score") as average(value) by [region]
-')
 ```
 
 :::

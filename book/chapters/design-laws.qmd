@@ -117,6 +117,17 @@ the sentence was worth writing, and it never refuses one for that:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then add [loud] as upper(lower(upper([product])))
+    then pick [product, loud]
+    then take 2
+')
+```
+
 ### R
 
 ```{r}
@@ -133,18 +144,6 @@ sales |>
   >> add(loud = upper(lower(upper(col.product))))
   >> pick(col.product, col.loud)
   >> take(2))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then add [loud] as upper(lower(upper([product])))
-    then pick [product, loud]
-    then take 2
-')
 ```
 
 :::

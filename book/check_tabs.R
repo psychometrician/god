@@ -52,10 +52,14 @@ check_tabs <- function(book = "book") {
       body <- ln[start:end]
 
       labels <- trimws(grep("^\\s*### ", body, value = TRUE))
-      has_run <- identical(labels, c("### R", "### Python", "### run"))
+      # `run` leads, ruled 2026-08-11 with the text form. It is the surface a
+      # new reader is pointed at, so it is the tab already open when the page
+      # loads; Quarto shows the first one. The pipe spellings follow in the
+      # book's canonical order, R then Python.
+      has_run <- identical(labels, c("### run", "### R", "### Python"))
       if (!identical(labels, c("### R", "### Python")) && !has_run) {
         bad <- c(bad, sprintf(
-          "  %s:%d tabs are (%s); a tabset is `### R` then `### Python`, with `### run` allowed third",
+          "  %s:%d tabs are (%s); a tabset is `### R` then `### Python`, with `### run` allowed first",
           short, start, paste(labels, collapse = ", ")))
         next
       }
@@ -63,8 +67,9 @@ check_tabs <- function(book = "book") {
       main <- body
       if (has_run) {
         at <- grep("^\\s*### run\\s*$", body)[1]
-        run_part <- body[at:length(body)]
-        main <- body[1:(at - 1L)]
+        r_at <- grep("^\\s*### R\\s*$", body)[1]
+        run_part <- body[at:(r_at - 1L)]
+        main <- c(body[1:(at - 1L)], body[r_at:length(body)])
         run_chunks <- sum(grepl("^\\s*```\\{r\\}", run_part))
         if (run_chunks != 1L ||
             sum(grepl("^\\s*```\\{python\\}", run_part)) != 0L ||

@@ -54,6 +54,18 @@ date, and each is named for what it returns.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  diary
+    then add [on] as to_date([on_])
+    then add [y] as year([on]), [m] as month([on]), [d] as day([on]),
+         [wd] as weekday([on])
+    then pick [on_, y, m, d, wd]
+')
+```
+
 ### R
 
 ```{r}
@@ -71,19 +83,6 @@ diary |>
   >> add(y = year(col.on), m = month(col.on), d = day(col.on),
          wd = weekday(col.on))
   >> pick(col.on_, col.y, col.m, col.d, col.wd))
-```
-
-
-### run
-
-```{r}
-run('
-  diary
-    then add [on] as to_date([on_])
-    then add [y] as year([on]), [m] as month([on]), [d] as day([on]),
-         [wd] as weekday([on])
-    then pick [on_, y, m, d, wd]
-')
 ```
 
 :::

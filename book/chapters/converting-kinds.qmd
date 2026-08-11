@@ -11,6 +11,16 @@ kind of mistake to find later.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  messy
+    then add [word] as to_text([n])
+    then add [digits] as characters([word])
+')
+```
+
 ### R
 
 ```{r}
@@ -21,17 +31,6 @@ messy |> add(word = to_text(n)) |> add(digits = characters(word))
 
 ```{python}
 messy >> add(word = to_text(col.n)) >> add(digits = characters(col.word))
-```
-
-
-### run
-
-```{r}
-run('
-  messy
-    then add [word] as to_text([n])
-    then add [digits] as characters([word])
-')
 ```
 
 :::
@@ -75,6 +74,17 @@ before you use it on money.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  messy
+    then add [as_text] as to_text([n]),
+         [rounded] as to_whole((to_number([n]) / 2))
+    then pick [n, as_text, rounded]
+')
+```
+
 ### R
 
 ```{r}
@@ -89,18 +99,6 @@ messy |>
 (messy
   >> add(as_text = to_text(col.n), rounded = to_whole(to_number(col.n) / 2))
   >> pick(col.n, col.as_text, col.rounded))
-```
-
-
-### run
-
-```{r}
-run('
-  messy
-    then add [as_text] as to_text([n]),
-         [rounded] as to_whole((to_number([n]) / 2))
-    then pick [n, as_text, rounded]
-')
 ```
 
 :::
@@ -119,6 +117,16 @@ in a range.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where between([revenue], 150, 400)
+    then sort [revenue]
+')
+```
+
 ### R
 
 ```{r}
@@ -129,17 +137,6 @@ sales |> keep(between(revenue, 150, 400)) |> sort(revenue)
 
 ```{python}
 sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where between([revenue], 150, 400)
-    then sort [revenue]
-')
 ```
 
 :::

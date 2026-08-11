@@ -10,6 +10,16 @@ that say which rows correspond. `products` holds a maker for each product.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then pick [product, maker, revenue]
+')
+```
+
 ### R
 
 ```{r}
@@ -24,17 +34,6 @@ sales |> join(products, by = product) |> pick(product, maker, revenue)
   >> pick(col.product, col.maker, col.revenue))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then join products by [product]
-    then pick [product, maker, revenue]
-')
-```
-
 :::
 
 *`sales then join products by [product] then pick [product, maker, revenue]`*
@@ -46,6 +45,16 @@ make.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then join products
+    then take 2
+')
+```
+
 ### R
 
 ```{r}
@@ -56,17 +65,6 @@ sales |> join(products) |> take(2)
 
 ```{python}
 sales >> join(products) >> take(2)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then join products
-    then take 2
-')
 ```
 
 :::
@@ -85,6 +83,16 @@ with the tables the other way round, so it adds no meaning and gets no word.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then join products unmatched "none"
+    then summarize [revenue] as total([revenue]) by [maker]
+')
+```
+
 ### R
 
 ```{r}
@@ -99,17 +107,6 @@ sales |>
 (sales
   >> join(products, unmatched = "none")
   >> summarize(revenue = total(col.revenue), by = col.maker))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then join products unmatched "none"
-    then summarize [revenue] as total([revenue]) by [maker]
-')
 ```
 
 :::

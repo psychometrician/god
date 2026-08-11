@@ -11,6 +11,17 @@ others.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where ([revenue] > 150)
+    then summarize [sold] as total([quantity]) by [region]
+    then sort [sold] descending
+')
+```
+
 ### R
 
 ```{r}
@@ -27,18 +38,6 @@ sales |>
   >> keep(col.revenue > 150)
   >> summarize(sold = total(col.quantity), by = col.region)
   >> sort(descending(col.sold)))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where ([revenue] > 150)
-    then summarize [sold] as total([quantity]) by [region]
-    then sort [sold] descending
-')
 ```
 
 :::

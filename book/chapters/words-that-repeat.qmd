@@ -23,6 +23,15 @@ where it says which rows the first few are taken from.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then summarize [total] as total([revenue]) by [product]
+')
+```
+
 ### R
 
 ```{r}
@@ -35,16 +44,6 @@ sales |> summarize(total = total(revenue), by = product)
 sales >> summarize(total = total(col.revenue), by = col.product)
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then summarize [total] as total([revenue]) by [product]
-')
-```
-
 :::
 
 *`sales then summarize [total] as total([revenue]) by [product]`*
@@ -54,6 +53,16 @@ still worked out per group, and instead of one row per group, every row gets
 its group's answer, which is exactly what a share needs:
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add [share] as ([revenue] / total([revenue])) by [product]
+    then pick [product, revenue, share]
+')
+```
 
 ### R
 
@@ -71,17 +80,6 @@ sales |>
   >> pick(col.product, col.revenue, col.share))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then add [share] as ([revenue] / total([revenue])) by [product]
-    then pick [product, revenue, share]
-')
-```
-
 :::
 
 Read a product's rows and their shares sum to one: each row's revenue over
@@ -91,6 +89,16 @@ know, sitting on a different verb. And on `take`, the word means the same
 thing a third time:
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue] descending
+    then take 1 by [product]
+')
+```
 
 ### R
 
@@ -102,17 +110,6 @@ sales |> sort(descending(revenue)) |> take(1, by = product)
 
 ```{python}
 sales >> sort(descending(col.revenue)) >> take(1, by = col.product)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then sort [revenue] descending
-    then take 1 by [product]
-')
 ```
 
 :::
@@ -127,6 +124,17 @@ correspond.
 same shape names the result of `rename` and the filler in `fill_missing`.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add [margin] as ([revenue] - [cost])
+    then rename [earned] as [revenue]
+    then pick [product, earned, margin]
+')
+```
 
 ### R
 
@@ -146,18 +154,6 @@ sales |>
   >> pick(col.product, col.earned, col.margin))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then add [margin] as ([revenue] - [cost])
-    then rename [earned] as [revenue]
-    then pick [product, earned, margin]
-')
-```
-
 :::
 
 ## `all_but` turns a list inside out
@@ -166,6 +162,15 @@ Wrap the names you do *not* want. It is the same word wherever a set of columns
 is chosen, which so far is `pick` and, in the next part, `lengthen`.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then pick all_but [cost, region]
+')
+```
 
 ### R
 
@@ -179,16 +184,6 @@ sales |> pick(all_but(cost, region))
 sales >> pick(all_but(col.cost, col.region))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then pick all_but [cost, region]
-')
-```
-
 :::
 
 ## `descending` reverses an ordering
@@ -198,6 +193,17 @@ it reads the same on `sort` and inside `rank`, and beyond the column it marks,
 it has no options of its own on either.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add [place] as rank([revenue] descending)
+    then sort [place]
+    then pick [product, revenue, place]
+')
+```
 
 ### R
 
@@ -217,18 +223,6 @@ sales |>
   >> pick(col.product, col.revenue, col.place))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then add [place] as rank([revenue] descending)
-    then sort [place]
-    then pick [product, revenue, place]
-')
-```
-
 :::
 
 ## `where` asks a question
@@ -240,6 +234,15 @@ about.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where ([revenue] > 150)
+')
+```
+
 ### R
 
 ```{r}
@@ -250,16 +253,6 @@ sales |> keep(revenue > 150)
 
 ```{python}
 sales >> keep(col.revenue > 150)
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where ([revenue] > 150)
-')
 ```
 
 :::

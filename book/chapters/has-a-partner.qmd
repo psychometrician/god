@@ -37,6 +37,15 @@ exactly the rows the first one dropped.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where (not matching(stocked, by [product]))
+')
+```
+
 ### R
 
 ```{r}
@@ -49,16 +58,6 @@ sales |> keep(!matching(stocked, by = product))
 sales >> keep(~matching(stocked, by = col.product))
 ```
 
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where (not matching(stocked, by [product]))
-')
-```
-
 :::
 
 `by` works here exactly as it does on `join`, and leaving it out means the same
@@ -66,6 +65,15 @@ thing: god matches on the column names both tables share, and the note naming
 its choice arrives beside the answer, as it does for `join`.
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then keep where matching(stocked)
+')
+```
 
 ### R
 
@@ -77,16 +85,6 @@ sales |> keep(matching(stocked))
 
 ```{python}
 sales >> keep(matching(stocked))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where matching(stocked)
-')
 ```
 
 :::
@@ -155,6 +153,16 @@ except GodError as refusal:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  sales
+    then keep where matching(products, by [product])
+    then keep where ([revenue] > 100)
+')
+```
+
 ### R
 
 ```{r}
@@ -167,17 +175,6 @@ sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
 (sales
   >> keep(matching(products, by = col.product))
   >> keep(col.revenue > 100))
-```
-
-
-### run
-
-```{r}
-run('
-  sales
-    then keep where matching(products, by [product])
-    then keep where ([revenue] > 100)
-')
 ```
 
 :::

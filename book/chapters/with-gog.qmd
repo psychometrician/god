@@ -72,6 +72,15 @@ From here it pipes like every table before it.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  gapminder
+    then take 5
+')
+```
+
 ### R
 
 ```{r}
@@ -82,16 +91,6 @@ gapminder |> take(5)
 
 ```{python}
 gapminder >> take(5)
-```
-
-
-### run
-
-```{r}
-run('
-  gapminder
-    then take 5
-')
 ```
 
 :::
