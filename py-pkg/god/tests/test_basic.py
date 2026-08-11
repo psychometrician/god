@@ -808,6 +808,24 @@ else:
     print("        Two of its five differences from DuckDB do not raise anything,")
     print("        so this is worth installing: pip install pyspark")
 
+# **A warehouse is a different engine behind the same dialect name**, and the
+# book tells a reader the same sentence runs there unchanged. Local pyspark
+# cannot answer that. This runs where credentials are in the environment and
+# says nothing where they are not, because most machines will never have them
+# and a missing warehouse is not a failing one.
+if all(os.environ.get(k) for k in
+       ("DATABRICKS_SERVER_HOSTNAME", "DATABRICKS_HTTP_PATH", "DATABRICKS_TOKEN")):
+    _warehouse = subprocess.run(
+        [sys.executable, str(Path(__file__).resolve().parents[3] / "parity" / "warehouse.py")],
+        capture_output=True, text=True,
+    )
+    if _warehouse.returncode == 0:
+        passed += 1
+        print("  ok    the corpus returns the same tables on DuckDB and on a warehouse")
+    else:
+        failed += 1
+        print("  FAIL  the warehouse disagrees\n" + _warehouse.stdout.rstrip()[-2000:])
+
 # The printing backends, run rather than read. **Nothing else executes them**,
 # which is why a rendering can read perfectly and mean something else: a bare
 # string is a column name to polars, so `then("big")` is not the word "big".

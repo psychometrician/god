@@ -160,6 +160,7 @@ python3 py-pkg/god/tests/test_basic.py    # the Python package, and it runs the 
 python3 parity/check.py                   # the two languages against each other
 python3 parity/vocabulary.py              # both bindings against the engine's own word list
 python3 parity/spark.py                   # the corpus on DuckDB and Spark, tables compared
+python3 parity/warehouse.py               # the corpus on DuckDB and a SQL warehouse, tables compared
 python3 parity/printed.py                 # the printed code executed, tables compared
 
 Rscript book/check_grammar.R              # every pipeline and transcript the book shows, run
