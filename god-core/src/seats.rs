@@ -18,9 +18,10 @@
 //!   `keep`'s question or fill a hole, because both work one row at a time
 //!   before any group's answer exists — and each refusal says which two-step
 //!   spelling to write instead.
-//! * **A place along the rows is written onto rows.** A window stands in
-//!   `add`, after a `sort` has settled the order it walks — `rank` alone
-//!   names its own — and nowhere that has no row to write onto.
+//! * **A place along the rows is written onto rows, in a declared order.**
+//!   A window stands in `add`, after a `sort` has settled the order it
+//!   walks — `rank` alone names its own — and nowhere else: every other
+//!   seat either has no row to write onto or no way to say the order.
 //!
 //! The table below is those four properties, cell by cell, and **the tests
 //! run every cell through the real parser and checker**, so this table and
@@ -135,17 +136,12 @@ pub fn rule_for(seat: Seat, kind: Kind) -> Admission {
         (Seat::OrderingKey, _) => Refused,
 
         // A hole is filled one row at a time. A scalar fills it; a group's
-        // answer does not exist yet at that row, and the message names the
-        // `add ... by` that makes it a column first.
-        //
-        // **The window cell is the one this table admits without settling.**
-        // `fill_missing [x] as previous([x])` compiles today, with no sort
-        // demanded, and whether that stays — a fill that walks the rows
-        // must first be told their order — is a recorded open question, not
-        // a rule. The cell states what the engine does; it does not bless it.
+        // answer does not exist at that row yet, and a value that looks
+        // along the rows needs an order no filler ever declares. Each
+        // refusal names the column to make first.
         (Seat::Filler, Kind::Scalar) => Stands,
         (Seat::Filler, Kind::Aggregate) => Refused,
-        (Seat::Filler, Kind::Window) => Stands,
+        (Seat::Filler, Kind::Window) => Refused,
 
         // A cell of the wide table holds one value. A scalar computes it, an
         // aggregate is the collision answer — two rows wanting one cell —
@@ -168,7 +164,7 @@ pub fn note_for(seat: Seat, kind: Kind) -> &'static str {
         (Seat::GroupAnswer, Kind::Aggregate) => "one level; an aggregate cannot hold another",
         (Seat::OrderingKey, _) => "an ordering position names a column; the computed key is an add away",
         (Seat::Filler, Kind::Aggregate) => "make it a column with add ... by, then fill",
-        (Seat::Filler, Kind::Window) => "admitted today with no order asked; an open question, not a rule",
+        (Seat::Filler, Kind::Window) => "make it a column with sort then add, then fill",
         (Seat::CellValue, Kind::Aggregate) => "the answer when two rows want one cell",
         _ => "",
     }

@@ -825,6 +825,12 @@ fn check_step(
                         value.span(),
                     ));
                 }
+                if value.windows() {
+                    return Err(Diagnostic::illegal(
+                        "`fill_missing` fills each hole from its own row, and a value that looks along the rows needs their order settled first. Make it a column: `then sort [day] then add [x] as first_present([x], previous([x]))`",
+                        value.span(),
+                    ));
+                }
                 out.set(&name.text, if kind == Type::Unknown { filler } else { kind });
             }
             duplicate_names(values)?;

@@ -156,6 +156,9 @@ check_error("a host habit is answered with the grammar's word",
 check_error("a missing table says how to pass one",
             run("no_such_table then take 1"),
             "Pass it by name")
+check_error("a window cannot fill a hole, and the repair is named",
+            run("sales then fill_missing [revenue] as previous([revenue])"),
+            "first_present")
 
 cat("\nthe same pipeline, written as dplyr\n")
 

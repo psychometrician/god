@@ -5,6 +5,15 @@ a person using god can see.
 
 ## Unreleased
 
+### A window can no longer fill a hole
+
+`fill_missing [x] as previous([x])` used to compile, with no sort demanded,
+so what filled the hole depended on an order nothing had declared — the one
+place in the grammar where that could happen. It is refused now, and the
+refusal names the spelling that says the same thing with the order settled:
+`sort`, then `add [x] as first_present([x], previous([x]))`. Filling with a
+plain value is unchanged.
+
 ### `show_as` on a sentence that names two tables
 
 Asking for the translation of a text pipeline with a `join` in it used to fail

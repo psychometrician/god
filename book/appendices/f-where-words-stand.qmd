@@ -44,9 +44,9 @@ the rows once a `sort` has said in what order. A **group's answer** in
 inside it. An **ordering position** names a column and never an expression,
 in `sort` and inside `rank` alike, because the computed key is one `add`
 away and a second spelling of that `add` is what the refusal declines to be.
-A **filler** and a **cell** each hold one value, and the rows where a
-group's answer would help are reached the same way as everywhere else: make
-it a column first.
+A **filler** and a **cell** each hold one value, and where a group's answer
+or a look along the rows would help, the road is the same as everywhere
+else: make it a column first.
 
 Some cells carry one more sentence, and the engine says those too:
 
@@ -59,12 +59,6 @@ knitr::kable(
   col.names = c("The seat", "The kind", "What the cell says")
 )
 ```
-
-One of those notes is different in kind from the rest, and it is on this
-page because honesty is cheaper than surprise: a window as `fill_missing`'s
-filler is admitted today without being asked for an order, and whether that
-stays is an open question rather than a rule. The cell states what the
-engine does; it does not bless it.
 
 What the grid never says is *useful*. A sentence these seats accept is
 answered however strange it is, because well-formed and worthwhile are

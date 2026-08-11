@@ -164,6 +164,11 @@ check_error(
     lambda: god.run("no_such_table then take 1"),
     "Pass it by name",
 )
+check_error(
+    "a window cannot fill a hole, and the repair is named",
+    lambda: god.run("sales then fill_missing [revenue] as previous([revenue])"),
+    "first_present",
+)
 
 print("\nthe same pipeline, written as dplyr")
 
