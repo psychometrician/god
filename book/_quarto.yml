@@ -7,6 +7,19 @@ project:
   # table the same table.
   resources:
     - data/
+    # **The book's virtualenv is not a resource, and without this line it is
+    # published.** `book/.venv` sits inside the Quarto project, so Quarto's own
+    # resource discovery copies it into `_book/` — 237 files and 2.8 MB of
+    # somebody else's Python — and the workflow then force-pushes all of
+    # `_book/` to the public site. The rendered book carried
+    # `.venv/lib/python3.12/site-packages/` for as long as it had a virtualenv.
+    #
+    # The sibling avoids this a different way, by building its venv in the
+    # runner's temp directory where Quarto cannot see it. That fixes the
+    # publisher and leaves the render wrong, so a local `_book/` there carries
+    # the venv too and only luck keeps it off the site. Excluding it here fixes
+    # what is copied, which is the thing both routes read.
+    - "!.venv/"
 
 book:
   title: "god: A Grammar of Data"

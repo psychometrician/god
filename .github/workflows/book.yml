@@ -254,6 +254,18 @@ jobs:
             exit 1
           fi
 
+          # **A virtualenv here is published, and one was.** `book/.venv` sits
+          # inside the Quarto project, so Quarto's resource discovery copied it
+          # into `_book/` and the force-push below put 237 files and 2.8 MB of
+          # third-party Python on a site whose description says it holds
+          # rendered HTML and nothing else. `_quarto.yml` excludes it now; this
+          # is the check that says so, on the last step before the push.
+          if [ -d _book/.venv ] || find _book -name 'site-packages' -type d -print -quit | grep -q .; then
+            echo "::error::a virtualenv is in _book/ - the publish would push it to the site"
+            find _book -maxdepth 2 -name '.venv' -o -name 'site-packages' | head
+            exit 1
+          fi
+
           # Required: Pages runs Jekyll, which skips underscore-prefixed paths,
           # and Quarto writes its stylesheets and search index into site_libs/.
           # No render produces either of these two files, and `force_orphan`

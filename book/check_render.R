@@ -24,6 +24,9 @@
 #   4. No Python repr with its newlines spelled out in a cell's output, which
 #      is what one binding printing as well as returning looked like.
 #   5. No PDF, which would make Quarto offer the whole book as a download.
+#   6. No virtualenv. `book/.venv` is inside the Quarto project, so Quarto
+#      copied it into `_book/` and the publish pushed 237 files of somebody
+#      else's Python to the public site.
 #
 # **A skip is not a pass, and this says so in those words.** Where there is no
 # render, or where the render is older than the sources it came from, grading it
@@ -130,6 +133,26 @@ check_render <- function(book = "book") {
     bad <- c(bad, paste0(
       "a PDF is in the render, which makes Quarto offer the book as a download: ",
       paste(head(pdfs, 3), collapse = ", ")))
+  }
+
+  # **A virtualenv in the render is published to the public site.**
+  # `book/.venv` sits inside the Quarto project, so Quarto's resource discovery
+  # copied it into `_book/` and the workflow force-pushed all of `_book/` to
+  # `god-book` — 237 files and 2.8 MB of somebody else's Python, on a site whose
+  # own README says it holds rendered HTML and nothing else. It was there from
+  # the day the book grew a virtualenv until 2026-08-12.
+  #
+  # `site-packages` is asked for as well as `.venv`, because the name of the
+  # directory is a developer's choice and the thing inside it is not.
+  strays <- c(
+    list.files(out, pattern = "^[.]venv$", include.dirs = TRUE, all.files = TRUE),
+    basename(dirname(list.files(out, pattern = "^site-packages$",
+                                recursive = TRUE, include.dirs = TRUE)))
+  )
+  if (length(strays)) {
+    bad <- c(bad, paste0(
+      "a virtualenv is in the render, and the whole render is published: ",
+      paste(unique(head(strays, 3)), collapse = ", ")))
   }
 
   if (length(bad))
