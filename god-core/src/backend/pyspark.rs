@@ -616,6 +616,12 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             "F.coalesce({})",
             args.iter().map(as_column).collect::<Vec<_>>().join(", ")
         ),
+        // `F.concat` returns null when any argument is, which is the rule.
+        // `concat_ws` is the one that skips them, and it is not wanted here.
+        "join_text" => format!(
+            "F.concat({})",
+            args.iter().map(as_column).collect::<Vec<_>>().join(", ")
+        ),
         "year" => format!("F.year({})", arg(0)),
         "month" => format!("F.month({})", arg(0)),
         "day" => format!("F.dayofmonth({})", arg(0)),

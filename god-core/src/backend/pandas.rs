@@ -710,6 +710,14 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             let rest: Vec<String> = args[1..].iter().map(|a| inner(a, plain)).collect();
             format!("{}.fillna({})", arg(0), rest.join(").fillna("))
         }
+        // **Plain `+`, which is what a pandas reader would write**, and it
+        // propagates the missing value the way the grammar says: adding to a
+        // NaN gives a NaN. `str.cat` is the other spelling and its default is
+        // the opposite, dropping the row's missing part and joining the rest.
+        "join_text" => format!(
+            "({})",
+            args.iter().map(|a| inner(a, plain)).collect::<Vec<_>>().join(" + ")
+        ),
         "year" => format!("{}.dt.year", arg(0)),
         "month" => format!("{}.dt.month", arg(0)),
         "day" => format!("{}.dt.day", arg(0)),

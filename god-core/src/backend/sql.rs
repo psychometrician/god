@@ -1088,6 +1088,18 @@ impl Dialect {
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
+            // **`||` rather than `concat`, and it was measured.** DuckDB's
+            // `concat` *skips* a null and hands back the rest, so a label built
+            // from an absent middle name would come back looking finished. `||`
+            // propagates, which is the rule the grammar settled on, and both
+            // engines spell it the same way, so this is not a dialect entry.
+            "join_text" => format!(
+                "({})",
+                args.iter()
+                    .map(|e| self.expr(e))
+                    .collect::<Vec<_>>()
+                    .join(" || ")
+            ),
             // `STRING` rather than `VARCHAR`, and it was measured: Spark refuses a
             // bare `VARCHAR` because it wants a length, and both engines take
             // `STRING`. One spelling serves both, so this is not a dialect entry.

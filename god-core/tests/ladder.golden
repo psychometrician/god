@@ -549,3 +549,21 @@ sales                                   region:text  product:text  revenue:numbe
 └ pick [region, product, share]         region  product  share
                                         -revenue  -cost  -ordered_on
 ---
+sales then add [label] as join_text([region], " ", [product]) then pick [label, revenue] then sort [label] then take 3
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [label] as join_text([region], " ", [product])
+│                                       region  product  revenue  cost  ordered_on  +label:text
+├ pick [label, revenue]                 label  revenue
+│                                       -region  -product  -cost  -ordered_on
+├ sort [label]                          label  revenue
+└ take 3                                label  revenue
+    at most 3 rows
+---
+sales then add [key] as join_text([region], "-", to_text([revenue])) then keep where [key] contains "West" then pick [key]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [key] as join_text([region], "-", to_text([revenue]))
+│                                       region  product  revenue  cost  ordered_on  +key:text
+├ keep where ([key] contains "West")    region  product  revenue  cost  ordered_on  key
+└ pick [key]                            key
+                                        -region  -product  -revenue  -cost  -ordered_on
+---

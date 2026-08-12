@@ -136,3 +136,7 @@ sales then add [d] as to_date([ordered_on]) then add [h] as hour([d]) then pick 
 sales then add [share] as [revenue] / total([revenue]) then sort [share] descending, [ordered_on] then pick [ordered_on, product, share] then take 3
 ---
 sales then add [share] as [revenue] / total([revenue]) by [region] then keep where [share] > 0.35 then sort [region], [share] descending then pick [region, product, share]
+---
+sales then add [label] as join_text([region], " ", [product]) then pick [label, revenue] then sort [label] then take 3
+---
+sales then add [key] as join_text([region], "-", to_text([revenue])) then keep where [key] contains "West" then pick [key]

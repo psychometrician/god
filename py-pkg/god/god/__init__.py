@@ -42,6 +42,7 @@ from .verbs import (
     first_present,
     following,
     join,
+    join_text,
     keep,
     kind,
     hour,
@@ -114,6 +115,9 @@ __all__ = [
     # The rest of the text functions. The `_text` suffix says what they operate
     # on, where `to_` says what they convert into.
     "trim", "characters", "replace_text", "split_text",
+    # Text put together, which is `split_text` read the other way. A
+    # separator is written as a value where it goes, not as a setting.
+    "join_text",
     # Whether a value sits between two ends, counting both.
     "between",
     # The parts of a date. `weekday` counts Monday as 1 wherever it runs, which

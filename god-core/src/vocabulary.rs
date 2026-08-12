@@ -156,6 +156,26 @@ pub const FUNCTIONS: &[Function] = &[
     // wrongly, and it is what the word `present` is for.
     Function { name: "first_present", kind: Kind::Scalar, arity: Arity::AtLeast(2) },
 
+    // **Text put together, which is `split_text` read the other way.** The
+    // grammar could take text apart and not join it back until 2026-08-11, an
+    // asymmetry no law asked for and one a sweep of the neighbours found rather
+    // than a reader. Every one of them has this and every one spells it
+    // differently: `unite`, `paste0`, `str.cat`, `concat_str`, `CONCAT`.
+    //
+    // **A separator is a value, not a clause.** `join_text([first], " ",
+    // [last])` says aloud what it does, and the alternative was a trailing
+    // `with " "` that would have cost a grammar word to save repeating a space.
+    // Variadic for the same reason `first_present` is: the arguments are a
+    // sequence rather than a fixed pair.
+    //
+    // **Missing anywhere makes the answer missing**, which is the rule
+    // arithmetic already follows. Engines disagree about this and the
+    // disagreement is quiet: DuckDB's `concat` skips a null and returns the
+    // rest, so a label built from an absent middle name would come back looking
+    // finished. The backends are told to use the spelling that propagates. To
+    // fill a hole instead of losing the row, name it: `first_present([x], "")`.
+    Function { name: "join_text", kind: Kind::Scalar, arity: Arity::AtLeast(2) },
+
     // **Case, which is the answer to a question the name tests could not
     // answer.** `pick where name starts "q"` is case-sensitive and misses
     // `Q1_score`, and the fix is not a flag on the test: it is that a name is

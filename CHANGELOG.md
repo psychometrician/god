@@ -5,6 +5,26 @@ a person using god can see.
 
 ## Unreleased
 
+### `join_text`, for putting text together
+
+The grammar could take text apart with `split_text` and had no way to join
+it back. `join_text` is that word, and a separator is written where it
+goes rather than set somewhere else:
+
+```r
+sales |> add(label = join_text(region, " ", product))
+```
+
+**A missing value anywhere makes the whole answer missing**, which is the
+rule addition already follows. Several engines quietly do the opposite,
+dropping the absent part and handing back the rest, so a label built from
+a name nobody recorded comes back looking finished. To fill the hole
+instead of losing the row, say what to fill it with:
+`join_text(first, " ", first_present(last, ""))`.
+
+Numbers are refused rather than converted, and the message names
+`to_text`, because how a number should look is a decision you make.
+
 ### See what a pipeline does to the table, before it runs
 
 `show_steps` draws a pipeline step by step: the table as it stands once

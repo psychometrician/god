@@ -490,6 +490,15 @@ fn call(fname: &str, args: &[Expr]) -> String {
             "coalesce({})",
             args.iter().map(expr).collect::<Vec<_>>().join(", ")
         ),
+        // **`str_c` rather than `paste0`, and the difference is the whole
+        // ruling.** `paste0("a", NA)` is the four characters `aNA`, because
+        // base R stringifies the missing value; `str_c` returns NA. The grammar
+        // says missing anywhere makes the answer missing, so the spelling that
+        // says so is the one printed.
+        "join_text" => format!(
+            "stringr::str_c({})",
+            args.iter().map(expr).collect::<Vec<_>>().join(", ")
+        ),
         // lubridate is named explicitly rather than assumed to be attached,
         // because `year` and `month` are not in base R and a reader copying this
         // line needs to know where they come from.

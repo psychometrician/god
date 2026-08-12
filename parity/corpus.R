@@ -171,3 +171,7 @@ sales |> add(d = to_date(ordered_on)) |> add(h = hour(d)) |> pick(ordered_on, h)
 sales |> add(share = revenue / total(revenue)) |> sort(descending(share), ordered_on) |> pick(ordered_on, product, share) |> take(3)
 ---
 sales |> add(share = revenue / total(revenue), by = region) |> keep(share > 0.35) |> sort(region, descending(share)) |> pick(region, product, share)
+---
+sales |> add(label = join_text(region, " ", product)) |> pick(label, revenue) |> sort(label) |> take(3)
+---
+sales |> add(key = join_text(region, "-", to_text(revenue))) |> keep(grepl("West", key, fixed = TRUE)) |> pick(key)

@@ -605,6 +605,18 @@ fn call(fname: &str, args: &[Expr]) -> String {
             "pl.coalesce([{}])",
             args.iter().map(expr).collect::<Vec<_>>().join(", ")
         ),
+        // `concat_str` leaves nulls alone by default, which is the rule the
+        // grammar settled on, so nothing has to be said to get it.
+        //
+        // **`literal` rather than `expr`, and this was caught by running it.**
+        // A separator is the commonest argument here and it is nearly always a
+        // bare piece of text, which polars reads inside this list as a *column
+        // name*: the printed line looked perfect and failed saying it could not
+        // find a column called `" "`.
+        "join_text" => format!(
+            "pl.concat_str([{}])",
+            args.iter().map(literal).collect::<Vec<_>>().join(", ")
+        ),
         "year" => format!("{}.dt.year()", arg(0)),
         "month" => format!("{}.dt.month()", arg(0)),
         "day" => format!("{}.dt.day()", arg(0)),

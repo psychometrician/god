@@ -633,6 +633,28 @@ def split_text(column, cut_on, piece):
     )
 
 
+def join_text(*parts):
+    """Text values joined into one: ``join_text(col.first, " ", col.last)``.
+
+    This is ``split_text`` read the other way. A separator is written where it
+    goes, as a value, rather than being a setting somewhere else, so the call
+    says aloud what comes out.
+
+    **Missing anywhere makes the answer missing**, which is the rule arithmetic
+    already follows. To fill a hole instead of losing the row, say what to fill
+    it with: ``join_text(col.first, " ", first_present(col.last, ""))``.
+
+    Numbers are refused rather than converted, because how a number should look
+    is a decision: use ``to_text`` and make it.
+    """
+    if len(parts) < 2:
+        raise GodExpressionError(
+            "`join_text` joins at least two things: join_text(col.first, col.last)"
+        )
+    written = ", ".join(_written(p, "join_text") for p in parts)
+    return Expr(f"join_text({written})")
+
+
 def between(column, low, high):
     """Whether this sits between two ends, counting both: ``between(col.n, 1, 10)``.
 

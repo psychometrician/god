@@ -178,3 +178,7 @@ sales >> add(d = to_date(col.ordered_on)) >> add(h = hour(col.d)) >> pick(col.or
 sales >> add(share = col.revenue / total(col.revenue)) >> sort(descending(col.share), col.ordered_on) >> pick(col.ordered_on, col.product, col.share) >> take(3)
 ---
 sales >> add(share = col.revenue / total(col.revenue), by = col.region) >> keep(col.share > 0.35) >> sort(col.region, descending(col.share)) >> pick(col.region, col.product, col.share)
+---
+sales >> add(label = join_text(col.region, " ", col.product)) >> pick(col.label, col.revenue) >> sort(col.label) >> take(3)
+---
+sales >> add(key = join_text(col.region, "-", to_text(col.revenue))) >> keep(col.key.contains("West")) >> pick(col.key)

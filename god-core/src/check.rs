@@ -1873,6 +1873,21 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                     }
                     Ok(Type::Text)
                 }
+                // **Every argument is text, and a number is refused rather than
+                // converted.** Silently calling `to_text` on a number would be
+                // the grammar deciding how it should look: 7 or 7.0, and a date
+                // in whose format. The refusal names the word that decides.
+                "join_text" => {
+                    for (i, kind) in kinds.iter().enumerate() {
+                        if !kind.agrees_with(Type::Text) {
+                            return Err(Diagnostic::illegal(
+                                format!("`join_text` joins text, and this is {}. Convert it first with `to_text(...)`, which is where you say how it should look", kind.name()),
+                                args[i].span(),
+                            ));
+                        }
+                    }
+                    Ok(Type::Text)
+                }
                 "split_text" => {
                     for i in [0usize, 1] {
                         if !kinds[i].agrees_with(Type::Text) {

@@ -54,6 +54,66 @@ special. `characters` counts characters; it is not called `length`, because R's
 `length` counts the elements of a vector and a word that reads as one thing and
 does another is the trap this vocabulary is built to avoid.
 
+## Putting text back together
+
+`join_text` is `split_text` read the other way. It joins two or more values into
+one, and a separator is written where it goes, as a value, rather than being set
+somewhere else.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+messy |>
+  add(name = trim(raw)) |>
+  add(greeting = join_text("hello ", name)) |>
+  pick(greeting, n)
+```
+
+### Python
+
+```{python}
+(messy
+  >> add(name = trim(col.raw))
+  >> add(greeting = join_text("hello ", col.name))
+  >> pick(col.greeting, col.n))
+```
+
+:::
+
+Numbers are refused rather than converted. `join_text([name], [n])` will not
+run, and the message names `to_text`, because how a number should look is a
+decision you make rather than one the grammar makes for you.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+messy |> add(both = join_text(raw, n))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(messy >> add(both = join_text(col.raw, col.n)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+A missing value anywhere makes the whole answer missing. That is the rule
+addition already follows, and it is the one engines disagree about most quietly:
+several of them drop the absent part and hand back the rest, so a label built
+from a name nobody recorded comes back looking finished. If you would rather
+fill the hole than lose the row, say what to fill it with:
+`join_text([first], " ", first_present([last], ""))`.
+
 ## Case, both ways
 
 `lower` and `upper` fold a value's case. They are ordinary functions on a value,

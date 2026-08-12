@@ -234,6 +234,9 @@ pipeline in any of the seven targets, `god_sql` hands back the query for a
 table you describe, and R's `use_engine` points execution at any DBI
 connection, the way a Python pipeline follows its frames to Spark.
 
+Text is taken apart with `split_text` and put back together with `join_text`,
+which is the same word read the other way.
+
 **`show_steps` draws what a pipeline does to the table**, step by step, without
 running any of it: the columns each step makes, the ones it takes away, and what
 a second table sends across when you join one. A sentence god refuses is drawn
