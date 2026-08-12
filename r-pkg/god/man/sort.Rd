@@ -25,4 +25,8 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> sort(descending(revenue))
+#>   region revenue
+#> 1   West     150
+#> 2   East     120
+#> 3   West     100
 }

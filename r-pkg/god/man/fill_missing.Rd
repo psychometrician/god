@@ -24,4 +24,7 @@ patchy <- data.frame(
   listed  = c(90, 60)
 )
 patchy |> fill_missing(revenue = 0)
+#>   product revenue listed
+#> 1  Widget     100     90
+#> 2  Gadget       0     60
 }

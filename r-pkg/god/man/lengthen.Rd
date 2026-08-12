@@ -34,4 +34,9 @@ answers <- data.frame(
   q1 = c(1, 4), q2 = c(2, 5)
 )
 answers |> lengthen(q1, q2)
+#>   student name value
+#> 1     ann   q1     1
+#> 2     ann   q2     2
+#> 3     bob   q1     4
+#> 4     bob   q2     5
 }

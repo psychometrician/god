@@ -23,4 +23,5 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 format(sales |> keep(region == "West"))
+#> [1] "sales\n  then keep where ([region] is \"West\")"
 }

@@ -39,6 +39,9 @@ god_shadowed <- c(sort = "base::sort")
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> keep(region == "West")
+#' #>   region revenue
+#' #> 1   West     100
+#' #> 2   West     150
 #' @export
 keep <- function(.data, condition) {
   pipeline <- god_head(.data, substitute(.data), "keep")
@@ -157,6 +160,11 @@ god_tables_named <- function(e) {
 #'   cost    = c(40, 80, 75, 60)
 #' )
 #' sales |> pick(region, revenue)
+#' #>   region revenue
+#' #> 1   West     100
+#' #> 2   East     120
+#' #> 3   West     120
+#' #> 4  North     150
 #' @export
 pick <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "pick")
@@ -218,6 +226,10 @@ pick <- function(.data, ...) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> add(doubled = revenue * 2)
+#' #>   region revenue doubled
+#' #> 1   West     100     200
+#' #> 2   East     120     240
+#' #> 3   West     150     300
 #' @export
 add <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "add")
@@ -255,6 +267,9 @@ add <- function(.data, ..., by) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> summarize(sold = total(revenue), by = region)
+#' #>   region sold
+#' #> 1   East  120
+#' #> 2   West  250
 #' @export
 summarize <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "summarize")
@@ -292,6 +307,10 @@ summarize <- function(.data, ..., by) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> sort(descending(revenue))
+#' #>   region revenue
+#' #> 1   West     150
+#' #> 2   East     120
+#' #> 3   West     100
 #' @export
 sort <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "sort")
@@ -330,6 +349,9 @@ sort <- function(.data, ...) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> take(2)
+#' #>   region revenue
+#' #> 1   West     100
+#' #> 2   East     120
 #' @export
 take <- function(.data, n, by) {
   pipeline <- god_head(.data, substitute(.data), "take")
@@ -374,6 +396,11 @@ take <- function(.data, n, by) {
 #'   pick(product, revenue) |>
 #'   join(products, by = product) |>
 #'   sort(product)
+#' #>     product revenue  maker
+#' #> 1 Doohickey     120   <NA>
+#' #> 2    Gadget     120 Globex
+#' #> 3    Widget     100   Acme
+#' #> 4    Widget     150   Acme
 #' @export
 join <- function(.data, other, by, unmatched = "this") {
   pipeline <- god_head(.data, substitute(.data), "join")
@@ -423,6 +450,11 @@ join <- function(.data, other, by, unmatched = "this") {
 #' )
 #' late <- data.frame(region = "North", revenue = 80)
 #' sales |> add_rows(late)
+#' #>   region revenue
+#' #> 1   West     100
+#' #> 2   East     120
+#' #> 3   West     150
+#' #> 4  North      80
 #' @export
 add_rows <- function(.data, other) {
   pipeline <- god_head(.data, substitute(.data), "add_rows")
@@ -467,6 +499,11 @@ add_rows <- function(.data, other) {
 #' sales |>
 #'   add_combinations(region, product) |>
 #'   fill_missing(revenue = 0)
+#' #>   region product revenue
+#' #> 1   West  Widget     100
+#' #> 2   East  Widget     120
+#' #> 3   West  Gadget     150
+#' #> 4   East  Gadget       0
 #' @export
 add_combinations <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "add_combinations")
@@ -503,6 +540,9 @@ add_combinations <- function(.data, ..., by) {
 #'   product = c("Widget", "Gadget", "Widget")
 #' )
 #' sales |> drop_duplicates()
+#' #>   region product
+#' #> 1   East  Gadget
+#' #> 2   West  Widget
 #' @export
 drop_duplicates <- function(.data) {
   god_step(god_head(.data, substitute(.data), "drop_duplicates"), "drop_duplicates")
@@ -522,6 +562,10 @@ drop_duplicates <- function(.data) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' sales |> rename(area = region)
+#' #>   area revenue
+#' #> 1 West     100
+#' #> 2 East     120
+#' #> 3 West     150
 #' @export
 rename <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "rename")
@@ -548,6 +592,8 @@ rename <- function(.data, ...) {
 #'   listed  = c(90, 60)
 #' )
 #' patchy |> drop_missing(revenue)
+#' #>   product revenue listed
+#' #> 1  Widget     100     90
 #' @export
 drop_missing <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "drop_missing")
@@ -571,6 +617,9 @@ drop_missing <- function(.data, ...) {
 #'   listed  = c(90, 60)
 #' )
 #' patchy |> fill_missing(revenue = 0)
+#' #>   product revenue listed
+#' #> 1  Widget     100     90
+#' #> 2  Gadget       0     60
 #' @export
 fill_missing <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "fill_missing")
@@ -602,6 +651,11 @@ fill_missing <- function(.data, ...) {
 #'   q1 = c(1, 4), q2 = c(2, 5)
 #' )
 #' answers |> lengthen(q1, q2)
+#' #>   student name value
+#' #> 1     ann   q1     1
+#' #> 2     ann   q2     2
+#' #> 3     bob   q1     4
+#' #> 4     bob   q2     5
 #' @export
 lengthen <- function(.data, ..., name, value) {
   pipeline <- god_head(.data, substitute(.data), "lengthen")
@@ -691,6 +745,9 @@ lengthen <- function(.data, ..., name, value) {
 #' )
 #' marks |> widen(name = question, value = mark, by = student,
 #'                giving = c(q1, q2))
+#' #>   student q1 q2
+#' #> 1     ann  1  2
+#' #> 2     bob  4  5
 #' @export
 widen <- function(.data, name, value, by, missing, giving) {
   pipeline <- god_head(.data, substitute(.data), "widen")
@@ -868,10 +925,9 @@ god_written <- function(pipeline) {
 #'   region  = c("West", "East", "West"),
 #'   revenue = c(100, 120, 150)
 #' )
-#' # Printing a pipeline runs it. `collect` is the explicit form,
-#' # for when you want the data frame rather than the look of it.
 #' answer <- collect(sales |> keep(region == "West"))
 #' nrow(answer)
+#' #> [1] 2
 #' @export
 collect <- function(pipeline) {
   if (!inherits(pipeline, "god_pipeline")) {
@@ -903,6 +959,7 @@ as.data.frame.god_pipeline <- function(x, ...) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' format(sales |> keep(region == "West"))
+#' #> [1] "sales\n  then keep where ([region] is \"West\")"
 #' @export
 format.god_pipeline <- function(x, ...) {
   god_written(x)

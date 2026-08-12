@@ -28,4 +28,7 @@ run('
   sales
     then keep where [region] is "West"
 ', sales = sales)
+#>   region revenue
+#> 1   West     100
+#> 2   West     150
 }

@@ -23,4 +23,7 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> keep(region == "West")
+#>   region revenue
+#> 1   West     100
+#> 2   West     150
 }

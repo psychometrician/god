@@ -24,4 +24,6 @@ patchy <- data.frame(
   listed  = c(90, 60)
 )
 patchy |> drop_missing(revenue)
+#>   product revenue listed
+#> 1  Widget     100     90
 }

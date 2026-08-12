@@ -23,4 +23,7 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 cat(god_sql("sales then take 1", "region:text,revenue:number"))
+#> WITH step0 AS (SELECT * FROM "sales"),
+#>      step1 AS (SELECT * FROM step0 LIMIT 1)
+#> SELECT * FROM step1
 }

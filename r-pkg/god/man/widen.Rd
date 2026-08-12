@@ -42,4 +42,7 @@ marks <- data.frame(
 )
 marks |> widen(name = question, value = mark, by = student,
                giving = c(q1, q2))
+#>   student q1 q2
+#> 1     ann  1  2
+#> 2     bob  4  5
 }

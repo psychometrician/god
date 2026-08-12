@@ -26,4 +26,7 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> summarize(sold = total(revenue), by = region)
+#>   region sold
+#> 1   East  120
+#> 2   West  250
 }

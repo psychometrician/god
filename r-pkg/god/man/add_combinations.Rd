@@ -39,4 +39,9 @@ sales <- data.frame(
 sales |>
   add_combinations(region, product) |>
   fill_missing(revenue = 0)
+#>   region product revenue
+#> 1   West  Widget     100
+#> 2   East  Widget     120
+#> 3   West  Gadget     150
+#> 4   East  Gadget       0
 }

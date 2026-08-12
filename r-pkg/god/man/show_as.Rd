@@ -28,5 +28,10 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 show_as(sales |> keep(region == "West"), "dplyr")
+#> sales |>
+#>   filter((region == "West"))
 show_as(sales |> keep(region == "West"), "sql")
+#> WITH step0 AS (SELECT * FROM "sales"),
+#>      step1 AS (SELECT * FROM step0 WHERE ("region" = 'West'))
+#> SELECT * FROM step1
 }

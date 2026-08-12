@@ -22,8 +22,7 @@ sales <- data.frame(
   region  = c("West", "East", "West"),
   revenue = c(100, 120, 150)
 )
-# Printing a pipeline runs it. `collect` is the explicit form,
-# for when you want the data frame rather than the look of it.
 answer <- collect(sales |> keep(region == "West"))
 nrow(answer)
+#> [1] 2
 }

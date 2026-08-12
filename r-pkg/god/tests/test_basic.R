@@ -986,9 +986,30 @@ if (file.exists("r-pkg/god/NAMESPACE")) {
     }
     code <- paste(code, collapse = "\n")
     if (!nzchar(trimws(code))) next
+    # **The `#>` lines are compared, not decorated.** An example that shows an
+    # answer is making a claim about what the engine returns today, and a claim
+    # nothing checks is the species of defect every guard here exists for. This
+    # is R's half of what doctest does on the Python side, and the two pages
+    # show the same table so a drift on either side is visible on both.
     outcome <- tryCatch({
-      invisible(capture.output(eval(parse(text = code), envir = new.env(parent = globalenv()))))
-      "ok"
+      env <- new.env(parent = globalenv())
+      parsed <- parse(text = code, keep.source = TRUE)
+      claimed <- sub("^#> ?", "", grep("^#>", strsplit(code, "\n")[[1]], value = TRUE))
+      shown <- character()
+      for (k in seq_along(parsed)) {
+        # `capture.output` wraps the evaluation, not only the printing, so a
+        # statement that writes with `cat` is caught too. Without that,
+        # `god_sql`'s example printed a query into the middle of this suite's
+        # own output and nothing compared it.
+        shown <- c(shown, capture.output({
+          result <- withVisible(eval(parsed[[k]], env))
+          if (result$visible) print(result$value)
+        }))
+      }
+      if (length(claimed) && !identical(trimws(claimed), trimws(shown))) {
+        sprintf("the answer it shows is not the answer it gives\n        shows: %s\n        gives: %s",
+                paste(claimed, collapse = " | "), paste(shown, collapse = " | "))
+      } else "ok"
     }, error = function(e) conditionMessage(e))
     if (identical(outcome, "ok")) ran <- ran + 1L
     else broke <- c(broke, sprintf("%s: %s", basename(page), outcome))

@@ -40,4 +40,9 @@ sales |>
   pick(product, revenue) |>
   join(products, by = product) |>
   sort(product)
+#>     product revenue  maker
+#> 1 Doohickey     120   <NA>
+#> 2    Gadget     120 Globex
+#> 3    Widget     100   Acme
+#> 4    Widget     150   Acme
 }

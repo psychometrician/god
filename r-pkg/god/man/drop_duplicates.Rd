@@ -23,4 +23,7 @@ sales <- data.frame(
   product = c("Widget", "Gadget", "Widget")
 )
 sales |> drop_duplicates()
+#>   region product
+#> 1   East  Gadget
+#> 2   West  Widget
 }

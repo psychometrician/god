@@ -26,4 +26,9 @@ sales <- data.frame(
 )
 late <- data.frame(region = "North", revenue = 80)
 sales |> add_rows(late)
+#>   region revenue
+#> 1   West     100
+#> 2   East     120
+#> 3   West     150
+#> 4  North      80
 }

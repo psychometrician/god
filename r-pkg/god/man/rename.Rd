@@ -24,4 +24,8 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> rename(area = region)
+#>   area revenue
+#> 1 West     100
+#> 2 East     120
+#> 3 West     150
 }

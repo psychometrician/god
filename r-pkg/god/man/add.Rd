@@ -26,4 +26,8 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> add(doubled = revenue * 2)
+#>   region revenue doubled
+#> 1   West     100     200
+#> 2   East     120     240
+#> 3   West     150     300
 }

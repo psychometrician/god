@@ -28,4 +28,7 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 sales |> take(2)
+#>   region revenue
+#> 1   West     100
+#> 2   East     120
 }

@@ -27,6 +27,9 @@
 #'   sales
 #'     then keep where [region] is "West"
 #' ', sales = sales)
+#' #>   region revenue
+#' #> 1   West     100
+#' #> 2   West     150
 #' @export
 run <- function(pipeline, ...) {
   tables <- list(...)
@@ -81,12 +84,12 @@ run <- function(pipeline, ...) {
 #' @return The connection that was in use before, invisibly.
 #' @examples
 #' \dontrun{
-#'
+#' 
 #' # By default a pipeline runs on DuckDB, in this session.
 #' # Point it somewhere else with a DBI connection:
 #' con <- DBI::dbConnect(duckdb::duckdb())
 #' use_engine(con)
-#'
+#' 
 #' # And back again:
 #' use_engine(NULL)
 #' }
@@ -184,7 +187,12 @@ god_connection <- function() {
 #'   revenue = c(100, 120, 150)
 #' )
 #' show_as(sales |> keep(region == "West"), "dplyr")
+#' #> sales |>
+#' #>   filter((region == "West"))
 #' show_as(sales |> keep(region == "West"), "sql")
+#' #> WITH step0 AS (SELECT * FROM "sales"),
+#' #>      step1 AS (SELECT * FROM step0 WHERE ("region" = 'West'))
+#' #> SELECT * FROM step1
 #' @export
 show_as <- function(pipeline, as = "dplyr", ...) {
   asked <- god_asking(pipeline, list(...), parent.frame())
@@ -217,6 +225,10 @@ show_as <- function(pipeline, as = "dplyr", ...) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' show_steps(sales |> keep(region == "West") |> take(1))
+#' #> sales                              region:text  revenue:number
+#' #> ├ keep where ([region] is "West")  region  revenue
+#' #> └ take 1                           region  revenue
+#' #>     at most 1 rows
 #' @export
 show_steps <- function(pipeline, ...) {
   structure(
@@ -248,6 +260,7 @@ print.god_steps <- function(x, ...) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' format(show_steps(sales |> take(1)))
+#' #> [1] "sales     region:text  revenue:number\n└ take 1  region  revenue\n    at most 1 rows"
 #' @export
 format.god_steps <- function(x, as = "text", ...) {
   # The engine says which ways of drawing there are, and refuses the rest. A
@@ -305,6 +318,9 @@ god_asking <- function(pipeline, tables, here) {
 #'   revenue = c(100, 120, 150)
 #' )
 #' cat(god_sql("sales then take 1", "region:text,revenue:number"))
+#' #> WITH step0 AS (SELECT * FROM "sales"),
+#' #>      step1 AS (SELECT * FROM step0 LIMIT 1)
+#' #> SELECT * FROM step1
 #' @export
 god_sql <- function(pipeline, columns) {
   god_call(c("--columns", columns), pipeline)

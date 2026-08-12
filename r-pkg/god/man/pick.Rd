@@ -26,4 +26,9 @@ sales <- data.frame(
   cost    = c(40, 80, 75, 60)
 )
 sales |> pick(region, revenue)
+#>   region revenue
+#> 1   West     100
+#> 2   East     120
+#> 3   West     120
+#> 4  North     150
 }

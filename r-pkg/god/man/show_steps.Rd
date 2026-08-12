@@ -35,4 +35,8 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 show_steps(sales |> keep(region == "West") |> take(1))
+#> sales                              region:text  revenue:number
+#> ├ keep where ([region] is "West")  region  revenue
+#> └ take 1                           region  revenue
+#>     at most 1 rows
 }

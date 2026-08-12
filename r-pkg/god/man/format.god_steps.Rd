@@ -25,4 +25,5 @@ sales <- data.frame(
   revenue = c(100, 120, 150)
 )
 format(show_steps(sales |> take(1)))
+#> [1] "sales     region:text  revenue:number\n└ take 1  region  revenue\n    at most 1 rows"
 }
