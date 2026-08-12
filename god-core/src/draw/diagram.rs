@@ -63,12 +63,8 @@ const BAR_H: u32 = CHIP_H + BAR_PAD * 2;
 const ROW_GAP: u32 = 10;
 const NOTE_H: u32 = 18;
 
-/// How many chips a bar shows before it counts instead. A wide table is drawn
-/// as its first columns and a tally, never as a bar off the side of the page.
-const CHIP_CAP: usize = 10;
-
-pub fn render(seen: &Reading, others: &Tables) -> String {
-    let mut d = Draw { out: String::new(), width: 0, height: 0 };
+pub(crate) fn render(seen: &Reading, others: &Tables) -> String {
+    let mut d = Draw { width: 0, height: 0 };
 
     // Everything is laid out into a buffer first, because the document's size is
     // not known until the last band is placed and an SVG declares it up front.
@@ -246,8 +242,13 @@ fn text_w(s: &str, ch: u32) -> u32 {
     super::scene::cells(s) as u32 * ch
 }
 
+/// What the layout has measured so far.
+///
+/// **Measurements only.** Every drawing method writes into a `body` buffer it
+/// is handed, so the document is assembled in one place rather than in two;
+/// this carried a `String` of its own until the compiler pointed out that
+/// nothing ever read it.
 struct Draw {
-    out: String,
     width: u32,
     height: u32,
 }
