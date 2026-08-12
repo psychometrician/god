@@ -3,7 +3,11 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
-## Unreleased
+## 0.2.0
+
+Three new words, and a worked example on every one of them. `pip install
+-U grammar-of-data` in Python; R-universe serves the same version as
+`god` on its next sync.
 
 ### Every word now has a worked example, in both languages
 
