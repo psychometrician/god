@@ -40,6 +40,30 @@ of it, that is a defect in the comment. Open an issue and it gets rewritten.
 | `r-pkg/god/R/` · `py-pkg/god/god/` | Carrying text in and a table back | ✅ |
 | `book/` | The manual, where every example executes | ✅ |
 
+Inside the R package, which is the one with files a reader has to tell apart:
+
+| File | Owns |
+|---|---|
+| `R/verbs.R` | The fifteen verbs. Each builds a sentence and decides nothing |
+| `R/translate.R` | R's expressions into the grammar's |
+| `R/run.R` | The text form, finding the engine, and running the query |
+| `R/zzz.R` | How a pipeline prints inside a rendered document |
+| `NAMESPACE` | Hand maintained, not roxygen generated |
+| `man/` | roxygen's output. Regenerate it; see below |
+| `configure` | Builds or bundles the engine into `inst/bin/`, and refuses rather than installing a package that cannot run |
+
+**What does not go in either binding: any decision at all.** Validation,
+defaults, coercion and every error message live in the grammar. A binding finds
+a table in your scope, hands over some text, runs the query it gets back, and
+returns a frame. That is the whole job.
+
+**That table used to live in `r-pkg/god/README.md`, and it was the wrong
+place.** R-universe renders a package's README as its front page, so what a
+stranger deciding whether to install god actually read was a note to
+contributors about which file owns what — titled after a directory,
+`r-pkg/god`, and never saying what god is. Both package READMEs are written for
+a user now and follow one shape.
+
 **`god-core` has no runtime dependencies, and keeping it that way is a rule.**
 Turning text into a plan and a plan into text needs no library. Only the test
 suite links an engine, because tests must read rows rather than inspect queries.

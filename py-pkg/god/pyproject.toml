@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # and every chapter says `import god` regardless.
 name = "grammar-of-data"
 version = "0.2.0"
-description = "A grammar of data: one vocabulary for tables, in R, Python and SQL"
+description = "One small vocabulary for manipulating tables, spelled the same way in Python, in R, and as plain text"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"

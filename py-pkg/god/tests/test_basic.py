@@ -13,6 +13,7 @@ import contextlib
 import io
 import os
 import doctest
+import pathlib
 import inspect
 import sys
 from pathlib import Path
@@ -993,6 +994,57 @@ check("every exported name shows an example",
        if ">>>" not in (inspect.getdoc(getattr(god, n, None)) or "")],
       [])
 print(f"  ({_attempted} examples run)")
+
+
+# --- the two packages describe themselves the same way ----------------------
+#
+# **Two registries render these, and nobody sees both.** A person deciding
+# whether to install god reads exactly one of the R-universe page or the PyPI
+# page, so drift between them is invisible from either side — which is how the
+# R README came to be a note to contributors titled after a directory, never
+# saying what god is and never linking the manual, while PyPI's said both.
+#
+# What is compared is the *shape* rather than the words. The two spellings
+# genuinely differ — `>>` against `|>`, `col.region` against a bare name — and a
+# check demanding identical text would forbid the one difference the project
+# admits to. So: the same sections, in the same order, and the facts that must
+# appear in both.
+print("\nthe two packages describe themselves the same way")
+
+_here = pathlib.Path(__file__).resolve().parents[3]
+_readmes = {
+    "R": _here / "r-pkg" / "god" / "README.md",
+    "Python": _here / "py-pkg" / "god" / "README.md",
+}
+if all(p.exists() for p in _readmes.values()):
+    _text = {k: p.read_text(encoding="utf-8") for k, p in _readmes.items()}
+    _sections = {k: [ln.strip() for ln in t.splitlines() if ln.startswith("## ")]
+                 for k, t in _text.items()}
+
+    # The manual is the fact that was missing from one side, so it is named.
+    for language, body in _text.items():
+        check(f"{language}'s README links the manual",
+              "psychometrician.github.io/god-book/" in body, True)
+        check(f"{language}'s README is titled for a reader, not a directory",
+              body.startswith("# god — a grammar of data, for "), True)
+        # **`.find`, not `.index`.** The first version raised ValueError the
+        # moment a README lacked the sentence, so the guard crashed instead of
+        # reporting — and the two checks after it never ran. A guard that
+        # cannot survive the thing it guards is not a guard.
+        _says, _installs = body.find("One small vocabulary"), body.find("## Installing")
+        check(f"{language}'s README says what god is before how to install it",
+              _says != -1 and _installs != -1 and _says < _installs, True)
+        check(f"{language}'s README points at the per-word help",
+              "## Every word answers for itself" in body, True)
+
+    # Both carry an Installing section and a help section, in that order; what
+    # follows is each language's own business.
+    _shared = ["## Installing", "## Every word answers for itself"]
+    for language, found in _sections.items():
+        check(f"{language}'s README carries the shared sections in order",
+              [s for s in found if s in _shared], _shared)
+else:
+    print("  skip  the two READMEs (not run from the repository root)")
 
 
 print(f"\n{passed} passed, {failed} failed")

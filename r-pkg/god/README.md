@@ -1,24 +1,24 @@
-# r-pkg/god
+# god — a grammar of data, for R
 
-The R package. It installs as a binary from R-universe, with no toolchain:
-
-```r
-install.packages("god",
-  repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
-```
-
-Installing from the source tarball compiles the engine during installation,
-which takes a few seconds and needs [Rust](https://rustup.rs/); an install that
-can find no engine and no way to build one refuses, naming every place it
-looked, rather than succeeding into a package that cannot answer a pipeline.
-
-Both spellings below are the same sentence, and the package proves it:
+One small vocabulary for manipulating tables, spelled the same way in R, in
+Python, and as plain text. A pipeline is checked whole before any of it runs, so
+a bad column is reported at the step that names it rather than failing partway
+through — or worse, not failing.
 
 ```r
+library(god)
+
+sales <- read.csv("sales.csv")
+
 sales |>
   keep(region == "West") |>
   summarize(margin = total(margin), by = product)
+```
 
+The same sentence runs as plain text, byte-for-byte what you would paste into
+Python or into a database:
+
+```r
 run(r"(
 sales
   then keep where [region] is "West"
@@ -26,35 +26,36 @@ sales
 )")
 ```
 
-## What is here
+R 4.0's raw strings are why that needs no escaping: the text is the text.
 
-| File | Owns |
-|---|---|
-| `R/verbs.R` | The fifteen verbs. Each builds a sentence and decides nothing |
-| `R/translate.R` | R's expressions into the grammar's |
-| `R/run.R` | The text form, finding the engine, and running the query |
-| `R/zzz.R` | How a pipeline prints inside a rendered document |
-| `NAMESPACE` | Hand maintained, not roxygen generated |
-| `configure` | Builds or bundles the engine into `inst/bin/`, and refuses rather than installing a package that cannot run |
+And when you reach the edge of the vocabulary, it shows you the same pipeline in
+a tool you already know — `show_as(pipeline, "dplyr")`, or `"pandas"`,
+`"polars"`, `"pyspark"`, `"sql"`, `"spark"`.
 
-## What does not go here
-
-**Any decision at all.** Validation, defaults, coercion and every error message
-live in the grammar. This package finds a table in your scope, hands over some
-text, runs the query it gets back, and returns a data frame. That is the whole
-job.
-
-## Raw strings, so the text is the text
-
-R 4.0 added raw strings, so a pipeline needs no escaping and is byte-for-byte
-the same characters as the one you would paste into Python or into a database:
+## Installing
 
 ```r
-run(r"(sales then keep where [region] is "West")")
+install.packages("god",
+  repos = c("https://psychometrician.r-universe.dev", "https://cloud.r-project.org"))
 ```
 
-## Names this package masks
+That is a binary, with no toolchain to set up. Installing from the source
+tarball compiles the engine during installation, which takes a few seconds and
+needs [Rust](https://rustup.rs/); an install that can find no engine and no way
+to build one refuses, naming every place it looked, rather than succeeding into
+a package that cannot answer a pipeline.
 
-One base name: `sort`. The grammar's `sort` takes the word's everyday meaning,
-`base::sort` stays one `base::` away, and loading the package says so once.
-The other exports are the grammar's own words and shadow nothing in base R.
+## Every word answers for itself
+
+`?keep`, `?summarize`, `?add_combinations` — every verb, function and grammar
+word has a page with a worked example, a small table going in and the answer
+coming out.
+
+## One name this package masks
+
+`sort`. The grammar's `sort` takes the word's everyday meaning, `base::sort`
+stays one `base::` away, and loading the package says so once. The other exports
+are the grammar's own words and shadow nothing in base R.
+
+The manual, live in both languages, is at
+<https://psychometrician.github.io/god-book/>.

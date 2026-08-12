@@ -4,10 +4,11 @@ Version: 0.2.0
 Authors@R:
     person("psychometrician", role = c("aut", "cre"), email = "psychometrician@gmail.com")
 Description: One small vocabulary for manipulating tables, spelled the same way
-    in R, in Python, and on a cluster. A pipeline is checked before any of it
-    runs, so a bad column is reported at the step that names it rather than
-    failing partway through. The grammar owns the words, the checking and the
-    messages; an engine underneath does the work.
+    in R, in Python, and as plain text. A pipeline is checked whole before any
+    of it runs, so a bad column is reported at the step that names it rather
+    than failing partway through. The grammar owns the words, the checking and
+    the messages; an engine underneath does the work. The manual, live in both
+    languages, is at <https://psychometrician.github.io/god-book/>.
 License: Apache License (== 2.0)
 URL: https://github.com/psychometrician/god,
     https://psychometrician.github.io/god-book/
