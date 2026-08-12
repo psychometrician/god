@@ -182,3 +182,27 @@ sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
 The two `keep` steps read as one sentence: first the rows with a partner,
 then the rows that clear the bar. However long the pipeline grows, `matching`
 can only remove rows, which is the property the word exists to keep.
+
+That property is the one worth seeing beside a join, because the two sentences
+look alike and mean different things.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> keep(matching(products, by = product)) |> show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> keep(matching(products, by = col.product)))
+```
+
+:::
+
+`products` gets a line of its own, the same as it would under a join, and its
+`maker` column stays where it is. Nothing crossed over, and the last line says
+the rows can only be fewer. A join in the same place says they may multiply.
+That difference is the whole reason both words exist.

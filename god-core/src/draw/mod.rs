@@ -15,14 +15,17 @@
 //!                                          cells, never pixels
 //! ```
 //!
-//! Layout happens once, in cells of a fixed grid, and an emitter turns cells
-//! into output. There is exactly one emitter today and it writes text; a second
-//! one that draws a picture is arithmetic over the same scene rather than a
-//! second layout, which is the only arrangement where the two cannot drift.
+//! **The reading happens once and the placing happens twice.** What a step
+//! makes, what it takes away, which table arrives and what became of the rows
+//! are facts about the sentence, worked out in `ladder::read`. Where those facts
+//! sit is a layout, and there are two: a ladder of characters for a terminal,
+//! and a diagram of bars and chips for a page. Two readings of one sentence is
+//! how the drawings would start disagreeing about it; two layouts is just two
+//! layouts.
 
+pub mod diagram;
 pub mod ladder;
 pub mod scene;
-pub mod svg;
 pub mod text;
 
 pub use scene::{Ink, Scene};
@@ -40,13 +43,15 @@ pub fn ladder(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> St
     text::render(&ladder::build(plan, source, schema, others))
 }
 
-/// The same ladder, drawn.
+/// The same pipeline as a diagram.
 ///
-/// **The same scene, so the two cannot disagree.** Whatever the text says about
-/// where a column sits, the picture puts it there, because neither of them
-/// decides: the layout was settled before either was asked.
+/// **Shape rather than characters.** A table is a bar holding one chip per
+/// column, so its width is its width: a `summarize` narrows the page and a
+/// `join` widens it, and a reader sees that before reading a word. The ladder
+/// cannot say it, because a grid of characters can only look like a grid of
+/// characters.
 pub fn picture(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> String {
-    svg::render(&ladder::build(plan, source, schema, others))
+    diagram::render(&ladder::read(plan, source, schema, others), others)
 }
 
 /// The two ways to look at the same drawing.

@@ -279,6 +279,35 @@ the point of the demonstration: nothing about the grammar knows or cares how
 big the table is. [Somewhere else](somewhere-else.qmd)
 shows the same indifference reaching a warehouse.
 
+## Where the other columns went
+
+`summarize` keeps the columns you grouped by and the ones you named, and takes
+away everything else. That is its whole behavior, and it is the thing readers
+are most often surprised by. You can look at it before you run anything.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  summarize(total = total(revenue), by = region) |>
+  show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> summarize(total = total(col.revenue), by = col.region))
+```
+
+:::
+
+One line makes `total`, and the same line takes `date`, `product`, `quantity`,
+`revenue` and `cost` away. When a later step asks for a column that is not
+there, this is usually where it went. [What it does to the table](what-it-does.qmd) reads
+the drawing in full.
+
 ## What travels with it
 
 - `by` is the same word, with the same meaning, that grouped `take` in the

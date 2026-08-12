@@ -41,8 +41,16 @@ const TRIBUTARY: u16 = 6;
 /// table holds — and the cap is what stops one long `summarize` from buying that
 /// alignment with a page of white space.
 const LABEL_CAP: u16 = 40;
-/// How many columns a strip shows before it starts counting instead.
-const CHIP_CAP: usize = 12;
+/// How many columns go on one line before the strip wraps.
+///
+/// **Wrapping rather than counting** is what lets a wide table be drawn whole:
+/// nothing is hidden and the width stops growing with the table.
+///
+/// **Eight here and five in the picture, and the difference is the medium.** A
+/// terminal line is wider than a row of drawn chips, and five wrapped the
+/// book's own six-column table, orphaning the one column a reader came to see
+/// onto a line of its own. Measured against the corpus rather than picked.
+const WRAP: usize = 8;
 
 /// One column, as it is about to be drawn.
 ///
@@ -50,18 +58,18 @@ const CHIP_CAP: usize = 12;
 /// picture wants to draw them differently: the name is what a reader is looking
 /// for and the kind is what they check once. Set side by side with no gap, the
 /// text ladder shows `revenue:number` either way.
-struct Chip {
-    text: String,
-    kind: Option<String>,
-    ink: Ink,
+pub(crate) struct Chip {
+    pub text: String,
+    pub kind: Option<String>,
+    pub ink: Ink,
 }
 
 impl Chip {
-    fn plain(text: impl Into<String>, ink: Ink) -> Self {
+    pub(crate) fn plain(text: impl Into<String>, ink: Ink) -> Self {
         Chip { text: text.into(), kind: None, ink }
     }
 
-    fn holding(text: impl Into<String>, kind: crate::check::Type, ink: Ink) -> Self {
+    pub(crate) fn holding(text: impl Into<String>, kind: crate::check::Type, ink: Ink) -> Self {
         Chip {
             text: text.into(),
             kind: match kind.word() {
@@ -73,34 +81,51 @@ impl Chip {
     }
 }
 
-/// Check the pipeline and lay it out — including when the check refuses.
-pub fn build(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> Scene {
+/// A pipeline read once, for whoever is going to draw it.
+///
+/// **The two drawings share this and share nothing else.** What a step makes,
+/// what it takes away, which table arrives and what became of the rows are
+/// facts about the sentence; where they sit on a page is a layout. Working the
+/// facts out twice is how a ladder and a picture start disagreeing about the
+/// same pipeline, so they are worked out here and each emitter lays them out
+/// its own way.
+pub(crate) struct Reading<'a> {
+    /// The plan the checker approved, which is not always the one parsed: a
+    /// `join` written without a key has one filled in.
+    pub plan: Plan,
+    pub source: &'a str,
+    /// What the table holds before each step, and once more for what the last
+    /// one leaves. Empty when nothing checked at all.
+    pub states: Vec<Schema>,
+    pub assumptions: Vec<Diagnostic>,
+    /// The words that were refused and why, where the sentence did not check.
+    pub refusal: Option<(Option<Span>, Diagnostic)>,
+}
+
+pub(crate) fn read<'a>(
+    plan: &Plan,
+    source: &'a str,
+    schema: &Schema,
+    others: &Tables,
+) -> Reading<'a> {
+    let carry = |checked: check::Checked, refusal| {
+        let mut states: Vec<Schema> = checked.entering;
+        states.push(checked.schema);
+        Reading { plan: checked.plan, source, states, assumptions: checked.assumptions, refusal }
+    };
+
     match check::check_tables(plan, schema, others) {
-        // **The checked plan, never the parsed one.** A `join` written without a
-        // key has one worked out for it, and the checker writes that back; draw
-        // the plan it approved and the picture says `by [id]` for the same reason
-        // the sentence written back out does, through the same code.
-        Ok(checked) => draw(
-            &checked.plan,
-            source,
-            &checked.entering,
-            &checked.schema,
-            &checked.assumptions,
-            others,
-            None,
-        ),
+        Ok(checked) => carry(checked, None),
         Err(refusal) => {
             // **How far did it get?** The step whose words contain the refusal
             // is the one that could not be checked, so everything before it
             // checked cleanly and can be drawn. Running the checker again over
-            // that prefix is how those columns are recovered: it costs one more
-            // pass over a handful of steps, and it needs the checker to hand
-            // back nothing it does not already hand back.
+            // that prefix is how those columns are recovered.
             let stop = refused_step(plan, &refusal);
-            // **The span is carried, not the index.** The prefix drawn below
-            // stops short of the step that failed, so an index into it would
-            // point past the end — and the words the caret goes under have to
-            // come from the sentence the person wrote either way.
+            // **The span is carried, not the index.** The prefix stops short of
+            // the step that failed, so an index into it would point past the
+            // end, and the words a caret goes under come from the sentence
+            // somebody wrote either way.
             let blame = plan.steps.get(stop).map(|s| s.span());
             let prefix = Plan {
                 source: plan.source.clone(),
@@ -108,26 +133,44 @@ pub fn build(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> Sce
                 steps: plan.steps[..stop].to_vec(),
             };
             match check::check_tables(&prefix, schema, others) {
-                Ok(checked) => draw(
-                    &checked.plan,
+                Ok(checked) => carry(checked, Some((blame, refusal))),
+                // The prefix will not check either, so nothing can be said
+                // about the columns. `states` is empty and the drawing says
+                // only what was refused.
+                Err(_) => Reading {
+                    plan: Plan {
+                        source: plan.source.clone(),
+                        source_span: plan.source_span,
+                        steps: Vec::new(),
+                    },
                     source,
-                    &checked.entering,
-                    &checked.schema,
-                    &checked.assumptions,
-                    others,
-                    Some((blame, &refusal)),
-                ),
-                // The prefix will not check either. Nothing can be said about
-                // the columns, so say only what was refused.
-                Err(_) => {
-                    let mut scene = Scene::new();
-                    scene.push(RowBuilder::new(0).at(RAIL).put(&plan.source, Ink::Source).done());
-                    refusal_band(&mut scene, 1, source, blame, &refusal);
-                    scene
-                }
+                    states: Vec::new(),
+                    assumptions: Vec::new(),
+                    refusal: Some((blame, refusal)),
+                },
             }
         }
     }
+}
+
+pub fn build(plan: &Plan, source: &str, schema: &Schema, others: &Tables) -> Scene {
+    let seen = read(plan, source, schema, others);
+    if seen.states.is_empty() {
+        let mut scene = Scene::new();
+        scene.push(RowBuilder::new(0).at(RAIL).put(&seen.plan.source, Ink::Source).done());
+        let (blame, refusal) = seen.refusal.as_ref().expect("nothing checked, so something refused");
+        refusal_band(&mut scene, 1, source, *blame, refusal);
+        return scene;
+    }
+    draw(
+        &seen.plan,
+        seen.source,
+        &seen.states[..seen.states.len() - 1],
+        &seen.states[seen.states.len() - 1],
+        &seen.assumptions,
+        others,
+        seen.refusal.as_ref().map(|(b, d)| (*b, d)),
+    )
 }
 
 /// Which step could not be checked.
@@ -150,7 +193,7 @@ fn refused_step(plan: &Plan, refusal: &Diagnostic) -> usize {
     plan.steps.len()
 }
 
-fn holds(outer: Span, inner: Span) -> bool {
+pub(crate) fn holds(outer: Span, inner: Span) -> bool {
     inner.start >= outer.start && inner.start + inner.len <= outer.start + outer.len
 }
 
@@ -233,7 +276,7 @@ fn draw(
 
         if !gone.is_empty() {
             let row = RowBuilder::new(band).at(RAIL).put(rail, Ink::Rail).at(strip_col);
-            put_chips(&mut scene, row, gone);
+            put_chips(&mut scene, row, gone, strip_col, band, rail);
         }
 
         for note in assumptions.iter().filter(|a| a.span == Some(step.span())) {
@@ -312,7 +355,7 @@ fn refusal_band(
     );
 }
 
-fn slice(source: &str, span: Span) -> Option<&str> {
+pub(crate) fn slice(source: &str, span: Span) -> Option<&str> {
     source.get(span.start..span.start + span.len)
 }
 
@@ -323,7 +366,7 @@ fn slice(source: &str, span: Span) -> Option<&str> {
 /// has not changed since the line above. It belongs on the table you start from,
 /// and on a column a step has just made, because those are the two places a
 /// reader has not been told.
-fn chips_of(schema: &Schema) -> Vec<Chip> {
+pub(crate) fn chips_of(schema: &Schema) -> Vec<Chip> {
     schema
         .columns
         .iter()
@@ -337,7 +380,7 @@ fn chips_of(schema: &Schema) -> Vec<Chip> {
 /// which is a thing every join does and almost no tool says out loud — pandas
 /// hands back two columns with suffixes nobody asked for. Marking it in both
 /// places is that rule, drawn.
-fn chips_from(their: &Schema, keys: &[String]) -> Vec<Chip> {
+pub(crate) fn chips_from(their: &Schema, keys: &[String]) -> Vec<Chip> {
     their
         .columns
         .iter()
@@ -353,7 +396,7 @@ fn chips_from(their: &Schema, keys: &[String]) -> Vec<Chip> {
 
 /// What one step did to the table: the columns it hands on, and the ones it
 /// does not.
-fn chips_between(before: &Schema, after: &Schema, keys: &[String]) -> (Vec<Chip>, Vec<Chip>) {
+pub(crate) fn chips_between(before: &Schema, after: &Schema, keys: &[String]) -> (Vec<Chip>, Vec<Chip>) {
     let kept = after
         .columns
         .iter()
@@ -396,19 +439,40 @@ fn put_strip(
         // The rail carries on down the wrapped line. Without it the ladder
         // appears to stop and start again at the next step.
         let next = RowBuilder::new(band).at(RAIL).put(rail, Ink::Rail).at(strip_col);
-        put_chips(scene, next, chips);
+        put_chips(scene, next, chips, strip_col, band, rail);
     } else {
-        put_chips(scene, row.at(strip_col), chips);
+        put_chips(scene, row.at(strip_col), chips, strip_col, band, rail);
     }
 }
 
-fn put_chips(scene: &mut Scene, mut row: RowBuilder, chips: Vec<Chip>) {
-    let mut first = true;
-    for chip in cap(chips) {
-        if !first {
+/// Lay the columns out, **wrapping rather than counting**.
+///
+/// A forty-column table used to come out as one line reaching off the page, or,
+/// once that was capped, as a dozen names and a tally. Both are worse than the
+/// obvious thing: put a few on each line and keep going. Nothing is hidden, the
+/// width stops growing, and a reader can still find any column by eye.
+///
+/// **The same treatment goes to the columns that left**, because a step that
+/// takes thirty away should not report that in a different shape from the one
+/// that reports what it kept.
+fn put_chips(
+    scene: &mut Scene,
+    mut row: RowBuilder,
+    chips: Vec<Chip>,
+    strip_col: u16,
+    band: u16,
+    rail: &str,
+) {
+    let mut on_this_line = 0usize;
+    for chip in chips {
+        if on_this_line == WRAP {
+            scene.push(row.done());
+            row = RowBuilder::new(band).at(RAIL).put(rail, Ink::Rail).at(strip_col);
+            on_this_line = 0;
+        } else if on_this_line > 0 {
             row = row.gap(2);
         }
-        first = false;
+        on_this_line += 1;
         row = row.put(chip.text, chip.ink);
         // No gap: the kind sits against the name, so the two cells read as
         // `revenue:number` in text and can be drawn apart in a picture.
@@ -416,7 +480,9 @@ fn put_chips(scene: &mut Scene, mut row: RowBuilder, chips: Vec<Chip>) {
             row = row.put(kind, Ink::Kind);
         }
     }
-    scene.push(row.done());
+    if !row.is_empty() {
+        scene.push(row.done());
+    }
 }
 
 /// Keep a strip readable on a wide table.
@@ -425,41 +491,11 @@ fn put_chips(scene: &mut Scene, mut row: RowBuilder, chips: Vec<Chip>) {
 /// always ones this step left alone, so a `+` or a `=` is never the thing that
 /// went missing — otherwise the one line a reader came for is the one the cap
 /// would take.
-fn cap(chips: Vec<Chip>) -> Vec<Chip> {
-    if chips.len() <= CHIP_CAP {
-        return chips;
-    }
-    let changed = chips.iter().filter(|c| c.ink != Ink::Column).count();
-    let mut budget = CHIP_CAP.saturating_sub(changed);
-    let mut out: Vec<Chip> = Vec::new();
-    let mut elided = 0usize;
-    let mut marker = None;
-
-    for chip in chips {
-        if chip.ink != Ink::Column {
-            out.push(chip);
-        } else if budget > 0 {
-            budget -= 1;
-            out.push(chip);
-        } else {
-            if marker.is_none() {
-                marker = Some(out.len());
-            }
-            elided += 1;
-        }
-    }
-
-    if let Some(at) = marker {
-        out.insert(at, Chip::plain(format!("({elided} more)"), Ink::Note));
-    }
-    out
-}
-
 /// A second table, arriving partway down the pipeline.
-struct Arrival {
-    other: String,
-    keys: Vec<String>,
-    kind: Arriving,
+pub(crate) struct Arrival {
+    pub other: String,
+    pub keys: Vec<String>,
+    pub kind: Arriving,
 }
 
 /// **There are exactly three things a second table can send across, and telling
@@ -471,7 +507,7 @@ struct Arrival {
 /// join is the most common mistake anybody makes with two tables, and the
 /// difference is invisible in every spelling of it: the sentences look alike, and
 /// so do the answers, until a key repeats.
-enum Arriving {
+pub(crate) enum Arriving {
     Columns(Unmatched),
     Nothing { negated: bool },
     Rows,
@@ -479,7 +515,7 @@ enum Arriving {
 
 impl Arrival {
     /// The line under the arriving table, saying what actually crossed.
-    fn crossing(&self, their: Option<&Schema>) -> String {
+    pub(crate) fn crossing(&self, their: Option<&Schema>) -> String {
         let on = if self.keys.is_empty() {
             "matched".to_string()
         } else {
@@ -507,7 +543,7 @@ impl Arrival {
     }
 }
 
-fn tributaries(step: &Step) -> Vec<Arrival> {
+pub(crate) fn tributaries(step: &Step) -> Vec<Arrival> {
     match step {
         Step::Join { other, by, unmatched, .. } => vec![Arrival {
             other: other.text.clone(),
@@ -556,7 +592,7 @@ fn find_matching(e: &Expr, negated: bool, out: &mut Vec<Arrival>) {
 /// **Deliberately quiet.** That `keep` returns fewer rows is not news to anybody,
 /// and a note on every band trains the eye to skip all of them. What earns a line
 /// is a step whose effect on the rows is not written on its face.
-fn rows_notes(step: &Step, arrivals: &[Arrival]) -> Vec<(String, Ink)> {
+pub(crate) fn rows_notes(step: &Step, arrivals: &[Arrival]) -> Vec<(String, Ink)> {
     let mut said = Vec::new();
 
     match step {

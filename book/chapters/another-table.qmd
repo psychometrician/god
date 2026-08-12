@@ -191,7 +191,32 @@ except GodError as refusal:
 
 :::
 
+A join is the step where it is hardest to say what the table will hold
+afterwards, so it is worth looking before running.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |> join(products, by = product) |> show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales >> join(products, by = col.product))
+```
+
+:::
+
+The arriving table gets a line of its own. The column both tables matched on
+carries an `=`, and it carries it twice, once on each side, because it is on
+both and arrives once rather than as two columns with invented names. What
+crossed over carries a `+`.
+
 One thing the checker cannot see is a key that repeats. If the other table
 holds two rows for one key, your rows multiply, and that is a fact about the
 rows rather than about the sentence. The checker reads column names and
-never a row, so this one stays yours to know.
+never a row, so this one stays yours to know. The drawing says so on its last
+line rather than promising a number it cannot know.

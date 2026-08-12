@@ -41,19 +41,28 @@ and the drawing is that reading rather than a second one.
 
 ## What the marks mean
 
-Read a drawing downward. The first line is the table you start from, and every
-line after it is one step, showing the table as it stands once that step has
+Read a drawing downward. The first band is the table you start from, and every
+band after it is one step, showing the table as it stands once that step has
 run.
 
-To the right of each step is what the table holds at that point. A column the
-step **makes** carries a `+`. A column the step **takes away** carries a `-`,
-and it appears on the line of the step that removed it, not later. Everything
-else is a column that was already there and still is.
+Beside each step is what the table holds at that point, one mark per column. A
+column the step **makes** carries a `+`. A column the step **takes away**
+carries a `-`, and it appears against the step that removed it, not later.
+Everything else was already there and still is.
+
+**The width is the point.** A step's columns are drawn as one block, so the
+block is as wide as the table is: a `summarize` that takes five columns away
+draws a third of the width of the one above it, and a `join` draws more. You can
+see what a step did to the table before reading what it was.
+
+A wide table wraps rather than running off the page, and the columns that left
+wrap the same way. Nothing is counted or hidden, so a table with forty columns
+is drawn with forty columns.
 
 The type is written beside a column in two places only: on the table you start
 from, and on a column a step has just made. Those are the two places you have
-not been told yet. Repeating it on every line would double the width of the
-drawing to say nothing new.
+not been told yet. Repeating it everywhere would double the width of the drawing
+to say nothing new.
 
 ## Where a column went
 

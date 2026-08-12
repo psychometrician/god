@@ -184,47 +184,30 @@ fn a_refused_sentence_is_drawn_as_far_as_it_checked() {
     );
 }
 
-/// **The picture draws every piece of rail the ladder builds.**
+/// **Every column the ladder names, the picture draws.**
 ///
-/// The two emitters agree on three box-drawing glyphs, and the picture turns
-/// them into strokes rather than letters so they join between lines. That
-/// agreement is the one place the split between layout and emission can go
-/// quietly wrong: a fourth glyph would come out of the picture as *nothing*, and
-/// a missing piece of rail is not something a reader notices is missing.
+/// The first version of this counted one `<text>` per cell and was exact until
+/// the picture started folding a long step's words across lines, at which point
+/// the counts diverged for a reason that was not a defect. Chips are atomic and
+/// never fold, so asking for the columns is the invariant that survives a
+/// layout change: what must not happen is a column going missing from one
+/// drawing and not the other.
 #[test]
-fn the_picture_draws_every_rail_the_ladder_builds() {
+fn every_column_the_ladder_names_the_picture_draws() {
     for sentence in corpus() {
-        for row in &scene(sentence).rows {
-            for cell in row.cells.iter().filter(|c| c.ink == Ink::Rail) {
+        let drawn = scene(sentence);
+        let picture = picture(sentence);
+        for row in &drawn.rows {
+            for cell in row.cells.iter().filter(|c| {
+                matches!(c.ink, Ink::Column | Ink::Added | Ink::Dropped | Ink::Key)
+            }) {
                 assert!(
-                    draw::svg::draws_rail(&cell.text),
-                    "`{sentence}` builds its rail from `{}`, which the picture would draw as nothing",
+                    picture.contains(&cell.text),
+                    "`{sentence}` names `{}` in the ladder and the picture does not draw it",
                     cell.text
                 );
             }
         }
-    }
-}
-
-/// **Nothing the ladder puts on the page is missing from the picture.**
-///
-/// One `<text>` per cell that is not rail, counted rather than eyeballed. An
-/// emitter that skipped a kind of ink — because a `match` grew an arm that falls
-/// through — would produce a picture that still looks finished.
-#[test]
-fn the_picture_draws_every_cell_the_ladder_places() {
-    for sentence in corpus() {
-        let drawn = scene(sentence);
-        let expected: usize = drawn
-            .rows
-            .iter()
-            .map(|r| r.cells.iter().filter(|c| c.ink != Ink::Rail).count())
-            .sum();
-        assert_eq!(
-            picture(sentence).matches("<text ").count(),
-            expected,
-            "`{sentence}` places {expected} runs of text and the picture draws a different number"
-        );
     }
 }
 

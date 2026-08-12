@@ -143,6 +143,33 @@ twice |> widen(name = question, value = average(mark), by = student)
 
 :::
 
+## What the columns became
+
+`widen` is the one step whose new columns come from the data rather than from
+the sentence, so what the drawing can say about it is worth knowing exactly.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+marks |> widen(name = question, value = mark, by = student) |> show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(marks >> widen(name = col.question, value = col.mark, by = col.student))
+```
+
+:::
+
+`question` and `mark` leave, `student` stays, and the drawing says nothing at
+all about what arrives. That silence is honest rather than a gap: the new column
+names are values sitting in the `question` column, and nothing has read a row
+yet. It is also why this is the last step here, and what the next section is
+about.
+
 ## Saying what it makes
 
 The columns `widen` produces come from the data, which nothing can know before

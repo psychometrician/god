@@ -25,6 +25,22 @@ instead of losing the row, say what to fill it with:
 Numbers are refused rather than converted, and the message names
 `to_text`, because how a number should look is a decision you make.
 
+### The drawing is a diagram now
+
+`show_steps` drew a ladder of text and colored it. On a page that is a
+picture of a terminal. It draws a diagram instead: each step's columns
+are a block of chips, so the block is as wide as the table is. A
+`summarize` that takes five columns away draws a third of the width of
+the one above it, and a join draws more. You see what a step did before
+you read what it was.
+
+A wide table wraps rather than running off the page, and the columns
+that left wrap the same way, so a table with forty columns is drawn with
+forty columns and nothing is counted or hidden.
+
+At a console it is still the ladder, because that is what the rest of a
+session looks like.
+
 ### See what a pipeline does to the table, before it runs
 
 `show_steps` draws a pipeline step by step: the table as it stands once

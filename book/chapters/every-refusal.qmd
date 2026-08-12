@@ -33,6 +33,35 @@ except GodError as refusal:
 The whole pipeline is read before any of it runs, so a mistake at step two is
 reported as a mistake at step two rather than partway through the work.
 
+Because the reading happens before anything runs, a sentence that will not run
+can still be drawn, as far as it got.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sales |>
+  summarize(total = total(revenue), by = region) |>
+  keep(product == "Widget") |>
+  show_steps()
+```
+
+### Python
+
+```{python}
+show_steps(sales
+           >> summarize(total = total(col.revenue), by = col.region)
+           >> keep(col.product == "Widget"))
+```
+
+:::
+
+The message says `product` is not a column, and it is right. The drawing says
+where it went: the `summarize` above took it away, along with everything else
+that was not grouped by. That is the question a message on its own cannot
+answer, and it is why the refusal and the drawing are worth having together.
+
 There is one refusal that cannot work this way, and it is worth knowing which.
 When `widen` finds two rows wanting the same cell, that is a fact about the data
 rather than about the sentence, and the grammar reads column names rather than
