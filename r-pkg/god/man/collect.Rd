@@ -17,3 +17,13 @@ Nothing runs until the answer is wanted. Printing a pipeline runs it, and so
 does converting one; this is the explicit form, for when you want the table
 rather than the look of it.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+# Printing a pipeline runs it. `collect` is the explicit form,
+# for when you want the data frame rather than the look of it.
+answer <- collect(sales |> keep(region == "West"))
+nrow(answer)
+}

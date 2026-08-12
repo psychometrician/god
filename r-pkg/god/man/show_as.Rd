@@ -22,3 +22,11 @@ The text, invisibly, after printing it.
 A small vocabulary covers most of what people do and never all of it, so the
 question is not whether you reach its edge but what happens when you do.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+show_as(sales |> keep(region == "West"), "dplyr")
+show_as(sales |> keep(region == "West"), "sql")
+}

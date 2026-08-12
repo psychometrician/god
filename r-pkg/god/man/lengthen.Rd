@@ -28,3 +28,10 @@ A pipeline.
 The table grows taller, which is what the name says. Direction goes in the
 name because nobody could ever remember which of `melt` and `cast` did this.
 }
+\examples{
+answers <- data.frame(
+  student = c("ann", "bob"),
+  q1 = c(1, 4), q2 = c(2, 5)
+)
+answers |> lengthen(q1, q2)
+}

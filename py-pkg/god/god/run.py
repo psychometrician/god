@@ -34,6 +34,20 @@ class GodError(Exception):
     The message is the grammar's own, already rendered with its caret. Wrapping
     it in "god-cli failed (exit 2)" would replace something written for a person
     with something written for a program.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West"], "revenue": [100]})
+    >>> try:
+    ...     collect(sales >> keep(col.reveune > 1))
+    ... except GodError as refusal:
+    ...     print(refusal)
+    illegal: there is no column called `reveune`. Did you mean `revenue`? The table has: region, revenue
+      |
+    2 |   then keep where ([reveune] > 1)
+      |                     ^^^^^^^
     """
 
 
@@ -43,6 +57,17 @@ def run(pipeline: str, **tables):
     The table named at the head of the pipeline is looked up where you are
     calling from, the way ``duckdb.sql("SELECT * FROM df")`` finds ``df``. Pass
     one by name when it is not in scope.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> run('sales then keep where [region] is "West"', sales=sales)
+      region  revenue
+    0   West      100
+    1   West      150
     """
     # A pipeline can name more than one table, which is what `join` brought. The
     # grammar says which, in the order it names them, and the first is the head.
@@ -208,6 +233,16 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
 
     **This returns rather than prints.** A notebook and a prompt both show what
     an expression evaluates to, so printing as well would show it twice.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> show_as(sales >> keep(col.region == "West"), "dplyr")
+    sales |>
+      filter((region == "West"))
     """
     args, sentence = _asking(pipeline, tables, _asked_from())
     return _Written(_call(args + ["--as", as_], sentence))
@@ -274,6 +309,18 @@ def show_steps(pipeline, **tables) -> _Steps:
     shows what crossed over and what matched. A sentence the grammar refuses is
     still drawn, as far as it checked, with the refusal under the words that
     stopped it — which is the question an error message on its own cannot answer.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> show_steps(sales >> keep(col.region == "West") >> take(1))
+    sales                              region:text  revenue:number
+    ├ keep where ([region] is "West")  region  revenue
+    └ take 1                           region  revenue
+        at most 1 rows
     """
     args, sentence = _asking(pipeline, tables, _asked_from())
     return _Steps(args, sentence)
@@ -311,7 +358,19 @@ def _asking(pipeline, tables: dict, caller) -> tuple[list[str], str]:
 
 
 def god_sql(pipeline: str, columns: str) -> str:
-    """The query a pipeline becomes."""
+    """The query a pipeline becomes.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> print(god_sql("sales then take 1", "region:text,revenue:number"))
+    WITH step0 AS (SELECT * FROM "sales"),
+         step1 AS (SELECT * FROM step0 LIMIT 1)
+    SELECT * FROM step1
+    """
     return _call(["--columns", columns], pipeline)
 
 

@@ -202,6 +202,17 @@ def keep(condition):
 
     `col.region == "West"`. Comparisons joined by `&` need parentheses, because
     `&` binds more tightly than `==` in Python, and negation is `~`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> keep(col.region == "West"))
+      region  revenue
+    0   West      100
+    1   West      150
     """
     if not isinstance(condition, Expr):
         raise GodExpressionError(
@@ -221,6 +232,21 @@ def pick(*names):
     word in R and in the text form, which it was not until 2026-08-07: the marker
     was `except`, and Python had to spell it `except_` because `except` is a
     keyword here. `all_but` reads as what it means and is legal in both.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West", "North"],
+    ...                       "product": ["Widget", "Gadget", "Doohickey", "Widget"],
+    ...                       "revenue": [100, 120, 120, 150],
+    ...                       "cost": [40, 80, 75, 60]})
+    >>> collect(sales >> pick(col.region, col.revenue))
+      region  revenue
+    0   West      100
+    1   East      120
+    2   West      120
+    3  North      150
     """
     if not names:
         raise GodExpressionError("`pick` needs at least one column")
@@ -259,6 +285,18 @@ def add(*across, by=None, **values):
     dplyr's `across`::
 
         survey >> add(where(name.starts("q"), value * 2))
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(doubled=col.revenue * 2))
+      region  revenue  doubled
+    0   West      100      200
+    1   East      120      240
+    2   West      150      300
     """
     rule = _one_across(across, "add")
     grouping = _grouping(by)
@@ -279,6 +317,17 @@ def summarize(*across, by=None, **values):
     One aggregation can be applied to every column whose name matches::
 
         survey >> summarize(where(name.ends("_score"), average(value)), by = col.region)
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(sold=total(col.revenue), by=col.region))
+      region   sold
+    0   East  120.0
+    1   West  250.0
     """
     rule = _one_across(across, "summarize")
     grouping = _grouping(by)
@@ -314,6 +363,18 @@ def sort(*keys):
 
     Wrap a key in ``descending`` to reverse it. There is deliberately no
     ``ascending``: ascending is what happens when you do not ask for anything.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(descending(col.revenue)))
+      region  revenue
+    0   West      150
+    1   East      120
+    2   West      100
     """
     if not keys:
         raise GodExpressionError("`sort` needs at least one column to order by")
@@ -337,6 +398,17 @@ def take(n, *, by=None):
     An ordinary Python value, so a threshold held in a variable works. This is
     the one position where no column could appear, which is why a bare name here
     is a value rather than a column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> take(2))
+      region  revenue
+    0   West      100
+    1   East      120
     """
     if isinstance(n, Expr) or isinstance(n, bool) or not isinstance(n, int):
         raise GodExpressionError("`take` needs a whole number of rows: take(10)")
@@ -354,6 +426,23 @@ def join(other, *, by=None, unmatched="this"):
     and is the default, ``"none"`` keeps neither, ``"both"`` keeps both. There is
     no ``"other"``, because that is this join with the tables the other way
     round.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West", "North"],
+    ...                       "product": ["Widget", "Gadget", "Doohickey", "Widget"],
+    ...                       "revenue": [100, 120, 120, 150],
+    ...                       "cost": [40, 80, 75, 60]})
+    >>> products = pd.DataFrame({"product": ["Widget", "Gadget"],
+    ...                          "maker": ["Acme", "Globex"]})
+    >>> collect(sales >> pick(col.product, col.revenue) >> join(products, by=col.product) >> sort(col.product))
+         product  revenue   maker
+    0  Doohickey      120     NaN
+    1     Gadget      120  Globex
+    2     Widget      150    Acme
+    3     Widget      100    Acme
     """
     if not _is_frame(other):
         raise GodExpressionError(
@@ -387,6 +476,18 @@ def matching(other, *, by=None):
 
     It is the whole question `keep` asks rather than one part of one, so it does
     not combine with `&` or `|`. Ask it in its own step.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"product": ["Widget", "Gadget", "Widget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> stocked = pd.DataFrame({"product": ["Widget"]})
+    >>> collect(sales >> keep(matching(stocked, by=col.product)))
+      product  revenue
+    0  Widget      100
+    1  Widget      150
     """
     if not _is_frame(other):
         raise GodExpressionError(
@@ -408,6 +509,20 @@ def add_rows(other):
     Both tables need the same columns. A column on one side only is refused
     rather than filled in with missing values, because a column that is half
     empty and says nothing is how a mistake survives.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> late = pd.DataFrame({"region": ["North"], "revenue": [80]})
+    >>> collect(sales >> add_rows(late))
+      region  revenue
+    0   West      100
+    1   East      120
+    2   West      150
+    3  North       80
     """
     if not _is_frame(other):
         raise GodExpressionError(
@@ -432,6 +547,20 @@ def add_combinations(*names, by=None):
     ``by`` makes the combinations inside each group. Without it the whole table
     is one group. With it, a new row keeps those columns filled in rather than
     going missing, which is the reason to write one.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "product": ["Widget", "Widget", "Gadget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add_combinations(col.region, col.product) >> fill_missing(revenue=0))
+      region product  revenue
+    0   West  Widget      100
+    1   East  Widget      120
+    2   West  Gadget      150
+    3   East  Gadget        0
     """
     if not names:
         raise GodExpressionError(
@@ -448,6 +577,17 @@ def drop_duplicates():
 
     The answer comes back in a settled order, because dropping duplicates says
     nothing about order and an answer that reorders itself is not predictable.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "product": ["Widget", "Gadget", "Widget"]})
+    >>> collect(sales >> drop_duplicates())
+      region product
+    0   East  Gadget
+    1   West  Widget
     """
     return _Verb("drop_duplicates", lambda: "drop_duplicates")
 
@@ -458,6 +598,18 @@ def rename(**pairs):
     The new name goes first, the way it does everywhere else in the grammar and
     the way assignment reads. Note that pandas writes the pair the other way
     round, and both spellings are legal here, so this is worth reading twice.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> rename(area=col.region))
+       area  revenue
+    0  West      100
+    1  East      120
+    2  West      150
     """
     if not pairs:
         raise GodExpressionError(
@@ -470,7 +622,18 @@ def rename(**pairs):
 
 
 def drop_missing(*names):
-    """Drop rows with missing values. With no columns named, every column."""
+    """Drop rows with missing values. With no columns named, every column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> patchy = pd.DataFrame({"product": ["Widget", "Gadget"],
+    ...                        "revenue": [100.0, None]})
+    >>> collect(patchy >> drop_missing(col.revenue))
+      product  revenue
+    0  Widget    100.0
+    """
     if not names:
         return _Verb("drop_missing", lambda: "drop_missing")
     listed = ", ".join(name_of(n, "drop_missing") for n in names)
@@ -478,7 +641,19 @@ def drop_missing(*names):
 
 
 def fill_missing(**values):
-    """Replace missing values: ``fill_missing(price = 0)``."""
+    """Replace missing values: ``fill_missing(price = 0)``.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> patchy = pd.DataFrame({"product": ["Widget", "Gadget"],
+    ...                        "revenue": [100.0, None]})
+    >>> collect(patchy >> fill_missing(revenue=0))
+      product  revenue
+    0  Widget    100.0
+    1  Gadget      0.0
+    """
     written = _assignments(values, "fill_missing")
     return _Verb("fill_missing", lambda: f"fill_missing {written}")
 
@@ -500,6 +675,18 @@ def descending(column):
     direction belongs to a key: `sort(col.product, descending(col.revenue))`
     orders one way by product and the other way by revenue, and a positional word
     could not say which key it modified.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(descending(col.revenue)))
+      region  revenue
+    0   West      150
+    1   East      120
+    2   West      100
     """
     return _Descending(name_of(column, "sort"))
 
@@ -551,6 +738,32 @@ def where(condition, value=None):
 
     The matched columns keep their names, because `add` already means make or
     replace. Joins with `&`, `|` and `~` like any other condition.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> survey = pd.DataFrame({"name": ["ana", "ben"],
+    ...                        "q1_score": [4, 5], "q2_score": [2, 5]})
+    >>> collect(survey >> pick(where(name.starts("q"))))
+       q1_score  q2_score
+    0         4         2
+    1         5         5
+
+    >>> survey = pd.DataFrame({"name": ["ana", "ben"],
+    ...                        "q1_score": [4, 5], "q2_score": [2, 5]})
+    >>> collect(survey >> add(where(name.starts("q"), value * 10)))
+      name  q1_score  q2_score
+    0  ana        40        20
+    1  ben        50        50
+
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> pick(where(kind == "number")))
+       revenue
+    0      100
+    1      120
+    2      150
     """
     if not isinstance(condition, Expr):
         raise GodExpressionError(
@@ -571,12 +784,37 @@ def lower(column):
     Also folds a column's *name*, which is how a name test asks for either
     case: ``pick(where(lower(name).starts("q")))`` matches `Q1_score` where
     ``name.starts("q")`` does not.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"product": ["Widget", "Gadget", "Widget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(quiet=lower(col.product)) >> pick(col.product, col.quiet))
+      product   quiet
+    0  Widget  widget
+    1  Gadget  gadget
+    2  Widget  widget
     """
     return Expr(f"lower({_column_or_word(column, 'lower')})")
 
 
 def upper(column):
-    """Text with its case folded up: `upper(col.region)`."""
+    """Text with its case folded up: `upper(col.region)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"product": ["Widget", "Gadget", "Widget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(shout=upper(col.product)) >> pick(col.product, col.shout))
+      product   shout
+    0  Widget  WIDGET
+    1  Gadget  GADGET
+    2  Widget  WIDGET
+    """
     return Expr(f"upper({_column_or_word(column, 'upper')})")
 
 
@@ -593,22 +831,71 @@ def _written(value, where: str) -> str:
 
 
 def to_number(column):
-    """This, as a number: `to_number(col.age_text)`."""
+    """This, as a number: `to_number(col.age_text)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> messy = pd.DataFrame({"raw": ["  ann marie  ", "  bob  "], "n": [7, 99]})
+    >>> collect(messy >> add(size=to_number(to_text(col.n))) >> pick(col.size))
+       size
+    0   7.0
+    1  99.0
+    """
     return Expr(f"to_number({_written(column, 'to_number')})")
 
 
 def to_whole(column):
-    """This, as a whole number: `to_whole(col.score)`."""
+    """This, as a whole number: `to_whole(col.score)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(rounded=to_whole(col.revenue / 7)) >> pick(col.rounded))
+       rounded
+    0       14
+    1       17
+    2       21
+    """
     return Expr(f"to_whole({_written(column, 'to_whole')})")
 
 
 def to_text(column):
-    """This, as text: `to_text(col.id)`."""
+    """This, as text: `to_text(col.id)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(written=to_text(col.revenue)) >> pick(col.written))
+      written
+    0     100
+    1     120
+    2     150
+    """
     return Expr(f"to_text({_written(column, 'to_text')})")
 
 
 def to_date(column):
-    """This, as a date: `to_date(col.ordered_on)`."""
+    """This, as a date: `to_date(col.ordered_on)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(day=to_date(col.on_)) >> pick(col.day))
+             day
+    0 2026-01-02
+    1 2026-01-05
+    """
     return Expr(f"to_date({_written(column, 'to_date')})")
 
 
@@ -616,7 +903,18 @@ def to_date(column):
 
 
 def trim(column):
-    """Text with the spaces taken off both ends: `trim(col.name)`."""
+    """Text with the spaces taken off both ends: `trim(col.name)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> messy = pd.DataFrame({"raw": ["  ann marie  ", "  bob  "], "n": [7, 99]})
+    >>> collect(messy >> add(name=trim(col.raw)) >> pick(col.name))
+            name
+    0  ann marie
+    1        bob
+    """
     return Expr(f"trim({_written(column, 'trim')})")
 
 
@@ -626,6 +924,16 @@ def characters(column):
     Not `length`, because R's `length` counts the elements of a vector, and a
     word that reads as one thing and does another is the one case masking cannot
     be made honest.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> messy = pd.DataFrame({"raw": ["  ann marie  ", "  bob  "], "n": [7, 99]})
+    >>> collect(messy >> add(width=characters(trim(col.raw))) >> pick(col.width))
+       width
+    0      9
+    1      3
     """
     return Expr(f"characters({_written(column, 'characters')})")
 
@@ -635,6 +943,18 @@ def replace_text(column, look_for, put_there):
 
     ``replace_text(col.name, "-", " ")`` looks for the text itself rather than
     for a pattern, so nothing in it is special.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"product": ["Widget", "Gadget", "Widget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(kind=replace_text(col.product, "Widget", "Sprocket")) >> pick(col.kind))
+           kind
+    0  Sprocket
+    1    Gadget
+    2  Sprocket
     """
     return Expr(
         "replace_text({}, {}, {})".format(
@@ -650,6 +970,16 @@ def split_text(column, cut_on, piece):
 
     The pieces are counted from 1, and it says which one because every value in
     the grammar is one value. There is no list here to hand back.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> messy = pd.DataFrame({"raw": ["  ann marie  ", "  bob  "], "n": [7, 99]})
+    >>> collect(messy >> add(first=split_text(trim(col.raw), " ", 1)) >> pick(col.first))
+      first
+    0   ann
+    1   bob
     """
     return Expr(
         "split_text({}, {}, {})".format(
@@ -673,6 +1003,18 @@ def join_text(*parts):
 
     Numbers are refused rather than converted, because how a number should look
     is a decision: use ``to_text`` and make it.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(label=join_text(col.region, " ", to_text(col.revenue))) >> pick(col.label))
+          label
+    0  West 100
+    1  East 120
+    2  West 150
     """
     if len(parts) < 2:
         raise GodExpressionError(
@@ -687,6 +1029,16 @@ def between(column, low, high):
 
     Inclusive at each end, the way SQL's `BETWEEN` and dplyr's `between` both
     are, so nobody arriving from either has to check.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> keep(between(col.revenue, 110, 140)))
+      region  revenue
+    0   East      120
     """
     return Expr(
         "between({}, {}, {})".format(
@@ -728,6 +1080,18 @@ def first_present(*columns):
     answer is missing for that row.
 
     SQL and dplyr both call this `coalesce`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> patchy = pd.DataFrame({"product": ["Widget", "Gadget"],
+    ...                        "revenue": [100.0, None],
+    ...                        "listed": [90.0, 60.0]})
+    >>> collect(patchy >> add(price=first_present(col.revenue, col.listed)))
+      product  revenue  listed  price
+    0  Widget    100.0    90.0  100.0
+    1  Gadget      NaN    60.0   60.0
     """
     if len(columns) < 2:
         raise GodExpressionError(
@@ -754,6 +1118,18 @@ def when(*pairs, otherwise=None):
     mechanical rather than stylistic. ``"A" if col.score >= 90 else "B"`` calls
     `__bool__` on the expression, picks a branch while the pipeline is still
     being built, and throws the condition away without raising anything.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(size=when(col.revenue > 120, "big", otherwise="small")))
+      region  revenue   size
+    0   West      100  small
+    1   East      120  small
+    2   West      150    big
     """
     if not pairs:
         raise GodExpressionError(
@@ -788,17 +1164,53 @@ def when(*pairs, otherwise=None):
 
 
 def year(column):
-    """The year of a date: `year(col.ordered_on)`."""
+    """The year of a date: `year(col.ordered_on)`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(y=year(to_date(col.on_))) >> pick(col.y))
+          y
+    0  2026
+    1  2026
+    """
     return Expr(f"year({_written(column, 'year')})")
 
 
 def month(column):
-    """The month of a date, 1 to 12."""
+    """The month of a date, 1 to 12.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(m=month(to_date(col.on_))) >> pick(col.m))
+       m
+    0  1
+    1  1
+    """
     return Expr(f"month({_written(column, 'month')})")
 
 
 def day(column):
-    """The day of the month, 1 to 31."""
+    """The day of the month, 1 to 31.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(d=day(to_date(col.on_))) >> pick(col.d))
+       d
+    0  2
+    1  5
+    """
     return Expr(f"day({_written(column, 'day')})")
 
 
@@ -808,12 +1220,35 @@ def weekday(column):
     The numbering is the grammar's rather than the engine's, and it has to be:
     asked plainly, DuckDB calls a Friday 5 and Spark calls it 4, and neither
     complains. Here it is 5 wherever you run it.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(w=weekday(to_date(col.on_))) >> pick(col.w))
+       w
+    0  5
+    1  1
     """
     return Expr(f"weekday({_written(column, 'weekday')})")
 
 
 def hour(column):
-    """The hour of a time, 0 to 23. A date with no time in it is 0."""
+    """The hour of a time, 0 to 23. A date with no time in it is 0.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
+    ...                       "x": [10, 20]})
+    >>> collect(diary >> add(h=hour(to_date(col.on_))) >> pick(col.h))
+       h
+    0  0
+    1  0
+    """
     return Expr(f"hour({_written(column, 'hour')})")
 
 
@@ -827,6 +1262,18 @@ def running_total(column):
     """The total so far, down the rows: `running_total(col.amount)`.
 
     Needs a `sort` before it, and `by` restarts it for each group.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> add(so_far=running_total(col.revenue)))
+      region  revenue  so_far
+    0   West      100   100.0
+    1   East      120   220.0
+    2   West      150   370.0
     """
     return Expr(f"running_total({_written(column, 'running_total')})")
 
@@ -836,6 +1283,18 @@ def previous(column):
 
     The first row of each group has nothing before it, so it is missing.
     Everywhere else this is called `lag`, which nobody can read aloud.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> add(before=previous(col.revenue)))
+      region  revenue  before
+    0   West      100    <NA>
+    1   East      120     100
+    2   West      150     120
     """
     return Expr(f"previous({_written(column, 'previous')})")
 
@@ -844,6 +1303,18 @@ def following(column):
     """This column's value in the row after: `following(col.price)`.
 
     The last row of each group has nothing after it, so it is missing.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> add(after=following(col.revenue)))
+      region  revenue  after
+    0   West      100    120
+    1   East      120    150
+    2   West      150   <NA>
     """
     return Expr(f"following({_written(column, 'following')})")
 
@@ -860,6 +1331,18 @@ def rank(column):
 
     dplyr calls this `min_rank`, which names the implementation. This is the one
     a person means when they say rank.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(place=rank(descending(col.revenue))))
+      region  revenue  place
+    0   West      150      1
+    1   East      120      2
+    2   West      100      3
     """
     if isinstance(column, _Descending):
         return Expr(f"rank([{column.name}] descending)")
@@ -873,6 +1356,18 @@ def row_number():
     needs a `sort` before it to say what the order is, and is refused without
     one. To number by a column without sorting the table, `rank` says what it
     goes by.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> add(n=row_number()))
+      region  revenue  n
+    0   West      100  1
+    1   East      120  2
+    2   West      150  3
     """
     return Expr("row_number()")
 
@@ -885,7 +1380,20 @@ class _AllBut:
 
 
 def all_but(*columns):
-    """Invert a `pick`: `pick(all_but(col.cost))`."""
+    """Invert a `pick`: `pick(all_but(col.cost))`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> patchy = pd.DataFrame({"product": ["Widget", "Gadget"],
+    ...                        "revenue": [100.0, None],
+    ...                        "listed": [90.0, 60.0]})
+    >>> collect(patchy >> pick(all_but(col.listed)))
+      product  revenue
+    0  Widget    100.0
+    1  Gadget      NaN
+    """
     if not columns:
         raise GodExpressionError("`all_but` needs at least one column")
     return _AllBut([name_of(c, "pick") for c in columns])
@@ -906,40 +1414,158 @@ def _function(name: str, *args) -> Expr:
 
 
 def total(column):
+    """Add up a column, over a group or the whole table.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(sold=total(col.revenue), by=col.region))
+      region   sold
+    0   East  120.0
+    1   West  250.0
+    """
     return _function("total", column)
 
 
 def average(column):
+    """The mean of a column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(typical=average(col.revenue)))
+          typical
+    0  123.333333
+    """
     return _function("average", column)
 
 
 def median(column):
+    """The middle value of a column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(middle=median(col.revenue)))
+       middle
+    0   120.0
+    """
     return _function("median", column)
 
 
 def smallest(column):
+    """The lowest value in a column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(low=smallest(col.revenue), by=col.region))
+      region  low
+    0   East  120
+    1   West  100
+    """
     return _function("smallest", column)
 
 
 def largest(column):
+    """The highest value in a column.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(high=largest(col.revenue), by=col.region))
+      region  high
+    0   East   120
+    1   West   150
+    """
     return _function("largest", column)
 
 
 def first(column):
+    """The value in the first row of a group.
+
+    A group's rows have no order of their own, so this means the first row
+    as the pipeline reached it. Put a ``sort`` before it to say which.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> summarize(cheapest=first(col.revenue), by=col.region))
+      region  cheapest
+    0   East       120
+    1   West       100
+    """
     return _function("first", column)
 
 
 def last(column):
+    """The value in the last row of a group.
+
+    Wants a ``sort`` before it for the same reason ``first`` does.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> summarize(dearest=last(col.revenue), by=col.region))
+      region  dearest
+    0   East      120
+    1   West      150
+    """
     return _function("last", column)
 
 
 def unique_count(column):
+    """How many different values a column holds.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"product": ["Widget", "Gadget", "Widget"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(kinds=unique_count(col.product)))
+       kinds
+    0      2
+    """
     return _function("unique_count", column)
 
 
 def row_count():
     """How many rows. It asks about rows rather than about a column, so it takes
-    no argument, and it is named for the value it returns."""
+    no argument, and it is named for the value it returns.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> summarize(orders=row_count(), by=col.region))
+      region  orders
+    0   East       1
+    1   West       2
+    """
     return _function("row_count")
 
 
@@ -975,6 +1601,19 @@ def lengthen(*names, name=None, value=None):
 
     and `{value}` for a piece says that piece picks which value column a row
     belongs to, which is what tidyr spells `.value`.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> answers = pd.DataFrame({"student": ["ann", "bob"],
+    ...                         "q1": [1, 4], "q2": [2, 5]})
+    >>> collect(answers >> lengthen(col.q1, col.q2))
+      student name  value
+    0     ann   q1      1
+    1     ann   q2      2
+    2     bob   q1      4
+    3     bob   q2      5
     """
     if not names:
         raise GodExpressionError(
@@ -1030,6 +1669,18 @@ def widen(name=None, value=None, by=None, missing=None, giving=None):
     `giving` says which columns this makes. Without it the column names come
     from the data, which nothing can know before the query runs, so nothing may
     follow.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> marks = pd.DataFrame({"student": ["ann", "ann", "bob", "bob"],
+    ...                       "question": ["q1", "q2", "q1", "q2"],
+    ...                       "mark": [1, 2, 4, 5]})
+    >>> collect(marks >> widen(name=col.question, value=col.mark, by=col.student, giving=[col.q1, col.q2]))
+      student  q1  q2
+    0     ann   1   2
+    1     bob   4   5
     """
     said = _naming(name, value, value_is_expression=True)
     written = "widen" + (f" {said}" if said else "")
@@ -1087,6 +1738,17 @@ def collect(pipeline: Pipeline):
 
     Nothing runs until the answer is wanted. Printing a pipeline runs it; this is
     the explicit form, for when you want the frame rather than the look of it.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> keep(col.region == "West"))
+      region  revenue
+    0   West      100
+    1   West      150
     """
     if not isinstance(pipeline, Pipeline):
         raise GodExpressionError("`collect` runs a god pipeline, and this is not one")

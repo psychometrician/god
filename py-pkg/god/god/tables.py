@@ -38,6 +38,22 @@ def god_table(name, text=()):
 
     Returns:
         A pandas DataFrame.
+
+    Examples
+    --------
+    **This one reaches the network**, which is why it is shown rather than run:
+    the suites stay offline, and an example that needs a connection fails on a
+    train rather than reporting a defect.
+
+    >>> import god                                          # doctest: +SKIP
+    >>> sales = god.god_table("sales")                      # doctest: +SKIP
+    >>> len(sales), list(sales.columns)                     # doctest: +SKIP
+    (15, ['date', 'region', 'product', 'quantity', 'revenue', 'cost'])
+
+    A column of leading-zero codes comes back as numbers unless it is named,
+    because a CSV records what a value is and never what kind of thing it is:
+
+    >>> god.god_table("survey", text=["respondent"])        # doctest: +SKIP
     """
     if not isinstance(name, str):
         raise GodError(

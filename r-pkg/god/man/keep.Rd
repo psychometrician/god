@@ -17,3 +17,10 @@ A pipeline. Print it, or `collect()` it, to get a table.
 \description{
 Keep the rows where a condition holds
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> keep(region == "West")
+}

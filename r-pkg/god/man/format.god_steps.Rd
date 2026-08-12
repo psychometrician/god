@@ -19,3 +19,10 @@ The drawing, as one string.
 \description{
 The drawing as text
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+format(show_steps(sales |> take(1)))
+}

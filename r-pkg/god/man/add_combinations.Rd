@@ -30,3 +30,13 @@ anywhere is never invented. A missing value is not a category and makes no
 combinations, and no row is lost by that: nothing already in the table is
 touched at all.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  product = c("Widget", "Widget", "Gadget"),
+  revenue = c(100, 120, 150)
+)
+sales |>
+  add_combinations(region, product) |>
+  fill_missing(revenue = 0)
+}

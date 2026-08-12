@@ -18,6 +18,15 @@
 #'   the pipeline is looked up where you are calling from, the way
 #'   `duckdb.sql("SELECT * FROM df")` finds `df` in Python.
 #' @return A data frame.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' run('
+#'   sales
+#'     then keep where [region] is "West"
+#' ', sales = sales)
 #' @export
 run <- function(pipeline, ...) {
   tables <- list(...)
@@ -70,6 +79,17 @@ run <- function(pipeline, ...) {
 #' @param dialect Which SQL to write. `"sql"` for DuckDB, `"spark"` for Spark
 #'   and Databricks.
 #' @return The connection that was in use before, invisibly.
+#' @examples
+#' \dontrun{
+#'
+#' # By default a pipeline runs on DuckDB, in this session.
+#' # Point it somewhere else with a DBI connection:
+#' con <- DBI::dbConnect(duckdb::duckdb())
+#' use_engine(con)
+#'
+#' # And back again:
+#' use_engine(NULL)
+#' }
 #' @export
 use_engine <- function(connection = NULL, dialect = c("sql", "spark")) {
   dialect <- match.arg(dialect)
@@ -158,6 +178,13 @@ god_connection <- function() {
 #'   the message lists the real ones, so this list going stale costs nothing.
 #' @param ... Tables, named, if the one at the head is not in scope.
 #' @return The text, invisibly, after printing it.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' show_as(sales |> keep(region == "West"), "dplyr")
+#' show_as(sales |> keep(region == "West"), "sql")
 #' @export
 show_as <- function(pipeline, as = "dplyr", ...) {
   asked <- god_asking(pipeline, list(...), parent.frame())
@@ -184,6 +211,12 @@ show_as <- function(pipeline, as = "dplyr", ...) {
 #' @return An object that prints as a ladder at the console and draws itself
 #'   inside a rendered document. `format(x, "svg")` gives the picture as text,
 #'   for writing to a file.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' show_steps(sales |> keep(region == "West") |> take(1))
 #' @export
 show_steps <- function(pipeline, ...) {
   structure(
@@ -209,6 +242,12 @@ print.god_steps <- function(x, ...) {
 #' @param as `"text"` for the ladder, `"svg"` for the picture.
 #' @param ... Unused.
 #' @return The drawing, as one string.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' format(show_steps(sales |> take(1)))
 #' @export
 format.god_steps <- function(x, as = "text", ...) {
   # The engine says which ways of drawing there are, and refuses the rest. A
@@ -260,6 +299,12 @@ god_asking <- function(pipeline, tables, here) {
 #' @param pipeline The pipeline, as text.
 #' @param columns The table's columns, as `name:type` separated by commas.
 #' @return The query, as text.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' cat(god_sql("sales then take 1", "region:text,revenue:number"))
 #' @export
 god_sql <- function(pipeline, columns) {
   god_call(c("--columns", columns), pipeline)

@@ -19,3 +19,13 @@ A data frame.
 \description{
 Run a pipeline
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+run('
+  sales
+    then keep where [region] is "West"
+', sales = sales)
+}

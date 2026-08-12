@@ -17,3 +17,11 @@ A pipeline.
 \description{
 Drop rows with missing values
 }
+\examples{
+patchy <- data.frame(
+  product = c("Widget", "Gadget"),
+  revenue = c(100, NA),
+  listed  = c(90, 60)
+)
+patchy |> drop_missing(revenue)
+}

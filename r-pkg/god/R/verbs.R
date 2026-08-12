@@ -33,6 +33,12 @@ god_shadowed <- c(sort = "base::sort")
 #' @param .data A table, or a pipeline.
 #' @param condition A condition, written in R: `region == "West"`.
 #' @return A pipeline. Print it, or `collect()` it, to get a table.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> keep(region == "West")
 #' @export
 keep <- function(.data, condition) {
   pipeline <- god_head(.data, substitute(.data), "keep")
@@ -143,6 +149,14 @@ god_tables_named <- function(e) {
 #' @param ... Column names. Wrap them in `all_but()` to name the ones to drop
 #'   instead: `pick(all_but(cost))`.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West", "North"),
+#'   product = c("Widget", "Gadget", "Doohickey", "Widget"),
+#'   revenue = c(100, 120, 120, 150),
+#'   cost    = c(40, 80, 75, 60)
+#' )
+#' sales |> pick(region, revenue)
 #' @export
 pick <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "pick")
@@ -198,6 +212,12 @@ pick <- function(.data, ...) {
 #' @param by Columns to group by. An aggregate is then broadcast back over each
 #'   group rather than collapsing it: `add(share = revenue / total(revenue), by = product)`.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> add(doubled = revenue * 2)
 #' @export
 add <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "add")
@@ -229,6 +249,12 @@ add <- function(.data, ..., by) {
 #'   `margin = total(margin)`.
 #' @param by Columns to group by. Without it the whole table is one group.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> summarize(sold = total(revenue), by = region)
 #' @export
 summarize <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "summarize")
@@ -260,6 +286,12 @@ summarize <- function(.data, ..., by) {
 #'   There is deliberately no `ascending()`: ascending is what happens when you
 #'   do not ask for anything.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> sort(descending(revenue))
 #' @export
 sort <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "sort")
@@ -292,6 +324,12 @@ sort <- function(.data, ...) {
 #'   `sort` before it, because "the first rows" means nothing until something
 #'   says first by what.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> take(2)
 #' @export
 take <- function(.data, n, by) {
   pipeline <- god_head(.data, substitute(.data), "take")
@@ -321,6 +359,21 @@ take <- function(.data, n, by) {
 #'   no `"other"`, because that is this join with the tables the other way
 #'   round.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West", "North"),
+#'   product = c("Widget", "Gadget", "Doohickey", "Widget"),
+#'   revenue = c(100, 120, 120, 150),
+#'   cost    = c(40, 80, 75, 60)
+#' )
+#' products <- data.frame(
+#'   product = c("Widget", "Gadget"),
+#'   maker   = c("Acme", "Globex")
+#' )
+#' sales |>
+#'   pick(product, revenue) |>
+#'   join(products, by = product) |>
+#'   sort(product)
 #' @export
 join <- function(.data, other, by, unmatched = "this") {
   pipeline <- god_head(.data, substitute(.data), "join")
@@ -363,6 +416,13 @@ join <- function(.data, other, by, unmatched = "this") {
 #' @param .data A table, or a pipeline.
 #' @param other The other table.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' late <- data.frame(region = "North", revenue = 80)
+#' sales |> add_rows(late)
 #' @export
 add_rows <- function(.data, other) {
   pipeline <- god_head(.data, substitute(.data), "add_rows")
@@ -398,6 +458,15 @@ add_rows <- function(.data, other) {
 #'   is one group. With it, a new row keeps these columns filled in rather than
 #'   going missing, which is the reason to write one.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   product = c("Widget", "Widget", "Gadget"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |>
+#'   add_combinations(region, product) |>
+#'   fill_missing(revenue = 0)
 #' @export
 add_combinations <- function(.data, ..., by) {
   pipeline <- god_head(.data, substitute(.data), "add_combinations")
@@ -428,6 +497,12 @@ add_combinations <- function(.data, ..., by) {
 #'
 #' @param .data A table, or a pipeline.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   product = c("Widget", "Gadget", "Widget")
+#' )
+#' sales |> drop_duplicates()
 #' @export
 drop_duplicates <- function(.data) {
   god_step(god_head(.data, substitute(.data), "drop_duplicates"), "drop_duplicates")
@@ -441,6 +516,12 @@ drop_duplicates <- function(.data) {
 #' @param .data A table, or a pipeline.
 #' @param ... `new = old` pairs.
 #' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> rename(area = region)
 #' @export
 rename <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "rename")
@@ -460,6 +541,13 @@ rename <- function(.data, ...) {
 #' @param .data A table, or a pipeline.
 #' @param ... Columns to look at. With none, every column.
 #' @return A pipeline.
+#' @examples
+#' patchy <- data.frame(
+#'   product = c("Widget", "Gadget"),
+#'   revenue = c(100, NA),
+#'   listed  = c(90, 60)
+#' )
+#' patchy |> drop_missing(revenue)
 #' @export
 drop_missing <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "drop_missing")
@@ -476,6 +564,13 @@ drop_missing <- function(.data, ...) {
 #' @param .data A table, or a pipeline.
 #' @param ... `column = value` pairs.
 #' @return A pipeline.
+#' @examples
+#' patchy <- data.frame(
+#'   product = c("Widget", "Gadget"),
+#'   revenue = c(100, NA),
+#'   listed  = c(90, 60)
+#' )
+#' patchy |> fill_missing(revenue = 0)
 #' @export
 fill_missing <- function(.data, ...) {
   pipeline <- god_head(.data, substitute(.data), "fill_missing")
@@ -501,6 +596,12 @@ fill_missing <- function(.data, ...) {
 #' @param value What the new column of values is called. Left out, the two are
 #'   called `name` and `value`, which are the grammar's own words for them.
 #' @return A pipeline.
+#' @examples
+#' answers <- data.frame(
+#'   student = c("ann", "bob"),
+#'   q1 = c(1, 4), q2 = c(2, 5)
+#' )
+#' answers |> lengthen(q1, q2)
 #' @export
 lengthen <- function(.data, ..., name, value) {
   pipeline <- god_head(.data, substitute(.data), "lengthen")
@@ -582,6 +683,14 @@ lengthen <- function(.data, ..., name, value) {
 #' @param giving The columns this makes. Without it the columns come from the
 #'   data, which nothing can know before the query runs, so nothing may follow.
 #' @return A pipeline.
+#' @examples
+#' marks <- data.frame(
+#'   student  = c("ann", "ann", "bob", "bob"),
+#'   question = c("q1", "q2", "q1", "q2"),
+#'   mark     = c(1, 2, 4, 5)
+#' )
+#' marks |> widen(name = question, value = mark, by = student,
+#'                giving = c(q1, q2))
 #' @export
 widen <- function(.data, name, value, by, missing, giving) {
   pipeline <- god_head(.data, substitute(.data), "widen")
@@ -754,6 +863,15 @@ god_written <- function(pipeline) {
 #'
 #' @param pipeline A pipeline.
 #' @return A data frame.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' # Printing a pipeline runs it. `collect` is the explicit form,
+#' # for when you want the data frame rather than the look of it.
+#' answer <- collect(sales |> keep(region == "West"))
+#' nrow(answer)
 #' @export
 collect <- function(pipeline) {
   if (!inherits(pipeline, "god_pipeline")) {
@@ -779,6 +897,12 @@ as.data.frame.god_pipeline <- function(x, ...) {
 #' @param x A pipeline.
 #' @param ... Unused.
 #' @return The text.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' format(sales |> keep(region == "West"))
 #' @export
 format.god_pipeline <- function(x, ...) {
   god_written(x)

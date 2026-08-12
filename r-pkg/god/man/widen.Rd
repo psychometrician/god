@@ -34,3 +34,12 @@ The inverse of `lengthen`, reading the same two words the other way: `name`
 points at the column holding column names in both, and the verb says whether
 it is being made or read.
 }
+\examples{
+marks <- data.frame(
+  student  = c("ann", "ann", "bob", "bob"),
+  question = c("q1", "q2", "q1", "q2"),
+  mark     = c(1, 2, 4, 5)
+)
+marks |> widen(name = question, value = mark, by = student,
+               giving = c(q1, q2))
+}

@@ -19,3 +19,10 @@ A pipeline.
 \description{
 Order the rows
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> sort(descending(revenue))
+}

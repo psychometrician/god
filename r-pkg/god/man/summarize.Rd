@@ -20,3 +20,10 @@ A pipeline.
 \description{
 Collapse to one row per group
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> summarize(sold = total(revenue), by = region)
+}

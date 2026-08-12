@@ -19,3 +19,11 @@ Both tables need the same columns. A column on one side only is refused
 rather than filled in with missing values, because a column that is half
 empty and says nothing is how a mistake survives.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+late <- data.frame(region = "North", revenue = 80)
+sales |> add_rows(late)
+}

@@ -18,3 +18,10 @@ A pipeline.
 The new name goes first, the way it does everywhere else in the grammar and
 the way assignment reads: `rename(margin = profit)`.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> rename(area = region)
+}

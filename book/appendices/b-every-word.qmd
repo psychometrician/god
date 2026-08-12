@@ -150,6 +150,34 @@ The grammar words are not in the table on purpose: `in`, `is`, `not` and
 their siblings are also words the host languages use, so a scan would
 confidently attribute the wrong page. They are everywhere above instead.
 
+## Every word answers for itself
+
+You do not have to come back here. Each word above has a page where you are
+already sitting, and every one of them carries an example you can paste.
+
+```r
+?keep
+?add_combinations
+```
+
+```python
+help(god.keep)
+help(god.add_combinations)
+```
+
+The two show the same example in the two spellings, down to the same table and
+the same numbers, which is this book's claim stated one word at a time. They are
+run rather than written: the R suite executes the example on every help page and
+the Python suite executes every one in every docstring, so a page that falls
+behind the engine fails a build instead of misleading the reader who went
+looking.
+
+One difference between those pages and these is worth knowing before it
+surprises you. This book tells Python to print a whole number without its
+decimal point, so that the two tabs of an example agree. Nothing has told your
+own session that, and a total of whole numbers arrives there as `250.0` rather
+than `250`. The help pages show the second, because that is what you will see.
+
 ## That is all of it
 
 There is no second list, no set of helpers, and no dialect that adds a few more

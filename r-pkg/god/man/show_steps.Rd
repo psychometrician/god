@@ -29,3 +29,10 @@ shows what crossed over and what matched. A sentence the grammar refuses is
 still drawn, as far as it checked, with the refusal under the words that
 stopped it — which is the question an error message on its own cannot answer.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+show_steps(sales |> keep(region == "West") |> take(1))
+}

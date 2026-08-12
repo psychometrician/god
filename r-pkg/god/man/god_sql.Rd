@@ -17,3 +17,10 @@ The query, as text.
 \description{
 The query a pipeline becomes
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+cat(god_sql("sales then take 1", "region:text,revenue:number"))
+}

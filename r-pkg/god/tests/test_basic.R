@@ -961,6 +961,40 @@ if (file.exists("r-pkg/god/NAMESPACE")) {
                     grep("^\\\\alias\\{", readLines(f, warn = FALSE), value = TRUE))))
   undocumented <- setdiff(exported, union(documented, aliases))
   check("every exported name has a help page", undocumented, character(0))
+
+  # **And every page's example is run**, which is the half that decides whether
+  # the page is worth having. `R CMD check` runs `\examples{}` and CI does not
+  # run `R CMD check`, so without this the examples are read and never executed
+  # — the exact shape of defect the book's live chunks exist to refuse.
+  #
+  # `\dontrun{}` is honored rather than stripped: `use_engine`'s example opens
+  # a connection and `god_table`'s reaches the network, and a suite has to pass
+  # on a laptop with neither.
+  ran <- 0L
+  broke <- character()
+  for (page in list.files("r-pkg/god/man", pattern = "[.]Rd$", full.names = TRUE)) {
+    parsed <- tools::parse_Rd(page)
+    code <- character()
+    for (piece in parsed) {
+      if (identical(attr(piece, "Rd_tag"), "\\examples")) {
+        code <- c(code, paste(
+          vapply(piece, function(x)
+            if (identical(attr(x, "Rd_tag"), "\\dontrun")) "" else paste(unlist(x), collapse = ""),
+            character(1)),
+          collapse = ""))
+      }
+    }
+    code <- paste(code, collapse = "\n")
+    if (!nzchar(trimws(code))) next
+    outcome <- tryCatch({
+      invisible(capture.output(eval(parse(text = code), envir = new.env(parent = globalenv()))))
+      "ok"
+    }, error = function(e) conditionMessage(e))
+    if (identical(outcome, "ok")) ran <- ran + 1L
+    else broke <- c(broke, sprintf("%s: %s", basename(page), outcome))
+  }
+  check("every example on every help page runs", broke, character(0))
+  cat(sprintf("        (%d pages' examples run)\n", ran))
   # The other direction: a page for something no longer exported is a help
   # topic pointing at a function an installed copy does not have.
   stale <- setdiff(documented, c(exported, methods, aliases, "figures"))

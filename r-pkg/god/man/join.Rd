@@ -25,3 +25,19 @@ A pipeline.
 \description{
 Add another table's columns
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West", "North"),
+  product = c("Widget", "Gadget", "Doohickey", "Widget"),
+  revenue = c(100, 120, 120, 150),
+  cost    = c(40, 80, 75, 60)
+)
+products <- data.frame(
+  product = c("Widget", "Gadget"),
+  maker   = c("Acme", "Globex")
+)
+sales |>
+  pick(product, revenue) |>
+  join(products, by = product) |>
+  sort(product)
+}

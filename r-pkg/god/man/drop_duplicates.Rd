@@ -17,3 +17,10 @@ Rows that are identical across every column. The answer comes back in a
 settled order, because dropping duplicates says nothing about order and an
 answer that reorders itself between runs is not predictable.
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  product = c("Widget", "Gadget", "Widget")
+)
+sales |> drop_duplicates()
+}

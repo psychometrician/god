@@ -18,3 +18,12 @@ A pipeline.
 \description{
 Just these columns, or all but these
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West", "North"),
+  product = c("Widget", "Gadget", "Doohickey", "Widget"),
+  revenue = c(100, 120, 120, 150),
+  cost    = c(40, 80, 75, 60)
+)
+sales |> pick(region, revenue)
+}

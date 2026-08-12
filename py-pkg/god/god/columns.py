@@ -30,6 +30,21 @@ class Expr:
     knows what is in the table, and nothing here checks: whether `[revenue]`
     exists and whether `total` may appear where it was written are the grammar's
     questions, answered once, in one place, for both languages.
+
+    **This is also what `help()` reaches for `name`, `value` and `kind`**, which
+    are instances rather than functions. All three stand inside `where(...)`
+    and `help(god.where)` shows each one working.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> col.revenue > 110
+    god expression: ([revenue] > 110)
+    >>> sales = pd.DataFrame({"region": ["West", "East"], "revenue": [100, 120]})
+    >>> collect(sales >> keep(col.revenue > 110))
+      region  revenue
+    0   East      120
     """
 
     __slots__ = ("_text", "_negation", "_column", "_brings")
@@ -214,6 +229,21 @@ class _Columns:
     R writes a bare `revenue` because it can look a name up in the data before
     the scope. Python has no such hook, so a column says it is one. That is the
     second of the two differences between the languages, and the whole of it.
+
+    `col["order date"]` is for a name that is not a Python identifier. The
+    grammar's own words `name`, `value` and `kind` are not columns and are
+    written bare; they stand inside `where(...)` and are shown there.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> keep(col.revenue > 110))
+      region  revenue
+    0   East      120
+    1   West      150
     """
 
     __slots__ = ()

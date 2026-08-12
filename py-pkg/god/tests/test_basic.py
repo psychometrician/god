@@ -12,6 +12,8 @@ built on proxies passes for years while the thing it covers is broken.
 import contextlib
 import io
 import os
+import doctest
+import inspect
 import sys
 from pathlib import Path
 
@@ -955,6 +957,43 @@ check("the tables come from the published book",
       "https://psychometrician.github.io/god-book/data/")
 check_error("god_table with something that is not a name",
             lambda: god.god_table(42), "god_table")
+
+# --- every example in every docstring, run ----------------------------------
+#
+# **A help page is a manual page, and this project does not ship a manual page
+# nothing runs.** `help(god.summarize)` shows a table; if the answer printed
+# there is not the answer the engine gives today, the docstring is teaching
+# something false to the one reader who went looking.
+#
+# The expected blocks were never typed. Each was produced by executing the
+# example and capturing what it printed, so they started correct; this is what
+# keeps them so. NORMALIZE_WHITESPACE because pandas lines a column up to its
+# widest value and that width is not the answer.
+#
+# `sys.modules[...]` rather than `import god.run as _`, and that is not
+# fussiness: `god/__init__.py` does `from .run import run`, so `god.run` is the
+# *function* and the submodule of that name is shadowed by it. The obvious
+# spelling hands doctest a function and it raises.
+print("\nevery example in every docstring")
+
+_doc_flags = doctest.NORMALIZE_WHITESPACE | doctest.ELLIPSIS
+_attempted = _doc_failed = 0
+for _module in ("god.verbs", "god.run", "god.tables", "god.columns"):
+    __import__(_module)
+    _result = doctest.testmod(sys.modules[_module], optionflags=_doc_flags, verbose=False)
+    _attempted += _result.attempted
+    _doc_failed += _result.failed
+    check(f"the examples in {_module} still return what they print",
+          _result.failed, 0)
+
+# A count nobody maintains, guarding against the failure this whole block
+# would otherwise have: a docstring that loses its examples and passes.
+check("every exported name shows an example",
+      [n for n in god.__all__
+       if ">>>" not in (inspect.getdoc(getattr(god, n, None)) or "")],
+      [])
+print(f"  ({_attempted} examples run)")
+
 
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)

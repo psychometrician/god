@@ -17,3 +17,11 @@ A pipeline.
 \description{
 Replace missing values in a column
 }
+\examples{
+patchy <- data.frame(
+  product = c("Widget", "Gadget"),
+  revenue = c(100, NA),
+  listed  = c(90, 60)
+)
+patchy |> fill_missing(revenue = 0)
+}

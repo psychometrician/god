@@ -17,3 +17,10 @@ The text.
 \description{
 The pipeline as the grammar's own text
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+format(sales |> keep(region == "West"))
+}

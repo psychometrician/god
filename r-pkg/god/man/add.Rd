@@ -20,3 +20,10 @@ A pipeline.
 \description{
 Add or replace a column
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> add(doubled = revenue * 2)
+}

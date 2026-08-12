@@ -22,3 +22,10 @@ A pipeline.
 \description{
 The first n rows
 }
+\examples{
+sales <- data.frame(
+  region  = c("West", "East", "West"),
+  revenue = c(100, 120, 150)
+)
+sales |> take(2)
+}

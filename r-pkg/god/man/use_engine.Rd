@@ -27,3 +27,15 @@ connection, and which dialect of SQL to write for it.
 
 Call it with no arguments to go back to the engine on this machine.
 }
+\examples{
+\dontrun{
+
+# By default a pipeline runs on DuckDB, in this session.
+# Point it somewhere else with a DBI connection:
+con <- DBI::dbConnect(duckdb::duckdb())
+use_engine(con)
+
+# And back again:
+use_engine(NULL)
+}
+}
