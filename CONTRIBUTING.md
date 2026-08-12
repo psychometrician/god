@@ -106,6 +106,26 @@ Answer three questions in writing before writing code:
    is the word, where nobody could remember which of `melt` and `cast` made
    data taller.
 
+### R's help page is generated, and nothing in a source checkout needs it
+
+**`r-pkg/god/man/` is roxygen2's output, so writing the comment is not writing
+the page.** `NAMESPACE` is hand-maintained here, which means adding a verb takes
+an edit there and a *regeneration* of `man/`, and the second step is the one
+that gets skipped:
+
+```bash
+Rscript -e 'roxygen2::roxygenise("r-pkg/god", roclets = "rd")'
+```
+
+`roclets = "rd"` is not optional. Without it roxygen2 also wants to write
+`NAMESPACE`, which this package keeps by hand and which says so at the top.
+
+**Nothing in a source tree can miss the omission**, which is why it happened
+three times before anything caught it. `pkgload::load_all` needs no `.Rd` at
+all, so the suites, the book and every parity harness run green over a verb
+`?name` cannot find on an installed copy. The R suite now checks every exported
+name against `man/`, in both directions.
+
 ## Diagnostics
 
 Three kinds, and the difference matters to a caller:

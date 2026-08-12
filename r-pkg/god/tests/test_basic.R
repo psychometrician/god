@@ -933,6 +933,42 @@ if (dir.exists("book")) {
   cat("  skip  no book guard sits unwired (not run from the repository root)\n")
 }
 
+# **Every exported name has a help page, and this exists because three did
+# not.** `?add_combinations`, `?show_steps` and `?format.god_steps` all failed
+# on an installed copy: the roxygen comment was written in the same change as
+# the verb, `NAMESPACE` was edited by hand, and `man/` is *generated*, so
+# nothing regenerated it and nothing noticed. Every other check in this project
+# holds one copy of a fact against another; this is the copy that had none.
+#
+# The failure is invisible from the source tree. `pkgload::load_all` needs no
+# `.Rd` at all, so the whole suite, the whole book and every parity harness run
+# green over a verb a user cannot look up.
+if (file.exists("r-pkg/god/NAMESPACE")) {
+  exported <- sub("^export\\((.*)\\)$", "\\1",
+                  grep("^export\\(", readLines("r-pkg/god/NAMESPACE", warn = FALSE),
+                       value = TRUE))
+  # An S3 method is documented under the generic it belongs to rather than
+  # under its own name, so those are asked for by the file roxygen writes.
+  methods <- sub("^S3method\\((.*),(.*)\\)$", "\\1.\\2",
+                 grep("^S3method\\(", readLines("r-pkg/god/NAMESPACE", warn = FALSE),
+                      value = TRUE))
+  documented <- sub("[.]Rd$", "", list.files("r-pkg/god/man", pattern = "[.]Rd$"))
+  # A page may document several names through `@rdname`, so the alias is what
+  # settles it rather than the filename.
+  aliases <- unlist(lapply(
+    list.files("r-pkg/god/man", pattern = "[.]Rd$", full.names = TRUE),
+    function(f) sub("^\\\\alias\\{(.*)\\}$", "\\1",
+                    grep("^\\\\alias\\{", readLines(f, warn = FALSE), value = TRUE))))
+  undocumented <- setdiff(exported, union(documented, aliases))
+  check("every exported name has a help page", undocumented, character(0))
+  # The other direction: a page for something no longer exported is a help
+  # topic pointing at a function an installed copy does not have.
+  stale <- setdiff(documented, c(exported, methods, aliases, "figures"))
+  check("no help page survives the thing it documented", stale, character(0))
+} else {
+  cat("  skip  every exported name has a help page (not run from the repository root)\n")
+}
+
 cat("\nthe guard can fail\n")
 local({
   before <- failed
