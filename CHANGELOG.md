@@ -5,6 +5,29 @@ a person using god can see.
 
 ## Unreleased
 
+### Every word now has a worked example, in both languages
+
+`?keep` in R and `help(god.keep)` in Python each show a small table going
+in and the answer coming out. Every verb, every function and every
+grammar word has one, and the two languages show the same example: the
+same table, the same numbers, in each language's spelling.
+
+```r
+?add_combinations
+```
+
+```python
+help(god.add_combinations)
+```
+
+Eight aggregations — `total`, `average`, `median`, `smallest`,
+`largest`, `first`, `last` and `unique_count` — had no Python
+documentation at all and now answer `help()`. `first` and `last` say
+that they want a `sort` before them, which is the part that bites.
+
+Three R help pages did not exist: `?add_combinations`, `?show_steps`
+and `?format.god_steps`. They do now.
+
 ### `add_combinations`, for the rows that are not there
 
 Group a table by region and product and the combination nobody recorded
