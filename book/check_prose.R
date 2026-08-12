@@ -143,6 +143,7 @@ check_prose <- function(dirs = "book") {
   bad_bold <- character(0); bad_dash <- character(0); bad_head <- character(0)
   bad_case <- character(0); bad_call <- character(0); bad_idiom <- character(0)
   bad_number <- character(0); bad_hbold <- character(0)
+  bad_dense <- character(0)
 
   # A chapter or part named by number is a claim that rots the day a chapter is
   # inserted ahead of it, and this book plans to keep inserting them. The
@@ -299,9 +300,75 @@ check_prose <- function(dirs = "book") {
     }
   }
 
+  # --- How often a run-in label opens a paragraph -------------------------
+  #
+  # **The label is blessed, so this is what stops it spreading.** One per
+  # section: a section with a label on every paragraph has no emphasis in it,
+  # only weight, and the eye learns to skip the bold rather than stop at it.
+  # This is the private documents' native voice one directory away, which is
+  # exactly why the book needs a number on it rather than a preference.
+  #
+  # The carve-out is a **parallel series**, where the labels name the items of
+  # one list and nothing unlabeled sits between them: the vocabulary chapter
+  # labels the five kinds of word, and the preface labels two decisions. A
+  # code chunk between two labels does not break a series — the vocabulary
+  # chapter prints each shelf after naming it — so only an unlabeled
+  # *paragraph* does.
+  #
+  # Measured 2026-08-12 before the rule was written: 20 labels, 9 files, two
+  # sections holding more than one, and both of those are series.
+  for (f in qmds) {
+    lines <- readLines(f, warn = FALSE)
+    short <- sub("^.*book/", "", f)
+    fence <- FALSE
+    section <- "(top)"; section_at <- 0L
+    labeled <- integer(0); plain <- integer(0)
+
+    flush <- function() {
+      if (length(labeled) < 2L) return(invisible(NULL))
+      between <- plain[plain > min(labeled) & plain < max(labeled)]
+      if (length(between))
+        bad_dense <<- c(bad_dense, sprintf(
+          "  %s:%d  %d run-in labels under `%s`, and %d unlabeled paragraph(s) between them",
+          short, section_at, length(labeled), section, length(between)))
+      invisible(NULL)
+    }
+
+    at_para <- TRUE
+    for (i in seq_along(lines)) {
+      line <- lines[[i]]
+      if (grepl("^\\s*```", line)) { fence <- !fence; at_para <- TRUE; next }
+      if (fence) next
+      if (!nzchar(trimws(line))) { at_para <- TRUE; next }
+      if (grepl("^## ", line)) {
+        flush()
+        labeled <- integer(0); plain <- integer(0)
+        section <- trimws(sub("^##\\s*", "", line)); section_at <- i
+        at_para <- TRUE
+        next
+      }
+      if (at_para) {
+        at_para <- FALSE
+        # Prose paragraphs only. A list item, a table row, a block quote, a
+        # div fence and a heading are all shapes this rule has no opinion on.
+        #
+        # **A bullet needs the space after it, and that is not fussiness.** The
+        # first version wrote the marks as one class, `[-*+>|:#<]`, which
+        # matches the first `*` of `**A label**` — so every label this rule
+        # exists to count was skipped as a list item and the check could not
+        # fail. Found by breaking it on purpose; it had reported PASS over a
+        # deliberate violation.
+        if (!grepl("^\\s*(([-*+]|[0-9]+\\.)\\s|[>|:#<])", line)) {
+          if (grepl("^\\*\\*", line)) labeled <- c(labeled, i) else plain <- c(plain, i)
+        }
+      }
+    }
+    flush()
+  }
+
   total <- length(bad_bold) + length(bad_dash) + length(bad_head) +
     length(bad_case) + length(bad_call) + length(bad_idiom) +
-    length(bad_number) + length(bad_hbold)
+    length(bad_number) + length(bad_hbold) + length(bad_dense)
 
   report <- function(items, headline, advice) {
     if (!length(items)) return(invisible(NULL))
@@ -327,6 +394,8 @@ check_prose <- function(dirs = "book") {
            "Link it by title. Numbers shift when a chapter is inserted.")
     report(bad_hbold, "FAIL: bold inside a heading",
            "A heading is already prominent. Italic for contrastive stress; otherwise plain.")
+    report(bad_dense, "FAIL: more than one run-in label in a section",
+           "One per section. Label the paragraph whose claim is the surprising one, or make them a series with nothing unlabeled between.")
     stop("check_prose: ", total, " prose inconsistency(ies)")
   }
 

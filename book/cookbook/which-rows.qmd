@@ -75,8 +75,7 @@ sales >> sort(descending(col.revenue)) >> take(1, by = col.region)
 
 **One verb away.** The top two: `take(2, by = region)`. The *latest* per
 group instead of the largest: sort by `date` instead of `revenue`, which is
-[the closing example of sorting and
-taking](../chapters/sorting-and-taking.qmd).
+the closing example of sorting and taking.
 
 ## The rows above a bar
 

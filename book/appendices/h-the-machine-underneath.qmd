@@ -84,12 +84,11 @@ one machine the frame itself is the ceiling. god has no word for reading a
 file into a pipeline, and [the coverage appendix](e-coverage.qmd) records
 that gap beside the others, with what to do today.
 
-A table bigger than the machine: that is what
-[Somewhere else](../chapters/somewhere-else.qmd) is for. The table stays in
-the warehouse or on the cluster, the sentence goes there as text, and no
-data moves at all. At that size the honest question is not whether one
-process can stream one file, and the grammar's answer is to run where the
-data lives.
+A table bigger than the machine is the second answer, and it is the warehouse
+and the cluster named at the top of this page. The table stays where it is,
+the sentence goes there as text, and no data moves at all. At that size the
+honest question is not whether one process can stream one file, and the
+grammar's answer is to run where the data lives.
 
 One more property falls out of compiling to text: everything above is
 inspectable. `show_as` prints the exact query the engine will run, and the

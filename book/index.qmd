@@ -612,8 +612,7 @@ name is being used.
 
 The two quote marks divide the same way: double quotes belong to the grammar,
 for a text value, and single ones to the host, around a sentence. The chapter
-on [what it wrote](chapters/what-it-wrote.qmd) gathers the whole quoting
-story in one place.
+on what it wrote gathers the whole quoting story in one place.
 
 ## Words instead of symbols, where the languages disagree
 
