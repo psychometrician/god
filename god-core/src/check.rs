@@ -801,6 +801,10 @@ fn check_step(
             Ok(schema.clone())
         }
 
+        Step::AddCombinations { names, by, span } => {
+            check_add_combinations(names, by, *span, schema)
+        }
+
         Step::FillMissing { values, .. } => {
             let mut out = schema.clone();
             for Named { name, value } in values.iter() {
@@ -1504,6 +1508,84 @@ fn made_here_is_not_visible(
                     "`[{name}]` is made by this same `{verb}`, so it is not on the table yet. Every value in one step is worked out from the table as it arrives. Make it in a step of its own: `then {verb} [{name}] as ... then {verb} ...`"
                 ),
                 span,
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// What `add_combinations` refuses.
+///
+/// **The schema never changes**, which is the whole reason this verb needs no
+/// clause for what a new row holds: every column is still there and still
+/// nameable, so `fill_missing` can be written after it.
+///
+/// **One refusal here is a real rule rather than a guard against nonsense.**
+/// Fewer than two columns cannot make a combination that is not already in the
+/// table, whatever `by` says: the distinct values of one column, crossed with
+/// nothing, are the values that column already has. So the sentence would be
+/// answered by handing the table straight back, and a step that cannot do
+/// anything is better refused than silently obeyed (§10 — say so rather than
+/// write something close).
+fn check_add_combinations(
+    names: &[Name],
+    by: &[Name],
+    span: Span,
+    schema: &Schema,
+) -> Result<Schema, Diagnostic> {
+    for name in names.iter().chain(by.iter()) {
+        known(name, schema)?;
+    }
+
+    if names.len() < 2 {
+        let one = names.first().map(|n| n.text.clone());
+        let hint = match &one {
+            Some(text) => format!(
+                "`add_combinations [{text}, ...]` needs a second column to cross `{text}` against"
+            ),
+            None => "`add_combinations [region, product]`".to_string(),
+        };
+        return Err(Diagnostic::illegal(
+            format!(
+                "`add_combinations` crosses two columns or more, and this names {}. One column on its own has no combinations to make — its distinct values are already the values it holds — so the table would come back unchanged. {hint}",
+                match names.len() {
+                    0 => "none".to_string(),
+                    _ => "one".to_string(),
+                }
+            ),
+            span,
+        ));
+    }
+
+    // A column cannot be both crossed and held fixed. Left to the query it
+    // would join a group against itself and the answer would be the table
+    // unchanged, which is the same nothing the rule above refuses.
+    for name in names.iter() {
+        if let Some(held) = by.iter().find(|b| b.text == name.text) {
+            let _ = held;
+            return Err(Diagnostic::illegal(
+                format!(
+                    "`[{}]` is being crossed and held fixed at once, and it can only be one. Take it out of `by` to cross it, or out of the brackets to keep it as the group",
+                    name.text
+                ),
+                name.span,
+            ));
+        }
+    }
+
+    repeated_column(names, "the columns being crossed")?;
+    repeated_column(by, "`by`")?;
+
+    Ok(schema.clone())
+}
+
+/// One column named twice in one list.
+fn repeated_column(names: &[Name], where_: &str) -> Result<(), Diagnostic> {
+    for (i, a) in names.iter().enumerate() {
+        if names[..i].iter().any(|b| b.text == a.text) {
+            return Err(Diagnostic::illegal(
+                format!("`[{}]` is named twice in {where_}", a.text),
+                a.span,
             ));
         }
     }

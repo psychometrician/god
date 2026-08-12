@@ -25,7 +25,8 @@ from .columns import Expr, GodExpressionError, name_of, _value
 
 __all__ = [
     "keep", "pick", "add", "summarize", "sort", "take", "join",
-    "add_rows", "drop_duplicates", "rename", "drop_missing", "fill_missing",
+    "add_rows", "add_combinations", "drop_duplicates", "rename",
+    "drop_missing", "fill_missing",
     "descending", "all_but", "collect",
     "total", "average", "median", "smallest", "largest",
     "first", "last", "unique_count", "row_count",
@@ -414,6 +415,32 @@ def add_rows(other):
         )
     name = _name_in_caller(other)
     return _Verb("add_rows", lambda: f"add_rows {name}", brings=(name, other))
+
+
+def add_combinations(*names, by=None):
+    """Make the absent combinations appear: ``add_combinations(col.region, col.product)``.
+
+    Every combination of the values these columns already hold, as rows. The rows
+    that were there are handed on untouched; the ones that were not arrive with
+    every other column missing, and ``fill_missing`` is what says otherwise.
+
+    The values come from the table and nowhere else, so a month with no row
+    anywhere is never invented. A missing value is not a category and makes no
+    combinations, and no row is lost by that: nothing already in the table is
+    touched at all.
+
+    ``by`` makes the combinations inside each group. Without it the whole table
+    is one group. With it, a new row keeps those columns filled in rather than
+    going missing, which is the reason to write one.
+    """
+    if not names:
+        raise GodExpressionError(
+            "`add_combinations` needs the columns whose combinations to make: "
+            "add_combinations(col.region, col.product)"
+        )
+    listed = ", ".join(name_of(n, "add_combinations") for n in names)
+    grouping = _grouping(by)
+    return _Verb("add_combinations", lambda: f"add_combinations [{listed}]{grouping}")
 
 
 def drop_duplicates():

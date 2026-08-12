@@ -17,6 +17,13 @@ name has to be looked up every time. `lengthen` comes first in this part
 because it is the direction data usually needs on arrival; `widen` is the way
 back, for the table a person reads rather than the table a pipeline works on.
 
+A third verb changes the shape without moving a single value. Both of those
+two rearrange what is there; `add_combinations` is for what is not, which
+means the combination nobody recorded, the one a grouped answer leaves out
+rather than reports as nothing. It closes this part because it is the case the
+first two cannot reach: no amount of turning a table one way or the other
+produces a row that was never in it.
+
 One law holds the part together: **the same facts, either shape**. Reshaping
 moves values, and it never invents or discards one; where a verb has to
 decide something you did not say, it prints the assumption back beside the

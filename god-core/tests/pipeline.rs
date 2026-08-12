@@ -359,3 +359,129 @@ fn a_dot_outside_a_table_name_is_still_refused() {
         refused.message
     );
 }
+
+/// `add_combinations` makes the absent combination appear, and nothing else.
+///
+/// **The fixture holds four of the six combinations**: West sells Widgets and
+/// Gadgets, East sells only Widgets, and neither region sells Gizmos, so the two
+/// absent pairs are East/Gadget and both Gizmos — five products across two
+/// regions is not the shape here. Written out rather than counted, because a
+/// test that computes its own expectation agrees with a broken engine.
+#[test]
+fn add_combinations_adds_the_pairs_that_were_missing() {
+    let conn = sales();
+    let (columns, rows) = run(
+        &conn,
+        "sales then add_combinations [region, product] then pick [region, product, revenue]",
+    );
+
+    assert_eq!(columns, vec!["region", "product", "revenue"]);
+
+    // The five rows that were there, in the order they were in, then the one
+    // that was not. Nothing is touched, reordered or filled in.
+    assert_eq!(
+        rows,
+        vec![
+            vec!["West".to_string(), "Widget".to_string(), "100.0".to_string()],
+            vec!["West".to_string(), "Widget".to_string(), "200.0".to_string()],
+            vec!["West".to_string(), "Gadget".to_string(), "300.0".to_string()],
+            vec!["West".to_string(), "Gadget".to_string(), "150.0".to_string()],
+            vec!["East".to_string(), "Widget".to_string(), "500.0".to_string()],
+            vec!["East".to_string(), "Gadget".to_string(), "missing".to_string()],
+        ]
+    );
+}
+
+/// The new rows are missing everywhere else, and `fill_missing` is what says
+/// otherwise. That is the whole reason this verb carries no clause of its own.
+#[test]
+fn what_a_new_row_holds_is_a_second_step() {
+    let conn = sales();
+    let (_, rows) = run(
+        &conn,
+        r#"sales
+             then add_combinations [region, product]
+             then fill_missing [revenue] as 0
+             then summarize [sold] as total([revenue]) by [region, product]"#,
+    );
+
+    // East/Gadget is a real group now and totals nothing, which is the answer a
+    // survey wanted and the reason the verb exists.
+    assert!(
+        rows.contains(&vec!["East".to_string(), "Gadget".to_string(), "0.0".to_string()]),
+        "the combination that was absent should total zero: {rows:?}"
+    );
+}
+
+/// `by` makes the combinations inside each group, and a new row keeps the group
+/// filled in rather than going missing. That is the difference between naming a
+/// column in `by` and crossing it.
+#[test]
+fn by_holds_a_column_fixed_and_crosses_inside_it() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE scores (school VARCHAR, student VARCHAR, question VARCHAR);
+         INSERT INTO scores VALUES
+             ('east', 'ann', 'q1'),
+             ('east', 'ann', 'q2'),
+             ('east', 'bob', 'q1'),
+             ('west', 'cal', 'q3');",
+    )
+    .expect("the fixture table");
+
+    let (columns, rows) = run_on(
+        &conn,
+        "scores then add_combinations [student, question] by [school] then sort [school], [student], [question]",
+        "scores",
+    );
+
+    // Inside `east` the students are ann and bob and the questions are q1 and
+    // q2, so bob/q2 is the one pair missing. **`west` gains nothing**, and that
+    // is the point: cal is never crossed against a question from another school,
+    // and the school on the new row says `east` rather than nothing.
+    assert_eq!(columns, vec!["school", "student", "question"]);
+    assert_eq!(
+        rows,
+        vec![
+            vec!["east".to_string(), "ann".to_string(), "q1".to_string()],
+            vec!["east".to_string(), "ann".to_string(), "q2".to_string()],
+            vec!["east".to_string(), "bob".to_string(), "q1".to_string()],
+            vec!["east".to_string(), "bob".to_string(), "q2".to_string()],
+            vec!["west".to_string(), "cal".to_string(), "q3".to_string()],
+        ]
+    );
+}
+
+/// A missing value makes no combination, and keeps its own row.
+///
+/// **Both halves matter and the second is the one a query gets wrong.** Building
+/// the grid from the values that are there is a choice; losing the row whose
+/// value is missing would be a defect, and a full join written the obvious way
+/// makes it. This verb never joins the rows it was given, so it cannot.
+#[test]
+fn a_missing_value_is_not_a_category_and_costs_no_rows() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE t (region VARCHAR, product VARCHAR);
+         INSERT INTO t VALUES ('West', 'Widget'), ('East', 'Gadget'), (NULL, 'Gizmo');",
+    )
+    .expect("the fixture table");
+
+    let (_, rows) = run_on(
+        &conn,
+        "t then add_combinations [region, product] then sort [region], [product]",
+        "t",
+    );
+
+    // Two regions and three products is six pairs, four of them absent; the row
+    // with no region is still there, and no seventh region was invented for it.
+    assert_eq!(rows.len(), 3 + 4, "{rows:?}");
+    assert!(
+        rows.contains(&vec!["missing".to_string(), "Gizmo".to_string()]),
+        "the row whose region is missing must survive: {rows:?}"
+    );
+    assert!(
+        rows.iter().filter(|r| r[0] == "missing").count() == 1,
+        "no combination should be made from a missing value: {rows:?}"
+    );
+}

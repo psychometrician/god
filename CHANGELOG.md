@@ -5,6 +5,42 @@ a person using god can see.
 
 ## Unreleased
 
+### `add_combinations`, for the rows that are not there
+
+Group a table by region and product and the combination nobody recorded
+is not a zero in the answer. It is not in the answer. `add_combinations`
+makes every combination of the values two columns already hold into a
+row, so the gap becomes a line you can read:
+
+```r
+sales |>
+  add_combinations(region, product) |>
+  fill_missing(revenue = 0) |>
+  summarize(sold = total(revenue), by = c(region, product))
+```
+
+A new row is missing in every other column, and `fill_missing` is where
+you say otherwise. That is two steps rather than an argument on purpose:
+a region that sold none sold zero, and a sensor that was switched off
+did not record a zero, and only you know which one you have.
+
+The values come from the table and nowhere else, so a month with no rows
+anywhere is never invented. Nothing already in the table is touched: no
+row is dropped, reordered or filled in, including one whose value is
+missing.
+
+`by` makes the combinations inside each group instead of across the whole
+table, which is what keeps students from being crossed against another
+school's questions:
+
+```python
+sittings >> add_combinations(col.student, col.question, by = col.school)
+```
+
+Two columns or more, always. One column crossed with nothing is the
+values it already holds, so the sentence is refused rather than handing
+the table back unchanged.
+
 ### `join_text`, for putting text together
 
 The grammar could take text apart with `split_text` and had no way to join

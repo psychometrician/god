@@ -140,3 +140,7 @@ sales then add [share] as [revenue] / total([revenue]) by [region] then keep whe
 sales then add [label] as join_text([region], " ", [product]) then pick [label, revenue] then sort [label] then take 3
 ---
 sales then add [key] as join_text([region], "-", to_text([revenue])) then keep where [key] contains "West" then pick [key]
+---
+sales then add_combinations [region, product] then fill_missing [revenue] as 0 then summarize [rows] as row_count(), [total] as total([revenue]) by [region]
+---
+sales then add [tier] as when([revenue] > 250, "high", otherwise "low") then add_combinations [region, product] by [tier] then summarize [rows] as row_count() by [tier]

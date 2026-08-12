@@ -581,3 +581,49 @@ fn kind_is_only_a_word_where_columns_are_being_chosen() {
     let message = refusal(r#"sales then keep where kind is "number""#);
     assert!(message.contains("what a column holds"), "{message}");
 }
+
+// -- making the absent combinations appear ---------------------------------
+
+/// **One column has no combinations to make**, whatever else the sentence says,
+/// so this is a refusal rather than a step that quietly does nothing.
+#[test]
+fn one_column_cannot_be_crossed_with_itself() {
+    let message = refusal("sales then add_combinations [region]");
+    assert!(message.contains("two columns or more"), "{message}");
+    assert!(
+        message.contains("the table would come back unchanged"),
+        "the message should say what the sentence would actually do: {message}"
+    );
+    assert!(
+        message.contains("[region, ...]"),
+        "the repair should be written with the column they already named: {message}"
+    );
+}
+
+/// A column cannot be crossed and held fixed at once, and the message says which
+/// of the two to take it out of rather than only that it cannot be both.
+#[test]
+fn a_column_is_crossed_or_held_fixed_and_not_both() {
+    let message = refusal("sales then add_combinations [region, product] by [region]");
+    assert!(message.contains("crossed and held fixed"), "{message}");
+    assert!(message.contains("Take it out of `by`"), "{message}");
+}
+
+/// **The neighbour is the mistake worth catching.** `add_rows` takes a table and
+/// this takes columns; the two words start alike, and left to the general
+/// message a reader would be told a word was unexpected rather than that they
+/// had reached for the other verb.
+#[test]
+fn a_table_here_points_at_the_verb_that_takes_one() {
+    let message = refusal("sales then add_combinations products");
+    assert!(message.contains("takes columns rather than a table"), "{message}");
+    assert!(message.contains("add_rows products"), "{message}");
+}
+
+#[test]
+fn a_column_named_twice_is_refused_in_either_list() {
+    assert!(refusal("sales then add_combinations [region, region]")
+        .contains("named twice in the columns being crossed"));
+    assert!(refusal("sales then add_combinations [region, product] by [cost, cost]")
+        .contains("named twice in `by`"));
+}

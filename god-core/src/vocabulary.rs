@@ -22,6 +22,12 @@
 pub const VERBS: &[&str] = &[
     "keep", "pick", "add", "summarize", "sort", "take", "join", "add_rows",
     "drop_duplicates", "rename", "drop_missing", "fill_missing",
+    // Making the absent combinations appear. It is named for what it does to
+    // the table — rows arrive underneath — which is why it joins `add_rows`
+    // rather than borrowing tidyr's `complete`: that word is read as an
+    // adjective far more often than as an imperative, and the vocabulary
+    // already renamed `unique` away for exactly that (§11.0).
+    "add_combinations",
     // Reshaping. **Direction is in the name, which is Law 4's own example**:
     // nobody could ever remember which of `melt` and `cast` made data taller.
     // They are not `to_long` and `to_wide`, because `to_` marks a conversion

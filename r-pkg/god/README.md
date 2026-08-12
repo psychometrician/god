@@ -30,7 +30,7 @@ sales
 
 | File | Owns |
 |---|---|
-| `R/verbs.R` | The fourteen verbs. Each builds a sentence and decides nothing |
+| `R/verbs.R` | The fifteen verbs. Each builds a sentence and decides nothing |
 | `R/translate.R` | R's expressions into the grammar's |
 | `R/run.R` | The text form, finding the engine, and running the query |
 | `R/zzz.R` | How a pipeline prints inside a rendered document |

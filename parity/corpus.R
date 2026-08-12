@@ -175,3 +175,7 @@ sales |> add(share = revenue / total(revenue), by = region) |> keep(share > 0.35
 sales |> add(label = join_text(region, " ", product)) |> pick(label, revenue) |> sort(label) |> take(3)
 ---
 sales |> add(key = join_text(region, "-", to_text(revenue))) |> keep(grepl("West", key, fixed = TRUE)) |> pick(key)
+---
+sales |> add_combinations(region, product) |> fill_missing(revenue = 0) |> summarize(rows = row_count(), total = total(revenue), by = region)
+---
+sales |> add(tier = when(revenue > 250, "high", otherwise = "low")) |> add_combinations(region, product, by = tier) |> summarize(rows = row_count(), by = tier)

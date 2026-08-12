@@ -618,6 +618,14 @@ pub(crate) fn rows_notes(step: &Step, arrivals: &[Arrival]) -> Vec<(String, Ink)
         Step::Lengthen { .. } => {
             said.push(("more rows — one per column stacked".to_string(), Ink::Note))
         }
+        // **The second half of this line is the half worth drawing.** That a
+        // verb spelled `add_combinations` adds rows is written on its face; that
+        // the rows it adds are empty in every other column is the thing a reader
+        // finds out from their answer otherwise.
+        Step::AddCombinations { .. } => said.push((
+            "more rows — one per absent combination, missing everywhere else".to_string(),
+            Ink::Note,
+        )),
         Step::Widen { .. } => said.push(("fewer rows — one per group".to_string(), Ink::Note)),
         _ => {}
     }

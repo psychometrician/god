@@ -108,6 +108,34 @@ impl Backend for Dplyr {
 
                 Step::AddRows { other, .. } => format!("bind_rows({})", other.text),
 
+                // **The one place tidyr is shorter than the grammar**, and it
+                // is worth showing for that reason alone: `complete` is one
+                // call and this verb is one word, so the reading aid here is
+                // the name rather than the shape.
+                //
+                // `by` is where they part. tidyr has no argument for it and
+                // reads the grouping off the frame, so a grouped completion is
+                // three calls with a state change in the middle — set the
+                // grouping, complete, put it back. That `ungroup` is not
+                // decoration: a frame left grouped changes what every later
+                // verb does, which is the class of bug the grammar's `by =`
+                // exists to make impossible.
+                Step::AddCombinations { names, by, .. } => {
+                    let crossed: Vec<String> =
+                        names.iter().map(|n| name(&n.text)).collect();
+                    let complete = format!("complete({})", crossed.join(", "));
+                    if by.is_empty() {
+                        complete
+                    } else {
+                        let groups: Vec<String> =
+                            by.iter().map(|n| name(&n.text)).collect();
+                        format!(
+                            "group_by({}) |>\n  {complete} |>\n  ungroup()",
+                            groups.join(", ")
+                        )
+                    }
+                }
+
                 Step::DropDuplicates { .. } => "distinct()".to_string(),
 
                 Step::Rename { values, .. } => {

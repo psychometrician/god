@@ -257,9 +257,10 @@ print("\nthe verbs write the grammar's own sentence")
 # agree on this fixture.
 
 from god import (  # noqa: E402
-    add, all_but, average, col, collect, descending, keep, largest,
-    first_present, kind, lengthen, lower, matching, name, pick, rank, row_count,
-    row_number, smallest,
+    add, add_combinations, all_but, average, col, collect, descending, keep,
+    largest,
+    fill_missing, first_present, kind, lengthen, lower, matching, name, pick,
+    rank, row_count, row_number, smallest,
     sort, summarize, upper, value, when, where, widen,
     take, total,
     to_number, to_whole, to_text, to_date,
@@ -705,6 +706,52 @@ check_error("a step after a widen that declares nothing is refused",
             "giving [q1, q2, q3]")
 check_error("lengthen needs the columns that become rows",
             lambda: lengthen(), "lengthen(col.q1")
+
+print("\nthe combinations that are not there")
+
+# One region sells one product and the other sells two, so exactly one pair of
+# the four is absent, and it can be named rather than counted.
+shop = pd.DataFrame({
+    "region":  ["West", "West", "East"],
+    "product": ["Widget", "Gadget", "Widget"],
+    "revenue": [100.0, 200.0, 300.0],
+})
+
+filled = collect(shop >> add_combinations(col.region, col.product))
+check("the pair that was absent arrives", len(filled), 4)
+check("and the rows that were there are untouched, in order",
+      [float(v) for v in filled["revenue"][:3]], [100.0, 200.0, 300.0])
+check("the new row is East and Gadget",
+      [filled["region"][3], filled["product"][3]], ["East", "Gadget"])
+check("and it holds nothing anywhere else", bool(pd.isna(filled["revenue"][3])), True)
+
+check("what a new row holds is a second step",
+      [float(v) for v in collect(
+          shop >> add_combinations(col.region, col.product)
+               >> fill_missing(revenue = 0))["revenue"]],
+      [100.0, 200.0, 300.0, 0.0])
+
+# `by` holds a column fixed and crosses inside it. ann sat two questions and
+# bob one, both at the same school, so bob gains q2 and nobody crosses schools.
+sittings = pd.DataFrame({
+    "school":   ["east", "east", "east", "west"],
+    "student":  ["ann", "ann", "bob", "cal"],
+    "question": ["q1", "q2", "q1", "q3"],
+})
+inside = collect(sittings >> add_combinations(col.student, col.question, by = col.school))
+check("by crosses inside each group only", len(inside), 5)
+check("and the new row keeps its group rather than going missing",
+      [inside["school"][4], inside["student"][4], inside["question"][4]],
+      ["east", "bob", "q2"])
+
+check_error("one column has no combinations to make",
+            lambda: collect(shop >> add_combinations(col.region)),
+            "two columns or more")
+check_error("and a column cannot be crossed and held fixed at once",
+            lambda: collect(shop >> add_combinations(col.region, col.product, by = col.region)),
+            "crossed and held fixed")
+check_error("add_combinations needs the columns whose combinations to make",
+            lambda: add_combinations(), "add_combinations(col.region")
 
 print("\na pipeline printed in a notebook is a table, not console text")
 

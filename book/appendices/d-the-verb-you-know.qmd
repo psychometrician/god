@@ -27,6 +27,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `left_join()`, `inner_join()` | `join`, `unmatched` | [Another table](../chapters/another-table.qmd) |
 | `semi_join()`, `anti_join()` | `keep(matching(...))`, with `not` | [Has a partner](../chapters/has-a-partner.qmd) |
 | `bind_rows()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `complete()`, `expand()` | `add_combinations`, with `by` | [The rows that are not there](../chapters/rows-that-are-not-there.qmd) |
 | `case_when()` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
 | `coalesce()` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
 | `across(starts_with())` | `where`, `name`, `value` | [One value per column](../chapters/one-value-per-column.qmd) |
@@ -52,6 +53,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `merge()` | `join` | [Another table](../chapters/another-table.qmd) |
 | `isin()` filter against a table | `matching` | [Has a partner](../chapters/has-a-partner.qmd) |
 | `concat()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `reindex(MultiIndex.from_product())` | `add_combinations` | [The rows that are not there](../chapters/rows-that-are-not-there.qmd) |
 | `np.select`, nested `where` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
 | `fillna()`, `dropna()` | `fill_missing`, `drop_missing` | [Missing values](../chapters/missing-values.qmd) |
 | `cumsum()`, `shift()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
@@ -69,6 +71,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `JOIN ... ON` | `join ... by` | [Another table](../chapters/another-table.qmd) |
 | `EXISTS`, `IN (SELECT ...)` | `matching` | [Has a partner](../chapters/has-a-partner.qmd) |
 | `UNION ALL` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
+| `CROSS JOIN` of two `DISTINCT`s, joined back | `add_combinations` | [The rows that are not there](../chapters/rows-that-are-not-there.qmd) |
 | `CASE WHEN ... ELSE ... END` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
 | `COALESCE` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
 | `RANK() OVER`, `ROW_NUMBER()` | `rank`, `row_number` | [Each row a place](../chapters/each-row-a-place.qmd) |

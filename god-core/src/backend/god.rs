@@ -73,6 +73,10 @@ pub(crate) fn step_text(step: &Step) -> String {
 
         Step::AddRows { other, .. } => format!("add_rows {}", other.text),
 
+        Step::AddCombinations { names, by, .. } => {
+            format!("add_combinations {}{}", columns(names), grouping(by))
+        }
+
         Step::DropDuplicates { .. } => "drop_duplicates".to_string(),
 
         Step::Rename { values, .. } => format!("rename {}", assignments(values)),

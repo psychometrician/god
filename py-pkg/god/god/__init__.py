@@ -28,6 +28,7 @@ from .run import GodError, god_sql, run, show_as, show_steps
 from .tables import god_table
 from .verbs import (
     add,
+    add_combinations,
     add_rows,
     all_but,
     average,
@@ -88,7 +89,8 @@ __all__ = [
     # The verbs. Every one is an imperative English verb, and the list is
     # closed: a word that is not here is not in the grammar.
     "keep", "pick", "add", "summarize", "sort", "take", "join",
-    "add_rows", "drop_duplicates", "rename", "drop_missing", "fill_missing",
+    "add_rows", "add_combinations", "drop_duplicates", "rename",
+    "drop_missing", "fill_missing",
     # Reshaping. Direction is in the name, because nobody could ever remember
     # which of `melt` and `cast` made data taller.
     "lengthen", "widen",

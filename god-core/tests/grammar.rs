@@ -110,6 +110,9 @@ fn verb_sentences() -> &'static [(&'static str, &'static str)] {
         ("take", r#"sales then take 3"#),
         ("join", r#"sales then join products by [region]"#),
         ("add_rows", r#"sales then pick [region] then add_rows products"#),
+        // Two columns, always: one on its own has no combinations to make, so
+        // the shortest legal sentence here is the two-column one.
+        ("add_combinations", r#"sales then add_combinations [region, product]"#),
         ("drop_duplicates", r#"sales then drop_duplicates"#),
         ("rename", r#"sales then rename [area] as [region]"#),
         ("drop_missing", r#"sales then drop_missing [region]"#),

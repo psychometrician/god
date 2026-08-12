@@ -187,6 +187,44 @@ pub enum Step {
     /// refused by the checker, so there is nothing here to configure.
     AddRows { other: Name, span: Span },
 
+    /// `add_combinations [region, product]`, with an optional
+    /// `by [store]` that makes the combinations inside each group.
+    ///
+    /// **The absent combinations, as rows underneath.** Every row that was
+    /// already there is handed on untouched, which is why this is spelled like
+    /// `add_rows` and not like a reshaping verb: nothing is rearranged, and the
+    /// only thing that changes is how many rows there are.
+    ///
+    /// Three rulings are built into it rather than configurable.
+    ///
+    /// **The values come from the table and nowhere else.** The combinations are
+    /// the distinct values each named column already holds, crossed. A month
+    /// with no row anywhere is never invented, because nothing in the table
+    /// names it — that would need a literal sequence written into a sentence,
+    /// and the grammar has no shape for one.
+    ///
+    /// **A missing value is not a category, so it makes no combinations.** The
+    /// grid is built from the values that are there. No row is lost by that
+    /// ruling, because no original row is touched at all.
+    ///
+    /// **Every other column of a new row is missing, and there is no clause to
+    /// say otherwise.** `fill_missing` already says it, in a second step, and
+    /// this step never changes the schema so every column is nameable.
+    /// `widen`'s `missing` clause is not a precedent the other way: a bare
+    /// `widen` may be terminal, so a `fill_missing` after one cannot name
+    /// columns it does not yet know.
+    AddCombinations {
+        /// The columns whose values are crossed. Two or more, always: one
+        /// column on its own has no combinations to make, whatever `by` says.
+        names: Vec<Name>,
+        /// The columns held fixed, with the crossing done inside each of their
+        /// groups. `by` in its usual meaning — the columns that establish which
+        /// rows correspond to which (§11.1) — and the reason it is worth having
+        /// is that a new row keeps them filled in rather than going missing.
+        by: Vec<Name>,
+        span: Span,
+    },
+
     /// `drop_duplicates`
     DropDuplicates { span: Span },
 
@@ -322,6 +360,7 @@ impl Step {
             | Step::Take { span, .. }
             | Step::Join { span, .. }
             | Step::AddRows { span, .. }
+            | Step::AddCombinations { span, .. }
             | Step::DropDuplicates { span }
             | Step::Rename { span, .. }
             | Step::DropMissing { span, .. }
@@ -410,6 +449,9 @@ impl Step {
                 unmatched: *unmatched,
                 span: flat,
             },
+            Step::AddCombinations { names: ns, by, .. } => {
+                Step::AddCombinations { names: names(ns), by: names(by), span: flat }
+            }
         }
     }
 
@@ -424,6 +466,7 @@ impl Step {
             Step::Take { .. } => "take",
             Step::Join { .. } => "join",
             Step::AddRows { .. } => "add_rows",
+            Step::AddCombinations { .. } => "add_combinations",
             Step::DropDuplicates { .. } => "drop_duplicates",
             Step::Rename { .. } => "rename",
             Step::DropMissing { .. } => "drop_missing",

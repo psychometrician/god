@@ -1,0 +1,256 @@
+---
+title: "The rows that are not there"
+---
+
+{{< include ../_setup.qmd >}}
+
+Which region sold no Sprockets? Ask the sales table what each region sold of
+each product, and the answer comes back looking complete.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then summarize [sold] as total([revenue]) by [region, product]
+')
+```
+
+### R
+
+```{r}
+sales |> summarize(sold = total(revenue), by = c(region, product))
+```
+
+### Python
+
+```{python}
+sales >> summarize(sold = total(col.revenue), by = [col.region, col.product])
+```
+
+:::
+
+*`sales then summarize [sold] as total([revenue]) by [region, product]`*
+
+Eleven rows, for three regions and four products. Three fours are twelve. The
+missing row is North and Sprocket, and the reason it is missing is that the
+North never sold one. That is the very thing the question was asking, and it
+is the only answer that did not survive to be read.
+
+This is the quiet failure of grouping. A group is made from the rows that are
+there, so a group with no rows is not empty: it is absent, and a total that
+should read zero is a line the eye slides past instead. Sort the answer and
+the gap moves. Chart it and the bar is not short, it is not drawn.
+
+## Making them appear
+
+`add_combinations` takes the values two columns already hold and makes every
+combination of them a row.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add_combinations [region, product]
+    then summarize [sold] as total([revenue]) by [region, product]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  add_combinations(region, product) |>
+  summarize(sold = total(revenue), by = c(region, product))
+```
+
+### Python
+
+```{python}
+sales >> add_combinations(col.region, col.product) \
+      >> summarize(sold = total(col.revenue), by = [col.region, col.product])
+```
+
+:::
+
+Twelve rows now, and North/Sprocket is one of them. It reads as missing
+rather than as zero, and that is right so far: the verb added a row and no
+value, because nothing in the table says what the North sold. `fill_missing`
+is where that gets said.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add_combinations [region, product]
+    then fill_missing [revenue] as 0
+    then summarize [sold] as total([revenue]) by [region, product]
+    then keep where [sold] < 100
+')
+```
+
+### R
+
+```{r}
+sales |>
+  add_combinations(region, product) |>
+  fill_missing(revenue = 0) |>
+  summarize(sold = total(revenue), by = c(region, product)) |>
+  keep(sold < 100)
+```
+
+### Python
+
+```{python}
+sales >> add_combinations(col.region, col.product) \
+      >> fill_missing(revenue = 0) \
+      >> summarize(sold = total(col.revenue), by = [col.region, col.product]) \
+      >> keep(col.sold < 100)
+```
+
+:::
+
+Two steps rather than one argument, and deliberately. Whether an absent
+combination means zero is a question about the data and not about the verb: a
+region that sold no Sprockets sold zero of them, and a sensor that was
+switched off did not record a zero. The grammar cannot tell those apart, so it
+declines to guess, and the second step is where you say which one you have.
+
+## The values come from the table
+
+Only the values already in a column are crossed. That is worth saying plainly,
+because it is the boundary of what this verb can do: a product nobody has ever
+sold anywhere is not in the `product` column, so no row is made for it, and a
+month with no orders at all cannot be conjured from a table that never
+mentions it.
+
+The same rule settles what happens to a hole. A missing value is not a
+category, so it makes no combinations, and nothing is lost by that: the rows
+that were already there are handed on untouched. This verb never looks at
+them.
+
+## Inside a group
+
+Crossing every value against every other is right for regions and products,
+and wrong as soon as a third column has an opinion. Every student sat their
+own school's paper:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+sittings <- data.frame(
+  school   = c("east", "east", "east", "west"),
+  student  = c("ann", "ann", "bob", "cal"),
+  question = c("q1", "q2", "q1", "q3"),
+  stringsAsFactors = FALSE
+)
+
+sittings |> add_combinations(student, question, by = school)
+```
+
+### Python
+
+```{python}
+sittings = pd.DataFrame({
+    "school":   ["east", "east", "east", "west"],
+    "student":  ["ann", "ann", "bob", "cal"],
+    "question": ["q1", "q2", "q1", "q3"],
+})
+
+sittings >> add_combinations(col.student, col.question, by = col.school)
+```
+
+:::
+
+*`sittings then add_combinations [student, question] by [school]`*
+
+`by` names the columns to hold fixed, and the crossing happens inside each of
+them. Bob is given q2, because a student at his school sat it; nobody is given
+q3, because that is the west's paper. Cal gains nothing at all.
+
+Without `by`, the same sentence would cross all three students against all
+three questions and hand back nine rows with the school column empty in every
+one that was made. That is a table saying something false in a shape that
+looks tidy.
+
+## What it refuses
+
+Two columns or more, always. One column crossed with nothing is the values it
+already holds, so the sentence would hand the table straight back, and a step
+that cannot do anything is better refused than obeyed in silence.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> add_combinations(region))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> add_combinations(col.region))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+A column cannot be crossed and held fixed at once either, and the message says
+which of the two lists to take it out of. Both repairs are legal and they make
+different tables, so the grammar has no business choosing between them.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> add_combinations(region, product, by = region))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> add_combinations(col.region, col.product, by = col.region))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The verb next to this one in the vocabulary takes a table rather than columns,
+and the two words start alike. Writing a table's name here is answered by the
+verb that wanted one:
+
+```{r}
+#| error: true
+run('sales then add_combinations more')
+```
+
+That message belongs to the sentence rather than to either language. Written
+in R or in Python, a bare name in this position is a *column*, so the two
+bindings hand the grammar `add_combinations [more]` and the reply is the one
+for a column that is not there. That is also the truth, and the shorter road to
+the same repair.
+
+`add_rows` stacks another table underneath this one; `add_combinations` works
+on this table's own values and reaches for nothing outside it. Both make the
+table taller, which is why they share a first word, and only one of them needs
+a second table to do it.

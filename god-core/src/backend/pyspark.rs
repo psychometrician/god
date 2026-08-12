@@ -161,6 +161,41 @@ impl Backend for PySpark {
                     calls.push(format!("unionByName({})", other.text))
                 }
 
+                // The same mechanism the other two need. Spark's `full` join
+                // coalesces the keys for itself when `on` is a list of names
+                // rather than a condition, so this needs no `coalesce=`: the
+                // list is the spelling that says the two sides mean one column.
+                Step::AddCombinations { names, by, .. } => {
+                    let held: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+                    let mut grid = String::new();
+                    for (k, n) in names.iter().enumerate() {
+                        let mut wanted = held.clone();
+                        wanted.push(n.text.clone());
+                        let distinct = format!(
+                            "d.select({}).dropna().distinct()",
+                            strings(&wanted)
+                                .trim_start_matches('[')
+                                .trim_end_matches(']')
+                        );
+                        if k == 0 {
+                            grid = distinct;
+                        } else if held.is_empty() {
+                            grid = format!("{grid}.crossJoin({distinct})");
+                        } else {
+                            grid = format!(
+                                "{grid}.join({distinct}, on={}, how=\"inner\")",
+                                strings(&held)
+                            );
+                        }
+                    }
+                    let keys: Vec<String> =
+                        held.iter().cloned().chain(names.iter().map(|n| n.text.clone())).collect();
+                    calls.push(format!(
+                        "transform(lambda d: d.join({grid}, on={}, how=\"full\"))",
+                        strings(&keys)
+                    ));
+                }
+
                 Step::DropDuplicates { .. } => {
                     calls.push("dropDuplicates()".to_string());
                     let all: Vec<String> =

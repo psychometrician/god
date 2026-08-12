@@ -146,6 +146,12 @@ book:
       chapters:
         - chapters/columns-into-rows.qmd
         - chapters/rows-into-columns.qmd
+        # Third, and after the pair rather than between them: `lengthen` and
+        # `widen` are one idea read both ways, and a chapter in the middle would
+        # break the sentence they make together. This one changes the shape by
+        # making rows appear rather than by moving values, which is the same
+        # part's job from the other direction.
+        - chapters/rows-that-are-not-there.qmd
 
     - part: parts/values.qmd
       chapters:

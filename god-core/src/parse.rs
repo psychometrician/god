@@ -762,6 +762,46 @@ impl<'a> Parser<'a> {
                 })
             }
 
+            "add_combinations" => {
+                // **A table's name is the mistake worth naming here**, because
+                // the verb beside this one in the vocabulary takes one and the
+                // two words start alike. Left to the general message, a reader
+                // would be told a word was unexpected rather than that they had
+                // reached for the neighbour.
+                if let Some(Tok::Word(name)) = self.peek() {
+                    if !vocabulary::GRAMMAR_WORDS.contains(&name.as_str()) {
+                        return Err(Diagnostic::illegal(
+                            format!(
+                                "`add_combinations` works on this table's own values, so it takes columns rather than a table: `add_combinations [region, product]`. For another table's rows underneath: `add_rows {name}`"
+                            ),
+                            self.peek_span(),
+                        ));
+                    }
+                }
+
+                let names = self.expect_columns(
+                    "`add_combinations` needs the columns whose combinations to make, in brackets: `add_combinations [region, product]`",
+                )?;
+
+                // `by` holds its usual meaning — the columns that say which rows
+                // correspond — and here it decides where the crossing happens.
+                // Without it the whole table is one group.
+                let by = if self.eat_word("by") {
+                    self.expect_columns(
+                        "`by` needs the columns to make the combinations inside, in brackets: `by [store]`",
+                    )?
+                } else {
+                    Vec::new()
+                };
+
+                let end = by
+                    .last()
+                    .or_else(|| names.last())
+                    .map(|n| n.span)
+                    .unwrap_or(start);
+                Ok(Step::AddCombinations { names, by, span: start.to(end) })
+            }
+
             "add" | "summarize" => {
                 // `add where name starts "q" as value * 2`: one value for every
                 // column whose name matches, instead of a list written out.

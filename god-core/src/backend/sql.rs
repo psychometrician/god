@@ -52,6 +52,14 @@ const RANK: &str = "__god_row";
 /// checks it. Reserved the same way `RANK` is, and it never survives its step.
 const CELL: &str = "__god_cell";
 
+/// What each column's distinct values are called while `add_combinations`
+/// crosses them. Numbered, one per crossed column, and reserved the same way.
+const GRID: &str = "__god_grid";
+
+/// What the rows already in the table are called while `add_combinations` asks
+/// which combinations are absent from them.
+const ROWS: &str = "__god_rows";
+
 /// The keys of the most recent `sort` before this step.
 fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
     plan.steps[..before]
@@ -341,6 +349,107 @@ impl Dialect {
                     format!(
                         "SELECT {columns} FROM {from} UNION ALL SELECT {columns} FROM {}",
                         self.table(&other.text)
+                    )
+                }
+
+                Step::AddCombinations { names, by, .. } => {
+                    // **The original rows are not touched, and that is the
+                    // shape of the query rather than a promise about it.** The
+                    // first half is the table, unchanged and unjoined; the
+                    // second half is the combinations that are not in it. So
+                    // this is `add_rows` against a grid the query builds, which
+                    // is what the verb's name says, and no row can be lost or
+                    // reordered by a join that never runs on it.
+                    //
+                    // **A grid built from non-missing values is what lets the
+                    // whole query use plain `=`.** A null-safe comparison is
+                    // spelled two ways on the two engines and would be a sixth
+                    // dialect entry. It is not needed: a missing value makes no
+                    // combination, so nothing in the grid is null, and a row
+                    // whose key is missing simply matches nothing and keeps its
+                    // place in the first half.
+                    let held: Vec<String> =
+                        by.iter().map(|n| self.name(&n.text)).collect();
+
+                    // Each crossed column's own distinct values, carrying the
+                    // held columns along so the cross can be done inside each
+                    // group. With no `by` the join condition is empty and this
+                    // is an unrestricted cross, which is the same query with one
+                    // group.
+                    let parts: Vec<String> = names
+                        .iter()
+                        .enumerate()
+                        .map(|(k, n)| {
+                            let mut selected = held.clone();
+                            selected.push(self.name(&n.text));
+                            format!(
+                                "(SELECT DISTINCT {} FROM {from} WHERE {} IS NOT NULL) {GRID}{k}",
+                                selected.join(", "),
+                                self.name(&n.text)
+                            )
+                        })
+                        .collect();
+
+                    let mut grid = parts[0].clone();
+                    for (k, part) in parts.iter().enumerate().skip(1) {
+                        let on: Vec<String> = by
+                            .iter()
+                            .map(|n| {
+                                format!(
+                                    "{GRID}0.{0} = {GRID}{k}.{0}",
+                                    self.name(&n.text)
+                                )
+                            })
+                            .collect();
+                        grid.push_str(&if on.is_empty() {
+                            format!(" CROSS JOIN {part}")
+                        } else {
+                            format!(" JOIN {part} ON {}", on.join(" AND "))
+                        });
+                    }
+
+                    // Every column, in the order the table holds them: the ones
+                    // the grid knows come from the grid, and the rest are
+                    // missing, which is the ruling this verb was built on.
+                    let listed: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(c, _)| self.name(c))
+                        .collect();
+                    let taken: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(c, _)| {
+                            let quoted = self.name(c);
+                            if let Some(k) = names.iter().position(|n| &n.text == c) {
+                                format!("{GRID}{k}.{quoted}")
+                            } else if by.iter().any(|n| &n.text == c) {
+                                format!("{GRID}0.{quoted}")
+                            } else {
+                                format!("NULL AS {quoted}")
+                            }
+                        })
+                        .collect();
+
+                    let absent: Vec<String> = names
+                        .iter()
+                        .enumerate()
+                        .map(|(k, n)| {
+                            format!(
+                                "{ROWS}.{0} = {GRID}{k}.{0}",
+                                self.name(&n.text)
+                            )
+                        })
+                        .chain(by.iter().map(|n| {
+                            format!("{ROWS}.{0} = {GRID}0.{0}", self.name(&n.text))
+                        }))
+                        .collect();
+
+                    format!(
+                        "SELECT {} FROM {from} UNION ALL SELECT {} FROM {grid} WHERE NOT EXISTS (SELECT 1 FROM {from} {ROWS} WHERE {})",
+                        listed.join(", "),
+                        taken.join(", "),
+                        absent.join(" AND ")
                     )
                 }
 

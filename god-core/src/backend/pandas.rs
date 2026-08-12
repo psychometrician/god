@@ -189,6 +189,45 @@ impl Backend for Pandas {
                     other.text
                 )),
 
+                // **pandas has no word for this, so the rendering is the
+                // mechanism**: build the grid of combinations, then merge it
+                // back with `how="outer"` so the rows that were not there
+                // arrive with everything else missing.
+                //
+                // `MultiIndex.from_product` is the shorter spelling and is
+                // wrong here in a way that only shows up on real data: it needs
+                // the key columns to be unique, and reindexing onto it drops or
+                // raises when they are not. A grid built by merging holds
+                // whatever the table holds.
+                Step::AddCombinations { names, by, .. } => {
+                    let held: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+                    let mut grid = String::new();
+                    for (k, n) in names.iter().enumerate() {
+                        let mut wanted = held.clone();
+                        wanted.push(n.text.clone());
+                        let distinct = format!(
+                            "d[{}].dropna().drop_duplicates()",
+                            strings(&wanted)
+                        );
+                        if k == 0 {
+                            grid = distinct;
+                        } else if held.is_empty() {
+                            grid = format!("{grid}.merge({distinct}, how=\"cross\")");
+                        } else {
+                            grid = format!(
+                                "{grid}.merge({distinct}, on={}, how=\"inner\")",
+                                strings(&held)
+                            );
+                        }
+                    }
+                    let keys: Vec<String> =
+                        held.iter().cloned().chain(names.iter().map(|n| n.text.clone())).collect();
+                    calls.push(format!(
+                        "pipe(lambda d: d.merge({grid}, on={}, how=\"outer\"))",
+                        strings(&keys)
+                    ));
+                }
+
                 Step::DropDuplicates { .. } => {
                     calls.push("drop_duplicates()".to_string());
                     let all: Vec<String> =

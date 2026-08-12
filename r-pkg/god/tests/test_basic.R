@@ -717,6 +717,53 @@ check_error("lengthen needs the columns that become rows",
             answers |> lengthen(),
             "lengthen(q1, q2, q3)")
 
+cat("\nthe combinations that are not there\n")
+
+# One region sells one product and the other sells two, so exactly one pair of
+# the four is absent, and it can be named rather than counted.
+shop <- data.frame(
+  region  = c("West", "West", "East"),
+  product = c("Widget", "Gadget", "Widget"),
+  revenue = c(100, 200, 300),
+  stringsAsFactors = FALSE
+)
+
+filled <- collect(shop |> add_combinations(region, product))
+check("the pair that was absent arrives", nrow(filled), 4L)
+check("and the rows that were there are untouched, in order",
+      filled$revenue[1:3], c(100, 200, 300))
+check("the new row is East and Gadget",
+      c(filled$region[4], filled$product[4]), c("East", "Gadget"))
+check("and it holds nothing anywhere else", is.na(filled$revenue[4]), TRUE)
+
+check("what a new row holds is a second step",
+      collect(shop |> add_combinations(region, product) |> fill_missing(revenue = 0))$revenue,
+      c(100, 200, 300, 0))
+
+# `by` holds a column fixed and crosses inside it. ann sat two questions and
+# bob one, both at the same school, so bob gains q2 and nobody crosses schools.
+sittings <- data.frame(
+  school   = c("east", "east", "east", "west"),
+  student  = c("ann", "ann", "bob", "cal"),
+  question = c("q1", "q2", "q1", "q3"),
+  stringsAsFactors = FALSE
+)
+inside <- collect(sittings |> add_combinations(student, question, by = school))
+check("by crosses inside each group only", nrow(inside), 5L)
+check("and the new row keeps its group rather than going missing",
+      c(inside$school[5], inside$student[5], inside$question[5]),
+      c("east", "bob", "q2"))
+
+check_error("one column has no combinations to make",
+            collect(shop |> add_combinations(region)),
+            "two columns or more")
+check_error("and a column cannot be crossed and held fixed at once",
+            collect(shop |> add_combinations(region, product, by = region)),
+            "crossed and held fixed")
+check_error("add_combinations needs the columns whose combinations to make",
+            shop |> add_combinations(),
+            "add_combinations(region, product)")
+
 cat("\nthe grammar still owns every refusal\n")
 
 check_error("an unknown column is caught by the grammar, not the verbs",

@@ -568,3 +568,25 @@ sales                                   region:text  product:text  revenue:numbe
 └ pick [key]                            key
                                         -region  -product  -revenue  -cost  -ordered_on
 ---
+sales then add_combinations [region, product] then fill_missing [revenue] as 0 then summarize [rows] as row_count(), [total] as total([revenue]) by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add_combinations [region, product]    region  product  revenue  cost  ordered_on
+│   more rows — one per absent combination, missing everywhere else
+├ fill_missing [revenue] as 0           region  product  revenue  cost  ordered_on
+└ summarize [rows] as row_count(), [total] as total([revenue]) by [region]
+                                        region  +rows:number  +total:number
+                                        -product  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then add [tier] as when([revenue] > 250, "high", otherwise "low") then add_combinations [region, product] by [tier] then summarize [rows] as row_count() by [tier]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [tier] as when(([revenue] > 250), "high", otherwise "low")
+│                                       region  product  revenue  cost  ordered_on  +tier:text
+├ add_combinations [region, product] by [tier]
+│                                       region  product  revenue  cost  ordered_on  tier
+│   more rows — one per absent combination, missing everywhere else
+└ summarize [rows] as row_count() by [tier]
+                                        tier  +rows:number
+                                        -region  -product  -revenue  -cost  -ordered_on
+    one row per group
+---

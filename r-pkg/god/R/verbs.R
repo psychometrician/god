@@ -380,6 +380,46 @@ add_rows <- function(.data, other) {
   god_step(pipeline, sprintf("add_rows %s", name))
 }
 
+#' Make the absent combinations appear
+#'
+#' Every combination of the values these columns already hold, as rows. The rows
+#' that were there are handed on untouched; the ones that were not arrive with
+#' every other column missing, and `fill_missing` is what says otherwise.
+#'
+#' The values come from the table and nowhere else, so a month with no row
+#' anywhere is never invented. A missing value is not a category and makes no
+#' combinations, and no row is lost by that: nothing already in the table is
+#' touched at all.
+#'
+#' @param .data A table, or a pipeline.
+#' @param ... The columns whose combinations to make. Two or more: one column on
+#'   its own has no combinations to make.
+#' @param by Columns to make the combinations inside. Without it the whole table
+#'   is one group. With it, a new row keeps these columns filled in rather than
+#'   going missing, which is the reason to write one.
+#' @return A pipeline.
+#' @export
+add_combinations <- function(.data, ..., by) {
+  pipeline <- god_head(.data, substitute(.data), "add_combinations")
+  chosen <- as.list(substitute(list(...)))[-1L]
+  if (!length(chosen)) {
+    stop(
+      "`add_combinations` needs the columns whose combinations to make: add_combinations(region, product)",
+      call. = FALSE
+    )
+  }
+  names <- vapply(chosen, god_name, character(1), where = "add_combinations")
+  grouping <- if (missing(by)) character() else god_names(substitute(by), "by")
+  god_step(
+    pipeline,
+    sprintf(
+      "add_combinations [%s]%s",
+      paste(names, collapse = ", "),
+      god_grouping(grouping)
+    )
+  )
+}
+
 #' Drop repeated rows
 #'
 #' Rows that are identical across every column. The answer comes back in a

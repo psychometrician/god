@@ -157,6 +157,44 @@ impl Backend for Polars {
                 // a method, and it is what keeps this printable as one chain.
                 Step::AddRows { other, .. } => calls.push(format!("vstack({})", other.text)),
 
+                // The same mechanism pandas needs, in polars' spelling, and the
+                // same reason: no library here has a word for it.
+                //
+                // `coalesce=True` is the entry that decides whether this is
+                // right. A full join leaves polars holding two of each key —
+                // the left's and the right's, one of them null on every row
+                // that matched only one side — and without coalescing, the
+                // grid's values would sit in a second column called
+                // `region_right` while `region` stayed missing.
+                Step::AddCombinations { names, by, .. } => {
+                    let held: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+                    let mut grid = String::new();
+                    for (k, n) in names.iter().enumerate() {
+                        let mut wanted = held.clone();
+                        wanted.push(n.text.clone());
+                        let distinct = format!(
+                            "d.select({}).drop_nulls().unique()",
+                            strings(&wanted)
+                        );
+                        if k == 0 {
+                            grid = distinct;
+                        } else if held.is_empty() {
+                            grid = format!("{grid}.join({distinct}, how=\"cross\")");
+                        } else {
+                            grid = format!(
+                                "{grid}.join({distinct}, on={}, how=\"inner\")",
+                                strings(&held)
+                            );
+                        }
+                    }
+                    let keys: Vec<String> =
+                        held.iter().cloned().chain(names.iter().map(|n| n.text.clone())).collect();
+                    calls.push(format!(
+                        "pipe(lambda d: d.join({grid}, on={}, how=\"full\", coalesce=True))",
+                        strings(&keys)
+                    ));
+                }
+
                 // Dropping repeats says nothing about the order the rest should
                 // be in, and an answer that reorders itself between runs is not
                 // predictable. Its groups are the distinct rows, so ordering by

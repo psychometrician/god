@@ -182,3 +182,7 @@ sales >> add(share = col.revenue / total(col.revenue), by = col.region) >> keep(
 sales >> add(label = join_text(col.region, " ", col.product)) >> pick(col.label, col.revenue) >> sort(col.label) >> take(3)
 ---
 sales >> add(key = join_text(col.region, "-", to_text(col.revenue))) >> keep(col.key.contains("West")) >> pick(col.key)
+---
+sales >> add_combinations(col.region, col.product) >> fill_missing(revenue = 0) >> summarize(rows = row_count(), total = total(col.revenue), by = col.region)
+---
+sales >> add(tier = when(col.revenue > 250, "high", otherwise = "low")) >> add_combinations(col.region, col.product, by = col.tier) >> summarize(rows = row_count(), by = col.tier)
