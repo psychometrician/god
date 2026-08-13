@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-one functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-two functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |

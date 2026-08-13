@@ -40,8 +40,10 @@ sales >> sort(descending(col.revenue)) >> take(5)
 
 *`sales then sort [revenue] descending then take 5`*
 
-**One verb away.** The bottom few: drop `descending`. The top few of a
-different measure: change the sort key, and nothing else.
+**One verb away.** The bottom few: `take_last(5)`, with the sort left as it
+is. Dropping `descending` instead reaches the same rows in the opposite
+order, which is a different table. The top few of a different measure: change
+the sort key, and nothing else.
 
 ## The top one per group
 

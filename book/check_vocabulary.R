@@ -89,11 +89,19 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
   # missing seventeen of the grammar words when this was first measured. The
   # README runs nothing, so appearing anywhere in it is the whole bar.
   missing_front <- character()
+  wrong_count <- character()
   if (length(readme) && file.exists(readme)) {
     front <- paste(readLines(readme, warn = FALSE), collapse = "\n")
     for (word in words$word) {
       if (!mentions(word, front)) missing_front <- c(missing_front, word)
     }
+    wrong_count <- counts_that_disagree(front, words, readme)
+  }
+
+  if (length(wrong_count)) {
+    cat("FAIL: the front page counts the vocabulary wrong\n")
+    for (line in wrong_count) cat("  ", line, "\n", sep = "")
+    cat("  A count is a copy of the vocabulary written as a number.\n")
   }
 
   if (length(missing_front)) {
@@ -103,7 +111,8 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
     }
   }
 
-  if (length(missing_run) || length(missing_any) || length(missing_front)) {
+  if (length(missing_run) || length(missing_any) || length(missing_front) ||
+      length(wrong_count)) {
     if (length(missing_run)) {
       cat("FAIL: the grammar has words this book never runs\n")
       for (word in missing_run) {
@@ -117,14 +126,66 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
         cat("  ", word, " is in the vocabulary and appears nowhere in the book\n", sep = "")
       }
     }
-    stop(sprintf("check_vocabulary: %d word(s) undocumented",
-                 length(missing_run) + length(missing_any) + length(missing_front)),
+    stop(sprintf("check_vocabulary: %d undocumented word(s), %d wrong count(s)",
+                 length(missing_run) + length(missing_any) + length(missing_front),
+                 length(wrong_count)),
          call. = FALSE)
   }
 
   cat("PASS: every word the grammar has is demonstrated (",
-      nrow(words), "words,", length(qmds), "files, and the README names them all )\n")
+      nrow(words), "words,", length(qmds),
+      "files, and the README names them all and counts them right )\n")
   invisible(TRUE)
+}
+
+# A count is a copy of the vocabulary written as a number, and it rots more
+# quietly than a list does, because every word is still named on the page. The
+# README said "thirty-one functions" from the day `join_text` landed, and the
+# check above passed the whole time — `join_text` *is* named there, and nothing
+# was counting.
+#
+# Only a numeral standing in front of the noun is read as a claim. "the verbs"
+# and "same verbs" are prose, convert to nothing, and are passed over, so the
+# page can go on saying those without owing a number.
+counts_that_disagree <- function(front, words, readme) {
+  ones <- c(one = 1, two = 2, three = 3, four = 4, five = 5, six = 6, seven = 7,
+            eight = 8, nine = 9, ten = 10, eleven = 11, twelve = 12,
+            thirteen = 13, fourteen = 14, fifteen = 15, sixteen = 16,
+            seventeen = 17, eighteen = 18, nineteen = 19)
+  tens <- c(twenty = 20, thirty = 30, forty = 40, fifty = 50, sixty = 60,
+            seventy = 70, eighty = 80, ninety = 90)
+
+  as_count <- function(token) {
+    token <- tolower(token)
+    if (grepl("^[0-9]+$", token)) return(as.integer(token))
+    if (!is.na(ones[token])) return(unname(ones[token]))
+    if (!is.na(tens[token])) return(unname(tens[token]))
+    parts <- strsplit(token, "-", fixed = TRUE)[[1]]
+    if (length(parts) == 2L && !is.na(tens[parts[1]]) && !is.na(ones[parts[2]])) {
+      return(unname(tens[parts[1]] + ones[parts[2]]))
+    }
+    NA_integer_
+  }
+
+  # What the engine calls a verb, and everything it calls a function: the three
+  # kinds a reader writes with brackets after them.
+  expected <- c(verbs = sum(words$kind == "verb"),
+                functions = sum(words$kind %in% c("scalar", "aggregate", "window")))
+
+  wrong <- character()
+  for (noun in names(expected)) {
+    phrases <- regmatches(
+      front, gregexpr(paste0("[[:alnum:]-]+ ", noun), front, perl = TRUE))[[1]]
+    for (phrase in phrases) {
+      said <- as_count(sub(paste0(" ", noun, "$"), "", phrase))
+      if (is.na(said)) next
+      if (said != expected[[noun]]) {
+        wrong <- c(wrong, sprintf('%s says "%s" and the grammar has %d',
+                                  readme, phrase, expected[[noun]]))
+      }
+    }
+  }
+  wrong
 }
 
 # `$GOD_CLI` if it is set, else walk up looking for the built binary. The same

@@ -20,6 +20,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `arrange()`, `desc()` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `group_by()` + `summarise()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
 | `slice_head(n)`, `slice_max()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `slice_tail(n)` | `take_last`, after a `sort` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `distinct()` | `pick` then `drop_duplicates` | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `rename(new = old)` | `rename`, same direction | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `pivot_longer()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
@@ -46,6 +47,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `sort_values(ascending=False)` | `sort`, `descending` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `groupby().agg()` | `summarize ... by` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
 | `head(n)`, `nlargest()` | `take`, `sort` then `take` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
+| `tail(n)` | `take_last`, after a `sort` | [Sorting and taking](../chapters/sorting-and-taking.qmd) |
 | `rename(columns={"old": "new"})` | `rename`, the other direction | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `drop_duplicates()` | `drop_duplicates`, no subset | [Renaming and repeats](../chapters/renaming-and-repeats.qmd) |
 | `melt()` | `lengthen` | [Columns into rows](../chapters/columns-into-rows.qmd) |
