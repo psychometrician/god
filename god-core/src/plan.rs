@@ -179,7 +179,24 @@ pub enum Step {
     /// what. So a grouped `take` requires a `sort` before it, and the backend
     /// carries that sort's keys into the window rather than trusting the engine
     /// to hand rows over in the order they arrived.
-    Take { count: u64, by: Vec<Name>, span: Span },
+    Take {
+        count: u64,
+        by: Vec<Name>,
+        /// `take_last` rather than `take`: the rows at the other end.
+        ///
+        /// **A flag rather than a second variant, because it is the same
+        /// operation read from the other side.** Every backend renders it by
+        /// walking the sort backwards and then putting the order back, so a
+        /// parallel `Step` would duplicate each of those spellings to change
+        /// one word in them.
+        ///
+        /// **It always needs a sort, where `take` needs one only when grouped.**
+        /// "The first three rows" of a table nobody sorted is at least the three
+        /// the pipeline reached first; "the last three" is a claim about an end,
+        /// and a table has no end until something says which way it runs.
+        last: bool,
+        span: Span,
+    },
 
     /// `add_rows more_sales`
     ///
@@ -410,8 +427,8 @@ impl Step {
                     .collect(),
                 span: flat,
             },
-            Step::Take { count, by, .. } => {
-                Step::Take { count: *count, by: names(by), span: flat }
+            Step::Take { count, by, last, .. } => {
+                Step::Take { count: *count, by: names(by), last: *last, span: flat }
             }
             Step::AddRows { other, .. } => {
                 Step::AddRows { other: other.without_span(), span: flat }
@@ -463,7 +480,7 @@ impl Step {
             Step::Add { .. } => "add",
             Step::Summarize { .. } => "summarize",
             Step::Sort { .. } => "sort",
-            Step::Take { .. } => "take",
+            Step::Take { last, .. } => if *last { "take_last" } else { "take" },
             Step::Join { .. } => "join",
             Step::AddRows { .. } => "add_rows",
             Step::AddCombinations { .. } => "add_combinations",

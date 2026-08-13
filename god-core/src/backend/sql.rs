@@ -787,9 +787,36 @@ impl Dialect {
                         on.join(" AND ")
                     )
                 }
-                Step::Take { count, by, .. } => {
+                Step::Take { count, by, last, .. } => {
+                    // The order the caller asked for, and the same order walked
+                    // backwards. `take_last` is `take` over the second one, with
+                    // the first restored afterwards so the answer still reads
+                    // the way the `sort` said it should.
+                    let written = |keys: &[SortKey], flip: bool| {
+                        keys.iter()
+                            .map(|k| {
+                                let down = if flip { !k.descending } else { k.descending };
+                                format!(
+                                    "{}{}",
+                                    self.name(&k.column.text),
+                                    if down { " DESC" } else { "" }
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    };
                     if by.is_empty() {
+                        if *last {
+                            let keys = last_sort(plan, i)
+                                .expect("take_last is only reached after a sort");
+                            format!(
+                                "SELECT * FROM (SELECT * FROM {from} ORDER BY {} LIMIT {count}) ORDER BY {}",
+                                written(keys, true),
+                                written(keys, false)
+                            )
+                        } else {
                         format!("SELECT * FROM {from} LIMIT {count}")
+                        }
                     } else {
                         // **The window carries the sort's own keys**, rather than
                         // trusting the engine to number rows in the order they
@@ -798,20 +825,14 @@ impl Dialect {
                         // query that works and a query that works here. The
                         // checker has already refused this without a sort before
                         // it, so there is always something to find.
-                        let keys = last_sort(plan, i)
-                            .map(|keys| {
-                                keys.iter()
-                                    .map(|k| {
-                                        format!(
-                                            "{}{}",
-                                            self.name(&k.column.text),
-                                            if k.descending { " DESC" } else { "" }
-                                        )
-                                    })
-                                    .collect::<Vec<_>>()
-                                    .join(", ")
-                            })
+                        let sorted = last_sort(plan, i)
                             .expect("a grouped take is only reached after a sort");
+                        // Numbering from the far end is the same window counting
+                        // the other way, which is why this needs no second query
+                        // shape. The `ORDER BY` at the end is always the order
+                        // the caller asked for.
+                        let keys = written(sorted, *last);
+                        let restore = written(sorted, false);
                         let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
                         // **The order the sort established has to survive the
                         // window.** Filtering on the row number is a `WHERE`,
@@ -822,7 +843,7 @@ impl Dialect {
                         // ran this sentence and returned the same two rows the
                         // other way round.
                         format!(
-                                "SELECT * {} ({rank}) FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY {} ORDER BY {keys}) AS {rank} FROM {from}) WHERE {rank} <= {count} ORDER BY {keys}",
+                                "SELECT * {} ({rank}) FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY {} ORDER BY {keys}) AS {rank} FROM {from}) WHERE {rank} <= {count} ORDER BY {restore}",
                                 self.exclude,
                                 groups.join(", "),
                                 rank = self.name(RANK)

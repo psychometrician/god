@@ -370,6 +370,41 @@ take <- function(.data, n, by) {
   )
 }
 
+#' The last n rows, or the last n of each group
+#'
+#' The other end of `take`. It always needs a `sort` before it, where a bare
+#' `take` does not: "the first rows" of an unsorted table is at least the rows
+#' the pipeline reached first, and "the last rows" is a claim about an end that
+#' a table does not have until something says which way it runs.
+#'
+#' @param .data A table, or a pipeline.
+#' @param n How many rows.
+#' @param by Columns to group by, for the last n rows of each group.
+#' @return A pipeline.
+#' @examples
+#' sales <- data.frame(
+#'   region  = c("West", "East", "West"),
+#'   revenue = c(100, 120, 150)
+#' )
+#' sales |> sort(revenue) |> take_last(2)
+#' @export
+take_last <- function(.data, n, by) {
+  pipeline <- god_head(.data, substitute(.data), "take_last")
+  count <- n
+  if (!is.numeric(count) || length(count) != 1L || is.na(count) || count != trunc(count)) {
+    stop("`take_last` needs a whole number of rows: take_last(10)", call. = FALSE)
+  }
+  grouping <- if (missing(by)) character() else god_names(substitute(by), "by")
+  god_step(
+    pipeline,
+    sprintf(
+      "take_last %s%s",
+      format(count, scientific = FALSE, trim = TRUE),
+      god_grouping(grouping)
+    )
+  )
+}
+
 #' Add another table's columns
 #'
 #' @param .data A table, or a pipeline.

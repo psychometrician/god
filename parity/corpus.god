@@ -144,3 +144,7 @@ sales then add [key] as join_text([region], "-", to_text([revenue])) then keep w
 sales then add_combinations [region, product] then fill_missing [revenue] as 0 then summarize [rows] as row_count(), [total] as total([revenue]) by [region]
 ---
 sales then add [tier] as when([revenue] > 250, "high", otherwise "low") then add_combinations [region, product] by [tier] then summarize [rows] as row_count() by [tier]
+---
+sales then sort [revenue] then take_last 3 then pick [product, revenue]
+---
+sales then sort [revenue] then take_last 1 by [region] then pick [region, product, revenue]

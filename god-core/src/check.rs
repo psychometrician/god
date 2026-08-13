@@ -200,10 +200,21 @@ pub fn check_tables(
                 ));
             }
         }
-        if let Step::Take { by, span, .. } = step {
+        if let Step::Take { by, last, span, .. } = step {
             if !by.is_empty() && !ordered {
                 return Err(Diagnostic::illegal(
                     "`take ... by` gives the first rows of each group, and nothing has said what order the rows are in, so there is no first. Sort before it: `then sort [when] descending then take 1 by [id]`",
+                    *span,
+                ));
+            }
+            // **`take_last` needs an order even ungrouped, where `take` does
+            // not, and the asymmetry is the honest one.** "The first three
+            // rows" of an unsorted table is at least the three the pipeline
+            // reached first. "The last three" is a claim about an end, and a
+            // table has no end until something says which way it runs.
+            if *last && by.is_empty() && !ordered {
+                return Err(Diagnostic::illegal(
+                    "`take_last` gives the rows at the far end, and nothing has said which end that is. Sort before it: `then sort [when] then take_last 3`. For the rows a pipeline reaches first, `take` needs no sort",
                     *span,
                 ));
             }

@@ -118,9 +118,21 @@ impl Backend for PySpark {
 
                 Step::Sort { keys, .. } => calls.push(sort_by(keys)),
 
-                Step::Take { count, by, .. } => {
+                Step::Take { count, by, last, .. } => {
                     if by.is_empty() {
+                        if *last {
+                            // **Spark's `tail` returns rows to the driver rather
+                            // than a frame**, so it cannot stand in a chain. The
+                            // sort is walked backwards, the first rows are taken
+                            // from that end, and the caller's order is restored.
+                            let keys = last_sort(plan, i)
+                                .expect("take_last is only reached after a sort");
+                            calls.push(sort_by(&flipped(keys)));
+                            calls.push(format!("limit({count})"));
+                            calls.push(sort_by(keys));
+                        } else {
                         calls.push(format!("limit({count})"));
+                        }
                     } else {
                         // **Spark has no grouped head**, so the rows are numbered
                         // within each group and the numbering is filtered. The
@@ -128,10 +140,13 @@ impl Backend for PySpark {
                         // has to be restated after the filter because a filter
                         // promises nothing about it.
                         let keys = last_sort(plan, i).unwrap_or_default();
+                        // Numbering from the far end is the same window counting
+                        // the other way.
+                        let counted = if *last { flipped(keys) } else { keys.to_vec() };
                         calls.push(format!(
                             "withColumn({}, F.row_number().over({}))",
                             text(RANK),
-                            window(&Over { partition: by, order: Some(keys), windowed: false }, &[])
+                            window(&Over { partition: by, order: Some(&counted), windowed: false }, &[])
                         ));
                         calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                         calls.push(format!("drop({})", text(RANK)));
@@ -423,6 +438,17 @@ fn sort_key(k: &SortKey) -> String {
 fn ordered(names: &[Name]) -> String {
     let written: Vec<String> = names.iter().map(|n| text(&n.text)).collect();
     format!("orderBy({})", written.join(", "))
+}
+
+/// The same keys, read from the other end.
+///
+/// `take_last` is `take` over a reversed order, so every target that has no word
+/// for the far end spells it by flipping the sort. Written once here rather than
+/// inline at each use.
+fn flipped(keys: &[SortKey]) -> Vec<SortKey> {
+    keys.iter()
+        .map(|k| SortKey { column: k.column.clone(), descending: !k.descending })
+        .collect()
 }
 
 fn sort_by(keys: &[SortKey]) -> String {

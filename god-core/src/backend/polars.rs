@@ -125,11 +125,12 @@ impl Backend for Polars {
                     calls.push(format!("sort({})", args.join(", ")));
                 }
 
-                Step::Take { count, by, .. } => {
+                Step::Take { count, by, last, .. } => {
+                    let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
-                        calls.push(format!("head({count})"));
+                        calls.push(format!("{end}({count})"));
                     } else {
-                        calls.push(format!("group_by({}).head({count})", list(by)));
+                        calls.push(format!("group_by({}).{end}({count})", list(by)));
                         // Taking the first rows of each group regroups them, so
                         // the order the sort established has to survive it.
                         if let Some(keys) = last_sort(plan, i) {

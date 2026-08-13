@@ -68,6 +68,7 @@ from .verbs import (
     sort,
     summarize,
     take,
+    take_last,
     to_date,
     to_number,
     to_text,
@@ -88,7 +89,7 @@ from .verbs import (
 __all__ = [
     # The verbs. Every one is an imperative English verb, and the list is
     # closed: a word that is not here is not in the grammar.
-    "keep", "pick", "add", "summarize", "sort", "take", "join",
+    "keep", "pick", "add", "summarize", "sort", "take", "take_last", "join",
     "add_rows", "add_combinations", "drop_duplicates", "rename",
     "drop_missing", "fill_missing",
     # Reshaping. Direction is in the name, because nobody could ever remember

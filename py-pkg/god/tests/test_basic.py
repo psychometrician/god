@@ -265,7 +265,7 @@ from god import (  # noqa: E402
     fill_missing, first_present, kind, lengthen, lower, matching, name, pick,
     rank, row_count, row_number, smallest,
     sort, summarize, upper, value, when, where, widen,
-    take, total,
+    take, take_last, total,
     to_number, to_whole, to_text, to_date,
     trim, characters, replace_text, split_text, between,
     year, month, day, weekday, hour,
@@ -710,6 +710,28 @@ check_error("a step after a widen that declares nothing is refused",
 check_error("lengthen needs the columns that become rows",
             lambda: lengthen(), "lengthen(col.q1")
 
+print("\nthe rows at the far end")
+
+ends = pd.DataFrame({"region": ["West", "East", "West", "East"],
+                     "revenue": [100.0, 120.0, 150.0, 90.0]})
+check("take_last gives the far end, in the order the sort asked for",
+      [float(v) for v in collect(ends >> sort(col.revenue) >> take_last(2))["revenue"]],
+      [120.0, 150.0])
+check("and take still gives the near end",
+      [float(v) for v in collect(ends >> sort(col.revenue) >> take(2))["revenue"]],
+      [90.0, 100.0])
+check("by takes the last of each group",
+      [float(v) for v in collect(ends >> sort(col.revenue) >> take_last(1, by=col.region)
+                                      >> sort(col.region))["revenue"]],
+      [120.0, 150.0])
+check_error("take_last needs a sort even ungrouped",
+            lambda: collect(ends >> take_last(2)),
+            "nothing has said which end that is")
+check_error("and it names take as the verb that does not",
+            lambda: collect(ends >> take_last(2)), "`take` needs no sort")
+check_error("take_last wants a whole number",
+            lambda: take_last("two"), "whole number of rows")
+
 print("\nthe combinations that are not there")
 
 # One region sells one product and the other sells two, so exactly one pair of
@@ -778,8 +800,22 @@ check_error("a column made in a step is not there yet for that step",
 
 print("\nthe verbs refuse what they cannot write")
 
+# **A column position says what it was handed, rather than printing it.** The
+# case that forced this was a whole table: `repr` of a DataFrame is the frame,
+# so the message arrived with rows and columns inside it and the reader had to
+# find the sentence around them. Every verb taking columns could produce it.
 check_error("pick takes columns, not expressions",
-            lambda: sales >> pick(col.revenue + col.cost), "is not a column name")
+            lambda: sales >> pick(col.revenue + col.cost), "is a computed value")
+check_error("and the repair for one is named",
+            lambda: sales >> pick(col.revenue + col.cost), "Make it a column first with `add`")
+check_error("a whole table is named rather than printed",
+            lambda: sales >> pick(products), "this is a whole table")
+check_error("and the frame is not in the message",
+            lambda: sales >> pick(products), "col.name")
+check_error("columns come one at a time, not in a list",
+            lambda: sales >> pick([col.region, col.cost]), "one at a time")
+check_error("and anything else is named with its kind",
+            lambda: sales >> sort(3.14), "is float, not a column name")
 check_error("all_but wants all its columns inside it",
             lambda: sales >> pick(all_but(col.cost), col.region), "pick(all_but(col.cost, col.region))")
 check_error("take wants a whole number", lambda: sales >> take(2.5), "take(10)")

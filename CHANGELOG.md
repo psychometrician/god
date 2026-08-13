@@ -3,6 +3,39 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
+## Unreleased
+
+### `take_last`, for the rows at the far end
+
+`take` gives the rows a pipeline reaches first. `take_last` gives the
+ones at the other end, in the order the `sort` asked for:
+
+```r
+sales |> sort(revenue) |> take_last(3)
+```
+
+```python
+sales >> sort(col.revenue) >> take_last(3)
+```
+
+Sorting the other way and taking the first three returns the same rows
+backwards, which is a different table and usually not the one you
+wanted. `by` works here as it does on `take`: the last of each group.
+
+**It always needs a `sort` before it**, where a bare `take` does not.
+The rows a pipeline reaches first are at least the rows it reached
+first; the rows at the far end are a claim about an end, and a table
+does not have one until something says which way it runs.
+
+### A column position says what it was handed
+
+Passing a whole table where a column belongs used to print the entire
+table into the error message. It now says that it is a table and how to
+name a column of it. Passing a list says to write the columns one at a
+time; passing a computed value says to make it a column with `add`
+first; anything else is named with its kind. In R, the message said the
+verb twice — "`sort` names a column in sort" — and now says it once.
+
 ## 0.2.0
 
 Three new words, and a worked example on every one of them. `pip install

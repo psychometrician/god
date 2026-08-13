@@ -186,3 +186,7 @@ sales >> add(key = join_text(col.region, "-", to_text(col.revenue))) >> keep(col
 sales >> add_combinations(col.region, col.product) >> fill_missing(revenue = 0) >> summarize(rows = row_count(), total = total(col.revenue), by = col.region)
 ---
 sales >> add(tier = when(col.revenue > 250, "high", otherwise = "low")) >> add_combinations(col.region, col.product, by = col.tier) >> summarize(rows = row_count(), by = col.tier)
+---
+sales >> sort(col.revenue) >> take_last(3) >> pick(col.product, col.revenue)
+---
+sales >> sort(col.revenue) >> take_last(1, by = col.region) >> pick(col.region, col.product, col.revenue)

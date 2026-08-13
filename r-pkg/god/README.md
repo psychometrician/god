@@ -47,7 +47,7 @@ a package that cannot answer a pipeline.
 
 ## Every word answers for itself
 
-`?keep`, `?summarize`, `?add_combinations` — every verb, function and grammar
+`?keep`, `?summarize`, `?take_last` — every verb, function and grammar
 word has a page with a worked example, a small table going in and the answer
 coming out.
 

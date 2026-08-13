@@ -717,6 +717,31 @@ check_error("lengthen needs the columns that become rows",
             answers |> lengthen(),
             "lengthen(q1, q2, q3)")
 
+cat("\nthe rows at the far end\n")
+
+ends <- data.frame(
+  region  = c("West", "East", "West", "East"),
+  revenue = c(100, 120, 150, 90),
+  stringsAsFactors = FALSE
+)
+last_two <- collect(ends |> sort(revenue) |> take_last(2))
+check("take_last gives the far end, in the order the sort asked for",
+      last_two$revenue, c(120, 150))
+check("and take still gives the near end", collect(ends |> sort(revenue) |> take(2))$revenue,
+      c(90, 100))
+check("by takes the last of each group",
+      collect(ends |> sort(revenue) |> take_last(1, by = region) |> sort(region))$revenue,
+      c(120, 150))
+check_error("take_last needs a sort even ungrouped",
+            collect(ends |> take_last(2)),
+            "nothing has said which end that is")
+check_error("and it names take as the verb that does not",
+            collect(ends |> take_last(2)),
+            "`take` needs no sort")
+check_error("take_last wants a whole number",
+            ends |> take_last("two"),
+            "whole number of rows")
+
 cat("\nthe combinations that are not there\n")
 
 # One region sells one product and the other sells two, so exactly one pair of
@@ -763,6 +788,12 @@ check_error("and a column cannot be crossed and held fixed at once",
 check_error("add_combinations needs the columns whose combinations to make",
             shop |> add_combinations(),
             "add_combinations(region, product)")
+
+# The verb was named twice: "`sort` names a column in sort". `where` is already
+# the verb, so saying it once is the whole fix.
+check_error("a column position names the verb once, not twice",
+            collect(sales |> sort(3.14)),
+            "`sort` names a column, and `3.14` is not a column name")
 
 cat("\nthe grammar still owns every refusal\n")
 

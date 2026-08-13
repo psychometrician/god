@@ -353,6 +353,26 @@ def _each(values):
         ) from None
 
 
+def is_frame(table) -> bool:
+    """Whether this looks like a table.
+
+    Asked of the object rather than of pandas, so a polars frame or anything
+    else shaped like a table is not turned away for having the wrong parentage.
+
+    **A Spark frame has no length and cannot be asked for one**, because counting
+    its rows is a job rather than an attribute. So the question is whether it can
+    say what its columns are, which every table can, and then whether it can be
+    measured *or* describe its own types.
+
+    It lives here rather than beside the verbs because two things need it now:
+    a verb deciding whether it was handed a table, and a column position saying
+    so when it was.
+    """
+    if not hasattr(table, "columns"):
+        return False
+    return hasattr(table, "__len__") or hasattr(table, "dtypes")
+
+
 def name_of(value, where: str) -> str:
     """The column a name-taking position was given.
 
@@ -364,7 +384,32 @@ def name_of(value, where: str) -> str:
         return value._column
     if isinstance(value, str):
         return value
-    written = value._text if isinstance(value, Expr) else repr(value)
+    # **What it was handed is named rather than printed**, and the case that
+    # forced this is a whole table: `repr` of a DataFrame is the frame, so the
+    # message arrived with rows and columns in the middle of it and the reader
+    # had to find the sentence around them. Every verb that takes columns could
+    # produce it.
+    if is_frame(value):
+        raise GodExpressionError(
+            f"`{where}` names a column, and this is a whole table. "
+            f"A column of it is written `col.name`"
+        )
+    if isinstance(value, (list, tuple, set)):
+        raise GodExpressionError(
+            f"`{where}` takes its columns one at a time rather than in a list: "
+            f"`{where}(col.a, col.b)`"
+        )
+    if isinstance(value, Expr):
+        raise GodExpressionError(
+            f"`{where}` names a column, and `{value._text}` is a computed value. "
+            f"Make it a column first with `add`, then name it here"
+        )
+    # Anything else is small enough to show, and shown with its kind, because
+    # `3.14` alone does not say why it is wrong.
+    written = repr(value)
+    if len(written) > 60:
+        written = written[:57] + "..."
     raise GodExpressionError(
-        f"`{where}` names a column, and `{written}` is not a column name"
+        f"`{where}` names a column, and `{written}` is "
+        f"{type(value).__name__}, not a column name"
     )

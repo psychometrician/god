@@ -895,7 +895,10 @@ impl<'a> Parser<'a> {
                 Ok(Step::Sort { keys, span })
             }
 
-            "take" => match self.next() {
+            // One arm for both ends. They differ in which rows survive and in
+            // nothing else, so the shape, the `by` clause and the two messages
+            // are shared rather than written twice with one word changed.
+            "take" | "take_last" => match self.next() {
                 Some(Token { tok: Tok::Whole(n), span }) if n >= 0 => {
                     let by = if self.eat_word("by") {
                         self.expect_columns("`by` needs the columns that say which rows go together, in brackets: `by [id]`")?
@@ -903,14 +906,19 @@ impl<'a> Parser<'a> {
                         Vec::new()
                     };
                     let end = by.last().map(|n| n.span).unwrap_or(span);
-                    Ok(Step::Take { count: n as u64, by, span: start.to(end) })
+                    Ok(Step::Take {
+                        count: n as u64,
+                        by,
+                        last: word == "take_last",
+                        span: start.to(end),
+                    })
                 }
                 Some(Token { span, .. }) => Err(Diagnostic::illegal(
-                    "`take` needs a whole number of rows: `take 10`",
+                    format!("`{word}` needs a whole number of rows: `{word} 10`"),
                     span,
                 )),
                 None => Err(Diagnostic::illegal(
-                    "`take` needs a whole number of rows: `take 10`",
+                    format!("`{word}` needs a whole number of rows: `{word} 10`"),
                     start,
                 )),
             },

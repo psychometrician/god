@@ -392,11 +392,12 @@ god_name <- function(e, where) {
   if (is.character(e) && length(e) == 1L) {
     return(e)
   }
+  # **The verb was named twice**: `sort` names a column in sort. `where` is
+  # already the verb, so saying it once is the whole fix.
+  written <- paste(deparse(e), collapse = " ")
+  if (nchar(written) > 60) written <- paste0(substr(written, 1, 57), "...")
   stop(
-    sprintf(
-      "`%s` names a column in %s, and `%s` is not a column name",
-      where, where, paste(deparse(e), collapse = " ")
-    ),
+    sprintf("`%s` names a column, and `%s` is not a column name", where, written),
     call. = FALSE
   )
 }

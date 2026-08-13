@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ fifteen verbs, thirty-one functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-one functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
@@ -134,7 +134,7 @@ unrelated package, and **the import is `god` in both languages regardless**.
 ## The vocabulary
 
 **Verbs**, and the list is closed. `keep` · `pick` · `add` · `summarize` ·
-`sort` · `take` · `join` · `add_rows` · `add_combinations` ·
+`sort` · `take` · `take_last` · `join` · `add_rows` · `add_combinations` ·
 `drop_duplicates` · `rename` · `drop_missing` · `fill_missing` ·
 `lengthen` · `widen`
 

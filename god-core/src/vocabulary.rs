@@ -20,7 +20,8 @@
 /// brackets already say the arguments are columns, so naming the verb after them
 /// said it twice.
 pub const VERBS: &[&str] = &[
-    "keep", "pick", "add", "summarize", "sort", "take", "join", "add_rows",
+    "keep", "pick", "add", "summarize", "sort", "take", "take_last", "join",
+    "add_rows",
     "drop_duplicates", "rename", "drop_missing", "fill_missing",
     // Making the absent combinations appear. It is named for what it does to
     // the table — rows arrive underneath — which is why it joins `add_rows`

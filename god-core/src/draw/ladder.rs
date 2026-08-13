@@ -604,11 +604,14 @@ pub(crate) fn rows_notes(step: &Step, arrivals: &[Arrival]) -> Vec<(String, Ink)
             },
             Ink::Note,
         )),
-        Step::Take { count, by, .. } => said.push((
-            if by.is_empty() {
-                format!("at most {count} rows")
-            } else {
-                format!("at most {count} rows per group")
+        Step::Take { count, by, last, .. } => said.push((
+            {
+                let end = if *last { ", from the far end" } else { "" };
+                if by.is_empty() {
+                    format!("at most {count} rows{end}")
+                } else {
+                    format!("at most {count} rows per group{end}")
+                }
             },
             Ink::Note,
         )),

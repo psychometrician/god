@@ -67,8 +67,8 @@ pub(crate) fn step_text(step: &Step) -> String {
             format!("sort {}", written.join(", "))
         }
 
-        Step::Take { count, by, .. } => {
-            format!("take {count}{}", grouping(by))
+        Step::Take { count, by, last, .. } => {
+            format!("take{} {count}{}", if *last { "_last" } else { "" }, grouping(by))
         }
 
         Step::AddRows { other, .. } => format!("add_rows {}", other.text),

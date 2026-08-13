@@ -134,6 +134,76 @@ text, which is why no date machinery was needed. [The chapter on
 dates](dates.qmd) introduces the real date words for the shapes that do not
 sort on their own.
 
+## The other end
+
+`take` gives the rows a pipeline reaches first. `take_last` gives the ones at
+the far end, and the pair reads as what they do.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue]
+    then take_last 3
+    then pick [product, revenue]
+')
+```
+
+### R
+
+```{r}
+sales |> sort(revenue) |> take_last(3) |> pick(product, revenue)
+```
+
+### Python
+
+```{python}
+sales >> sort(col.revenue) >> take_last(3) >> pick(col.product, col.revenue)
+```
+
+:::
+
+*`sales then sort [revenue] then take_last 3 then pick [product, revenue]`*
+
+The answer comes back in the order the `sort` asked for, smallest first, and
+the three rows are the three largest. Sorting the other way and taking the
+first three gets the same rows in the opposite order, which is a different
+table and usually not the one that was wanted.
+
+`by` works here as it does on `take`:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [revenue]
+    then take_last 1 by [region]
+    then pick [region, product, revenue]
+')
+```
+
+### R
+
+```{r}
+sales |> sort(revenue) |> take_last(1, by = region) |> pick(region, product, revenue)
+```
+
+### Python
+
+```{python}
+sales >> sort(col.revenue) >> take_last(1, by = col.region) >> pick(col.region, col.product, col.revenue)
+```
+
+:::
+
+*`sales then sort [revenue] then take_last 1 by [region] then pick [region, product, revenue]`*
+
 ## What travels with it
 
 - `descending` belongs to the key it wraps, and only `sort` accepts it.
@@ -174,3 +244,33 @@ honest one. Peeking at some rows of a table is a real thing to want. But
 "the first of each group, by no particular order" is not a question: it is
 a coin toss dressed as one. A tool that answered it would be choosing your
 answer for you.
+
+`take_last` asks for a sort even ungrouped, and the reason is the same one
+read from the other side. The rows a pipeline reaches first are at least the
+rows it reached first; the rows at the far end are a claim about an end, and a
+table does not have one until something says which way it runs.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> take_last(3) |> collect()
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> take_last(3))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The message names `take` as the word that needs no sort, because wanting a few
+rows to look at is the common reason to arrive here, and that is the verb for
+it.

@@ -590,3 +590,19 @@ sales                                   region:text  product:text  revenue:numbe
                                         -region  -product  -revenue  -cost  -ordered_on
     one row per group
 ---
+sales then sort [revenue] then take_last 3 then pick [product, revenue]
+sales                      region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [revenue]           region  product  revenue  cost  ordered_on
+├ take_last 3              region  product  revenue  cost  ordered_on
+│   at most 3 rows, from the far end
+└ pick [product, revenue]  product  revenue
+                           -region  -cost  -ordered_on
+---
+sales then sort [revenue] then take_last 1 by [region] then pick [region, product, revenue]
+sales                              region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [revenue]                   region  product  revenue  cost  ordered_on
+├ take_last 1 by [region]          region  product  revenue  cost  ordered_on
+│   at most 1 rows per group, from the far end
+└ pick [region, product, revenue]  region  product  revenue
+                                   -cost  -ordered_on
+---

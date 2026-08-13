@@ -157,11 +157,12 @@ impl Backend for Pandas {
 
                 Step::Sort { keys, .. } => calls.push(sort_by(keys)),
 
-                Step::Take { count, by, .. } => {
+                Step::Take { count, by, last, .. } => {
+                    let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
-                        calls.push(format!("head({count})"));
+                        calls.push(format!("{end}({count})"));
                     } else {
-                        calls.push(format!("groupby({}, as_index=False).head({count})", list(by)));
+                        calls.push(format!("groupby({}, as_index=False).{end}({count})", list(by)));
                         if let Some(keys) = last_sort(plan, i) {
                             calls.push(sort_by(keys));
                         }

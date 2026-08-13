@@ -627,3 +627,25 @@ fn a_column_named_twice_is_refused_in_either_list() {
     assert!(refusal("sales then add_combinations [region, product] by [cost, cost]")
         .contains("named twice in `by`"));
 }
+
+// -- the rows at the far end -----------------------------------------------
+
+/// **`take_last` needs an order where `take` does not**, and the message says
+/// which of the two the reader wanted.
+#[test]
+fn take_last_needs_something_to_say_which_end() {
+    let message = refusal("sales then take_last 3");
+    assert!(message.contains("nothing has said which end that is"), "{message}");
+    assert!(message.contains("then sort"), "{message}");
+    assert!(
+        message.contains("`take` needs no sort"),
+        "the message should name the verb that does not need one: {message}"
+    );
+}
+
+/// A bare `take` is still allowed without a sort, which is the asymmetry the
+/// rule above is worth having.
+#[test]
+fn take_is_still_allowed_without_a_sort() {
+    assert!(compile("sales then take 3", &sales(), "sql").is_ok());
+}

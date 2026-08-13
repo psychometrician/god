@@ -279,13 +279,16 @@ impl Backend for Dplyr {
                         keys.join(", ")
                     )
                 }
-                Step::Take { count, by, .. } => {
+                // dplyr names both ends, so this is the one target where the
+                // grammar's pair maps onto a pair rather than onto a mechanism.
+                Step::Take { count, by, last, .. } => {
+                    let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
-                        format!("head({count})")
+                        format!("{end}({count})")
                     } else {
                         let groups: Vec<String> =
                             by.iter().map(|n| n.text.clone()).collect();
-                        format!("slice_head(n = {count}, by = c({}))", groups.join(", "))
+                        format!("slice_{end}(n = {count}, by = c({}))", groups.join(", "))
                     }
                 }
             };

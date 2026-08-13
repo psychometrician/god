@@ -108,6 +108,9 @@ fn verb_sentences() -> &'static [(&'static str, &'static str)] {
         ("summarize", r#"sales then summarize [n] as row_count()"#),
         ("sort", r#"sales then sort [revenue] descending"#),
         ("take", r#"sales then take 3"#),
+        // Always after a sort, which is the one rule that sets it apart from
+        // `take`: a table has no far end until something says which way it runs.
+        ("take_last", r#"sales then sort [revenue] then take_last 3"#),
         ("join", r#"sales then join products by [region]"#),
         ("add_rows", r#"sales then pick [region] then add_rows products"#),
         // Two columns, always: one on its own has no combinations to make, so

@@ -21,10 +21,10 @@ from __future__ import annotations
 
 import inspect
 
-from .columns import Expr, GodExpressionError, name_of, _value
+from .columns import Expr, GodExpressionError, is_frame as _is_frame, name_of, _value
 
 __all__ = [
-    "keep", "pick", "add", "summarize", "sort", "take", "join",
+    "keep", "pick", "add", "summarize", "sort", "take", "take_last", "join",
     "add_rows", "add_combinations", "drop_duplicates", "rename",
     "drop_missing", "fill_missing",
     "descending", "all_but", "collect",
@@ -157,19 +157,6 @@ def _open(table, verb: str) -> Pipeline:
 
     name = _name_in_caller(table)
     return Pipeline(name, {name: table})
-
-
-def _is_frame(table) -> bool:
-    # Asked of the object rather than of pandas, so a polars frame or anything
-    # else shaped like a table is not turned away for having the wrong parentage.
-    #
-    # **A Spark frame has no length and cannot be asked for one**, because
-    # counting its rows is a job rather than an attribute. So the question is
-    # whether it can say what its columns are, which every table can, and then
-    # whether it can be measured *or* describe its own types.
-    if not hasattr(table, "columns"):
-        return False
-    return hasattr(table, "__len__") or hasattr(table, "dtypes")
 
 
 def _name_in_caller(table) -> str:
@@ -414,6 +401,31 @@ def take(n, *, by=None):
         raise GodExpressionError("`take` needs a whole number of rows: take(10)")
     grouping = _grouping(by)
     return _Verb("take", lambda: f"take {n}{grouping}")
+
+
+def take_last(n, *, by=None):
+    """The last n rows, or the last n of each group.
+
+    The other end of ``take``. It always needs a ``sort`` before it, where a bare
+    ``take`` does not: "the first rows" of an unsorted table is at least the rows
+    the pipeline reached first, and "the last rows" is a claim about an end that a
+    table does not have until something says which way it runs.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> sort(col.revenue) >> take_last(2))
+      region  revenue
+    0   East      120
+    1   West      150
+    """
+    if isinstance(n, Expr) or isinstance(n, bool) or not isinstance(n, int):
+        raise GodExpressionError("`take_last` needs a whole number of rows: take_last(10)")
+    grouping = _grouping(by)
+    return _Verb("take_last", lambda: f"take_last {n}{grouping}")
 
 
 def join(other, *, by=None, unmatched="this"):
