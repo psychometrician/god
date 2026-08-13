@@ -27,6 +27,14 @@ The rows a pipeline reaches first are at least the rows it reached
 first; the rows at the far end are a claim about an end, and a table
 does not have one until something says which way it runs.
 
+### One exception to catch, in Python
+
+`GodExpressionError` was not a `GodError`, so `except GodError` — the
+line every chapter of the manual teaches — did not catch it. A mistake
+the binding spots before a sentence is built, like passing a whole table
+where a column belongs, escaped the handler and crashed. It is a
+`GodError` now. One idea, one exception to catch.
+
 ### A column position says what it was handed
 
 Passing a whole table where a column belongs used to print the entire

@@ -219,8 +219,55 @@ class Expr:
     __hash__ = None
 
 
-class GodExpressionError(Exception):
-    """Something in an expression the grammar cannot be given."""
+class GodError(Exception):
+    """A pipeline god refused. The one exception a caller has to know.
+
+    **Every refusal is one of these, wherever it was raised**, and that is what
+    lets a reader write one `except` around a pipeline. The grammar's own
+    refusals arrive from the engine; a few are raised here instead, before a
+    sentence is even built, because a whole table where a column belongs is a
+    mistake worth naming at the point it is made rather than letting it reach
+    the engine as something stranger.
+
+    It lives in this module rather than beside `run` because this is the lower
+    one: a binding-level refusal cannot subclass an error defined above it
+    without a cycle. `run` re-exports it, so `from god.run import GodError`
+    still means what it always did.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West"], "revenue": [100]})
+    >>> products = pd.DataFrame({"product": ["Widget"]})
+
+    >>> try:
+    ...     collect(sales >> keep(col.reveune > 1))
+    ... except GodError as refusal:
+    ...     print(refusal)
+    <BLANKLINE>
+    illegal: there is no column called `reveune`. Did you mean `revenue`? The table has: region, revenue
+      |
+    2 |   then keep where ([reveune] > 1)
+      |                     ^^^^^^^
+
+    >>> try:
+    ...     collect(sales >> pick(products))
+    ... except GodError as refusal:
+    ...     print(refusal)
+    `pick` names a column, and this is a whole table. A column of it is written `col.name`
+    """
+
+
+class GodExpressionError(GodError):
+    """Something in an expression the grammar cannot be given.
+
+    **A `GodError`, deliberately.** It was a bare `Exception` until 2026-08-13,
+    which meant the `except GodError` every chapter of the manual teaches did
+    not catch it: a reader who followed the book and wrote `pick(products)` got
+    an uncaught crash rather than a refusal, and could not catch it by name
+    either, since this class is not exported. One idea, one exception to catch.
+    """
 
 
 class _Columns:

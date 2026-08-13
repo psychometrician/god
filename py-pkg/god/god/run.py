@@ -28,27 +28,10 @@ from pathlib import Path
 __all__ = ["run", "show_as", "show_steps", "god_sql", "GodError"]
 
 
-class GodError(Exception):
-    """A pipeline the grammar refused.
-
-    The message is the grammar's own, already rendered with its caret. Wrapping
-    it in "god-cli failed (exit 2)" would replace something written for a person
-    with something written for a program.
-
-    Examples
-    --------
-    >>> import pandas as pd
-    >>> from god import *
-    >>> sales = pd.DataFrame({"region": ["West"], "revenue": [100]})
-    >>> try:
-    ...     collect(sales >> keep(col.reveune > 1))
-    ... except GodError as refusal:
-    ...     print(refusal)
-    illegal: there is no column called `reveune`. Did you mean `revenue`? The table has: region, revenue
-      |
-    2 |   then keep where ([reveune] > 1)
-      |                     ^^^^^^^
-    """
+# **Re-exported rather than defined here**, so that the binding's own refusals
+# can be `GodError`s too. `columns.py` is the lower module and cannot import
+# this one; the class moved down and this name keeps working.
+from .columns import GodError  # noqa: F401  (re-exported for callers)
 
 
 def run(pipeline: str, **tables):

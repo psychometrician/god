@@ -138,3 +138,35 @@ The message names the nearest real column and then lists everything the
 table has, because the second most common cause of this error is not a typo
 at all: it is being wrong about which table you are holding. Both repairs are
 on the screen, and neither requires opening another window.
+
+A whole table where a column belongs is answered before a sentence is even
+built, and the two languages get there differently. Python is handed the frame
+itself, so it says what it was given; R is handed the *name* `products`
+unevaluated, so the grammar looks for a column of that name and reports what
+the table actually has.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> pick(products))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> pick(products))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Both are `GodError`, which is the one exception either language asks you to
+catch. That is worth knowing because the mistake above is caught by the binding
+rather than by the engine, and a refusal you cannot catch the same way as every
+other refusal would be a second thing to remember for one idea.
