@@ -26,11 +26,29 @@ and calling it agreement.
 """
 
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+
+# **Each run gets its own directory, so two of these can run at once.** They
+# could not before: the driver and the sentence under test were written to
+# `parity/.driver.R` and `parity/.pipeline.god`, fixed names, so a second run
+# overwrote the sentence between the write and the `Rscript` that read it and
+# each witness answered the other run's question. Nothing raised. The tables
+# simply disagreed — 57 of 75 in the run that found this, and 52 of 75 in the
+# one it was racing — which reads exactly like a regression and is not one.
+#
+# More than one agent works in this tree at a time, and the suites are the first
+# thing each of them runs, so this was a live way to lose an afternoon chasing a
+# break that did not exist.
+#
+# It also cannot leave a stray behind in the repository, which is what the fixed
+# names were being cleaned up to avoid.
+SCRATCH = Path(tempfile.mkdtemp(prefix="god-parity-"))
 sys.path.insert(0, str(ROOT / "py-pkg" / "god"))
 
 import pandas as pd  # noqa: E402
@@ -67,9 +85,9 @@ if (mode == "sql") {
 
 
 def r(pipeline: str, mode: str) -> str:
-    driver = ROOT / "parity" / ".driver.R"
+    driver = SCRATCH / "driver.R"
     driver.write_text(R_DRIVER)
-    text = ROOT / "parity" / ".pipeline.god"
+    text = SCRATCH / "pipeline.god"
     text.write_text(pipeline)
     result = subprocess.run(
         ["Rscript", str(driver), str(FIXTURE), str(text), mode],
@@ -189,14 +207,14 @@ def sentences(path: Path) -> list[str]:
 
 
 def main() -> int:
-    # The working files are cleaned up even when a witness dies mid-loop: the
-    # allowlist .gitignore makes any leftover a visible stray in `git status`,
-    # and an exception used to leak them past the cleanup at the loop's end.
+    # The working directory goes even when a witness dies mid-loop: an exception
+    # used to leak the working files past the cleanup at the loop's end, back
+    # when they were written into the repository and a leftover was a visible
+    # stray in `git status`.
     try:
         return _main()
     finally:
-        for leftover in (".driver.R", ".pipeline.god"):
-            (ROOT / "parity" / leftover).unlink(missing_ok=True)
+        shutil.rmtree(SCRATCH, ignore_errors=True)
 
 
 def _main() -> int:
