@@ -22,17 +22,26 @@ in code you can read because you watched it being written.
 | List-columns and nested data | god reads a table of plain values; nest and unnest in the host |
 | `widen` with several value columns at once | one `name`, one `value` per `widen`; run it twice and `join` |
 | Joins on anything but equality (ranges, nearest) | equality joins only; inequality joins in the host |
-| Random sampling | refused by the settled-answer law; sample in the host, then hand the table over |
+| Random sampling | neither built nor refused, for the reason below; sample in the host, then hand the table over |
 | The long aggregate shelf (variance, quantiles, weighted means, mode) | nine aggregations; the rest via `show_as` |
 | Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
 | Window frames (`ROWS BETWEEN 3 PRECEDING`) | `running_total`, `previous`, `following` are the whole windowed family today |
 | Reading a file into a pipeline (`scan_csv`, `scan_parquet`) | read it in the host and hand the frame over; for data that outgrows the machine, [somewhere else](../chapters/somewhere-else.qmd) |
 
-Two of these are refusals with a law behind them rather than absences, and
-the distinction matters: sampling and arbitrary functions will not arrive
-later, because the settled-answer law and the closed-cell law refuse them on
-purpose. The others are ordinary absences, candidates like any other word,
-waiting on the growth test every candidate faces.
+One of these is a refusal with a law behind it rather than an absence, and the
+distinction matters: an arbitrary function in a cell will not arrive later,
+because the closed-cell law refuses it on purpose.
+
+Random sampling is the row to read carefully, because it is neither a refusal
+nor an ordinary absence. Randomly chosen rows are everyday work, and what
+stands in the way is the seed: a seed written into a sentence is a value that
+changes the answer without changing the question, which is the thing the
+settled-answer law forbids. Refusing it outright is not obviously right
+either, so it is recorded as a lead and left open. If it is ever taken, this
+page says so rather than quietly changing.
+
+The others are ordinary absences, candidates like any other word, waiting on
+the growth test every candidate faces.
 
 ## What god does that they do not
 
