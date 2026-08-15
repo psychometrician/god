@@ -228,6 +228,10 @@ book:
     - appendices/f-where-words-stand.qmd
     - appendices/g-where-the-speed-lives.qmd
     - appendices/h-the-machine-underneath.qmd
+    # Same reason as f and g: appended so a through h keep their letters, which
+    # prose cites by name. This one is the "can it do what I already do?" page,
+    # and it is the only one that runs another library's code and compares.
+    - appendices/i-the-same-task.qmd
 
 # The provenance layer: the grammar's ideas are old, and the book says whose
 # they are. APA because the sibling book uses it, and one style across the two

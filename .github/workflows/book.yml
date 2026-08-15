@@ -110,9 +110,14 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2
         with:
           working-directory: r-pkg/god
+          # dplyr, tidyr and data.table are the appendix that runs the
+          # neighbours' own code and compares their tables against god's. They
+          # are a *book* dependency and deliberately not god's: a reader
+          # installing the package needs none of them.
           extra-packages: >-
             any::pkgload, any::reticulate, any::knitr, any::rmarkdown,
-            any::DBI, any::duckdb, any::gog
+            any::DBI, any::duckdb, any::gog,
+            any::dplyr, any::tidyr, any::data.table
 
       - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2
 
@@ -145,13 +150,17 @@ jobs:
         run: |
           python3 -m venv book/.venv
           book/.venv/bin/pip install --quiet --upgrade pip
-          book/.venv/bin/pip install --quiet pandas duckdb gog jinja2
+          # polars is the appendix's fifth neighbour; pyarrow is what lets
+          # polars read a pandas 3.0 frame at all, so the two travel together.
+          book/.venv/bin/pip install --quiet pandas duckdb gog jinja2 polars pyarrow
           book/.venv/bin/python - <<'PY'
           import pandas as pd, duckdb, gog, jinja2
           # The accessor, not just the import: a present jinja2 that pandas
           # cannot reach would pass an import check and fail the render.
           pd.DataFrame({"a": [1]}).style.hide(axis="index")
-          print("venv ok:", pd.__version__, duckdb.__version__, gog.__version__)
+          import polars, pyarrow
+          print("venv ok:", pd.__version__, duckdb.__version__, gog.__version__,
+                polars.__version__, pyarrow.__version__)
           PY
 
       # The book's guards, before the render rather than after it. Each one is

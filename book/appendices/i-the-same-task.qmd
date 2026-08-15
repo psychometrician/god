@@ -1,0 +1,1450 @@
+---
+title: "The same task, five ways"
+---
+
+{{< include ../_setup.qmd >}}
+
+```{r}
+#| include: false
+# The four neighbours, attached quietly. `data.table` is the one that needs
+# saying: it is not a `show_as` target and is not going to be one, so its column
+# here is written by hand where the other three could have been generated. That
+# is why every entry on this page is *executed and compared* rather than read:
+# a hand-written cell can be wrong in a way no reader would see.
+#
+# **The neighbours are attached first and god is attached after them, and the
+# order is load-bearing.** god and dplyr export four names in common
+# (`collect`, `pick`, `rename` and `summarize`), so whichever is attached last
+# wins. With dplyr last, a god pipeline handed to `collect()` reaches dplyr's
+# generic, which has no method for it and says so in R's words rather than the
+# book's. Attaching god last is what lets every column below be written the
+# bare way its own readers write it. Where a dplyr example needs one of the
+# four, it says `dplyr::` outright.
+suppressMessages({
+  library(dplyr, warn.conflicts = FALSE)
+  library(tidyr, warn.conflicts = FALSE)
+  library(data.table)
+  pkgload::load_all(find_up("r-pkg/god"), export_all = FALSE, quiet = TRUE)
+})
+
+# Two tables agree when they hold the same values, whatever order they arrived
+# in and whatever each library calls its integers.
+#
+# **Row order is normalized away on purpose, and only here.** Order is a
+# meaningful part of an answer, and the sorting entries below check it by
+# comparing the sorted column itself. What this page is asking of every other
+# entry is whether the same rows and values came back, and five libraries
+# disagreeing about row order for an unordered question is a fact about them
+# rather than a defect in any of them.
+.tidy <- function(d) {
+  d <- as.data.frame(d, stringsAsFactors = FALSE)
+  rownames(d) <- NULL
+  d <- d[, order(names(d)), drop = FALSE]
+  for (j in seq_along(d)) {
+    if (is.factor(d[[j]])) d[[j]] <- as.character(d[[j]])
+    if (is.integer(d[[j]])) d[[j]] <- as.double(d[[j]])
+  }
+  if (nrow(d) > 1L) d <- d[do.call(order, lapply(d, as.character)), , drop = FALSE]
+  rownames(d) <- NULL
+  d
+}
+
+# Every entry ends here. A disagreement stops the render, which is the whole
+# point: this page's claim is that the answers are the same, and a claim the
+# build does not test is a claim nobody is keeping.
+.agree <- function(task, god, ...) {
+  others <- list(...)
+  g <- .tidy(god)
+  for (nm in names(others)) {
+    o <- .tidy(others[[nm]])
+    if (!isTRUE(all.equal(g, o, tolerance = 1e-8, check.attributes = FALSE))) {
+      stop(sprintf(
+        "%s: god and %s returned different tables.\n  god has %d row(s), %d column(s); %s has %d, %d.",
+        task, nm, nrow(g), ncol(g), nm, nrow(o), ncol(o)), call. = FALSE)
+    }
+  }
+  .checked <<- .checked + length(others)
+  invisible(TRUE)
+}
+.checked <- 0L
+```
+
+```{python}
+#| include: false
+import polars as pl
+
+# The two Python neighbours run on the same rows as the R ones. pandas already
+# arrived with the setup; polars is built from it so that no fixture is defined
+# twice and drifts.
+pl_sales = pl.from_pandas(sales)
+pl_products = pl.from_pandas(products)
+pl_marks = pl.from_pandas(marks)
+pl_messy = pl.from_pandas(messy)
+
+
+def for_r(df):
+    """A pandas frame in a shape R can actually read.
+
+    **pandas 3.0 stores text as `StringDtype`, and reticulate does not convert
+    it.** A string column crosses into R as the Python extension array itself
+    rather than as a character vector, so a comparison on the R side sees an
+    object where it expected two values and stops on a length mismatch that
+    says nothing about the tables. Casting back to plain object dtype is what
+    makes the column ordinary again. Numbers and booleans already cross
+    cleanly and are left alone.
+    """
+    out = df.copy()
+    for column in out.columns:
+        if not (pd.api.types.is_numeric_dtype(out[column])
+                or pd.api.types.is_bool_dtype(out[column])):
+            out[column] = out[column].astype(object)
+    return out
+```
+
+If you write dplyr, tidyr, pandas, polars or data.table today, this appendix is
+the one that answers the question you actually have: *can it do what I already
+do?* Each entry states a task in English, shows what you would write in each of
+the five, shows god's sentence, and then shows the answer once, because all six
+produce the same table, and the page refuses to build if any of them does not.
+
+That last part is the difference between this appendix and a comparison table.
+Nothing here is asserted. Every cell runs when the book is built, and the
+tables are compared value by value; a disagreement stops the build rather than
+reaching you. The code in each neighbour's column is written the way somebody
+fluent in it would write it, not generated, so what you are reading is a fair
+comparison rather than god's own output wearing five costumes.
+
+**What this page is not** is a claim that god does everything these libraries
+do. It does not, on purpose, and
+[what this grammar does not do](e-coverage.qmd) is the list: regular
+expressions, rolling windows, arbitrary functions in a cell, and six more, each
+with the exit named. What this page claims is narrower and more useful: the
+ordinary work, the operations that make up most days, are all sayable in one
+small vocabulary that reads the same in two languages.
+
+The tables are the book's usual cast, described in
+[the preface](../index.qmd). `sales` is fifteen rows of orders.
+
+## Keep the rows above a value
+
+Which orders brought in more than 150?
+
+### god
+
+```{r}
+answer <- sales |> keep(revenue > 150) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> filter(revenue > 150)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales[sales.revenue > 150]
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.filter(pl.col("revenue") > 150)
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[revenue > 150]
+```
+
+```{r}
+#| echo: false
+.agree("keep the rows above a value", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Five spellings of one idea. god's is the only one that reads as a sentence,
+and the only one that is the same in both languages.
+
+## Total a column for each group
+
+What did each product earn in total, and across how many orders?
+
+### god
+
+```{r}
+answer <- sales |>
+  summarize(earned = total(revenue), orders = row_count(), by = product) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  group_by(product) |>
+  summarise(earned = sum(revenue), orders = n(), .groups = "drop")
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .groupby("product")
+  .agg(earned=("revenue", "sum"), orders=("revenue", "size"))
+  .reset_index())
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.group_by("product").agg(
+    pl.col("revenue").sum().alias("earned"),
+    pl.len().alias("orders"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(earned = sum(revenue), orders = .N), by = product]
+```
+
+```{r}
+#| echo: false
+.agree("total a column for each group", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Note how each library spells *count the rows*: `n()`, `size`, `pl.len()`, `.N`.
+god says `row_count()`, which is the same word in R and in Python.
+
+## Turn rows into columns
+
+Each student answered two questions. Put one row per student, one column per
+question.
+
+### god
+
+```{r}
+answer <- marks |> widen(name = question, value = mark) |> collect()
+```
+
+### tidyr
+
+```{r}
+by_dplyr <- marks |> pivot_wider(names_from = question, values_from = mark)
+```
+
+### pandas
+
+```{python}
+by_pandas = (marks
+  .pivot(index="student", columns="question", values="mark")
+  .reset_index()
+  .rename_axis(None, axis=1))
+```
+
+### polars
+
+```{python}
+by_polars = pl_marks.pivot(on="question", index="student", values="mark")
+```
+
+### data.table
+
+```{r}
+by_dt <- dcast(as.data.table(marks), student ~ question, value.var = "mark")
+```
+
+```{r}
+#| echo: false
+.agree("turn rows into columns", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Five names for one idea: `pivot_wider`, `pivot`, `pivot`, `dcast`, and `widen`.
+Only one of them says in the verb what happens to the table.
+
+## Keep the rows matching a word
+
+Which orders came from the West?
+
+### god
+
+```{r}
+answer <- sales |> keep(region == "West") |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> filter(region == "West")
+```
+
+### pandas
+
+```{python}
+by_pandas = sales[sales.region == "West"]
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.filter(pl.col("region") == "West")
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[region == "West"]
+```
+
+```{r}
+#| echo: false
+.agree("keep the rows matching a word", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+god writes `is` in the text form and `==` in both host languages, because
+that is what each host already means by it.
+
+## Choose some columns
+
+Just the product and what it earned.
+
+### god
+
+```{r}
+answer <- sales |> pick(product, revenue) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> select(product, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales[["product", "revenue"]]
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.select("product", "revenue")
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(product, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("choose some columns", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Four of the five name the columns they want. god does too, and says `pick`,
+which is a verb where `select` and `[[ ]]` are not.
+
+## Drop a column
+
+Everything except what it cost.
+
+### god
+
+```{r}
+answer <- sales |> pick(all_but(cost)) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> select(-cost)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.drop(columns=["cost"])
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.drop("cost")
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, !"cost"]
+```
+
+```{r}
+#| echo: false
+.agree("drop a column", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`all_but` is the same word wherever it stands, where the neighbours reach for
+a minus sign, a `drop`, and a `!`.
+
+## Add a computed column
+
+What did each order make?
+
+### god
+
+```{r}
+answer <- sales |> add(margin = revenue - cost) |> pick(product, margin) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> mutate(margin = revenue - cost) |> select(product, margin)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.assign(margin=sales.revenue - sales.cost)[["product", "margin"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns((pl.col("revenue") - pl.col("cost")).alias("margin"))
+  .select("product", "margin"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(product, margin = revenue - cost)]
+```
+
+```{r}
+#| echo: false
+.agree("add a computed column", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`mutate`, `assign`, `with_columns`, `:=`, and `add`. Only the last one is a
+word a reader who has never seen it would guess correctly.
+
+## Average a column for each group
+
+What is the typical order in each region?
+
+### god
+
+```{r}
+answer <- sales |> summarize(typical = average(revenue), by = region) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  group_by(region) |>
+  summarise(typical = mean(revenue), .groups = "drop")
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .groupby("region")
+  .agg(typical=("revenue", "mean"))
+  .reset_index())
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.group_by("region").agg(
+    pl.col("revenue").mean().alias("typical"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(typical = mean(revenue)), by = region]
+```
+
+```{r}
+#| echo: false
+.agree("average a column for each group", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`by` is an argument in god rather than a step, so grouping cannot outlive the
+sentence that asked for it.
+
+## Sort and take the top few
+
+The five biggest orders.
+
+### god
+
+```{r}
+answer <- sales |> sort(descending(revenue)) |> take(5) |> pick(product, revenue) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> arrange(desc(revenue)) |> head(5) |> select(product, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .sort_values("revenue", ascending=False)
+  .head(5)[["product", "revenue"]])
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .sort("revenue", descending=True)
+  .head(5)
+  .select("product", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- head(as.data.table(sales)[order(-revenue)], 5)[, .(product, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("sort and take the top few", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Every library here spells *reverse the order* differently: `desc`,
+`ascending=False`, `descending=True`, a minus sign. god says `descending`.
+
+## Take the rows at the far end
+
+The three smallest orders, smallest last.
+
+### god
+
+```{r}
+answer <- sales |> sort(descending(revenue)) |> take_last(3) |> pick(product, revenue) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> arrange(desc(revenue)) |> tail(3) |> select(product, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .sort_values("revenue", ascending=False)
+  .tail(3)[["product", "revenue"]])
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .sort("revenue", descending=True)
+  .tail(3)
+  .select("product", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- tail(as.data.table(sales)[order(-revenue)], 3)[, .(product, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("take the rows at the far end", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+This is the entry that produced a word. `take_last` came out of the polars and
+pandas sweeps, both of which called it `tail`, because sorting the other way
+and taking the first three returns the same rows backwards.
+
+## Bring in a column from another table
+
+Who makes each product?
+
+### god
+
+```{r}
+answer <- sales |>
+  join(products, by = product) |>
+  pick(product, maker, revenue) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  left_join(products, by = "product") |>
+  select(product, maker, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.merge(products, on="product", how="left")[["product", "maker", "revenue"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .join(pl_products, on="product", how="left")
+  .select("product", "maker", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- merge(as.data.table(sales), as.data.table(products),
+               by = "product", all.x = TRUE)[, .(product, maker, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("bring in a column from another table", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+god has one `join` and an `unmatched` word for whose rows survive, where the
+neighbours have four verbs or a `how=` argument. Note which way the default
+falls: god keeps the rows it started with, so `Sprocket` survives with no
+maker rather than disappearing. Writing this entry with `inner_join` is what
+the page's own comparison caught, on the row count.
+
+## Ask whether a row has a partner
+
+Which orders are for a product the catalogue lists?
+
+### god
+
+```{r}
+answer <- sales |>
+  keep(matching(products, by = product)) |>
+  pick(product, revenue) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> semi_join(products, by = "product") |> select(product, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales[sales["product"].isin(products["product"])][["product", "revenue"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .join(pl_products.select("product"), on="product", how="semi")
+  .select("product", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[product %chin% products$product, .(product, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("ask whether a row has a partner", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`matching` is a question rather than a join, so it cannot multiply rows. That
+is a promise `merge` and `isin` do not make in the same breath.
+
+## Turn columns into rows
+
+Two measures per order, one row each.
+
+### god
+
+```{r}
+answer <- sales |>
+  pick(product, revenue, cost) |>
+  lengthen(revenue, cost, name = measure, value = amount) |>
+  collect()
+```
+
+### tidyr
+
+```{r}
+by_dplyr <- sales |>
+  select(product, revenue, cost) |>
+  pivot_longer(c(revenue, cost), names_to = "measure", values_to = "amount")
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales[["product", "revenue", "cost"]]
+  .melt(id_vars="product", var_name="measure", value_name="amount"))
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .select("product", "revenue", "cost")
+  .unpivot(index="product", variable_name="measure", value_name="amount"))
+```
+
+### data.table
+
+```{r}
+by_dt <- melt(as.data.table(sales)[, .(product, revenue, cost)],
+              id.vars = "product", variable.name = "measure",
+              value.name = "amount", variable.factor = FALSE)
+```
+
+```{r}
+#| echo: false
+.agree("turn columns into rows", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`lengthen` and `widen` are one idea read in both directions, and they are the
+only pair here that says so in the words themselves.
+
+## Choose between values
+
+Label each order by size.
+
+### god
+
+```{r}
+answer <- sales |>
+  add(size = when(revenue >= 200, "big", revenue >= 100, "medium", otherwise = "small")) |>
+  pick(product, revenue, size) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  mutate(size = case_when(revenue >= 200 ~ "big",
+                          revenue >= 100 ~ "medium",
+                          .default = "small")) |>
+  select(product, revenue, size)
+```
+
+### pandas
+
+```{python}
+import numpy as np
+by_pandas = sales.assign(size=np.select(
+    [sales.revenue >= 200, sales.revenue >= 100],
+    ["big", "medium"], default="small"))[["product", "revenue", "size"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.when(pl.col("revenue") >= 200).then(pl.lit("big"))
+                  .when(pl.col("revenue") >= 100).then(pl.lit("medium"))
+                  .otherwise(pl.lit("small")).alias("size"))
+  .select("product", "revenue", "size"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(product, revenue,
+  size = fifelse(revenue >= 200, "big", fifelse(revenue >= 100, "medium", "small")))]
+```
+
+```{r}
+#| echo: false
+.agree("choose between values", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+polars needs `pl.lit` around every one of those words, because a bare string
+there is read as a column name. That is the defect class this book's printed-code
+harness was built to catch, and it is why this page runs everything it shows.
+
+## Number the rows in order
+
+Where does each order place, biggest first?
+
+### god
+
+```{r}
+answer <- sales |>
+  add(place = rank(descending(revenue))) |>
+  pick(product, revenue, place) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  mutate(place = min_rank(desc(revenue))) |>
+  select(product, revenue, place)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.assign(
+    place=sales.revenue.rank(ascending=False, method="min").astype("int64")
+)[["product", "revenue", "place"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.col("revenue").rank(method="min", descending=True)
+                  .cast(pl.Int64).alias("place"))
+  .select("product", "revenue", "place"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(product, revenue,
+                                  place = frank(-revenue, ties.method = "min"))]
+```
+
+```{r}
+#| echo: false
+.agree("number the rows in order", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`rank` is the one window word that needs no `sort` in front of it, because its
+argument already says what the order is.
+
+## Total as you go down the rows
+
+How does revenue accumulate, smallest order first?
+
+### god
+
+```{r}
+answer <- sales |>
+  sort(revenue) |>
+  add(so_far = running_total(revenue)) |>
+  pick(revenue, so_far) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  arrange(revenue) |>
+  mutate(so_far = cumsum(revenue)) |>
+  select(revenue, so_far)
+```
+
+### pandas
+
+```{python}
+_sorted = sales.sort_values("revenue", kind="stable")
+by_pandas = _sorted.assign(so_far=_sorted.revenue.cumsum())[["revenue", "so_far"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .sort("revenue")
+  .with_columns(pl.col("revenue").cum_sum().alias("so_far"))
+  .select("revenue", "so_far"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[order(revenue), .(revenue, so_far = cumsum(revenue))]
+```
+
+```{r}
+#| echo: false
+.agree("total as you go down the rows", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+god refuses `running_total` without a `sort` in front of it. The other four
+compute happily on whatever order the rows happen to be in, which is an answer
+that can change between runs.
+
+## Trim the spaces off a text column
+
+The names arrived padded.
+
+### god
+
+```{r}
+answer <- messy |> add(name = trim(raw)) |> pick(name, n) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- messy |> mutate(name = trimws(raw)) |> select(name, n)
+```
+
+### pandas
+
+```{python}
+by_pandas = messy.assign(name=messy.raw.str.strip())[["name", "n"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_messy
+  .with_columns(pl.col("raw").str.strip_chars().alias("name"))
+  .select("name", "n"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(messy)[, .(name = trimws(raw), n)]
+```
+
+```{r}
+#| echo: false
+.agree("trim the spaces off a text column", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`trimws`, `str.strip`, `str.strip_chars`, `trimws`, `trim`. The same operation,
+five spellings, and no two libraries agree.
+
+## Change a column's case
+
+Shout the region.
+
+### god
+
+```{r}
+answer <- sales |> add(loud = upper(region)) |> pick(region, loud) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> mutate(loud = toupper(region)) |> select(region, loud)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.assign(loud=sales.region.str.upper())[["region", "loud"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.col("region").str.to_uppercase().alias("loud"))
+  .select("region", "loud"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(region, loud = toupper(region))]
+```
+
+```{r}
+#| echo: false
+.agree("change a column's case", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`upper` and `lower` are the two everyone has. god spells them the shortest
+way that still says which direction.
+
+## Take a piece of a text column
+
+The part of each product name before the letter `d`.
+
+### god
+
+```{r}
+answer <- sales |> add(head = split_text(product, "d", 1)) |> pick(product, head) |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  mutate(head = vapply(strsplit(product, "d", fixed = TRUE), `[`, "", 1L)) |>
+  select(product, head)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.assign(
+    head=sales["product"].str.split("d").str[0])[["product", "head"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.col("product").str.split("d").list.get(0).alias("head"))
+  .select("product", "head"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(product,
+  head = vapply(strsplit(product, "d", fixed = TRUE), `[`, "", 1L))]
+```
+
+```{r}
+#| echo: false
+.agree("take a piece of a text column", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+god counts pieces from 1, and says which piece it wants in the call. The two
+R spellings need a `vapply` around a list, which is the shape this grammar is
+trying to spare you.
+
+## Put text back together
+
+Label each order with its region and product.
+
+### god
+
+```{r}
+answer <- sales |>
+  add(label = join_text(region, " ", product)) |>
+  pick(label, revenue) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  mutate(label = paste0(region, " ", product)) |>
+  select(label, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = sales.assign(
+    label=sales.region + " " + sales["product"])[["label", "revenue"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.concat_str([pl.col("region"), pl.lit(" "), pl.col("product")])
+                  .alias("label"))
+  .select("label", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(label = paste0(region, " ", product), revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("put text back together", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`join_text` is the sweep's second finding: god could take text apart with
+`split_text` and could not put it back, which is an asymmetry no law asked for.
+
+## Pull the year out of a date
+
+Which year did each order land in?
+
+### god
+
+```{r}
+answer <- sales |>
+  add(d = to_date(date)) |>
+  add(y = year(d), m = month(d)) |>
+  pick(date, y, m) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  mutate(d = as.Date(date),
+         y = as.numeric(format(d, "%Y")),
+         m = as.numeric(format(d, "%m"))) |>
+  select(date, y, m)
+```
+
+### pandas
+
+```{python}
+_d = pd.to_datetime(sales.date)
+by_pandas = sales.assign(y=_d.dt.year, m=_d.dt.month)[["date", "y", "m"]]
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .with_columns(pl.col("date").str.to_date().alias("d"))
+  .with_columns(pl.col("d").dt.year().alias("y"),
+                pl.col("d").dt.month().alias("m"))
+  .select("date", "y", "m"))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, {
+  d <- as.Date(date)
+  .(date, y = as.numeric(format(d, "%Y")), m = as.numeric(format(d, "%m")))
+}]
+```
+
+```{r}
+#| echo: false
+.agree("pull the year out of a date", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+Every library here needs the text turned into a date first, and god is the
+only one that makes you say so: `to_date` is never applied on your behalf.
+
+## Fill the holes in a column
+
+The catalogue does not list every product. Say so rather than leaving a blank.
+
+### god
+
+```{r}
+answer <- sales |>
+  join(products, by = product) |>
+  fill_missing(maker = "unlisted") |>
+  pick(product, maker) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  left_join(products, by = "product") |>
+  mutate(maker = coalesce(maker, "unlisted")) |>
+  select(product, maker)
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .merge(products, on="product", how="left")
+  .fillna({"maker": "unlisted"})[["product", "maker"]])
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .join(pl_products, on="product", how="left")
+  .with_columns(pl.col("maker").fill_null("unlisted"))
+  .select("product", "maker"))
+```
+
+### data.table
+
+```{r}
+by_dt <- merge(as.data.table(sales), as.data.table(products),
+               by = "product", all.x = TRUE)[
+  , .(product, maker = fifelse(is.na(maker), "unlisted", maker))]
+```
+
+```{r}
+#| echo: false
+.agree("fill the holes in a column", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`fill_missing` refuses a filler of the wrong kind: a number into a text
+column is a refusal rather than a silent coercion, which is the one place
+this list's neighbours differ from each other most.
+
+## Drop the rows with a hole
+
+Only the orders whose product the catalogue lists.
+
+### god
+
+```{r}
+answer <- sales |>
+  join(products, by = product) |>
+  drop_missing(maker) |>
+  pick(product, maker, revenue) |>
+  collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |>
+  left_join(products, by = "product") |>
+  filter(!is.na(maker)) |>
+  select(product, maker, revenue)
+```
+
+### pandas
+
+```{python}
+by_pandas = (sales
+  .merge(products, on="product", how="left")
+  .dropna(subset=["maker"])[["product", "maker", "revenue"]])
+```
+
+### polars
+
+```{python}
+by_polars = (pl_sales
+  .join(pl_products, on="product", how="left")
+  .drop_nulls("maker")
+  .select("product", "maker", "revenue"))
+```
+
+### data.table
+
+```{r}
+by_dt <- merge(as.data.table(sales), as.data.table(products),
+               by = "product", all.x = TRUE)[!is.na(maker),
+                                             .(product, maker, revenue)]
+```
+
+```{r}
+#| echo: false
+.agree("drop the rows with a hole", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`drop_missing` names the column it is judging. A bare `dropna()` judges every
+column at once, which is a different question wearing the same name.
+
+## Remove exact repeats
+
+Which regions appear at all?
+
+### god
+
+```{r}
+answer <- sales |> pick(region) |> drop_duplicates() |> collect()
+```
+
+### dplyr
+
+```{r}
+by_dplyr <- sales |> select(region) |> distinct()
+```
+
+### pandas
+
+```{python}
+by_pandas = sales[["region"]].drop_duplicates()
+```
+
+### polars
+
+```{python}
+by_polars = pl_sales.select("region").unique()
+```
+
+### data.table
+
+```{r}
+by_dt <- unique(as.data.table(sales)[, .(region)])
+```
+
+```{r}
+#| echo: false
+.agree("remove exact repeats", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+`distinct`, `drop_duplicates`, `unique`, `unique`, `drop_duplicates`. god took
+the longest of the five names because it is the one that says what happens to
+the table rather than what the table becomes.
+
+## Make the missing combinations appear
+
+Every region crossed with every product, including the pairs nobody sold.
+
+### god
+
+```{r}
+answer <- sales |>
+  summarize(earned = total(revenue), by = c(region, product)) |>
+  add_combinations(region, product) |>
+  fill_missing(earned = 0) |>
+  collect()
+```
+
+### tidyr
+
+```{r}
+by_dplyr <- sales |>
+  group_by(region, product) |>
+  summarise(earned = sum(revenue), .groups = "drop") |>
+  complete(region, product, fill = list(earned = 0))
+```
+
+### pandas
+
+```{python}
+_g = sales.groupby(["region", "product"], as_index=False).agg(
+    earned=("revenue", "sum"))
+_full = pd.MultiIndex.from_product(
+    [sorted(sales.region.unique()), sorted(sales["product"].unique())],
+    names=["region", "product"])
+by_pandas = (_g.set_index(["region", "product"])
+  .reindex(_full, fill_value=0)
+  .reset_index())
+```
+
+### polars
+
+```{python}
+_g = pl_sales.group_by("region", "product").agg(
+    pl.col("revenue").sum().alias("earned"))
+by_polars = (pl_sales.select("region").unique()
+  .join(pl_sales.select("product").unique(), how="cross")
+  .join(_g, on=["region", "product"], how="left")
+  .with_columns(pl.col("earned").fill_null(0)))
+```
+
+### data.table
+
+```{r}
+by_dt <- as.data.table(sales)[, .(earned = sum(revenue)), by = .(region, product)][
+  CJ(region = unique(sales$region), product = unique(sales$product)),
+  on = .(region, product)][is.na(earned), earned := 0][]
+```
+
+```{r}
+#| echo: false
+.agree("make the missing combinations appear", answer,
+       dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+answer
+```
+
+This is the entry where the five diverge most, and the reason is that the
+absent rows have to be conjured rather than found. god splits it in two on
+purpose: `add_combinations` makes the rows and `fill_missing` says what a new
+one holds, because whether an absent pair means zero is a question about your
+data rather than about the verb.
+
+```{r}
+#| echo: false
+#| output: asis
+cat(sprintf(
+  "*This page compared %d answers against god's while it was built, and every one of them agreed.*\n",
+  .checked))
+```
+
+Whichever of the five you arrived with, the sentence you would write in god is
+the same sentence, in either language, and it was checked against your own
+tool's answer before this page reached you.
