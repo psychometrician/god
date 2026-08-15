@@ -59,22 +59,24 @@ check_tabs <- function(book = "book") {
       # **A second shape, and only one page has it.** The rule below is about
       # one sentence in two languages. The appendix that compares five
       # libraries is about one task in five of them, so the R-against-Python
-      # count cannot apply: it holds three `{r}` chunks (god, dplyr or tidyr,
-      # data.table) against two `{python}` (pandas, polars).
+      # count cannot apply. It holds four `{r}` chunks (god's run and R
+      # spellings, dplyr or tidyr, data.table) against three `{python}` (god's
+      # Python spelling, pandas, polars). god's three spellings lead, in the
+      # book's canonical order, and the four neighbours follow.
       #
       # What carries over is the part that earns this file its place. The
       # labels are named exactly, in order, so a tab that silently fails to
       # appear is caught here rather than by somebody grepping a render log —
       # and this page has 125 tabs, which is the largest place such a tab
       # could hide.
-      five <- c("### god", "### dplyr", "### pandas", "### polars",
-                "### data.table")
+      five <- c("### god: run", "### god: R", "### god: Python",
+                "### dplyr", "### pandas", "### polars", "### data.table")
       if (identical(labels, five) ||
           identical(labels, sub("### dplyr", "### tidyr", five, fixed = TRUE))) {
-        if (sum(grepl("^\\s*```\\{r\\}", body)) != 3L ||
-            sum(grepl("^\\s*```\\{python\\}", body)) != 2L) {
+        if (sum(grepl("^\\s*```\\{r\\}", body)) != 4L ||
+            sum(grepl("^\\s*```\\{python\\}", body)) != 3L) {
           bad <- c(bad, sprintf(
-            "  %s:%d a five-library tabset holds three `{r}` chunks and two `{python}`, and this one holds %d and %d",
+            "  %s:%d a five-library tabset holds four `{r}` chunks and three `{python}`, and this one holds %d and %d",
             short, start, sum(grepl("^\\s*```\\{r\\}", body)),
             sum(grepl("^\\s*```\\{python\\}", body))))
         }
@@ -86,7 +88,7 @@ check_tabs <- function(book = "book") {
         bad <- c(bad, sprintf(
           paste("  %s:%d tabs are (%s); a tabset is `### R` then `### Python`,",
                 "with `### run` allowed first, or the five-library shape",
-                "(god, dplyr or tidyr, pandas, polars, data.table)"),
+                "(god: run, god: R, god: Python, dplyr or tidyr, pandas, polars, data.table)"),
           short, start, paste(labels, collapse = ", ")))
         next
       }

@@ -67,6 +67,19 @@ suppressMessages({
   invisible(TRUE)
 }
 .checked <- 0L
+
+# **god's three spellings are checked against each other before anything else.**
+# The book's central claim is that the R sentence, the Python sentence and the
+# text form are one sentence. This page shows all three on every task, and a
+# tab that is shown without being run is the defect the tabset guard exists to
+# stop, so all three execute and all three are compared here. `answer` is the R
+# one and stays the page's answer; the other two have to match it.
+.agree_all <- function(task, god, ...) {
+  .agree(task, god,
+         `god: run` = answer_run,
+         `god: Python` = py_eval("for_r(collect(answer_py))"))
+  .agree(task, god, ...)
+}
 ```
 
 ```{python}
@@ -103,9 +116,15 @@ def for_r(df):
 
 If you write dplyr, tidyr, pandas, polars or data.table today, this appendix is
 the one that answers the question you actually have: *can it do what I already
-do?* Each entry states a task in English, shows what you would write in each of
-the five, shows god's sentence, and then shows the answer once, because all six
-produce the same table, and the page refuses to build if any of them does not.
+do?* Each entry states a task in English, gives god's sentence in all three of
+its spellings, gives what you would write in each of the five libraries, and
+then shows the answer once, because all seven produce the same table and the
+page refuses to build if any of them does not.
+
+god's three come first, in the book's usual order: the text form that `run`
+takes, then R, then Python. They are one sentence, and this page is where that
+is checked rather than claimed: all three execute and all three are compared
+against each other before any neighbour is looked at.
 
 That last part is the difference between this appendix and a comparison table.
 Nothing here is asserted. Every cell runs when the book is built, and the
@@ -131,10 +150,25 @@ Which orders brought in more than 150?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then keep where ([revenue] > 150)
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> keep(revenue > 150) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> keep(col.revenue > 150)
 ```
 
 ### dplyr
@@ -165,14 +199,15 @@ by_dt <- as.data.table(sales)[revenue > 150]
 
 ```{r}
 #| echo: false
-.agree("keep the rows above a value", answer,
+.agree_all("keep the rows above a value", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
 ```
 
-Five spellings of one idea. god's is the only one that reads as a sentence,
-and the only one that is the same in both languages.
+Seven spellings of one idea, and three of them are god's. Its four neighbours
+each read as an operation on a frame; god's reads as a sentence, and reads the
+same whichever of the three you write it in.
 
 ## Total a column for each group
 
@@ -180,12 +215,28 @@ What did each product earn in total, and across how many orders?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then summarize [earned] as total([revenue]), [orders] as row_count() by [product]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   summarize(earned = total(revenue), orders = row_count(), by = product) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> summarize(earned = total(col.revenue), orders = row_count(),
+                               by = col.product)
 ```
 
 ### dplyr
@@ -223,7 +274,7 @@ by_dt <- as.data.table(sales)[, .(earned = sum(revenue), orders = .N), by = prod
 
 ```{r}
 #| echo: false
-.agree("total a column for each group", answer,
+.agree_all("total a column for each group", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -239,10 +290,25 @@ question.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  marks
+    then widen name [question], value [mark] by [student]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- marks |> widen(name = question, value = mark) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = marks >> widen(name = col.question, value = col.mark)
 ```
 
 ### tidyr
@@ -276,7 +342,7 @@ by_dt <- dcast(as.data.table(marks), student ~ question, value.var = "mark")
 
 ```{r}
 #| echo: false
-.agree("turn rows into columns", answer,
+.agree_all("turn rows into columns", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -291,10 +357,25 @@ Which orders came from the West?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then keep where ([region] is "West")
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> keep(region == "West") |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> keep(col.region == "West")
 ```
 
 ### dplyr
@@ -325,7 +406,7 @@ by_dt <- as.data.table(sales)[region == "West"]
 
 ```{r}
 #| echo: false
-.agree("keep the rows matching a word", answer,
+.agree_all("keep the rows matching a word", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -340,10 +421,25 @@ Just the product and what it earned.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then pick [product, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> pick(product, revenue) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> pick(col.product, col.revenue)
 ```
 
 ### dplyr
@@ -374,7 +470,7 @@ by_dt <- as.data.table(sales)[, .(product, revenue)]
 
 ```{r}
 #| echo: false
-.agree("choose some columns", answer,
+.agree_all("choose some columns", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -389,10 +485,25 @@ Everything except what it cost.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then pick all_but [cost]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> pick(all_but(cost)) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> pick(all_but(col.cost))
 ```
 
 ### dplyr
@@ -423,7 +534,7 @@ by_dt <- as.data.table(sales)[, !"cost"]
 
 ```{r}
 #| echo: false
-.agree("drop a column", answer,
+.agree_all("drop a column", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -438,10 +549,27 @@ What did each order make?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [margin] as ([revenue] - [cost])
+    then pick [product, margin]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> add(margin = revenue - cost) |> pick(product, margin) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(margin = col.revenue - col.cost)
+                   >> pick(col.product, col.margin))
 ```
 
 ### dplyr
@@ -474,7 +602,7 @@ by_dt <- as.data.table(sales)[, .(product, margin = revenue - cost)]
 
 ```{r}
 #| echo: false
-.agree("add a computed column", answer,
+.agree_all("add a computed column", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -489,10 +617,25 @@ What is the typical order in each region?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then summarize [typical] as average([revenue]) by [region]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> summarize(typical = average(revenue), by = region) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> summarize(typical = average(col.revenue), by = col.region)
 ```
 
 ### dplyr
@@ -529,7 +672,7 @@ by_dt <- as.data.table(sales)[, .(typical = mean(revenue)), by = region]
 
 ```{r}
 #| echo: false
-.agree("average a column for each group", answer,
+.agree_all("average a column for each group", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -544,10 +687,28 @@ The five biggest orders.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then sort [revenue] descending
+    then take 5
+    then pick [product, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> sort(descending(revenue)) |> take(5) |> pick(product, revenue) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> sort(descending(col.revenue)) >> take(5)
+                   >> pick(col.product, col.revenue))
 ```
 
 ### dplyr
@@ -583,7 +744,7 @@ by_dt <- head(as.data.table(sales)[order(-revenue)], 5)[, .(product, revenue)]
 
 ```{r}
 #| echo: false
-.agree("sort and take the top few", answer,
+.agree_all("sort and take the top few", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -598,10 +759,28 @@ The three smallest orders, smallest last.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then sort [revenue] descending
+    then take_last 3
+    then pick [product, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> sort(descending(revenue)) |> take_last(3) |> pick(product, revenue) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> sort(descending(col.revenue)) >> take_last(3)
+                   >> pick(col.product, col.revenue))
 ```
 
 ### dplyr
@@ -637,7 +816,7 @@ by_dt <- tail(as.data.table(sales)[order(-revenue)], 3)[, .(product, revenue)]
 
 ```{r}
 #| echo: false
-.agree("take the rows at the far end", answer,
+.agree_all("take the rows at the far end", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -653,13 +832,30 @@ Who makes each product?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then join products by [product]
+    then pick [product, maker, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   join(products, by = product) |>
   pick(product, maker, revenue) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> join(products, by = col.product)
+                   >> pick(col.product, col.maker, col.revenue))
 ```
 
 ### dplyr
@@ -695,7 +891,7 @@ by_dt <- merge(as.data.table(sales), as.data.table(products),
 
 ```{r}
 #| echo: false
-.agree("bring in a column from another table", answer,
+.agree_all("bring in a column from another table", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -713,13 +909,30 @@ Which orders are for a product the catalogue lists?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then keep where matching(products, by [product])
+    then pick [product, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   keep(matching(products, by = product)) |>
   pick(product, revenue) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> keep(matching(products, by = col.product))
+                   >> pick(col.product, col.revenue))
 ```
 
 ### dplyr
@@ -752,7 +965,7 @@ by_dt <- as.data.table(sales)[product %chin% products$product, .(product, revenu
 
 ```{r}
 #| echo: false
-.agree("ask whether a row has a partner", answer,
+.agree_all("ask whether a row has a partner", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -767,13 +980,31 @@ Two measures per order, one row each.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then pick [product, revenue, cost]
+    then lengthen [revenue, cost] as name [measure], value [amount]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   pick(product, revenue, cost) |>
   lengthen(revenue, cost, name = measure, value = amount) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> pick(col.product, col.revenue, col.cost)
+                   >> lengthen(col.revenue, col.cost, name = col.measure,
+                               value = col.amount))
 ```
 
 ### tidyr
@@ -811,7 +1042,7 @@ by_dt <- melt(as.data.table(sales)[, .(product, revenue, cost)],
 
 ```{r}
 #| echo: false
-.agree("turn columns into rows", answer,
+.agree_all("turn columns into rows", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -826,13 +1057,32 @@ Label each order by size.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [size] as when(([revenue] >= 200), "big", ([revenue] >= 100), "medium", otherwise "small")
+    then pick [product, revenue, size]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   add(size = when(revenue >= 200, "big", revenue >= 100, "medium", otherwise = "small")) |>
   pick(product, revenue, size) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(size = when(col.revenue >= 200, "big",
+                                      col.revenue >= 100, "medium",
+                                      otherwise = "small"))
+                   >> pick(col.product, col.revenue, col.size))
 ```
 
 ### dplyr
@@ -875,7 +1125,7 @@ by_dt <- as.data.table(sales)[, .(product, revenue,
 
 ```{r}
 #| echo: false
-.agree("choose between values", answer,
+.agree_all("choose between values", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -891,13 +1141,30 @@ Where does each order place, biggest first?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [place] as rank([revenue] descending)
+    then pick [product, revenue, place]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   add(place = rank(descending(revenue))) |>
   pick(product, revenue, place) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(place = rank(descending(col.revenue)))
+                   >> pick(col.product, col.revenue, col.place))
 ```
 
 ### dplyr
@@ -936,7 +1203,7 @@ by_dt <- as.data.table(sales)[, .(product, revenue,
 
 ```{r}
 #| echo: false
-.agree("number the rows in order", answer,
+.agree_all("number the rows in order", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -951,7 +1218,18 @@ How does revenue accumulate, smallest order first?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then sort [revenue]
+    then add [so_far] as running_total([revenue])
+    then pick [revenue, so_far]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
@@ -959,6 +1237,14 @@ answer <- sales |>
   add(so_far = running_total(revenue)) |>
   pick(revenue, so_far) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> sort(col.revenue)
+                   >> add(so_far = running_total(col.revenue))
+                   >> pick(col.revenue, col.so_far))
 ```
 
 ### dplyr
@@ -996,7 +1282,7 @@ by_dt <- as.data.table(sales)[order(revenue), .(revenue, so_far = cumsum(revenue
 
 ```{r}
 #| echo: false
-.agree("total as you go down the rows", answer,
+.agree_all("total as you go down the rows", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1012,10 +1298,26 @@ The names arrived padded.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  messy
+    then add [name] as trim([raw])
+    then pick [name, n]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- messy |> add(name = trim(raw)) |> pick(name, n) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = messy >> add(name = trim(col.raw)) >> pick(col.name, col.n)
 ```
 
 ### dplyr
@@ -1048,7 +1350,7 @@ by_dt <- as.data.table(messy)[, .(name = trimws(raw), n)]
 
 ```{r}
 #| echo: false
-.agree("trim the spaces off a text column", answer,
+.agree_all("trim the spaces off a text column", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1063,10 +1365,27 @@ Shout the region.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [loud] as upper([region])
+    then pick [region, loud]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> add(loud = upper(region)) |> pick(region, loud) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(loud = upper(col.region))
+                   >> pick(col.region, col.loud))
 ```
 
 ### dplyr
@@ -1099,7 +1418,7 @@ by_dt <- as.data.table(sales)[, .(region, loud = toupper(region))]
 
 ```{r}
 #| echo: false
-.agree("change a column's case", answer,
+.agree_all("change a column's case", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1114,10 +1433,27 @@ The part of each product name before the letter `d`.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [head] as split_text([product], "d", 1)
+    then pick [product, head]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> add(head = split_text(product, "d", 1)) |> pick(product, head) |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(head = split_text(col.product, "d", 1))
+                   >> pick(col.product, col.head))
 ```
 
 ### dplyr
@@ -1154,7 +1490,7 @@ by_dt <- as.data.table(sales)[, .(product,
 
 ```{r}
 #| echo: false
-.agree("take a piece of a text column", answer,
+.agree_all("take a piece of a text column", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1170,13 +1506,30 @@ Label each order with its region and product.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [label] as join_text([region], " ", [product])
+    then pick [label, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
   add(label = join_text(region, " ", product)) |>
   pick(label, revenue) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(label = join_text(col.region, " ", col.product))
+                   >> pick(col.label, col.revenue))
 ```
 
 ### dplyr
@@ -1213,7 +1566,7 @@ by_dt <- as.data.table(sales)[, .(label = paste0(region, " ", product), revenue)
 
 ```{r}
 #| echo: false
-.agree("put text back together", answer,
+.agree_all("put text back together", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1228,7 +1581,18 @@ Which year did each order land in?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then add [d] as to_date([date])
+    then add [y] as year([d]), [m] as month([d])
+    then pick [date, y, m]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
@@ -1236,6 +1600,14 @@ answer <- sales |>
   add(y = year(d), m = month(d)) |>
   pick(date, y, m) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> add(d = to_date(col.date))
+                   >> add(y = year(col.d), m = month(col.d))
+                   >> pick(col.date, col.y, col.m))
 ```
 
 ### dplyr
@@ -1278,7 +1650,7 @@ by_dt <- as.data.table(sales)[, {
 
 ```{r}
 #| echo: false
-.agree("pull the year out of a date", answer,
+.agree_all("pull the year out of a date", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1293,7 +1665,18 @@ The catalogue does not list every product. Say so rather than leaving a blank.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then join products by [product]
+    then fill_missing [maker] as "unlisted"
+    then pick [product, maker]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
@@ -1301,6 +1684,14 @@ answer <- sales |>
   fill_missing(maker = "unlisted") |>
   pick(product, maker) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> join(products, by = col.product)
+                   >> fill_missing(maker = "unlisted")
+                   >> pick(col.product, col.maker))
 ```
 
 ### dplyr
@@ -1341,7 +1732,7 @@ by_dt <- merge(as.data.table(sales), as.data.table(products),
 
 ```{r}
 #| echo: false
-.agree("fill the holes in a column", answer,
+.agree_all("fill the holes in a column", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1357,7 +1748,18 @@ Only the orders whose product the catalogue lists.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then join products by [product]
+    then drop_missing [maker]
+    then pick [product, maker, revenue]
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
@@ -1365,6 +1767,14 @@ answer <- sales |>
   drop_missing(maker) |>
   pick(product, maker, revenue) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> join(products, by = col.product)
+                   >> drop_missing(col.maker)
+                   >> pick(col.product, col.maker, col.revenue))
 ```
 
 ### dplyr
@@ -1405,7 +1815,7 @@ by_dt <- merge(as.data.table(sales), as.data.table(products),
 
 ```{r}
 #| echo: false
-.agree("drop the rows with a hole", answer,
+.agree_all("drop the rows with a hole", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1420,10 +1830,26 @@ Which regions appear at all?
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then pick [region]
+    then drop_duplicates
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |> pick(region) |> drop_duplicates() |> collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = sales >> pick(col.region) >> drop_duplicates()
 ```
 
 ### dplyr
@@ -1454,7 +1880,7 @@ by_dt <- unique(as.data.table(sales)[, .(region)])
 
 ```{r}
 #| echo: false
-.agree("remove exact repeats", answer,
+.agree_all("remove exact repeats", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
@@ -1470,7 +1896,18 @@ Every region crossed with every product, including the pairs nobody sold.
 
 ::: {.panel-tabset}
 
-### god
+### god: run
+
+```{r}
+answer_run <- run('
+  sales
+    then summarize [earned] as total([revenue]) by [region, product]
+    then add_combinations [region, product]
+    then fill_missing [earned] as 0
+')
+```
+
+### god: R
 
 ```{r}
 answer <- sales |>
@@ -1478,6 +1915,15 @@ answer <- sales |>
   add_combinations(region, product) |>
   fill_missing(earned = 0) |>
   collect()
+```
+
+### god: Python
+
+```{python}
+answer_py = (sales >> summarize(earned = total(col.revenue),
+                                by = [col.region, col.product])
+                   >> add_combinations(col.region, col.product)
+                   >> fill_missing(earned = 0))
 ```
 
 ### tidyr
@@ -1525,7 +1971,7 @@ by_dt <- as.data.table(sales)[, .(earned = sum(revenue)), by = .(region, product
 
 ```{r}
 #| echo: false
-.agree("make the missing combinations appear", answer,
+.agree_all("make the missing combinations appear", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
        polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
 answer
