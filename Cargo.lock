@@ -509,14 +509,14 @@ dependencies = [
 
 [[package]]
 name = "god-cli"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "god-core",
 ]
 
 [[package]]
 name = "god-core"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "duckdb",
 ]

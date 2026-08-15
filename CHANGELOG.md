@@ -3,7 +3,7 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
-## Unreleased
+## 0.2.1
 
 ### `take_last`, for the rows at the far end
 
