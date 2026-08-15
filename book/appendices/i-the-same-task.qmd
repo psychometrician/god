@@ -30,12 +30,18 @@ suppressMessages({
 # Two tables agree when they hold the same values, whatever order they arrived
 # in and whatever each library calls its integers.
 #
-# **Row order is normalized away on purpose, and only here.** Order is a
-# meaningful part of an answer, and the sorting entries below check it by
-# comparing the sorted column itself. What this page is asking of every other
-# entry is whether the same rows and values came back, and five libraries
-# disagreeing about row order for an unordered question is a fact about them
-# rather than a defect in any of them.
+# **Row order is normalized away here, and the entries that are about order
+# check it separately.** For an unordered question, five libraries disagreeing
+# about which row comes first is a fact about them rather than a defect in any
+# of them, so this comparison asks only whether the same rows and values came
+# back.
+#
+# That is not enough for a task whose answer *is* an order, and this comment
+# claimed it was handled when nothing handled it: the top-five entry passed
+# against its own answer reversed. `.in_order` below is the missing half, and
+# it compares the sort key's sequence rather than whole rows, because ties are
+# ordered differently by different libraries and that is not a disagreement
+# about the answer.
 .tidy <- function(d) {
   d <- as.data.frame(d, stringsAsFactors = FALSE)
   rownames(d) <- NULL
@@ -74,11 +80,31 @@ suppressMessages({
 # tab that is shown without being run is the defect the tabset guard exists to
 # stop, so all three execute and all three are compared here. `answer` is the R
 # one and stays the page's answer; the other two have to match it.
-.agree_all <- function(task, god, ...) {
-  .agree(task, god,
-         `god: run` = answer_run,
-         `god: Python` = py_eval("for_r(collect(answer_py))"))
-  .agree(task, god, ...)
+.agree_all <- function(task, god, ..., ordered = NULL) {
+  others <- c(list(`god: run` = answer_run,
+                   `god: Python` = py_eval("for_r(collect(answer_py))")),
+              list(...))
+  do.call(.agree, c(list(task, god), others))
+  if (!is.null(ordered)) do.call(.in_order, c(list(task, ordered, god), others))
+  invisible(TRUE)
+}
+
+# The sequence one column comes back in, which is the whole answer for a task
+# about sorting. Compared as text so a column of any kind can be checked.
+.in_order <- function(task, column, god, ...) {
+  seq_of <- function(d) as.character(as.data.frame(d)[[column]])
+  g <- seq_of(god)
+  for (nm in names(list(...))) {
+    o <- seq_of(list(...)[[nm]])
+    if (!identical(g, o)) {
+      stop(sprintf(
+        "%s: god and %s returned `%s` in different orders.\n  god: %s\n  %s: %s",
+        task, nm, column, paste(g, collapse = ", "), nm, paste(o, collapse = ", ")),
+        call. = FALSE)
+    }
+  }
+  .checked <<- .checked + length(list(...))
+  invisible(TRUE)
 }
 ```
 
@@ -754,7 +780,8 @@ by_dt <- head(as.data.table(sales)[order(-revenue)], 5)[, .(product, revenue)]
 #| echo: false
 .agree_all("sort and take the top few", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
-       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt,
+       ordered = "revenue")
 answer
 ```
 
@@ -826,7 +853,8 @@ by_dt <- tail(as.data.table(sales)[order(-revenue)], 3)[, .(product, revenue)]
 #| echo: false
 .agree_all("take the rows at the far end", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
-       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt,
+       ordered = "revenue")
 answer
 ```
 
@@ -1292,7 +1320,8 @@ by_dt <- as.data.table(sales)[order(revenue), .(revenue, so_far = cumsum(revenue
 #| echo: false
 .agree_all("total as you go down the rows", answer,
        dplyr = by_dplyr, pandas = py_eval("for_r(by_pandas)"),
-       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt)
+       polars = py_eval("for_r(by_polars.to_pandas())"), data.table = by_dt,
+       ordered = "so_far")
 answer
 ```
 
