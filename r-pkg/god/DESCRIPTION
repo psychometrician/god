@@ -16,7 +16,7 @@ BugReports: https://github.com/psychometrician/god/issues
 SystemRequirements: Cargo (Rust's package manager), rustc
 Encoding: UTF-8
 Depends:
-    R (>= 4.0)
+    R (>= 4.1)
 Imports:
     DBI,
     duckdb

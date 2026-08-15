@@ -44,6 +44,13 @@ time; passing a computed value says to make it a column with `add`
 first; anything else is named with its kind. In R, the message said the
 verb twice — "`sort` names a column in sort" — and now says it once.
 
+### R 4.1 is the stated minimum, and now it is the true one
+
+The R package said it needed R 4.0. It needs 4.1, and always has: a
+pipeline is written with `|>`, the native pipe, which arrived in 4.1. On
+4.0 the package could not have installed at all. Anyone on 4.1 or later —
+which is anyone who could ever have used it — is unaffected.
+
 ## 0.2.0
 
 Three new words, and a worked example on every one of them. `pip install
