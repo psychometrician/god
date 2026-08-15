@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-95 -112 190 224" width="1696" height="2000"
-     role="img" aria-label="The god hex sticker. A slate blue hexagon with a black border, holding a face built from the grammar's own marks: R's pipe and Python's as the two eyes, a pair of parentheses as the nose, and the package name as the mouth.">
+     role="img" aria-label="The god hex sticker. A slate blue hexagon with a black border, holding a face built from the grammar's own marks: R's pipe and Python's as the two eyes, the flow word `then` as the nose, and the package name as the mouth.">
 
   <!-- The god hex sticker.
        Standard hex geometry: 2 inches tall by 1.732 wide, pointy top, flat sides.
@@ -10,17 +10,25 @@
        marks. Only the wordmark is set, and it wants a single-story `g` to match
        the sibling sticker's.
 
-       The nose was `[ ]` until 2026-08-07 and is now `( )`. The test that
-       changed it: a mark on the cover should be one a reader actually types.
-       Measured across the parity corpus on 2026-08-09, `[` and `]` appear 0
-       times in R and 7 in Python, all of them Python's own list syntax;
-       parentheses appear 260 times in R and 268 in Python, because every verb
-       call in both languages has them.
+       The nose was `[ ]` until 2026-08-07, `( )` until 2026-08-14, and is now
+       the word `then`. Each change kept the same test: a mark on the cover
+       should be one a reader actually types. `[` and `]` appear 0 times in R,
+       which is what removed them.
 
-       The corpus grows, so those last two numbers drift and the first two do
-       not. What decided the nose is the *direction*, which no sentence added
-       later can reverse: a reader writing R types a parenthesis constantly and
-       a column bracket never. Re-measure rather than trusting the figures. -->
+       **What `then` adds is that the face now says all three of god's
+       spellings.** The eyes are `|>` and `>>`; the nose is the same idea in the
+       text form, the one `run()` takes. Counted across the 75-sentence parity
+       corpus on 2026-08-14: `|>` 172, `>>` 173, `then` 172. They move in
+       lockstep because a sentence has as many `then`s as it has pipes,
+       necessarily. Parentheses counted higher (287 and 295) but say something
+       else: what happens inside a step, not what joins one to the next.
+
+       **The cost, accepted rather than overlooked:** gog's nose is `/` and `|`,
+       symbols like its `+` `*` eyes, so a word here weakens the rhyme that made
+       the two stickers read as one construction. And this is the first face
+       mark that is *set* rather than drawn, so it carries the wordmark's
+       problem: `textLength` is pinned and the family must be the one with the
+       single-story `g`, or it drifts between renderers. -->
 
   <defs>
     <!-- R's pipe. The bar is deliberately shorter than the chevron: matched
@@ -40,14 +48,6 @@
             stroke-width="8.5" stroke-linejoin="miter"/>
     </g>
 
-    <!-- An opening parenthesis, drawn as one curve across the same 36-unit nose
-         band the bracket used. The stroke is 6.5 rather than the eyes' 8.5: a
-         curve of equal width carries more ink than a straight one and would
-         outweigh them. -->
-    <g id="paren-open">
-      <path d="M 5.5,-18 C -6.5,-11 -6.5,11 5.5,18" fill="none" stroke="#000000"
-            stroke-width="6.5" stroke-linecap="butt"/>
-    </g>
   </defs>
 
   <polygon points="0,-100 86.6,-50 86.6,50 0,100 -86.6,50 -86.6,-50"
@@ -57,11 +57,17 @@
     <use href="#eye-rpipe" x="-41" y="-31"/>
     <use href="#eye-pypipe" x="39" y="-31"/>
 
-    <!-- Mirrored rather than drawn twice, so the two halves cannot drift apart.
-         The gap between them is load-bearing: closed up, `()` reads as an empty
-         call rather than as a nose. -->
-    <use href="#paren-open" x="-11" y="10"/>
-    <g transform="translate(11,10) scale(-1,1)"><use href="#paren-open"/></g>
+    <!-- `then`, tight and sitting high in the nose band, which is the treatment
+         the author chose on 2026-08-14 over a matched-weight and a tracked-out
+         one. High so `god` below keeps its air; narrow so it reads as a mark
+         rather than as a line of text.
+
+         `textLength` is pinned for the same reason the wordmark pins it: this
+         is set type, not drawn geometry, and an unpinned word is a different
+         width in every renderer. -->
+    <text x="0" y="14" font-size="26" textLength="54" lengthAdjust="spacingAndGlyphs"
+          font-family="Avenir Next, Avenir, Futura, Century Gothic, Trebuchet MS, sans-serif"
+          font-weight="700">then</text>
 
     <!-- Nudged two units left of the geometric centre. `god` puts an ascender on
          its last letter and a descender on its first, so its weight runs
