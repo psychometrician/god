@@ -302,13 +302,14 @@ answer_run <- run('
 ### god: R
 
 ```{r}
-answer <- marks |> widen(name = question, value = mark) |> collect()
+answer <- marks |> widen(name = question, value = mark, by = student) |> collect()
 ```
 
 ### god: Python
 
 ```{python}
-answer_py = marks >> widen(name = col.question, value = col.mark)
+answer_py = marks >> widen(name = col.question, value = col.mark,
+                           by = col.student)
 ```
 
 ### tidyr
@@ -350,6 +351,13 @@ answer
 
 Five names for one idea: `pivot_wider`, `pivot`, `pivot`, `dcast`, and `widen`.
 Only one of them says in the verb what happens to the table.
+
+The `by` is written out here, and it did not have to be. Left off, god works
+out that the rows going together are the ones agreeing on every other column,
+and then *says so*: the answer arrives with the assumption printed above it,
+naming `student` and offering the phrasing that would have removed the doubt.
+That is the behaviour, not a warning about it. It is written out above so that
+all three of god's spellings on this page are the same sentence.
 
 ## Keep the rows matching a word
 
