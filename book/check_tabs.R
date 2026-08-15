@@ -56,10 +56,37 @@ check_tabs <- function(book = "book") {
       # new reader is pointed at, so it is the tab already open when the page
       # loads; Quarto shows the first one. The pipe spellings follow in the
       # book's canonical order, R then Python.
+      # **A second shape, and only one page has it.** The rule below is about
+      # one sentence in two languages. The appendix that compares five
+      # libraries is about one task in five of them, so the R-against-Python
+      # count cannot apply: it holds three `{r}` chunks (god, dplyr or tidyr,
+      # data.table) against two `{python}` (pandas, polars).
+      #
+      # What carries over is the part that earns this file its place. The
+      # labels are named exactly, in order, so a tab that silently fails to
+      # appear is caught here rather than by somebody grepping a render log —
+      # and this page has 125 tabs, which is the largest place such a tab
+      # could hide.
+      five <- c("### god", "### dplyr", "### pandas", "### polars",
+                "### data.table")
+      if (identical(labels, five) ||
+          identical(labels, sub("### dplyr", "### tidyr", five, fixed = TRUE))) {
+        if (sum(grepl("^\\s*```\\{r\\}", body)) != 3L ||
+            sum(grepl("^\\s*```\\{python\\}", body)) != 2L) {
+          bad <- c(bad, sprintf(
+            "  %s:%d a five-library tabset holds three `{r}` chunks and two `{python}`, and this one holds %d and %d",
+            short, start, sum(grepl("^\\s*```\\{r\\}", body)),
+            sum(grepl("^\\s*```\\{python\\}", body))))
+        }
+        next
+      }
+
       has_run <- identical(labels, c("### run", "### R", "### Python"))
       if (!identical(labels, c("### R", "### Python")) && !has_run) {
         bad <- c(bad, sprintf(
-          "  %s:%d tabs are (%s); a tabset is `### R` then `### Python`, with `### run` allowed first",
+          paste("  %s:%d tabs are (%s); a tabset is `### R` then `### Python`,",
+                "with `### run` allowed first, or the five-library shape",
+                "(god, dplyr or tidyr, pandas, polars, data.table)"),
           short, start, paste(labels, collapse = ", ")))
         next
       }
