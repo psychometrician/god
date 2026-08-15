@@ -65,7 +65,7 @@
          `textLength` is pinned for the same reason the wordmark pins it: this
          is set type, not drawn geometry, and an unpinned word is a different
          width in every renderer. -->
-    <text x="0" y="14" font-size="26" textLength="54" lengthAdjust="spacingAndGlyphs"
+    <text x="2" y="16" font-size="32" textLength="62" lengthAdjust="spacingAndGlyphs"
           font-family="Avenir Next, Avenir, Futura, Century Gothic, Trebuchet MS, sans-serif"
           font-weight="700">then</text>
 
