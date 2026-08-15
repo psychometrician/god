@@ -27,16 +27,20 @@ book:
 
   # The hex sticker, designed by the author. It is the cover rather than a
   # placeholder for one. Every mark on it is one both bindings use: the two
-  # pipes as the eyes, because they are the two languages, and the parentheses
-  # as the nose, because every verb in both is a call. The column brackets were
-  # here until they were measured against the corpus and found to appear zero
-  # times in R. `images/god-hex.svg` is the source and the marks are drawn
+  # pipes as the eyes, because they are the two languages, and the flow word
+  # `then` as the nose, because it is the text form's spelling of exactly what
+  # the two eyes spell, so the three marks are one idea in god's three surfaces
+  # rather than three ideas. Column brackets were here until they were measured
+  # against the corpus and found to appear zero times in R; parentheses replaced
+  # them and
+  # held until 2026-08-14, when they lost for saying something the eyes do not.
+  # `images/god-hex.svg` is the source and every mark but the two words is drawn
   # geometry rather than type, for the reason written in it.
   cover-image: images/god-hex.png
   cover-image-alt: >-
     The god hex sticker. A slate blue hexagon with a black border, holding a
     face built from the grammar's own marks: R's pipe and Python's as the two
-    eyes, a pair of parentheses as the nose, and the package name as the mouth.
+    eyes, the flow word `then` as the nose, and the package name as the mouth.
 
   # The human first, then the models, in the order they arrived — the way the
   # sibling book does it, which carries five. A model is named as a co-author of

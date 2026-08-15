@@ -541,18 +541,31 @@ them tiles, and handing one over is how the community introduces a package. If
 you have come from Python, that is all it is: a logo with a shape convention.
 
 What sits inside this one is a face. Its eyes are `|>` and `>>`, the pipe in R
-and the pipe in Python. Its nose is `(` and `)`. Its mouth is the package name.
+and the pipe in Python. Its nose is `then`. Its mouth is the package name.
 
 Those marks are chosen and not decorative, and the test they had to pass is that
 you actually write them. A face has two eyes and this grammar has two bindings:
 one language on the left, one on the right, saying the same thing. Both eyes
 point right, so the face is looking at the next step rather than at you.
 
-The parentheses are what the two bindings share. Every verb in both languages is
-a call, so `keep(...)` and `summarize(...)` are the shape of every sentence you
-will write on either side. They also work at the other scale, which is the
-sibling sticker's own logic: the pipes join one step to the *next*, and the
-parentheses hold what happens *inside* one.
+The nose is the third spelling. `|>` in R and `>>` in Python both mean *and then
+do this to it*, and the plain text form spells that same thing `then`. So the
+three marks on the face are not three ideas. They are one idea in each of the
+three places you can write god, which is the claim this whole book is making,
+sitting on the cover without a sentence.
+
+They are also the same size as each other in practice. Across the sentences this
+book is tested against, `|>` appears 172 times, `>>` appears 173, and `then`
+appears 172. That is not a coincidence worth remarking on so much as a
+consequence: a sentence has as many `then`s as it has pipes, because they are
+the same word.
+
+The nose was `(` and `)` until this was noticed, and parentheses do pass the
+test below. Every verb in both languages is a call, so you type them constantly.
+What they do not do is say the same thing as the eyes. They hold what happens
+*inside* a step, where the eyes join one step to the *next*, and a face whose
+three marks say one thing is worth more than a face whose marks are merely all
+frequent.
 
 The column brackets are not on the cover, and a measurement is the reason.
 Across the sentences this book is tested against, `[` and `]` appear *not once*

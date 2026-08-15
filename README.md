@@ -1,6 +1,6 @@
 # god — a grammar of data
 
-<img src="book/images/god-hex.png" alt="The god hex sticker: a slate blue hexagon holding a face built from the grammar's own marks, R's pipe and Python's as the two eyes, a pair of parentheses as the nose, and the package name as the mouth." align="right" width="170">
+<img src="book/images/god-hex.png" alt="The god hex sticker: a slate blue hexagon holding a face built from the grammar's own marks, R's pipe and Python's as the two eyes, the flow word `then` as the nose, and the package name as the mouth." align="right" width="170">
 
 **Say it once. Run it anywhere.**
 
