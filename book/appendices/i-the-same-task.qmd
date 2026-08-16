@@ -726,7 +726,7 @@ The five biggest orders.
 ```{r}
 answer_run <- run('
   sales
-    then sort [revenue] descending
+    then sort [revenue] descending, [product]
     then take 5
     then pick [product, revenue]
 ')
@@ -735,27 +735,31 @@ answer_run <- run('
 ### god: R
 
 ```{r}
-answer <- sales |> sort(descending(revenue)) |> take(5) |> pick(product, revenue) |> collect()
+answer <- sales |>
+  sort(descending(revenue), product) |>
+  take(5) |>
+  pick(product, revenue) |>
+  collect()
 ```
 
 ### god: Python
 
 ```{python}
-answer_py = (sales >> sort(descending(col.revenue)) >> take(5)
+answer_py = (sales >> sort(descending(col.revenue), col.product) >> take(5)
                    >> pick(col.product, col.revenue))
 ```
 
 ### dplyr
 
 ```{r}
-by_dplyr <- sales |> arrange(desc(revenue)) |> head(5) |> select(product, revenue)
+by_dplyr <- sales |> arrange(desc(revenue), product) |> head(5) |> select(product, revenue)
 ```
 
 ### pandas
 
 ```{python}
 by_pandas = (sales
-  .sort_values("revenue", ascending=False)
+  .sort_values(["revenue", "product"], ascending=[False, True])
   .head(5)[["product", "revenue"]])
 ```
 
@@ -763,7 +767,7 @@ by_pandas = (sales
 
 ```{python}
 by_polars = (pl_sales
-  .sort("revenue", descending=True)
+  .sort(["revenue", "product"], descending=[True, False])
   .head(5)
   .select("product", "revenue"))
 ```
@@ -771,7 +775,7 @@ by_polars = (pl_sales
 ### data.table
 
 ```{r}
-by_dt <- head(as.data.table(sales)[order(-revenue)], 5)[, .(product, revenue)]
+by_dt <- head(as.data.table(sales)[order(-revenue, product)], 5)[, .(product, revenue)]
 ```
 
 :::
@@ -787,6 +791,15 @@ answer
 
 Every library here spells *reverse the order* differently: `desc`,
 `ascending=False`, `descending=True`, a minus sign. god says `descending`.
+
+**The second sort key is not decoration, and this page needed it to build.**
+Two orders earned 150, so the fifth row of a top five is a tie, and which of
+them wins is whatever each library's sort happened to do. pandas sorts with an
+unstable algorithm by default, so it answered one way on one machine and the
+other way on another, and the comparison here refused to build until the
+question was made a fair one. A top five over a column with repeats is not a
+settled answer, which is the law this grammar is built on, and the repair is the
+same in all six spellings: name a second key.
 
 ## Take the rows at the far end
 
