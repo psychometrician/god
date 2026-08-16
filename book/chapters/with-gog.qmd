@@ -450,10 +450,8 @@ how you are thinking. `by` means in gog what it means here. So does `color`.
 In R, load them and go. R looks a column name up in your data before it looks
 anywhere else, and the two packages take care not to collide.
 
-In Python, one name is claimed by both. `col` is how each of them names a column,
-so `from god import *` followed by `from gog import *` would leave you with one
-of them and no warning. Import gog by name instead, which is what the examples
-above do:
+Python is a different shape. **The rule there is short:** bring god in whole, and
+reach gog through its name, which is what the examples above do.
 
 ```python
 from god import *
@@ -461,6 +459,26 @@ import gog
 ```
 
 Then `col.life` is god's and `gog.col.life` is gog's, and nothing is ambiguous.
+
+Two things make that the right way round, rather than a preference for whichever
+book you happen to be reading. Two names are claimed by both: `col`, which is how
+each of them names a column, and `median`, a word both vocabularies wanted.
+Bringing in both whole would leave you holding gog's pair and no warning.
+
+The second reason would still apply if god did not exist. A grammar of graphics
+wants words the language has already spent: `sum`, `max` and several more are
+transforms in gog and builtins in Python, so taking gog whole takes those from
+you as well. god's vocabulary overlaps none of Python's, and that is what makes
+it the one that is safe to bring in whole.
+
+So every gog name on this page carries the prefix, not only the two that collide.
+One rule is easier to keep than a list of which names happen to be free this year.
+
+It reverses cleanly when a file is mostly pictures. Take gog whole, reach god
+through its name, and take back the builtins you use with `from builtins import
+sum`. What does not reverse is taking both whole, which is the one arrangement
+here that fails without saying so.
+
 [Appendix A](../appendices/a-two-languages.qmd) says the same thing about every
 other name god takes over.
 
