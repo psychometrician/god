@@ -1122,5 +1122,69 @@ local({
         god:::god_book_data_url, "https://psychometrician.github.io/god-book/data/")
 })
 
+
+# --- dplyr masks god, and the sentence still runs ----------------------------
+# The verbs above shadow other people's names and pay for it with a message.
+# This is the other direction, and the common one: dplyr attached after god owns
+# `collect`, `pick`, `rename` and `summarize`, and a pipeline handed to one of
+# them reached a generic with no method for it. Three of the four are generics,
+# so god registers a method on each. `pick` is not one, and cannot be reached.
+cat("\ndplyr masks god, and the sentence still runs\n")
+
+# **Asked before dplyr is, because asking for it loads it.** Registering from
+# `.onLoad` with `requireNamespace` would load dplyr for everyone who has it
+# installed, in every session that never mentions it. The hook god leaves
+# instead costs a session nothing until dplyr actually arrives.
+check("loading god does not load dplyr", isNamespaceLoaded("dplyr"), FALSE)
+
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  cat("  dplyr is not installed, so the rest of these are skipped\n")
+} else local({
+  masked <- sales |> keep(region == "West")
+
+  check("dplyr's collect reaches the pipeline", nrow(dplyr::collect(masked)), 4L)
+
+  # The bar is not that each does something reasonable. It is that each writes
+  # *the same sentence* the unmasked call writes, because the fix is finished
+  # only when the attach order stops being observable.
+  check("dplyr's rename writes god's sentence",
+        format(dplyr::rename(masked, area = region)),
+        format(rename(masked, area = region)))
+  check("dplyr's summarize writes god's sentence",
+        format(dplyr::summarize(masked, takings = total(revenue))),
+        format(summarize(masked, takings = total(revenue))))
+
+  # `by` names columns and the grammar reads it unevaluated, so forwarding it as
+  # a value would hand god the symbol `by` instead of the column. This is the
+  # check that catches that.
+  check("and carries `by`, which cannot be forwarded",
+        format(dplyr::summarize(masked, takings = total(revenue), by = product)),
+        format(summarize(masked, takings = total(revenue), by = product)))
+
+  # `summarize` is an alias dispatching through `summarise`, so a method
+  # registered under the American spelling is one nothing would ever call.
+  check("the British spelling is the same generic",
+        format(dplyr::summarise(masked, takings = total(revenue))),
+        format(summarize(masked, takings = total(revenue))))
+
+  # **Two matching sentences are not two working sentences.** The checks above
+  # compare text, and text agreed while both sides said `sum(revenue)`, which the
+  # grammar has no word for — the engine refuses it and neither `format` call
+  # ever asked. So the masked sentence is run here, and the rows are read back.
+  answered <- dplyr::collect(
+    dplyr::summarize(masked, takings = total(revenue), by = product) |> sort(product)
+  )
+  check("and the masked sentence runs, rather than only matching",
+        answered$takings, c(450, 300))
+
+  # **A canary rather than a note of defeat.** dplyr's `pick` reads the data mask
+  # of the verb around it and is not a generic, which is why no method can be
+  # registered for it and `god::pick` is the only repair. Should this ever fail,
+  # dplyr has made it one and god should register a method there too.
+  check("dplyr's pick is not a generic, so no method can reach it",
+        grepl("UseMethod", paste(deparse(body(dplyr::pick)), collapse = " "), fixed = TRUE),
+        FALSE)
+})
+
 cat(sprintf("\n%d passed, %d failed\n", passed, failed))
 if (failed > 0) quit(status = 1)

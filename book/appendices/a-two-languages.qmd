@@ -163,13 +163,31 @@ So the cost is your own calls to `sort`, at the console or in a script, and
 nothing further. `base::sort` is always there, and the message above says so at
 the moment you need it.
 
-`keep`, `pick`, `summarize` and `add` collide with packages you may have attached
-rather than with base R, and load order decides which one wins. If you use dplyr
-in the same script, call one of them with its package in front:
-`dplyr::summarize`.
-
 Python has namespaces where R does not, so `import god` collides with nothing at
 all and only `from god import *` can.
+
+## The names other packages take back
+
+Four of god's names are dplyr's as well: `collect`, `pick`, `rename` and
+`summarize`. `keep` is purrr's. Attach one of those packages after god and its
+version of the name is what your next line reaches.
+
+**Three of the four cost you nothing.** `collect`, `rename` and `summarize` are
+generics, and god gives each of them a method for a pipeline, so the sentence
+runs whichever package you attached last.
+
+```{r}
+sales |>
+  keep(region == "West") |>
+  dplyr::summarize(takings = total(revenue), by = product)
+```
+
+That is dplyr's `summarize`, handed a god pipeline and answering as god's. Which
+order you wrote your `library()` calls in is not visible from here.
+
+`pick` is the exception, and the reason belongs to dplyr rather than to god: its
+`pick` is not a generic, so there is no method to give it. Write `god::pick` when
+both packages are attached.
 
 ## If you also use gog
 

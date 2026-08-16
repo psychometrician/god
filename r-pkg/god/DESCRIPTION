@@ -21,6 +21,7 @@ Imports:
     DBI,
     duckdb
 Suggests:
+    dplyr,
     knitr,
     pkgload
 Config/roxygen2/version: 8.0.0

@@ -3,6 +3,36 @@
 What changed, for someone deciding whether to upgrade. Every entry is something
 a person using god can see.
 
+## Unreleased
+
+### dplyr no longer takes god's verbs away, in R
+
+god and dplyr share four names: `collect`, `pick`, `rename` and
+`summarize`. Attaching dplyr after god handed all four to dplyr, and a
+pipeline given to one of them stopped with R's own complaint rather than
+an answer:
+
+```
+no applicable method for 'collect' applied to an object of class "god_pipeline"
+```
+
+It also named a spelling nobody typed, answering about `summarise` when
+the line said `summarize`.
+
+Three of the four are generics, and god now gives each of them a method,
+so `collect`, `rename` and `summarize` write the same sentence and
+return the same table whichever package was attached last:
+
+```r
+sales |> keep(region == "West") |> dplyr::summarize(takings = total(revenue))
+```
+
+`pick` is the exception. dplyr's `pick` is not a generic, so nothing can
+be registered for it; write `god::pick` where both packages are
+attached.
+
+Attaching god does not load dplyr, and never did.
+
 ## 0.2.1
 
 ### `take_last`, for the rows at the far end
