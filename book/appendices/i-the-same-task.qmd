@@ -792,7 +792,7 @@ answer
 Every library here spells *reverse the order* differently: `desc`,
 `ascending=False`, `descending=True`, a minus sign. god says `descending`.
 
-**The second sort key is not decoration, and this page needed it to build.**
+The second sort key is not decoration, and this page needed it to build.
 Two orders earned 150, so the fifth row of a top five is a tie, and which of
 them wins is whatever each library's sort happened to do. pandas sorts with an
 unstable algorithm by default, so it answered one way on one machine and the
