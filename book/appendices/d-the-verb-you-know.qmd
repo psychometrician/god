@@ -37,6 +37,12 @@ map to a word plus a place to put it rather than to a verb alone.
 | `show_query()` | `show_as`, with seven targets | [What it wrote](../chapters/what-it-wrote.qmd) |
 | `collect()` | `collect`, the same word | [Nothing runs until you ask](../chapters/nothing-runs-yet.qmd) |
 
+If you keep dplyr attached, four of the names in that column are also dplyr's:
+`collect`, `pick`, `rename` and `summarize`. Three of them answer the same way
+whichever package you attached last, and `pick` is the one that does not.
+[The names other packages take
+back](a-two-languages.qmd#the-names-other-packages-take-back) is the whole of it.
+
 ## From pandas
 
 | you know | god says | the chapter |
