@@ -74,7 +74,8 @@ from .verbs import (
     to_date,
     to_number,
     to_text,
-    to_whole,
+    round_below,
+    round_above,
     total,
     day,
     trim,
@@ -118,7 +119,7 @@ __all__ = [
     "lower", "upper",
     # Converting, always explicitly. Every one begins `to_`, and nothing else
     # does.
-    "to_number", "to_whole", "to_text", "to_date",
+    "to_number", "to_text", "to_date", "round_below", "round_above",
     # The rest of the text functions. The `_text` suffix says what they operate
     # on, where `to_` says what they convert into.
     "trim", "characters", "replace_text", "split_text",

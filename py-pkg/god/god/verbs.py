@@ -965,8 +965,18 @@ def to_number(column):
     return Expr(f"to_number({_written(column, 'to_number')})")
 
 
-def to_whole(column):
-    """This, as a whole number: `to_whole(col.score)`.
+def round_below(column):
+    """The whole number below: `round_below(col.score)`.
+
+    Always toward the smaller number, so `round_below(-5.5)` is -6 rather than
+    -5. A value that is already whole does not move.
+
+    **It is `below` and not `down` on purpose.** Spreadsheets round "down"
+    toward zero, which would make -5.5 into -5, so the plainer-looking word
+    would have meant two things to two readers with nothing to warn either.
+
+    For the nearest whole number rather than the one below, add a half first:
+    ``round_below(col.x + 0.5)``.
 
     Examples
     --------
@@ -974,13 +984,34 @@ def to_whole(column):
     >>> from god import *
     >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
     ...                       "revenue": [100, 120, 150]})
-    >>> collect(sales >> add(rounded=to_whole(col.revenue / 7)) >> pick(col.rounded))
-       rounded
-    0       14
-    1       17
-    2       21
+    >>> collect(sales >> add(each=round_below(col.revenue / 7)) >> pick(col.each))
+       each
+    0    14
+    1    17
+    2    21
     """
-    return Expr(f"to_whole({_written(column, 'to_whole')})")
+    return Expr(f"round_below({_written(column, 'round_below')})")
+
+
+def round_above(column):
+    """The whole number above: `round_above(col.score)`.
+
+    Always toward the larger number, so `round_above(-5.5)` is -5 and
+    `round_above(5.1)` is 6. A value that is already whole does not move.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "revenue": [100, 120, 150]})
+    >>> collect(sales >> add(pages=round_above(col.revenue / 7)) >> pick(col.pages))
+       pages
+    0     15
+    1     18
+    2     22
+    """
+    return Expr(f"round_above({_written(column, 'round_above')})")
 
 
 def to_text(column):

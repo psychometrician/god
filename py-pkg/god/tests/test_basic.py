@@ -266,7 +266,7 @@ from god import (  # noqa: E402
     rank, row_count, row_number, smallest,
     sort, summarize, upper, value, when, where, widen,
     take, take_last, total,
-    to_number, to_whole, to_text, to_date,
+    to_number, to_text, to_date, round_below, round_above,
     trim, characters, replace_text, split_text, between,
     year, month, day, weekday, hour,
     running_total, previous, following,

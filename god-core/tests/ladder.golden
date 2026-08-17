@@ -436,13 +436,13 @@ sales                                   region:text  product:text  revenue:numbe
 └ pick [product, revenue]               product  revenue
                                         -region  -cost  -ordered_on
 ---
-sales then add [as_text] as to_text([revenue]), [whole] as to_whole([cost]) then pick [as_text, whole] then take 3
+sales then add [as_text] as to_text([revenue]), [lo] as round_below([cost] / 7), [hi] as round_above([cost] / 7) then pick [as_text, lo, hi] then take 3
 sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
-├ add [as_text] as to_text([revenue]), [whole] as to_whole([cost])
-│                                       region  product  revenue  cost  ordered_on  +as_text:text  +whole:number
-├ pick [as_text, whole]                 as_text  whole
+├ add [as_text] as to_text([revenue]), [lo] as round_below(([cost] / 7)), [hi] as round_above(([cost] / 7))
+│                                       region  product  revenue  cost  ordered_on  +as_text:text  +lo:number  +hi:number
+├ pick [as_text, lo, hi]                as_text  lo  hi
 │                                       -region  -product  -revenue  -cost  -ordered_on
-└ take 3                                as_text  whole
+└ take 3                                as_text  lo  hi
     at most 3 rows
 ---
 sales then add [d] as to_date([ordered_on]) then add [y] as year([d]), [m] as month([d]), [dd] as day([d]), [wd] as weekday([d]) then pick [ordered_on, y, m, dd, wd] then sort [ordered_on]

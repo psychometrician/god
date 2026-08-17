@@ -213,10 +213,37 @@ pub const FUNCTIONS: &[Function] = &[
     // and `widen`: they convert nothing. Conversion is always explicit here and
     // never a `cast` metaphor, because the day a grammar converts on your behalf
     // is the day a column quietly changes what it holds.
+    //
+    // **There were four of these and there are three, because `to_whole` was
+    // never a conversion.** The grammar has one number type, so it went number
+    // to number and converted nothing at all — it was a rounding wearing this
+    // prefix, and that misfiling was the whole of why nobody could say which
+    // way it went. It is `round_below` and `round_above` now (2026-08-16).
     Function { name: "to_number", kind: Kind::Scalar, arity: Arity::Exactly(1) },
-    Function { name: "to_whole", kind: Kind::Scalar, arity: Arity::Exactly(1) },
     Function { name: "to_text", kind: Kind::Scalar, arity: Arity::Exactly(1) },
     Function { name: "to_date", kind: Kind::Scalar, arity: Arity::Exactly(1) },
+
+    // **The whole number below, and the whole number above.** Direction is in
+    // the name, which is Law 4, and it is in it *literally* rather than as a
+    // metaphor: `floor` and `ceiling` are the words every engine uses and they
+    // are the term-of-art kind this vocabulary has turned down three times —
+    // `lag`/`lead` became `previous`/`following`, `coalesce` became
+    // `first_present`, `melt`/`cast` became `lengthen`/`widen`.
+    //
+    // **`below` and `above` rather than `down` and `up`, and that is not
+    // taste.** Excel's `ROUNDDOWN` goes toward zero, so `ROUNDDOWN(-5.5)` is -5
+    // there and this is -6. Naming these `round_down`/`round_up` would have
+    // meant one word and two answers against the most used data tool there is,
+    // with nothing raised. On a number line "below" has no such second reading.
+    //
+    // **Neither needs a convention named for it, and that is why this pair won
+    // over `round`.** Measured on all five engines: floor and ceiling agree
+    // everywhere, negatives included. `round` does not — R and Python break a
+    // tie to the even number and DuckDB breaks it away from zero — so it would
+    // have been a third `weekday`. The nearest whole number is
+    // `round_below([x] + 0.5)`, a composition, so Law 5 refuses a word for it.
+    Function { name: "round_below", kind: Kind::Scalar, arity: Arity::Exactly(1) },
+    Function { name: "round_above", kind: Kind::Scalar, arity: Arity::Exactly(1) },
 
     // The string functions past case. **The `_text` suffix on two of them is not
     // decoration**: `base::replace` replaces elements of a vector by position and

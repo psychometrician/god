@@ -110,7 +110,7 @@ sales then add [head] as split_text([product], "d", 1), [swapped] as replace_tex
 ---
 sales then keep where between([revenue], 150, 400) then sort [revenue] then pick [product, revenue]
 ---
-sales then add [as_text] as to_text([revenue]), [whole] as to_whole([cost]) then pick [as_text, whole] then take 3
+sales then add [as_text] as to_text([revenue]), [lo] as round_below([cost] / 7), [hi] as round_above([cost] / 7) then pick [as_text, lo, hi] then take 3
 ---
 sales then add [d] as to_date([ordered_on]) then add [y] as year([d]), [m] as month([d]), [dd] as day([d]), [wd] as weekday([d]) then pick [ordered_on, y, m, dd, wd] then sort [ordered_on]
 ---

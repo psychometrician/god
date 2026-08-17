@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-four functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-five functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
@@ -156,7 +156,9 @@ Monday as 1 wherever it runs
 `split_text`
 
 **Converting**, always written out, never on your behalf. Every one begins
-`to_`, and nothing else does: `to_number` · `to_whole` · `to_text` · `to_date`
+`to_`, and nothing else does: `to_number` · `to_text` · `to_date`. Moving a
+number to a whole one is not a conversion and does not begin `to_`:
+`round_below` and `round_above` say which way they go
 
 **The conditional.** `when(question, answer, …, otherwise = )`, where the first
 question that is true wins.

@@ -145,7 +145,7 @@ sales |> add(head = split_text(product, "d", 1), swapped = replace_text(product,
 ---
 sales |> keep(between(revenue, 150, 400)) |> sort(revenue) |> pick(product, revenue)
 ---
-sales |> add(as_text = to_text(revenue), whole = to_whole(cost)) |> pick(as_text, whole) |> take(3)
+sales |> add(as_text = to_text(revenue), lo = round_below(cost / 7), hi = round_above(cost / 7)) |> pick(as_text, lo, hi) |> take(3)
 ---
 sales |> add(d = to_date(ordered_on)) |> add(y = year(d), m = month(d), dd = day(d), wd = weekday(d)) |> pick(ordered_on, y, m, dd, wd) |> sort(ordered_on)
 ---

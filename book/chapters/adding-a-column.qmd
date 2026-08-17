@@ -231,6 +231,109 @@ and that is because it is the only one you cannot already write. Whole
 division is `([n] - remainder([n], 3)) / 3`, and a square is `[x] * [x]`, so
 neither gets a word of its own.
 
+## Down to a whole number, or up
+
+Dividing rarely comes out even. `round_below` gives the whole number below the
+answer and `round_above` gives the one above, and a value that is already whole
+does not move under either.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add [each] as round_below([revenue] / 7),
+         [pages] as round_above([revenue] / 7)
+    then pick [revenue, each, pages]
+    then take 4
+')
+```
+
+### R
+
+```{r}
+sales |>
+  add(each = round_below(revenue / 7), pages = round_above(revenue / 7)) |>
+  pick(revenue, each, pages) |>
+  take(4)
+```
+
+### Python
+
+```{python}
+(sales
+  >> add(each = round_below(col.revenue / 7), pages = round_above(col.revenue / 7))
+  >> pick(col.revenue, col.each, col.pages)
+  >> take(4))
+```
+
+:::
+
+*`sales then add [each] as round_below([revenue] / 7)`*
+
+The words say `below` and `above` rather than down and up, and the reason is
+negative numbers. Below always means the smaller number, so `round_below(-5.5)`
+is -6, not -5. Spreadsheets round "down" the other way, toward zero, and a word
+that means one thing here and the opposite in the tool on the next screen is
+the kind of difference nobody notices until an invoice is wrong.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+edges <- data.frame(n = c(5.5, 5.1, -5.5, -5.7, 5.0))
+
+run('
+  edges
+    then add [below] as round_below([n]), [above] as round_above([n])
+', edges = edges)
+```
+
+### R
+
+```{r}
+edges |> add(below = round_below(n), above = round_above(n))
+```
+
+### Python
+
+```{python}
+edges = pd.DataFrame({"n": [5.5, 5.1, -5.5, -5.7, 5.0]})
+
+edges >> add(below = round_below(col.n), above = round_above(col.n))
+```
+
+:::
+
+There is no word for the nearest whole number, because you can already say it:
+add a half and round below. A word whose whole job is something the grammar can
+already write would be a second way to say one thing.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('edges then add [nearest] as round_below([n] + 0.5)', edges = edges)
+```
+
+### R
+
+```{r}
+edges |> add(nearest = round_below(n + 0.5))
+```
+
+### Python
+
+```{python}
+edges >> add(nearest = round_below(col.n + 0.5))
+```
+
+:::
+
 ## What travels with it
 
 - `as` names what a step makes, name first, and it means exactly this again

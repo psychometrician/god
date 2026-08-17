@@ -1966,6 +1966,17 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
 
         Expr::Call { name, args, span } => {
             let Some(function) = vocabulary::lookup(name) else {
+                // **A word the grammar used to have gets its own sentence.**
+                // The nearest-name guess cannot help here — `to_whole` is not a
+                // near miss for anything — and the reader wrote a word that
+                // worked last week, so what they need is which of the two
+                // replaced it rather than a list of thirty-four to search.
+                if name == "to_whole" {
+                    return Err(Diagnostic::illegal(
+                        "`to_whole` is now `round_below` and `round_above`, which say which way they go. It converted nothing — the grammar has one number type — so it was a rounding wearing a conversion's name, and nobody could tell from the name whether -5.5 came back as -5 or -6. `round_below(-5.5)` is -6 and `round_above(-5.5)` is -5. For the nearest whole number, `round_below([x] + 0.5)`",
+                        *span,
+                    ));
+                }
                 let suggestion = nearest(name, vocabulary::FUNCTIONS.iter().map(|f| f.name))
                     .map(|s| format!(" Did you mean `{s}`?"))
                     .unwrap_or_default();
@@ -2046,7 +2057,20 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                 // **A conversion takes anything and says what it gives**, which
                 // is the whole point of writing one: the reason to convert is
                 // that what you have is not what you want.
-                "to_number" | "to_whole" => Ok(Type::Number),
+                "to_number" => Ok(Type::Number),
+
+                // Both make a whole number out of a number, so both want one.
+                // Neither needs a note about which way it goes: the name says
+                // it, which is the whole reason they replaced `to_whole`.
+                "round_below" | "round_above" => {
+                    if !kinds[0].agrees_with(Type::Number) {
+                        return Err(Diagnostic::illegal(
+                            format!("`{name}` moves a number to a whole one, and this is {}. Convert it first with `to_number`", kinds[0].name()),
+                            args[0].span(),
+                        ));
+                    }
+                    Ok(Type::Number)
+                }
                 "to_text" => Ok(Type::Text),
                 "to_date" => Ok(Type::Date),
 

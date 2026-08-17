@@ -112,15 +112,6 @@ pub struct Dialect {
     /// Where it cannot, a `widen` that declares nothing is a sentence this
     /// dialect cannot write, and `refuses` says so.
     dynamic_pivot: bool,
-    /// How this engine converts a number to a whole one, **truncating toward
-    /// zero**, which is the convention the grammar names.
-    ///
-    /// **Spark's plain `CAST` already truncates and DuckDB's rounds**, so this
-    /// is one dialect's correction rather than a shared spelling — and reaching
-    /// for the obvious shared one broke Spark outright, because `trunc` there is
-    /// a *date* function that wants two arguments. Found by the two-engine
-    /// check, which is what it is for.
-    to_whole: &'static str,
     /// How this engine is told to skip missing values in `last_value`, which is
     /// what `latest` is built from.
     ///
@@ -142,7 +133,6 @@ const DUCKDB: Dialect = Dialect {
     escapes_backslash: false,
     weekday: "isodow({})",
     dynamic_pivot: true,
-    to_whole: "CAST(trunc({}) AS BIGINT)",
     last_present: "last_value({} IGNORE NULLS)",
 };
 
@@ -156,7 +146,6 @@ const SPARK: Dialect = Dialect {
     escapes_backslash: true,
     weekday: "extract(DAYOFWEEK_ISO FROM {})",
     dynamic_pivot: false,
-    to_whole: "CAST({} AS BIGINT)",
     last_present: "last_value({}, true)",
 };
 
@@ -1338,7 +1327,13 @@ impl Dialect {
             // conversion does in every host language and what five of the six
             // targets already did. Rounding is a different operation and would
             // be a different word.
-            "to_whole" => self.to_whole.replace("{}", &arg(0)),
+            // **`floor` and `ceil` need no dialect entry**, which is the
+            // measurement that chose this pair over `round` and over the
+            // truncating `to_whole` before it: DuckDB, Spark, R, pandas and
+            // polars all agree on both, negatives included. The cast is what
+            // keeps the answer printing as a whole number.
+            "round_below" => format!("CAST(floor({}) AS BIGINT)", arg(0)),
+            "round_above" => format!("CAST(ceil({}) AS BIGINT)", arg(0)),
             // **The floored remainder, spelled so both dialects produce it.**
             // Both answer -1 for -7 % 2 and R, Python, pandas and polars all
             // answer 1. Spark has `pmod` and DuckDB does not, so the wrap is

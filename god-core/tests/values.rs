@@ -654,3 +654,68 @@ fn remainder_wants_numbers_on_both_sides() {
     let message = refusal(&conn, "pupils", "pupils then add [r] as remainder([name], 2)");
     assert!(message.contains("`remainder` divides one number"), "{message}");
 }
+
+/// **`round_below` and `round_above` say which way they go, and `to_whole` did
+/// not.** That was the whole defect: the grammar has one number type, so
+/// `to_whole` converted nothing and was a rounding wearing a conversion's
+/// name — and nobody could tell from the name whether -5.5 came back as -5 or
+/// -6. These two can only be read one way.
+#[test]
+fn rounding_goes_the_way_its_name_says_including_for_negatives() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE edges (n DOUBLE);
+         INSERT INTO edges VALUES (5.5), (5.1), (-5.5), (-5.7), (5.0), (-5.0);",
+    )
+    .expect("the fixture table");
+
+    let (_, below) = run(&conn, "edges", "edges then add [v] as round_below([n]) then pick [v]");
+    assert_eq!(
+        below,
+        vec![vec!["5"], vec!["5"], vec!["-6"], vec!["-6"], vec!["5"], vec!["-5"]],
+        "below is always the smaller number, which is what `down` would have muddied"
+    );
+
+    let (_, above) = run(&conn, "edges", "edges then add [v] as round_above([n]) then pick [v]");
+    assert_eq!(
+        above,
+        vec![vec!["6"], vec!["6"], vec!["-5"], vec!["-5"], vec!["5"], vec!["-5"]]
+    );
+}
+
+/// The nearest whole number is a composition rather than a third word, which is
+/// the same call Law 5 made for integer division once `remainder` existed.
+#[test]
+fn the_nearest_whole_number_composes() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE edges (n DOUBLE);
+         INSERT INTO edges VALUES (5.4), (5.5), (5.6);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "edges",
+        "edges then add [v] as round_below([n] + 0.5) then pick [v]",
+    );
+    assert_eq!(rows, vec![vec!["5"], vec!["6"], vec!["6"]]);
+}
+
+/// A word the grammar used to have gets a sentence of its own rather than the
+/// nearest-name guess, because the reader wrote something that worked last week
+/// and needs to know which of the two replaced it.
+#[test]
+fn to_whole_is_refused_by_name_with_both_replacements() {
+    let conn = pupils();
+    let message = refusal(&conn, "pupils", "pupils then add [v] as to_whole([score])");
+    assert!(message.contains("round_below"), "{message}");
+    assert!(message.contains("round_above"), "{message}");
+    assert!(message.contains("-6"), "the message shows which way each goes: {message}");
+}
+
+#[test]
+fn rounding_wants_a_number() {
+    let conn = pupils();
+    let message = refusal(&conn, "pupils", "pupils then add [v] as round_below([name])");
+    assert!(message.contains("moves a number to a whole one"), "{message}");
+}

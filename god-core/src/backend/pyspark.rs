@@ -782,7 +782,8 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             format!("F.lead({}{}).over({})", arg(0), super::step(args), window(&over, &[]))
         }
         "to_number" => format!("{}.cast(\"double\")", arg(0)),
-        "to_whole" => format!("{}.cast(\"int\")", arg(0)),
+        "round_below" => format!("F.floor({})", arg(0)),
+        "round_above" => format!("F.ceil({})", arg(0)),
         "to_text" => format!("{}.cast(\"string\")", arg(0)),
         "to_date" => format!("{}.cast(\"date\")", arg(0)),
         "trim" => format!("F.trim({})", arg(0)),

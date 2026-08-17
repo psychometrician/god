@@ -152,7 +152,7 @@ sales >> add(head = split_text(col.product, "d", 1), swapped = replace_text(col.
 ---
 sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue) >> pick(col.product, col.revenue)
 ---
-sales >> add(as_text = to_text(col.revenue), whole = to_whole(col.cost)) >> pick(col.as_text, col.whole) >> take(3)
+sales >> add(as_text = to_text(col.revenue), lo = round_below(col.cost / 7), hi = round_above(col.cost / 7)) >> pick(col.as_text, col.lo, col.hi) >> take(3)
 ---
 sales >> add(d = to_date(col.ordered_on)) >> add(y = year(col.d), m = month(col.d), dd = day(col.d), wd = weekday(col.d)) >> pick(col.ordered_on, col.y, col.m, col.dd, col.wd) >> sort(col.ordered_on)
 ---

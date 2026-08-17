@@ -611,7 +611,11 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "previous" => format!("lag({}{})", arg(0), super::step(args)),
         "following" => format!("lead({}{})", arg(0), super::step(args)),
         "to_number" => format!("as.numeric({})", arg(0)),
-        "to_whole" => format!("as.integer({})", arg(0)),
+        // `as.integer` after the rounding, so the answer prints as a whole
+        // number rather than as `7` with a decimal point. The rounding is what
+        // decided the value; the cast only settles how it is stored.
+        "round_below" => format!("as.integer(floor({}))", arg(0)),
+        "round_above" => format!("as.integer(ceiling({}))", arg(0)),
         "to_text" => format!("as.character({})", arg(0)),
         "to_date" => format!("as.Date({})", arg(0)),
         "trim" => format!("trimws({})", arg(0)),

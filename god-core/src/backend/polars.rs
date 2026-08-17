@@ -728,7 +728,8 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "previous" => format!("{}.shift({})", arg(0), super::step_alone(args, "")),
         "following" => format!("{}.shift({})", arg(0), super::step_alone(args, "-")),
         "to_number" => format!("{}.cast(pl.Float64)", arg(0)),
-        "to_whole" => format!("{}.cast(pl.Int64)", arg(0)),
+        "round_below" => format!("{}.floor().cast(pl.Int64)", arg(0)),
+        "round_above" => format!("{}.ceil().cast(pl.Int64)", arg(0)),
         "to_text" => format!("{}.cast(pl.String)", arg(0)),
         // Not a cast: polars deprecated the string one, and `pl.Date` was the
         // wrong target anyway. DuckDB reads `to_date` as a timestamp, so

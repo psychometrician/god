@@ -38,8 +38,8 @@ messy >> add(word = to_text(col.n)) >> add(digits = characters(col.word))
 *`messy then add [word] as to_text([n]) then add [digits] as characters([word])`*
 
 **Every conversion begins `to_`**, and nothing else does: `to_number`,
-`to_whole`, `to_text`, `to_date`. Ask for the characters in a number without
-converting it first and you are told which conversion you wanted:
+`to_text`, `to_date`. Ask for the characters in a number without converting it
+first and you are told which conversion you wanted:
 
 ::: {.panel-tabset}
 
@@ -62,15 +62,19 @@ except GodError as refusal:
 
 :::
 
-## The four conversions
+## The three conversions
 
-`to_text`, `to_number`, `to_whole` and `to_date` are the whole set. Each one says
-what it makes rather than what it takes, so there is nothing to remember about
+`to_text`, `to_number` and `to_date` are the whole set. Each one says what it
+makes rather than what it takes, so there is nothing to remember about
 direction.
 
-`to_number` gives a number that may have a decimal point. `to_whole` gives one
-that may not, and it truncates rather than rounding, which is worth knowing
-before you use it on money.
+There were four of these, and the fourth was a mistake worth explaining because
+it is the kind that hides. `to_whole` turned a number into a whole one, which
+sounds like a conversion and is not: this grammar has one kind of number, so
+`to_whole` converted nothing. It was a rounding wearing a conversion's name, and
+because the name said nothing about direction, no reader could tell whether
+-5.5 came back as -5 or as -6. It is two words now, and they are in the chapter
+on adding a column, where the arithmetic lives.
 
 ::: {.panel-tabset}
 
@@ -79,9 +83,8 @@ before you use it on money.
 ```{r}
 run('
   messy
-    then add [as_text] as to_text([n]),
-         [halved] as to_whole((to_number([n]) / 2))
-    then pick [n, as_text, halved]
+    then add [as_text] as to_text([n]), [half] as to_number([n]) / 2
+    then pick [n, as_text, half]
 ')
 ```
 
@@ -89,75 +92,16 @@ run('
 
 ```{r}
 messy |>
-  add(as_text = to_text(n), halved = to_whole(to_number(n) / 2)) |>
-  pick(n, as_text, halved)
+  add(as_text = to_text(n), half = to_number(n) / 2) |>
+  pick(n, as_text, half)
 ```
 
 ### Python
 
 ```{python}
 (messy
-  >> add(as_text = to_text(col.n), halved = to_whole(to_number(col.n) / 2))
-  >> pick(col.n, col.as_text, col.halved))
-```
-
-:::
-
-### Which way `to_whole` goes, and why
-
-Half of 7 is 3.5, and `to_whole` makes that 3. It throws the fraction away
-rather than rounding to the nearest, and it does that in both directions: -3.5
-becomes -3, not -4. The word for that is truncation, and it is toward zero.
-
-This is worth stating rather than leaving to be discovered, because the other
-answer is just as reasonable and you cannot tell which you have by reading the
-name. Two reasons decided it.
-
-The first is that this is what a conversion does everywhere else. Every
-host language god reaches already truncates when it turns a number into a whole
-one: R's `as.integer(7.5)` is 7, Python's `int(7.5)` is 7, and pandas, polars
-and Spark all agree. If you learned `to_whole` here and then read the dplyr or
-pandas version of your own pipeline, nothing changes under you.
-
-The second is that rounding is a different question wearing the same word.
-Rounding has to answer what happens exactly halfway, and there are at least
-three defensible answers to that: away from zero, toward the even number, or
-always up. A word that has to pick one of those silently is a word you have to
-look up, and the point of this vocabulary is that you should not have to. If
-rounding is ever added it will be its own word, saying which rule it follows.
-
-So `to_whole` is a conversion, not a rounding, and if what you want is the
-nearest whole number, add half before converting.
-
-::: {.panel-tabset}
-
-### run
-
-```{r}
-run('
-  messy
-    then add [down] as to_whole((to_number([n]) / 2))
-    then add [nearest] as to_whole((to_number([n]) / 2) + 0.5)
-    then pick [n, down, nearest]
-')
-```
-
-### R
-
-```{r}
-messy |>
-  add(down = to_whole(to_number(n) / 2)) |>
-  add(nearest = to_whole(to_number(n) / 2 + 0.5)) |>
-  pick(n, down, nearest)
-```
-
-### Python
-
-```{python}
-(messy
-  >> add(down = to_whole(to_number(col.n) / 2))
-  >> add(nearest = to_whole(to_number(col.n) / 2 + 0.5))
-  >> pick(col.n, col.down, col.nearest))
+  >> add(as_text = to_text(col.n), half = to_number(col.n) / 2)
+  >> pick(col.n, col.as_text, col.half))
 ```
 
 :::

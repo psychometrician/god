@@ -71,16 +71,44 @@ The answer takes the sign of the divisor, so `remainder(-7, 2)` is 1. That is
 R's answer and Python's; SQL engines give -1, and god now gives the same answer
 wherever it runs.
 
-### `to_whole` rounded on some engines and truncated on others
+### `to_whole` is now `round_below` and `round_above`
 
-`to_whole(7.5)` gave 8 when the pipeline ran, and 7 when the same pipeline was
-handed to R or pandas through `show_as` and run there. It now truncates toward
-zero everywhere, which is what a conversion does in every host language and
-what all but one of the targets already did. The printed pandas version also
-stopped raising on a value with a fractional part.
+`to_whole` is gone, and writing it gets a refusal that names both replacements.
 
-**This changes answers.** A pipeline using `to_whole` on a number ending in
-.5 or above will return a smaller whole number than it did before.
+It had two problems and they had the same cause. It gave different answers on
+different engines — `to_whole(7.5)` was 8 when the pipeline ran and 7 when the
+same pipeline was handed to R or pandas and run there. And nobody could tell
+from the name which way it went, because the name did not say.
+
+The cause of both is that it was not a conversion. god has one kind of number,
+so `to_whole` turned a number into a number: it was a rounding wearing the
+`to_` prefix, and the prefix made it look like a type change nobody needed to
+think about.
+
+```r
+sales |> add(each = round_below(revenue / 7), pages = round_above(revenue / 7))
+```
+
+```python
+sales >> add(each = round_below(col.revenue / 7), pages = round_above(col.revenue / 7))
+```
+
+`round_below` always goes toward the smaller number and `round_above` toward
+the larger, so `round_below(-5.5)` is -6 and `round_above(-5.5)` is -5. A value
+that is already whole does not move under either. Both give the same answer on
+every engine god runs on or prints to.
+
+They are `below` and `above` rather than down and up because spreadsheets round
+"down" toward zero, which would make -5.5 into -5. One word meaning two things
+depending on which tool you were last in is the thing this grammar exists to
+avoid.
+
+There is no word for the nearest whole number, because you can write it:
+`round_below(col.x + 0.5)`.
+
+**This changes answers**, in two ways. A pipeline that used `to_whole` will now
+refuse rather than run, and the replacement you pick may return a different
+number than `to_whole` did on negatives.
 
 ### `join` on a key the two tables name differently
 

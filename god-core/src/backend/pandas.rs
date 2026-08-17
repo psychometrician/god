@@ -861,7 +861,12 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // disagree with the others, it would not run. And truncation toward
         // zero is the convention the grammar names, which DuckDB needed
         // `trunc()` to reach as well. Missing values survive as missing.
-        "to_whole" => format!("np.trunc({}).astype(\"Int64\")", arg(0)),
+        // `np.floor` before the cast for the same reason R needs it, and the
+        // cast is not optional: a bare `.astype("Int64")` raises on a value
+        // with a fractional part in pandas 3, so the rounding has to happen
+        // first whatever else is true.
+        "round_below" => format!("np.floor({}).astype(\"Int64\")", arg(0)),
+        "round_above" => format!("np.ceil({}).astype(\"Int64\")", arg(0)),
         "to_text" => format!("{}.astype(\"string\")", arg(0)),
         "to_date" => format!("pd.to_datetime({})", arg(0)),
         "trim" => format!("{}.str.strip()", arg(0)),
