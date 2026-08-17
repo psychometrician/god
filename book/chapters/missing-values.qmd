@@ -167,3 +167,101 @@ SQL and dplyr both call this `coalesce`. It is `first_present` here because
 `missing` is already the grammar's word for the absent value, so `present` is its
 opposite, and `first` names the part people most often misread: the columns
 are a priority order.
+
+## Carrying the last value forward
+
+A reading taken hourly, where the sensor only reports when the value changes,
+leaves holes that are not really missing: the value is the last one you saw.
+`latest` fills a hole with the most recent value above it.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+readings <- data.frame(
+  taken_at = 1:6,
+  reading  = c(10, NA, NA, 40, NA, 60)
+)
+
+run('
+  readings
+    then sort [taken_at]
+    then add [reading] as latest([reading])
+', readings = readings)
+```
+
+### R
+
+```{r}
+readings |> sort(taken_at) |> add(reading = latest(reading))
+```
+
+### Python
+
+```{python}
+readings = pd.DataFrame({
+    "taken_at": [1, 2, 3, 4, 5, 6],
+    "reading":  [10, None, None, 40, None, 60],
+})
+
+readings >> sort(col.taken_at) >> add(reading = latest(col.reading))
+```
+
+:::
+
+*`readings then sort [taken_at] then add [reading] as latest([reading])`*
+
+It fills a run of holes, not just one. That is the difference between this
+and reaching for `previous`, which looks back exactly one row and leaves the
+second hole of a pair still open.
+
+Like every value that walks the rows, it needs a `sort` first, because "the
+last value" means nothing until something has said last in what order. And
+`by` restarts it for each group, so one group never borrows another's value.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+readings <- data.frame(
+  sensor   = c("a", "a", "a", "b", "b", "b"),
+  taken_at = c(1, 2, 3, 1, 2, 3),
+  reading  = c(10, NA, NA, 50, NA, NA)
+)
+
+run('
+  readings
+    then sort [sensor], [taken_at]
+    then add [reading] as latest([reading]) by [sensor]
+', readings = readings)
+```
+
+### R
+
+```{r}
+readings |>
+  sort(sensor, taken_at) |>
+  add(reading = latest(reading), by = sensor)
+```
+
+### Python
+
+```{python}
+readings = pd.DataFrame({
+    "sensor":   ["a", "a", "a", "b", "b", "b"],
+    "taken_at": [1, 2, 3, 1, 2, 3],
+    "reading":  [10, None, None, 50, None, None],
+})
+
+(readings
+  >> sort(col.sensor, col.taken_at)
+  >> add(reading = latest(col.reading), by = col.sensor))
+```
+
+:::
+
+A row with nothing above it and nothing of its own stays missing, because
+there is no earlier value to carry. `fill_missing` after it puts a value
+there if you want one.

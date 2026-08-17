@@ -200,7 +200,18 @@ pub fn check_tables(
                 ));
             }
         }
-        if let Step::Take { by, last, span, .. } = step {
+        if let Step::Take { by, last, ties, span, .. } = step {
+            // **A tie is a tie in some ordering**, so with nothing sorted there
+            // is nothing to be tied on and the word would mean nothing at all.
+            // This is the sharpest of the three sort demands here: the other two
+            // would give a defensible answer without one, and this would give
+            // none.
+            if *ties && !ordered {
+                return Err(Diagnostic::illegal(
+                    "`with ties` keeps the rows level with the last one taken, and nothing has said what they would be level *on*. Sort before it: `then sort [points] descending then take 3 with ties`",
+                    *span,
+                ));
+            }
             if !by.is_empty() && !ordered {
                 return Err(Diagnostic::illegal(
                     "`take ... by` gives the first rows of each group, and nothing has said what order the rows are in, so there is no first. Sort before it: `then sort [when] descending then take 1 by [id]`",
@@ -283,6 +294,58 @@ fn expand_across(step: &mut Step, schema: &Schema) -> Result<(), Diagnostic> {
         let value = substitute_value(&rule.value, &name);
         values.push(Named { name, value });
     }
+    Ok(())
+}
+
+/// Turn `keep where any name starts "q" as value > 3` into one ordinary
+/// condition per matched column, joined by `or` — or by `and` for `every`.
+///
+/// **The same move `across` makes, for a question instead of a value.** Once
+/// this has run there is no such thing as a quantified condition: what the type
+/// rules, the seat rules and every backend see is a condition somebody could
+/// have written by hand. None of that code knows this exists, which is why it
+/// cost no new checking.
+///
+/// **The empty match is a refusal rather than an answer**, and the reason is
+/// that both answers are defensible and neither is guessable: an `any` over no
+/// columns is false and an `every` over no columns is true, so the same
+/// mistyped selector would silently empty the table or silently keep it whole.
+/// `across` refuses the same case for the same reason.
+fn expand_quantified(condition: &mut Expr, schema: &Schema) -> Result<(), Diagnostic> {
+    let (every, selector, test, span) = match condition {
+        Expr::Quantified { every, selector, test, span } => {
+            (*every, selector.clone(), test.clone(), *span)
+        }
+        _ => return Ok(()),
+    };
+
+    let chosen = columns_matching(&selector, schema)?;
+    if chosen.is_empty() {
+        return Err(Diagnostic::illegal(
+            format!(
+                "no column's name matches that, so there is nothing to ask. The table has: {}",
+                list(&schema.names())
+            ),
+            span,
+        ));
+    }
+
+    let joiner = if every { Logic::And } else { Logic::Or };
+    let mut built: Option<Expr> = None;
+    for column in chosen {
+        let name = Name { text: column, span };
+        let one = substitute_value(&test, &name);
+        built = Some(match built {
+            None => one,
+            Some(so_far) => Expr::Logic {
+                op: joiner,
+                left: Box::new(so_far),
+                right: Box::new(one),
+                span,
+            },
+        });
+    }
+    *condition = built.expect("the empty case was refused above");
     Ok(())
 }
 
@@ -479,13 +542,14 @@ fn window_needing_order(step: &Step) -> Option<(&'static str, Span)> {
                 Expr::Call { name, span, .. }
                     if matches!(
                         name.as_str(),
-                        "running_total" | "previous" | "following"
+                        "running_total" | "previous" | "following" | "latest"
                     ) =>
                 {
                     Some((
                         match name.as_str() {
                             "running_total" => "running_total(...)",
                             "previous" => "previous(...)",
+                            "latest" => "latest(...)",
                             _ => "following(...)",
                         },
                         *span,
@@ -513,6 +577,13 @@ fn check_step(
     // is why an aggregate written across many columns is checked by exactly the
     // code that checks one written by hand.
     expand_across(step, schema)?;
+    // The same, for `keep where any ... as ...`. It has to happen before the
+    // filtering-join peel below, so that `matching` still sees a condition it
+    // recognizes and every rule about what may stand in a `keep` applies to the
+    // expansion rather than to the pattern.
+    if let Step::Keep { condition, .. } = step {
+        expand_quantified(condition, schema)?;
+    }
 
     match step {
         Step::Keep { condition, .. } => {
@@ -1681,6 +1752,20 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
         Expr::Truth { .. } => Ok(Type::Truth),
         Expr::Missing { .. } => Ok(Type::Unknown),
 
+        // **Reaching here means it was written somewhere it is not expanded**,
+        // which is every seat but the whole condition of a `keep`. It asks one
+        // question of many columns and answers yes or no, so it is a condition
+        // and nothing else — the same restriction `matching` has, for a
+        // related reason.
+        Expr::Quantified { every, span, .. } => Err(Diagnostic::illegal(
+            format!(
+                "`{}` asks a question of many columns, so it is the whole question a `keep` asks and cannot stand here: `keep where {} name starts \"q\" as value > 3`",
+                if *every { "every" } else { "any" },
+                if *every { "every" } else { "any" }
+            ),
+            *span,
+        )),
+
         // **Every test has to be a question and every value has to hold the same
         // kind of thing**, because they all end up in one column. Both are rules
         // the grammar already applies elsewhere: `keep` asks the first of a
@@ -2076,6 +2161,27 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                     }
                     Ok(Type::Number)
                 }
+
+                // Both sides divide, so both have to be numbers. Dividing by
+                // nought is the engine's answer to give rather than the
+                // checker's to predict, the same as `/` already is.
+                "remainder" => {
+                    for i in [0usize, 1] {
+                        if !kinds[i].agrees_with(Type::Number) {
+                            return Err(Diagnostic::illegal(
+                                format!("`remainder` divides one number by another and hands back what is left over, and this is {}", kinds[i].name()),
+                                args[i].span(),
+                            ));
+                        }
+                    }
+                    Ok(Type::Number)
+                }
+
+                // It hands back a value from this column, so it hands back
+                // whatever the column holds. A row with nothing before it and
+                // nothing of its own stays missing, which is the one case
+                // `fill_missing` covers and this does not.
+                "latest" => Ok(kinds[0]),
 
                 // These hand back a value from another row, so they hand back
                 // whatever that column holds. A row with nothing before it, or

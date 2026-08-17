@@ -4,7 +4,7 @@
 \alias{take_last}
 \title{The last n rows, or the last n of each group}
 \usage{
-take_last(.data, n, by)
+take_last(.data, n, by, ties = FALSE)
 }
 \arguments{
 \item{.data}{A table, or a pipeline.}
@@ -12,6 +12,9 @@ take_last(.data, n, by)
 \item{n}{How many rows.}
 
 \item{by}{Columns to group by, for the last n rows of each group.}
+
+\item{ties}{Keep every row level with the last one taken, rather than
+exactly `n` rows. Needs a `sort` before it.}
 }
 \value{
 A pipeline.

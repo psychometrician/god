@@ -67,8 +67,13 @@ pub(crate) fn step_text(step: &Step) -> String {
             format!("sort {}", written.join(", "))
         }
 
-        Step::Take { count, by, last, .. } => {
-            format!("take{} {count}{}", if *last { "_last" } else { "" }, grouping(by))
+        Step::Take { count, by, last, ties, .. } => {
+            format!(
+                "take{} {count}{}{}",
+                if *last { "_last" } else { "" },
+                grouping(by),
+                if *ties { " with ties" } else { "" }
+            )
         }
 
         Step::AddRows { other, .. } => format!("add_rows {}", other.text),
@@ -295,5 +300,17 @@ fn expr(e: &Expr) -> String {
                 format!("matching({}, by {})", other.text, join_keys(by))
             }
         }
+
+        // **Printed back as it was written**, which is what this backend is
+        // for. A checked plan has none of these left — the checker expands one
+        // into ordinary conditions — so this is reached only when drawing a
+        // sentence that did not check, and that is exactly the reader who needs
+        // to see their own words rather than a rewrite of them.
+        Expr::Quantified { every, selector, test, .. } => format!(
+            "{} {} as {}",
+            if *every { "every" } else { "any" },
+            expr(selector),
+            expr(test)
+        ),
     }
 }

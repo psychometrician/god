@@ -556,3 +556,101 @@ fn the_windows_that_are_not_told_an_order_require_a_sort() {
     // And `rank` is not caught by it, because its argument is the order.
     assert!(run(&conn, "diary", "diary then add [place] as rank([x] descending)").1.len() == 3);
 }
+
+// -- what a task list found that four API sweeps could not ------------------
+
+/// **`latest` exists because the workaround this project shipped was wrong.**
+/// §14 refused a window in `fill_missing`'s seat and told people to write
+/// `first_present([x], previous([x]))` instead, calling it the same thing. It
+/// is not: `previous` looks back exactly one row, so a run of two holes left
+/// the second one open and nothing said so. This test is the difference.
+#[test]
+fn latest_fills_a_run_of_holes_where_previous_fills_one() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE gaps (d BIGINT, x BIGINT);
+         INSERT INTO gaps VALUES (1, 10), (2, NULL), (3, NULL), (4, 40), (5, NULL);",
+    )
+    .expect("the fixture table");
+
+    let (_, carried) = run(&conn, "gaps", "gaps then sort [d] then add [v] as latest([x]) then pick [v]");
+    assert_eq!(
+        carried,
+        vec![vec!["10"], vec!["10"], vec!["10"], vec!["40"], vec!["40"]]
+    );
+
+    // The old advice, on the same rows, so the gap it left is on the record.
+    let (_, one_back) = run(
+        &conn,
+        "gaps",
+        "gaps then sort [d] then add [v] as first_present([x], previous([x])) then pick [v]",
+    );
+    assert_eq!(one_back[2], ["missing"], "this is what `latest` was built to fix");
+}
+
+/// A row with nothing above it and nothing of its own stays missing, because
+/// there is no earlier value to carry. `fill_missing` is what puts one there.
+#[test]
+fn latest_leaves_a_leading_hole_alone() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE gaps (d BIGINT, x BIGINT);
+         INSERT INTO gaps VALUES (1, NULL), (2, 30);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(&conn, "gaps", "gaps then sort [d] then add [v] as latest([x]) then pick [v]");
+    assert_eq!(rows, vec![vec!["missing"], vec!["30"]]);
+}
+
+#[test]
+fn latest_needs_a_sort_like_every_other_window() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch("CREATE TABLE gaps (d BIGINT, x BIGINT);").expect("the fixture");
+    let message = refusal(&conn, "gaps", "gaps then add [v] as latest([x])");
+    assert!(message.contains("nothing has said what that order is"), "{message}");
+}
+
+/// **The sign is the grammar's rather than the engine's**, which is the second
+/// time a function has needed that ruling: R, Python, pandas and polars all
+/// answer 1 for `-7 % 2`, and DuckDB and Spark both answer -1 with nothing
+/// raised. `weekday` was the first.
+#[test]
+fn remainder_takes_the_divisors_sign_whatever_the_engine_would_do() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE nums (n BIGINT);
+         INSERT INTO nums VALUES (7), (-7), (6), (0);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(&conn, "nums", "nums then add [r] as remainder([n], 2) then pick [r]");
+    assert_eq!(rows, vec![vec!["1"], vec!["1"], vec!["0"], vec!["0"]]);
+}
+
+/// Integer division is why `remainder` is the only arithmetic word the grammar
+/// gained: once it exists there is a composition for the other one, and Law 5
+/// refuses a second way to say something already sayable.
+#[test]
+fn whole_division_composes_out_of_remainder() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE nums (n BIGINT);
+         INSERT INTO nums VALUES (7), (-7);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "nums",
+        "nums then add [d] as ([n] - remainder([n], 2)) / 2 then pick [d]",
+    );
+    // R's own answers: 7 %/% 2 is 3 and -7 %/% 2 is -4. They come back as
+    // doubles because `/` divides rather than divides-and-floors, which is the
+    // whole reason the composition needs `remainder` in front of it.
+    assert_eq!(rows, vec![vec!["3.0"], vec!["-4.0"]]);
+}
+
+#[test]
+fn remainder_wants_numbers_on_both_sides() {
+    let conn = pupils();
+    let message = refusal(&conn, "pupils", "pupils then add [r] as remainder([name], 2)");
+    assert!(message.contains("`remainder` divides one number"), "{message}");
+}

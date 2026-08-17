@@ -195,6 +195,18 @@ pub enum Step {
         /// the pipeline reached first; "the last three" is a claim about an end,
         /// and a table has no end until something says which way it runs.
         last: bool,
+        /// `with ties`: keep every row that ties with the last one taken.
+        ///
+        /// **It needs a sort for the same reason `by` does**, and more sharply:
+        /// a tie is a tie *in some ordering*, so with nothing sorted there is
+        /// nothing to tie on and the word would mean nothing.
+        ///
+        /// **The row count stops being readable off the sentence**, which is
+        /// why this is off by default and has to be asked for. dplyr's
+        /// `slice_max` defaults the other way, so the same request in the two
+        /// tools returned different rows with neither saying anything — the
+        /// disagreement this word exists to end.
+        ties: bool,
         span: Span,
     },
 
@@ -427,8 +439,8 @@ impl Step {
                     .collect(),
                 span: flat,
             },
-            Step::Take { count, by, last, .. } => {
-                Step::Take { count: *count, by: names(by), last: *last, span: flat }
+            Step::Take { count, by, last, ties, .. } => {
+                Step::Take { count: *count, by: names(by), last: *last, ties: *ties, span: flat }
             }
             Step::AddRows { other, .. } => {
                 Step::AddRows { other: other.without_span(), span: flat }
@@ -872,6 +884,31 @@ pub enum Expr {
         span: Span,
     },
 
+    /// `any name starts "q" as value > 3` — one condition asked of every
+    /// column whose name matches, and joined.
+    ///
+    /// **This is `across` for a question rather than for a value**, and it
+    /// reuses every part of it: the selector is the same `where name ...` that
+    /// `pick` takes, and `value` stands for the column being asked about, the
+    /// same way it does inside `add where`.
+    ///
+    /// **It is expanded before anything is checked**, into one ordinary
+    /// condition per matched column joined by `or` or `and`, so every rule that
+    /// applies to a condition written by hand applies here for free and without
+    /// knowing this exists. That is the move §13.11 records for `across`, and
+    /// the reason this cost no new checking.
+    Quantified {
+        /// Whether one matching column is enough, or all of them must.
+        every: bool,
+        /// A question about a column's name or kind, the shape `pick where`
+        /// takes.
+        selector: Box<Expr>,
+        /// The question asked of each matched column, with `value` standing for
+        /// it.
+        test: Box<Expr>,
+        span: Span,
+    },
+
     /// `kind`, meaning what the column being considered holds.
     ///
     /// The other thing you can ask about a column without looking at a row.
@@ -1004,6 +1041,7 @@ impl Expr {
             | Expr::Window { span, .. }
             | Expr::When { span, .. }
             | Expr::Matching { span, .. }
+            | Expr::Quantified { span, .. }
             | Expr::Call { span, .. } => *span,
         }
     }
@@ -1081,6 +1119,12 @@ impl Expr {
             Expr::Matching { other, by, .. } => Expr::Matching {
                 other: other.without_span(),
                 by: by.iter().map(JoinKey::without_span).collect(),
+                span: flat,
+            },
+            Expr::Quantified { every, selector, test, .. } => Expr::Quantified {
+                every: *every,
+                selector: Box::new(selector.without_spans()),
+                test: Box::new(test.without_spans()),
                 span: flat,
             },
         }

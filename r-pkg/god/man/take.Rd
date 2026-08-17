@@ -4,7 +4,7 @@
 \alias{take}
 \title{The first n rows}
 \usage{
-take(.data, n, by)
+take(.data, n, by, ties = FALSE)
 }
 \arguments{
 \item{.data}{A table, or a pipeline.}
@@ -15,6 +15,11 @@ works: `take(wanted)`.}
 \item{by}{Columns to group by, for the first n rows of each group. It needs a
 `sort` before it, because "the first rows" means nothing until something
 says first by what.}
+
+\item{ties}{Keep every row level with the last one taken, rather than
+exactly `n` rows. Needs a `sort` before it, since level on what is
+otherwise unanswerable, and the row count stops being readable off the
+sentence. dplyr's `slice_max` defaults the other way.}
 }
 \value{
 A pipeline.

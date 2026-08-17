@@ -5,6 +5,83 @@ a person using god can see.
 
 ## Unreleased
 
+### One question, asked of many columns at once
+
+`pick`, `add` and `summarize` have always taken a rule instead of a list of
+columns. `keep` did not, so asking eight score columns one question meant
+writing it eight times joined by `or`. Now it takes the same rule, with `any`
+or `every` in front:
+
+```r
+survey |> keep(where_any(startsWith(name, "q"), value > 3))
+survey |> keep(where_every(startsWith(name, "q"), value > 3))
+```
+
+```python
+survey >> keep(where_any(name.starts("q"), value > 3))
+survey >> keep(where_every(name.starts("q"), value > 3))
+```
+
+The text form is `keep where any name starts "q" as value > 3`. A rule that
+matches no column is refused rather than answered, because nothing is true of
+no columns and everything is, and neither answer is one you could have meant.
+
+### `latest`, for the last value that was there
+
+Fills a hole with the most recent value above it, in the order a `sort` has
+declared. `by` restarts it for each group.
+
+```r
+readings |> sort(taken_at) |> add(reading = latest(reading))
+```
+
+```python
+readings >> sort(col.taken_at) >> add(reading = latest(col.reading))
+```
+
+**If you were using `first_present(x, previous(x))` for this, it was filling
+only one row.** That is what the refusal message and this changelog used to
+recommend, and on a run of two holes it left the second one empty without
+saying anything. `latest` fills the run. The old advice is corrected
+everywhere it appeared.
+
+### `take` can keep the rows level with the cut
+
+`take 3` gives three rows. If the third and fourth are tied on the sort key,
+which one survives was the engine's choice. `with ties` keeps both:
+
+```r
+scores |> sort(descending(points)) |> take(2, ties = TRUE)
+```
+
+```python
+scores >> sort(descending(col.points)) >> take(2, ties=True)
+```
+
+It needs a `sort` in front of it, and the row count is no longer something you
+can read off the sentence, which is why it has to be asked for. Coming from
+dplyr, note that `slice_max` keeps ties by default and this does not.
+
+### `remainder`
+
+What is left over after dividing: `remainder(col.n, 3)`. For every third row,
+for buckets, for asking whether a number is even.
+
+The answer takes the sign of the divisor, so `remainder(-7, 2)` is 1. That is
+R's answer and Python's; SQL engines give -1, and god now gives the same answer
+wherever it runs.
+
+### `to_whole` rounded on some engines and truncated on others
+
+`to_whole(7.5)` gave 8 when the pipeline ran, and 7 when the same pipeline was
+handed to R or pandas through `show_as` and run there. It now truncates toward
+zero everywhere, which is what a conversion does in every host language and
+what all but one of the targets already did. The printed pandas version also
+stopped raising on a value with a fractional part.
+
+**This changes answers.** A pipeline using `to_whole` on a number ending in
+.5 or above will return a smaller whole number than it did before.
+
 ### `join` on a key the two tables name differently
 
 Real tables rarely agree on what the key is called: one holds `id` and the

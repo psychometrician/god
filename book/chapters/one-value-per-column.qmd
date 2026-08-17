@@ -126,3 +126,104 @@ show_as(survey >> add(where(name.starts("q"), value * 10)), "god")
 The grammar's own printing expands the rule into the columns it matched, so
 what actually ran is on the page rather than implied, which is honest to
 whoever reads the pipeline after you.
+
+## Asking one question of every column
+
+The same argument works for a question. If eight columns hold scores, "who
+answered above 3 anywhere?" is one question about eight columns, and writing
+it eight times joined by `or` is eight chances to miss one. `keep` takes the
+same selector, with `any` in front of it.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  survey
+    then keep where any name starts "q" as value > 4
+    then pick [name, q1_score, q2_score]
+')
+```
+
+### R
+
+```{r}
+survey |>
+  keep(where_any(startsWith(name, "q"), value > 4)) |>
+  pick(name, q1_score, q2_score)
+```
+
+### Python
+
+```{python}
+(survey
+  >> keep(where_any(name.starts("q"), value > 4))
+  >> pick(col.name, col.q1_score, col.q2_score))
+```
+
+:::
+
+*`survey then keep where any name starts "q" as value > 4`*
+
+`every` is the other half, and it asks the harder question: which respondents
+scored above 3 on all eight?
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  survey
+    then keep where every name starts "q" as value > 2
+    then pick [name]
+')
+```
+
+### R
+
+```{r}
+survey |> keep(where_every(startsWith(name, "q"), value > 2)) |> pick(name)
+```
+
+### Python
+
+```{python}
+survey >> keep(where_every(name.starts("q"), value > 2)) >> pick(col.name)
+```
+
+:::
+
+The two are `or` and `and` written once instead of seven times, and the
+expansion is on the page if you ask for it, exactly as it is for `add`.
+
+A selector that matches no column is refused rather than answered. Both
+answers would be defensible: nothing is true of no columns, and everything
+is. Neither is guessable, so a mistyped selector would otherwise empty your
+table or leave it whole without a word.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(survey |> keep(where_any(startsWith(name, "z"), value > 2)))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(survey >> keep(where_any(name.starts("z"), value > 2)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+The words are `any` and `every` in the sentence, and `where_any` and
+`where_every` in both languages. `any` is a function Python already has, and
+the grammar has never taken a name a host was using.

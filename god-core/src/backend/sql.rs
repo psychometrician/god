@@ -112,6 +112,26 @@ pub struct Dialect {
     /// Where it cannot, a `widen` that declares nothing is a sentence this
     /// dialect cannot write, and `refuses` says so.
     dynamic_pivot: bool,
+    /// How this engine converts a number to a whole one, **truncating toward
+    /// zero**, which is the convention the grammar names.
+    ///
+    /// **Spark's plain `CAST` already truncates and DuckDB's rounds**, so this
+    /// is one dialect's correction rather than a shared spelling — and reaching
+    /// for the obvious shared one broke Spark outright, because `trunc` there is
+    /// a *date* function that wants two arguments. Found by the two-engine
+    /// check, which is what it is for.
+    to_whole: &'static str,
+    /// How this engine is told to skip missing values in `last_value`, which is
+    /// what `latest` is built from.
+    ///
+    /// **The sixth entry, and the third that had to be measured on a live
+    /// session.** DuckDB takes the standard `IGNORE NULLS` after the argument;
+    /// Spark rejects that syntax outright and takes a second boolean argument
+    /// instead. Neither is a superset of the other, so this is a spelling in
+    /// the table rather than one form with a workaround.
+    ///
+    /// `{}` is the value being looked at.
+    last_present: &'static str,
 }
 
 /// DuckDB, which is what `--as sql` has always meant.
@@ -122,6 +142,8 @@ const DUCKDB: Dialect = Dialect {
     escapes_backslash: false,
     weekday: "isodow({})",
     dynamic_pivot: true,
+    to_whole: "CAST(trunc({}) AS BIGINT)",
+    last_present: "last_value({} IGNORE NULLS)",
 };
 
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
@@ -134,6 +156,8 @@ const SPARK: Dialect = Dialect {
     escapes_backslash: true,
     weekday: "extract(DAYOFWEEK_ISO FROM {})",
     dynamic_pivot: false,
+    to_whole: "CAST({} AS BIGINT)",
+    last_present: "last_value({}, true)",
 };
 
 pub struct Sql;
@@ -797,7 +821,7 @@ impl Dialect {
                         on.join(" AND ")
                     )
                 }
-                Step::Take { count, by, last, .. } => {
+                Step::Take { count, by, last, ties, .. } => {
                     // The order the caller asked for, and the same order walked
                     // backwards. `take_last` is `take` over the second one, with
                     // the first restored afterwards so the answer still reads
@@ -815,7 +839,33 @@ impl Dialect {
                             .collect::<Vec<_>>()
                             .join(", ")
                     };
-                    if by.is_empty() {
+                    if *ties {
+                        // **`with ties` is one query shape for both the grouped
+                        // and ungrouped cases**, because `LIMIT` cannot express
+                        // it at all: the count is not known until the rows are
+                        // ranked. `RANK` is the whole of it — it gives tied rows
+                        // the same place and skips the next, so `rank <= n`
+                        // keeps every row level with the last one taken.
+                        // `ROW_NUMBER` is what the untied case uses and is
+                        // exactly the wrong function here, since it breaks ties
+                        // arbitrarily and silently.
+                        let sorted = last_sort(plan, i)
+                            .expect("ties are only reached after a sort");
+                        let keys = written(sorted, *last);
+                        let restore = written(sorted, false);
+                        let partition = if by.is_empty() {
+                            String::new()
+                        } else {
+                            let groups: Vec<String> =
+                                by.iter().map(|n| self.name(&n.text)).collect();
+                            format!("PARTITION BY {} ", groups.join(", "))
+                        };
+                        format!(
+                            "SELECT * {} ({rank}) FROM (SELECT *, RANK() OVER ({partition}ORDER BY {keys}) AS {rank} FROM {from}) WHERE {rank} <= {count} ORDER BY {restore}",
+                            self.exclude,
+                            rank = self.name(RANK)
+                        )
+                    } else if by.is_empty() {
                         if *last {
                             let keys = last_sort(plan, i)
                                 .expect("take_last is only reached after a sort");
@@ -1037,13 +1087,23 @@ impl Dialect {
                 out
             }
             Expr::ColumnName { .. } => "NULL".to_string(),
+            // Expanded by the checker before any backend runs; written out
+            // rather than panicking so a drawing of an unchecked sentence has
+            // something to show.
+            Expr::Quantified { every, .. } => format!(
+                "/* {} of the matched columns */",
+                if *every { "every" } else { "any" }
+            ),
             // **A windowed call writes its own `OVER` too**, and it is here
             // rather than in `call` because `call` renders an expression
             // without knowing where it stands. All three take the order the
             // rows are already in, which the checker has refused to leave
             // unsaid.
             Expr::Call { name, args, .. }
-                if matches!(name.as_str(), "running_total" | "previous" | "following") =>
+                if matches!(
+                    name.as_str(),
+                    "running_total" | "previous" | "following" | "latest"
+                ) =>
             {
                 let mut clauses = Vec::new();
                 if !over.partition.is_empty() {
@@ -1082,6 +1142,19 @@ impl Dialect {
                     // `lag(x)` and `lag(x, 1)` mean the same thing to both
                     // dialects, and the shorter one is what a reader of the
                     // sentence wrote.
+                    // **The frame is written out here too, and for a sharper
+                    // reason than `running_total`'s.** `last_value` with an
+                    // `ORDER BY` and no frame defaults to `RANGE ... CURRENT
+                    // ROW`, which on a tie hands every tied row the last value
+                    // of the whole tie rather than its own — and with the
+                    // default frame some engines look at the entire partition,
+                    // so a hole would be filled from *below*. Naming the frame
+                    // is what makes this fill downward and only downward.
+                    "latest" => format!(
+                        "{} OVER ({} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+                        self.last_present.replace("{}", &inner),
+                        clauses.join(" ")
+                    ),
                     "previous" => {
                         format!("lag({inner}{}) OVER ({})", super::step(args), clauses.join(" "))
                     }
@@ -1255,7 +1328,22 @@ impl Dialect {
             "hour" => format!("hour({})", arg(0)),
             "weekday" => self.weekday.replace("{}", &arg(0)),
             "to_number" => format!("CAST({} AS DOUBLE)", arg(0)),
-            "to_whole" => format!("CAST({} AS BIGINT)", arg(0)),
+            // **`trunc` first, and it is not decoration.** A bare
+            // `CAST(7.5 AS BIGINT)` is 8 on DuckDB and 7 on Spark, and R,
+            // pandas and polars all answer 7 — so the same sentence meant two
+            // things depending on which engine ran it, with nothing raised.
+            // Measured, on both engines, rather than read out of a manual.
+            //
+            // The grammar names truncation toward zero, because that is what a
+            // conversion does in every host language and what five of the six
+            // targets already did. Rounding is a different operation and would
+            // be a different word.
+            "to_whole" => self.to_whole.replace("{}", &arg(0)),
+            // **The floored remainder, spelled so both dialects produce it.**
+            // Both answer -1 for -7 % 2 and R, Python, pandas and polars all
+            // answer 1. Spark has `pmod` and DuckDB does not, so the wrap is
+            // used for both rather than keeping a dialect entry for one word.
+            "remainder" => format!("((({a}) % ({b})) + ({b})) % ({b})", a = arg(0), b = arg(1)),
             "to_text" => format!("CAST({} AS STRING)", arg(0)),
             "to_date" => format!("CAST({} AS DATE)", arg(0)),
             "trim" => format!("trim({})", arg(0)),

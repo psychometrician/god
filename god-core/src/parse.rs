@@ -672,7 +672,30 @@ impl<'a> Parser<'a> {
                     "where",
                     "`keep` reads as a sentence: `keep where [column] is \"value\"`. The word `where` is missing",
                 )?;
-                let condition = self.expression()?;
+                // **`any` and `every` ask one question of many columns**, so
+                // they are read here rather than inside `expression`: what
+                // follows is a column *selector* and then a test, which is the
+                // shape `add where ... as ...` takes, not the shape an ordinary
+                // condition takes.
+                let condition = if self.at_word("any") || self.at_word("every") {
+                    let at = self.peek_span();
+                    let every = self.at_word("every");
+                    self.at += 1;
+                    let selector = self.expression()?;
+                    self.expect_word(
+                        "as",
+                        "a question asked of many columns needs the question after `as`: `keep where any name starts \"q\" as value > 3`",
+                    )?;
+                    let test = self.expression()?;
+                    Expr::Quantified {
+                        every,
+                        span: at.to(test.span()),
+                        selector: Box::new(selector),
+                        test: Box::new(test),
+                    }
+                } else {
+                    self.expression()?
+                };
                 let span = start.to(condition.span());
                 Ok(Step::Keep { condition, span })
             }
@@ -957,11 +980,28 @@ impl<'a> Parser<'a> {
                     } else {
                         Vec::new()
                     };
-                    let end = by.last().map(|n| n.span).unwrap_or(span);
+                    // `with ties` reads as two words and is one marker. `with`
+                    // introduces it and `ties` is the only thing it introduces,
+                    // so a `with` followed by anything else is a mistake worth
+                    // naming here rather than letting it reach the next step.
+                    let mut end = by.last().map(|n| n.span).unwrap_or(span);
+                    let mut ties = false;
+                    if self.eat_word("with") {
+                        let where_ties = self.peek_span();
+                        if !self.eat_word("ties") {
+                            return Err(Diagnostic::illegal(
+                                format!("the only thing `{word}` takes after `with` is `ties`: `{word} 3 with ties`"),
+                                where_ties,
+                            ));
+                        }
+                        ties = true;
+                        end = where_ties;
+                    }
                     Ok(Step::Take {
                         count: n as u64,
                         by,
                         last: word == "take_last",
+                        ties,
                         span: start.to(end),
                     })
                 }

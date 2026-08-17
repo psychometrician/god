@@ -119,6 +119,27 @@ impl Backend for PySpark {
 
                 Step::Sort { keys, .. } => calls.push(sort_by(keys)),
 
+                Step::Take { count, by, last, ties, .. } if *ties => {
+                    // Spark already needs a numbered window for a grouped
+                    // `take`, so this is that machinery with `rank` in place of
+                    // `row_number` — which is the one-word difference between
+                    // breaking ties arbitrarily and keeping them.
+                    let sorted = last_sort(plan, i)
+                        .expect("ties are only reached after a sort");
+                    let counted = if *last { flipped(sorted) } else { sorted.to_vec() };
+                    calls.push(format!(
+                        "withColumn({}, F.rank().over({}))",
+                        text(RANK),
+                        window(
+                            &Over { partition: by, order: Some(&counted), windowed: false },
+                            &[]
+                        )
+                    ));
+                    calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
+                    calls.push(format!("drop({})", text(RANK)));
+                    calls.push(sort_by(sorted));
+                }
+
                 Step::Take { count, by, last, .. } => {
                     if by.is_empty() {
                         if *last {
@@ -636,6 +657,15 @@ fn expr_over(e: &Expr, over: Over) -> String {
         // `keep` condition, and the step above renders that case as the join
         // Spark actually has.
         Expr::Matching { other, .. } => format!("# matching({})", other.text),
+        // **A quantified condition never reaches a backend**, because the
+        // checker expands it into ordinary conditions before anything renders
+        // (§13.11's move, for a question). It is written out in the grammar's
+        // own words rather than panicking, so that the drawing of a sentence
+        // that did *not* check still has something to show.
+        Expr::Quantified { every, .. } => {
+            format!("# {} of the matched columns", if *every { "every" } else { "any" })
+        }
+
         // Spark's `rank` is competition ranking already: ties share a place and
         // the next one skips. `dense_rank` is the other one, and is not what a
         // person means by rank.
@@ -727,6 +757,21 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // same total, which looks right on any fixture with distinct keys.
         "running_total" => format!(
             "F.sum({}).over({}.rowsBetween(Window.unboundedPreceding, Window.currentRow))",
+            arg(0),
+            window(&over, &[])
+        ),
+        // **`pmod` and not `%`.** Spark's `%` truncates, so -7 % 2 is -1
+        // there; `pmod` is its floored modulo and answers 1, which is the
+        // convention the grammar names.
+        "remainder" => format!("F.pmod({}, {})", arg(0), arg(1)),
+        // **The frame is written out for the same reason `running_total`'s is,
+        // and it matters more here.** `F.last` over an ordering with no frame
+        // takes Spark's default `RANGE ... CURRENT ROW`, which groups every row
+        // sharing a sort key — so on a tie a hole would be filled from a row
+        // beside it rather than from the last one above it. Naming the frame is
+        // what makes this fill downward and only downward.
+        "latest" => format!(
+            "F.last({}, ignorenulls=True).over({}.rowsBetween(Window.unboundedPreceding, Window.currentRow))",
             arg(0),
             window(&over, &[])
         ),

@@ -61,7 +61,42 @@ keep <- function(.data, condition) {
     pipeline <- god_use_table(pipeline, name, found)
   }
 
-  god_step(pipeline, sprintf("keep where %s", god_expr(condition)))
+  god_step(pipeline, sprintf("keep where %s", god_keep_condition(condition)))
+}
+
+# A `keep`'s condition, which is the one place a question may be asked of many
+# columns at once.
+#
+# **`where_any` and `where_every` rather than `any` and `every`.** The grammar's
+# own words are the short ones, and R could use them here — it never evaluates
+# this expression, so `any` would only ever be a symbol. Python cannot: it
+# evaluates, and `any` is one of its builtins, which the vocabulary has avoided
+# shadowing since `total` was chosen over `sum`. One spelling in both bindings is
+# worth more than each matching the text form separately, so both compound the
+# two words the way `take_last` and `first_present` already do.
+god_keep_condition <- function(e) {
+  if (is.call(e)) {
+    word <- as.character(e[[1L]])
+    if (identical(word, "where_any") || identical(word, "where_every")) {
+      parts <- as.list(e)[-1L]
+      if (length(parts) != 2L) {
+        stop(
+          sprintf(
+            "`%s` takes a question about a column's name and then the question to ask of each one: %s(startsWith(name, \"q\"), value > 3)",
+            word, word
+          ),
+          call. = FALSE
+        )
+      }
+      return(sprintf(
+        "%s %s as %s",
+        if (identical(word, "where_every")) "every" else "any",
+        god_pick_condition(parts[[1L]]),
+        god_expr(god_mark_value(parts[[2L]]))
+      ))
+    }
+  }
+  god_expr(e)
 }
 
 # The `where(pattern, value)` a verb was given, if it was given one.
@@ -339,6 +374,10 @@ sort <- function(.data, ...) {
 #' @param .data A table, or a pipeline.
 #' @param n How many. An ordinary R value, so a threshold held in a variable
 #'   works: `take(wanted)`.
+#' @param ties Keep every row level with the last one taken, rather than
+#'   exactly `n` rows. Needs a `sort` before it, since level on what is
+#'   otherwise unanswerable, and the row count stops being readable off the
+#'   sentence. dplyr's `slice_max` defaults the other way.
 #' @param by Columns to group by, for the first n rows of each group. It needs a
 #'   `sort` before it, because "the first rows" means nothing until something
 #'   says first by what.
@@ -353,7 +392,7 @@ sort <- function(.data, ...) {
 #' #> 1   West     100
 #' #> 2   East     120
 #' @export
-take <- function(.data, n, by) {
+take <- function(.data, n, by, ties = FALSE) {
   pipeline <- god_head(.data, substitute(.data), "take")
   count <- n
   if (!is.numeric(count) || length(count) != 1L || is.na(count) || count != trunc(count)) {
@@ -363,9 +402,10 @@ take <- function(.data, n, by) {
   god_step(
     pipeline,
     sprintf(
-      "take %s%s",
+      "take %s%s%s",
       format(count, scientific = FALSE, trim = TRUE),
-      god_grouping(grouping)
+      god_grouping(grouping),
+      if (isTRUE(ties)) " with ties" else ""
     )
   )
 }
@@ -379,6 +419,8 @@ take <- function(.data, n, by) {
 #'
 #' @param .data A table, or a pipeline.
 #' @param n How many rows.
+#' @param ties Keep every row level with the last one taken, rather than
+#'   exactly `n` rows. Needs a `sort` before it.
 #' @param by Columns to group by, for the last n rows of each group.
 #' @return A pipeline.
 #' @examples
@@ -388,7 +430,7 @@ take <- function(.data, n, by) {
 #' )
 #' sales |> sort(revenue) |> take_last(2)
 #' @export
-take_last <- function(.data, n, by) {
+take_last <- function(.data, n, by, ties = FALSE) {
   pipeline <- god_head(.data, substitute(.data), "take_last")
   count <- n
   if (!is.numeric(count) || length(count) != 1L || is.na(count) || count != trunc(count)) {
@@ -398,9 +440,10 @@ take_last <- function(.data, n, by) {
   god_step(
     pipeline,
     sprintf(
-      "take_last %s%s",
+      "take_last %s%s%s",
       format(count, scientific = FALSE, trim = TRUE),
-      god_grouping(grouping)
+      god_grouping(grouping),
+      if (isTRUE(ties)) " with ties" else ""
     )
   )
 }

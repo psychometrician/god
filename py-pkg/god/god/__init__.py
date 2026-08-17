@@ -62,6 +62,8 @@ from .verbs import (
     replace_text,
     row_count,
     row_number,
+    latest,
+    remainder,
     running_total,
     smallest,
     split_text,
@@ -82,6 +84,8 @@ from .verbs import (
     weekday,
     when,
     where,
+    where_any,
+    where_every,
     widen,
     year,
 )
@@ -127,9 +131,9 @@ __all__ = [
     # the engines left to themselves do not agree on.
     "year", "month", "day", "weekday", "hour",
     # Looking along the rows. All three need a `sort` before them.
-    "running_total", "previous", "following",
+    "running_total", "previous", "following", "latest", "remainder",
     # Choosing columns by the shape of their name.
-    "where", "name", "value", "kind",
+    "where", "where_any", "where_every", "name", "value", "kind",
     # The conditional. Not Python's own `if`, which would pick a branch
     # while the pipeline is being built and discard the condition.
     "when",

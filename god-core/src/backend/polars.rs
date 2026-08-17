@@ -125,6 +125,28 @@ impl Backend for Polars {
                     calls.push(format!("sort({})", args.join(", ")));
                 }
 
+                Step::Take { count, by, last, ties, .. } if *ties => {
+                    // The same mechanism, in polars' spelling. `method="min"`
+                    // is the ranking that shares a place among ties, which is
+                    // the whole of what makes this keep them.
+                    let sorted = last_sort(plan, i)
+                        .expect("ties are only reached after a sort");
+                    let first = &sorted[0];
+                    let descending = first.descending != *last;
+                    let ranked = format!(
+                        "pl.col({}).rank(method=\"min\", descending={})",
+                        text(&first.column.text),
+                        if descending { "True" } else { "False" }
+                    );
+                    let scoped = if by.is_empty() {
+                        ranked
+                    } else {
+                        format!("{ranked}.over({})", list(by))
+                    };
+                    calls.push(format!("filter({scoped} <= {count})"));
+                    calls.push(sort_by(sorted));
+                }
+
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
@@ -595,6 +617,15 @@ fn expr(e: &Expr) -> String {
         // `keep` condition, and the step above renders that case as the join
         // polars actually has.
         Expr::Matching { other, .. } => format!("# matching({})", other.text),
+        // **A quantified condition never reaches a backend**, because the
+        // checker expands it into ordinary conditions before anything renders
+        // (§13.11's move, for a question). It is written out in the grammar's
+        // own words rather than panicking, so that the drawing of a sentence
+        // that did *not* check still has something to show.
+        Expr::Quantified { every, .. } => {
+            format!("# {} of the matched columns", if *every { "every" } else { "any" })
+        }
+
         // `"min"` is competition ranking, which is what a person means by rank:
         // ties share a place and the next one skips. polars defaults to the
         // average of the tied places, which is not it.
@@ -690,6 +721,10 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "running_total" => format!("{}.cum_sum()", arg(0)),
         // polars keeps the sign convention the grammar refused the words for:
         // one row back is a positive shift, one row forward is a negative one.
+        // Measured rather than assumed: polars answers 1 for -7 % 2, the same
+        // as R and Python, so no correction is needed here.
+        "remainder" => format!("({} % {})", arg(0), arg(1)),
+        "latest" => format!("{}.forward_fill()", arg(0)),
         "previous" => format!("{}.shift({})", arg(0), super::step_alone(args, "")),
         "following" => format!("{}.shift({})", arg(0), super::step_alone(args, "-")),
         "to_number" => format!("{}.cast(pl.Float64)", arg(0)),

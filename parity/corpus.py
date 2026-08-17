@@ -201,3 +201,13 @@ sales >> keep(matching(regions, by = col.region == col.area)) >> summarize(n = r
 sales >> sort(col.ordered_on) >> add(two_back = previous(col.revenue, 2), two_on = following(col.revenue, 2)) >> pick(col.ordered_on, col.revenue, col.two_back, col.two_on)
 ---
 sales >> sort(col.ordered_on) >> add(before = previous(col.revenue, 2), by = col.region) >> pick(col.region, col.ordered_on, col.revenue, col.before)
+---
+sales >> keep(where_any((name == "revenue") | (name == "cost"), value > 100)) >> summarize(n = row_count(), by = col.region)
+---
+sales >> keep(where_every((name == "revenue") | (name == "cost"), value > 60)) >> pick(col.product, col.revenue, col.cost)
+---
+sales >> sort(descending(col.revenue)) >> take(3, ties = True) >> pick(col.product, col.revenue)
+---
+sales >> sort(col.ordered_on) >> add(carried = latest(col.cost), by = col.region) >> pick(col.region, col.ordered_on, col.cost, col.carried)
+---
+sales >> add(bucket = remainder(col.revenue, 7)) >> keep(remainder(col.cost, 2) == 0) >> pick(col.product, col.revenue, col.bucket)

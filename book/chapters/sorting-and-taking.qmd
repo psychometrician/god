@@ -204,6 +204,91 @@ sales >> sort(col.revenue) >> take_last(1, by = col.region) >> pick(col.region, 
 
 *`sales then sort [revenue] then take_last 1 by [region] then pick [region, product, revenue]`*
 
+## When the cut falls inside a tie
+
+`take 3` gives three rows. If the third and fourth are level on the sort key,
+one of them is in and one is out, and nothing in the table says which. The
+engine picked. That is fine when you wanted three rows and wrong when you
+wanted the top three *scores*.
+
+`with ties` says the second thing: keep every row level with the last one
+taken.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+scores <- data.frame(
+  who    = c("ana", "ben", "cal", "dee"),
+  points = c(10, 9, 9, 8)
+)
+
+run('
+  scores
+    then sort [points] descending
+    then take 2 with ties
+', scores = scores)
+```
+
+### R
+
+```{r}
+scores |> sort(descending(points)) |> take(2, ties = TRUE)
+```
+
+### Python
+
+```{python}
+scores = pd.DataFrame({
+    "who":    ["ana", "ben", "cal", "dee"],
+    "points": [10, 9, 9, 8],
+})
+
+scores >> sort(descending(col.points)) >> take(2, ties=True)
+```
+
+:::
+
+*`scores then sort [points] descending then take 2 with ties`*
+
+Three rows came back from `take 2`, and that is the point. Once you ask for
+ties you have stopped asking for a number of rows and started asking for a
+cut, so the count is no longer something you can read off the sentence. That
+is why it has to be asked for and is never the default.
+
+It needs a `sort` in front of it, and more sharply than the others do: level
+with the last row *on what*? With nothing sorted there is no answer, so the
+sentence is refused rather than guessed.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(scores |> take(2, ties = TRUE))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(scores >> take(2, ties=True))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+`take_last` takes it too, and means the same thing at the other end.
+
+If you are arriving from dplyr, this is the one place its default and this
+one differ: `slice_max(points, n = 2)` keeps ties unless you tell it not to,
+and `take 2` drops them unless you tell it to keep them. Neither is wrong.
+Writing it down is what stops the two from quietly disagreeing.
+
 ## What travels with it
 
 - `descending` belongs to the key it wraps, and only `sort` accepts it.

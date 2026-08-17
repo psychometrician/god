@@ -145,6 +145,60 @@ sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
 The doubled `revenue` exists only in the pipeline's answer. The `sales` your
 session holds is unchanged, the way it always is.
 
+## What is left over
+
+`remainder` divides and hands back what did not divide evenly. It is how you
+say "every third row", or sort rows into a fixed number of buckets, or ask
+whether a number is even.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [date]
+    then add [n] as row_number()
+    then keep where remainder([n], 3) is 0
+    then pick [n, product, revenue]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  sort(date) |>
+  add(n = row_number()) |>
+  keep(remainder(n, 3) == 0) |>
+  pick(n, product, revenue)
+```
+
+### Python
+
+```{python}
+(sales
+  >> sort(col.date)
+  >> add(n = row_number())
+  >> keep(remainder(col.n, 3) == 0)
+  >> pick(col.n, col.product, col.revenue))
+```
+
+:::
+
+*`sales then sort [date] then add [n] as row_number() then keep where remainder([n], 3) is 0`*
+
+The answer takes the sign of what you divided by, so `remainder(-7, 2)` is 1
+rather than -1. That is R's answer and Python's; SQL engines give the other
+one, and the grammar names which it means so the same sentence cannot come
+back two ways depending on where it ran.
+
+It is the only arithmetic word the grammar has beyond `+`, `-`, `*` and `/`,
+and that is because it is the only one you cannot already write. Whole
+division is `([n] - remainder([n], 3)) / 3`, and a square is `[x] * [x]`, so
+neither gets a word of its own.
+
 ## What travels with it
 
 - `as` names what a step makes, name first, and it means exactly this again

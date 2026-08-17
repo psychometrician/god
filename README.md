@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-two functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-four functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
@@ -143,10 +143,11 @@ sequence of instructions, so a step named with a noun reads against the grain of
 what it is. That is why choosing columns is `pick` and not `columns`.
 
 **Functions.** `total` · `average` · `median` · `smallest` · `largest` ·
-`first` · `last` · `row_count` · `unique_count` · `first_present` · `between`
+`first` · `last` · `row_count` · `unique_count` · `first_present` · `between` ·
+`remainder`
 
 **Along the rows.** `rank` · `row_number` · `running_total` · `previous` ·
-`following`
+`following` · `latest`, which fills a hole with the last value that was there
 
 **Dates.** `year` · `month` · `day` · `weekday` · `hour`, where `weekday` counts
 Monday as 1 wherever it runs
@@ -163,10 +164,12 @@ question that is true wins.
 **The structure words**, which are how a sentence holds together: `then` joins
 steps, `where` asks a question, `as` names what a step makes, `by` groups,
 `descending` turns a sort key around, `all_but` inverts a column list,
-`unmatched` says whose rows survive a `join`, and `giving` declares the columns
-a `widen` makes. Choosing columns by rule uses `name`, `value` and `kind`; text
-is tested with `starts`, `ends` and `contains`; and `matching` is the join that
-cannot multiply rows, asking "has a partner?" without bringing any columns in.
+`unmatched` says whose rows survive a `join`, `with ties` keeps the rows level
+with the last one a `take` took, and `giving` declares the columns a `widen`
+makes. Choosing columns by rule uses `name`, `value` and `kind`, and `any` or
+`every` asks one question of all of them at once; text is tested with `starts`,
+`ends` and `contains`; and `matching` is the join that cannot multiply rows,
+asking "has a partner?" without bringing any columns in.
 
 **Words where the hosts disagree**, replaced by one that means the same
 everywhere: `is` for equality, `yes` and `no` for truth, `missing` for the absent

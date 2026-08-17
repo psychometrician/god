@@ -31,7 +31,7 @@ __all__ = [
     "total", "average", "median", "smallest", "largest",
     "first", "last", "unique_count", "row_count",
     "rank", "row_number", "first_present", "lower", "upper",
-    "where", "name", "value", "kind",
+    "where", "where_any", "where_every", "name", "value", "kind",
 ]
 
 
@@ -376,7 +376,7 @@ def sort(*keys):
     return _Verb("sort", lambda: f"sort {line}")
 
 
-def take(n, *, by=None):
+def take(n, *, by=None, ties=False):
     """The first n rows, or the first n of each group.
 
     `by` needs a `sort` before it, because "the first rows" means nothing until
@@ -400,10 +400,11 @@ def take(n, *, by=None):
     if isinstance(n, Expr) or isinstance(n, bool) or not isinstance(n, int):
         raise GodExpressionError("`take` needs a whole number of rows: take(10)")
     grouping = _grouping(by)
-    return _Verb("take", lambda: f"take {n}{grouping}")
+    tied = " with ties" if ties else ""
+    return _Verb("take", lambda: f"take {n}{grouping}{tied}")
 
 
-def take_last(n, *, by=None):
+def take_last(n, *, by=None, ties=False):
     """The last n rows, or the last n of each group.
 
     The other end of ``take``. It always needs a ``sort`` before it, where a bare
@@ -425,7 +426,8 @@ def take_last(n, *, by=None):
     if isinstance(n, Expr) or isinstance(n, bool) or not isinstance(n, int):
         raise GodExpressionError("`take_last` needs a whole number of rows: take_last(10)")
     grouping = _grouping(by)
-    return _Verb("take_last", lambda: f"take_last {n}{grouping}")
+    tied = " with ties" if ties else ""
+    return _Verb("take_last", lambda: f"take_last {n}{grouping}{tied}")
 
 
 def join(other, *, by=None, unmatched="this"):
@@ -775,6 +777,69 @@ class _Where:
     def __init__(self, condition, value=None):
         self.condition = condition
         self.value = value
+
+
+def where_any(condition, test):
+    """Keep the rows where **any** of the matched columns answers yes.
+
+    dplyr spells this `when_any`, pandas and polars `.any(axis=1)`. The columns
+    are chosen the same way `where` chooses them, and ``value`` stands for the
+    column being asked about::
+
+        survey >> keep(where_any(name.starts("q"), value > 3))
+
+    **The name is a compound rather than the grammar's own word**, and both
+    bindings use the same one. The text form says `any`, which it can, because
+    nothing there is evaluated; Python evaluates, and `any` is a builtin the
+    vocabulary has avoided shadowing since `total` was chosen over `sum`. One
+    spelling in R and Python is worth more than each matching the text form on
+    its own.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> survey = pd.DataFrame({"who": ["ana", "ben"],
+    ...                        "q1": [4, 1], "q2": [1, 2]})
+    >>> collect(survey >> keep(where_any(name.starts("q"), value > 3)))
+       who  q1  q2
+    0  ana   4   1
+    """
+    return _quantified(condition, test, "any")
+
+
+def where_every(condition, test):
+    """Keep the rows where **every** matched column answers yes.
+
+    The other half of `where_any`, and the same shape::
+
+        survey >> keep(where_every(name.starts("q"), value > 3))
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> survey = pd.DataFrame({"who": ["ana", "ben"],
+    ...                        "q1": [4, 1], "q2": [5, 2]})
+    >>> collect(survey >> keep(where_every(name.starts("q"), value > 3)))
+       who  q1  q2
+    0  ana   4   5
+    """
+    return _quantified(condition, test, "every")
+
+
+def _quantified(condition, test, word):
+    if not isinstance(condition, Expr):
+        raise GodExpressionError(
+            f"`where_{word}` takes a question about a column's name first, "
+            'like name.starts("q")'
+        )
+    if not isinstance(test, Expr):
+        raise GodExpressionError(
+            f"`where_{word}` takes the question to ask of each column second, "
+            f'with `value` standing for it: where_{word}(name.starts("q"), value > 3)'
+        )
+    return Expr(f"{word} {condition} as {test}")
 
 
 def where(condition, value=None):
@@ -1310,6 +1375,58 @@ def hour(column):
 #
 # **All three have to be told the order**, the way `row_number` does: a total
 # *so far* means nothing until a `sort` has said so far in what.
+
+
+def remainder(column, divisor):
+    """What is left over after dividing: `remainder(col.n, 3)`.
+
+    The one arithmetic operator with no composition in the grammar. Integer
+    division has one once this exists — ``(col.n - remainder(col.n, 3)) / 3`` —
+    and a square is ``col.x * col.x``, so neither gets a word of its own.
+
+    **The sign is the grammar's, not the engine's.** R, Python, pandas and
+    polars all answer 1 for ``-7 % 2``; DuckDB and Spark both answer -1, and
+    neither raises. god names the first — the answer takes the divisor's sign,
+    which is what makes bucketing work — and gives each engine the spelling
+    that produces it.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> rows = pd.DataFrame({"n": [1, 2, 3, 4]})
+    >>> collect(rows >> keep(remainder(col.n, 2) == 0))
+       n
+    0  2
+    1  4
+    """
+    return Expr(f"remainder({_written(column, 'remainder')}, {_value(divisor)})")
+
+
+def latest(column):
+    """The last value that was there, reading down: `latest(col.reading)`.
+
+    Fills a hole with the most recent value above it, which tidyr spells
+    ``fill``, pandas ``ffill`` and polars ``forward_fill``. Needs a `sort`
+    before it, like every window, and `by` restarts it for each group.
+
+    A row with nothing above it and nothing of its own stays missing. To put a
+    value there instead, `fill_missing` after it.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> readings = pd.DataFrame({"at": [1, 2, 3, 4],
+    ...                          "reading": [10.0, None, None, 40.0]})
+    >>> collect(readings >> sort(col.at) >> add(reading=latest(col.reading)))
+       at  reading
+    0   1     10.0
+    1   2     10.0
+    2   3     10.0
+    3   4     40.0
+    """
+    return Expr(f"latest({_written(column, 'latest')})")
 
 
 def running_total(column):

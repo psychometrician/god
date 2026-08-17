@@ -662,3 +662,45 @@ sales                                   region:text  product:text  revenue:numbe
                                         region  ordered_on  revenue  before
                                         -product  -cost
 ---
+sales then keep where any name is "revenue" or name is "cost" as value > 100 then summarize [n] as row_count() by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (([revenue] > 100) or ([cost] > 100))
+│                                       region  product  revenue  cost  ordered_on
+└ summarize [n] as row_count() by [region]
+                                        region  +n:number
+                                        -product  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then keep where every name is "revenue" or name is "cost" as value > 60 then pick [product, revenue, cost]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (([revenue] > 60) and ([cost] > 60))
+│                                       region  product  revenue  cost  ordered_on
+└ pick [product, revenue, cost]         product  revenue  cost
+                                        -region  -ordered_on
+---
+sales then sort [revenue] descending then take 3 with ties then pick [product, revenue]
+sales                        region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [revenue] descending  region  product  revenue  cost  ordered_on
+├ take 3 with ties           region  product  revenue  cost  ordered_on
+│   at most 3 rows
+└ pick [product, revenue]    product  revenue
+                             -region  -cost  -ordered_on
+---
+sales then sort [ordered_on] then add [carried] as latest([cost]) by [region] then pick [region, ordered_on, cost, carried]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [carried] as latest([cost]) by [region]
+│                                       region  product  revenue  cost  ordered_on  +carried:number
+└ pick [region, ordered_on, cost, carried]
+                                        region  ordered_on  cost  carried
+                                        -product  -revenue
+---
+sales then add [bucket] as remainder([revenue], 7) then keep where remainder([cost], 2) is 0 then pick [product, revenue, bucket]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [bucket] as remainder([revenue], 7)
+│                                       region  product  revenue  cost  ordered_on  +bucket:number
+├ keep where (remainder([cost], 2) is 0)
+│                                       region  product  revenue  cost  ordered_on  bucket
+└ pick [product, revenue, bucket]       product  revenue  bucket
+                                        -region  -cost  -ordered_on
+---

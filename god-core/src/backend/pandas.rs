@@ -162,6 +162,31 @@ impl Backend for Pandas {
 
                 Step::Sort { keys, .. } => calls.push(sort_by(keys)),
 
+                Step::Take { count, by, last, ties, .. } if *ties => {
+                    // **No `with_ties` anywhere in pandas**, so this renders the
+                    // mechanism the way SQL does: rank, keep, drop. `method`
+                    // matters — "min" is the ranking that gives tied rows the
+                    // same place and skips the next, which is what makes
+                    // `rank <= n` keep everything level with the cut.
+                    let sorted = last_sort(plan, i)
+                        .expect("ties are only reached after a sort");
+                    let first = &sorted[0];
+                    let ascend = if first.descending != *last { "False" } else { "True" };
+                    let grouped = if by.is_empty() {
+                        format!("d[{}]", text(&first.column.text))
+                    } else {
+                        format!(
+                            "d.groupby({})[{}]",
+                            list(by),
+                            text(&first.column.text)
+                        )
+                    };
+                    calls.push(format!(
+                        "loc[lambda d: {grouped}.rank(method=\"min\", ascending={ascend}) <= {count}]"
+                    ));
+                    calls.push(sort_by(sorted));
+                }
+
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
@@ -699,6 +724,15 @@ fn inner(e: &Expr, over: Over) -> String {
         // Unreachable in a checked plan: `matching` may only stand as a whole
         // `keep` condition, and the step above renders that case.
         Expr::Matching { other, .. } => format!("# matching({})", other.text),
+        // **A quantified condition never reaches a backend**, because the
+        // checker expands it into ordinary conditions before anything renders
+        // (§13.11's move, for a question). It is written out in the grammar's
+        // own words rather than panicking, so that the drawing of a sentence
+        // that did *not* check still has something to show.
+        Expr::Quantified { every, .. } => {
+            format!("# {} of the matched columns", if *every { "every" } else { "any" })
+        }
+
         Expr::Window { kind, key, .. } => match (kind, key) {
             // `"min"` is competition ranking, which is what a person means by
             // rank. pandas defaults to averaging the tied places, which is not it.
@@ -815,10 +849,19 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // order; only the origin differs.
         "weekday" => format!("({}.dt.dayofweek + 1)", arg(0)),
         "running_total" => windowed("cumsum()"),
+        // Python's `%` is floored, which is the convention the grammar names.
+        "remainder" => format!("({} % {})", arg(0), arg(1)),
+        "latest" => windowed("ffill()"),
         "previous" => windowed(&format!("shift({})", super::step_alone(args, ""))),
         "following" => windowed(&format!("shift({})", super::step_alone(args, "-"))),
         "to_number" => format!("pd.to_numeric({})", arg(0)),
-        "to_whole" => format!("{}.astype(\"Int64\")", arg(0)),
+        // **`np.trunc` first, and it fixes two things at once.** A bare
+        // `.astype("Int64")` *raises* on a value with a fractional part in
+        // pandas 3 — "cannot safely cast" — so this rendering did not merely
+        // disagree with the others, it would not run. And truncation toward
+        // zero is the convention the grammar names, which DuckDB needed
+        // `trunc()` to reach as well. Missing values survive as missing.
+        "to_whole" => format!("np.trunc({}).astype(\"Int64\")", arg(0)),
         "to_text" => format!("{}.astype(\"string\")", arg(0)),
         "to_date" => format!("pd.to_datetime({})", arg(0)),
         "trim" => format!("{}.str.strip()", arg(0)),

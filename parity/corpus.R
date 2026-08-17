@@ -194,3 +194,13 @@ sales |> keep(matching(regions, by = region == area)) |> summarize(n = row_count
 sales |> sort(ordered_on) |> add(two_back = previous(revenue, 2), two_on = following(revenue, 2)) |> pick(ordered_on, revenue, two_back, two_on)
 ---
 sales |> sort(ordered_on) |> add(before = previous(revenue, 2), by = region) |> pick(region, ordered_on, revenue, before)
+---
+sales |> keep(where_any(name == "revenue" | name == "cost", value > 100)) |> summarize(n = row_count(), by = region)
+---
+sales |> keep(where_every(name == "revenue" | name == "cost", value > 60)) |> pick(product, revenue, cost)
+---
+sales |> sort(descending(revenue)) |> take(3, ties = TRUE) |> pick(product, revenue)
+---
+sales |> sort(ordered_on) |> add(carried = latest(cost), by = region) |> pick(region, ordered_on, cost, carried)
+---
+sales |> add(bucket = remainder(revenue, 7)) |> keep(remainder(cost, 2) == 0) |> pick(product, revenue, bucket)

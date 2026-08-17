@@ -43,7 +43,7 @@ impl Backend for Dplyr {
     fn render(&self, plan: &Plan, _entering: &[Schema]) -> String {
         let mut lines = vec![plan.source.clone()];
 
-        for step in &plan.steps {
+        for (i, step) in plan.steps.iter().enumerate() {
             let call = match step {
                 // A filtering join is a whole verb in dplyr rather than a
                 // condition inside `filter`, which is the reason the grammar
@@ -274,6 +274,30 @@ impl Backend for Dplyr {
                 }
                 // dplyr names both ends, so this is the one target where the
                 // grammar's pair maps onto a pair rather than onto a mechanism.
+                Step::Take { count, by, last, ties, .. } if *ties => {
+                    // **dplyr is the one target with a word for this**, which
+                    // is why the rendering changes shape rather than gaining a
+                    // clause: `slice_min`/`slice_max` take `with_ties`, and
+                    // `slice_head` does not have it at all. Which of the two is
+                    // right follows from the sort's own direction, since "the
+                    // first three with ties" is "the three smallest" when the
+                    // sort ascends and "the three largest" when it descends.
+                    let sorted = last_sort(plan, i)
+                        .expect("ties are only reached after a sort");
+                    let first = &sorted[0];
+                    let descending = first.descending != *last;
+                    let verb = if descending { "slice_max" } else { "slice_min" };
+                    let mut args = vec![
+                        format!("order_by = {}", name(&first.column.text)),
+                        format!("n = {count}"),
+                        "with_ties = TRUE".to_string(),
+                    ];
+                    if !by.is_empty() {
+                        args.push(format!("by = {}", columns(by)));
+                    }
+                    format!("{verb}({})", args.join(", "))
+                }
+
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
@@ -436,6 +460,15 @@ fn expr(e: &Expr) -> String {
         // `keep` condition, and the step above renders that case as the verb
         // dplyr actually has.
         Expr::Matching { other, .. } => format!("semi_join({})", other.text),
+        // **A quantified condition never reaches a backend**, because the
+        // checker expands it into ordinary conditions before anything renders
+        // (§13.11's move, for a question). It is written out in the grammar's
+        // own words rather than panicking, so that the drawing of a sentence
+        // that did *not* check still has something to show.
+        Expr::Quantified { every, .. } => {
+            format!("# {} of the matched columns", if *every { "every" } else { "any" })
+        }
+
         // dplyr calls competition ranking `min_rank`, which names the
         // implementation rather than the idea. `desc()` is its own word for a
         // reversed ordering, and is the same one `arrange` takes.
@@ -484,6 +517,15 @@ fn expr(e: &Expr) -> String {
 /// where both tables agree, `customer_id == id` where they do not — and it
 /// writes the sides in the order god writes them, so the pair goes across
 /// unchanged.
+/// The keys of the most recent `sort` before this step, which is what "first"
+/// and "tied" both mean here.
+fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
+    plan.steps[..before].iter().rev().find_map(|step| match step {
+        Step::Sort { keys, .. } => Some(keys.as_slice()),
+        _ => None,
+    })
+}
+
 fn join_by(keys: &[JoinKey]) -> String {
     keys.iter()
         .map(|k| {
@@ -556,6 +598,16 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // keep dplyr's own names, which is what a reader over there recognizes
         // even though the grammar refuses those two words for being jargon.
         "running_total" => format!("cumsum({})", arg(0)),
+        // R's `%%` is already floored, which is the convention the grammar
+        // names, so this passes straight through.
+        "remainder" => format!("({} %% {})", arg(0), arg(1)),
+        // **`vctrs::vec_fill_missing` rather than an idiom.** The base-R
+        // spellings for this are all tricks — indexing by a `cummax` of
+        // positions, or a `cumsum` of non-missing — and every one of them is
+        // unreadable at a glance, which is the thing a printing backend exists
+        // to avoid. vctrs is a tidyverse package a dplyr reader already has,
+        // and this backend already writes `lubridate::` for the same reason.
+        "latest" => format!("vctrs::vec_fill_missing({}, direction = \"down\")", arg(0)),
         "previous" => format!("lag({}{})", arg(0), super::step(args)),
         "following" => format!("lead({}{})", arg(0), super::step(args)),
         "to_number" => format!("as.numeric({})", arg(0)),

@@ -485,3 +485,152 @@ fn a_missing_value_is_not_a_category_and_costs_no_rows() {
         "no combination should be made from a missing value: {rows:?}"
     );
 }
+
+/// The message a pipeline this file expects to be refused comes back with.
+fn refusal(conn: &Connection, pipeline: &str) -> String {
+    let schema = schema_of(conn, "sales");
+    match compile(pipeline, &schema, "sql") {
+        Ok(_) => panic!("this was accepted, and should not have been:\n{pipeline}"),
+        Err(d) => d.message,
+    }
+}
+
+// -- a question asked of many columns at once --------------------------------
+//
+// **`keep` was the one verb the column selector never reached**, and nobody had
+// written down why. `pick`, `add`, `summarize` and `lengthen` all take
+// `where name ...`; asking eight columns one question meant writing it eight
+// times joined by `or`, on exactly the wide tables the selector exists for.
+
+#[test]
+fn any_keeps_a_row_where_one_matched_column_answers_yes() {
+    let conn = sales();
+    let (_, rows) = run(
+        &conn,
+        r#"sales then keep where any name is "revenue" or name is "cost" as value > 250 then pick [product, revenue]"#,
+    );
+    // Only the two rows with revenue past 250; no cost in the fixture reaches it.
+    assert_eq!(rows.len(), 2);
+}
+
+#[test]
+fn every_keeps_a_row_only_where_all_of_them_do() {
+    let conn = sales();
+    let (_, rows) = run(
+        &conn,
+        r#"sales then keep where every name is "revenue" or name is "cost" as value > 90 then pick [revenue, cost]"#,
+    );
+    // revenue and cost both over 90: (300, 100) and (500, 100).
+    assert_eq!(rows.len(), 2);
+    assert!(rows.iter().all(|r| r[1] == "100.0"), "{rows:?}");
+}
+
+/// It expands into ordinary conditions before anything is checked, which is the
+/// move `across` already makes. **The point is that no rule had to learn about
+/// it**: what the type checker, the seat rules and every backend see is a
+/// condition somebody could have typed.
+#[test]
+fn a_quantified_condition_expands_into_ordinary_ones() {
+    let conn = sales();
+    let schema = schema_of(&conn, "sales");
+    let printed = compile(
+        r#"sales then keep where any name is "revenue" or name is "cost" as value > 250"#,
+        &schema,
+        "god",
+    )
+    .expect("legal")
+    .text;
+    assert!(printed.contains("[revenue] > 250"), "{printed}");
+    assert!(printed.contains("[cost] > 250"), "{printed}");
+    assert!(printed.contains(" or "), "any joins with or: {printed}");
+}
+
+#[test]
+fn every_joins_with_and_rather_than_or() {
+    let conn = sales();
+    let schema = schema_of(&conn, "sales");
+    let printed = compile(
+        r#"sales then keep where every name is "revenue" or name is "cost" as value > 90"#,
+        &schema,
+        "god",
+    )
+    .expect("legal")
+    .text;
+    assert!(printed.contains(" and "), "{printed}");
+}
+
+/// **Both answers are defensible and neither is guessable**, which is why this
+/// refuses rather than answering. An `any` over no columns is false and an
+/// `every` over no columns is true, so one mistyped selector would silently
+/// empty the table and the other would silently keep it whole.
+#[test]
+fn a_selector_matching_nothing_is_refused_rather_than_answered() {
+    let conn = sales();
+    for word in ["any", "every"] {
+        let message = refusal(
+            &conn,
+            &format!(r#"sales then keep where {word} name starts "zz" as value > 1"#),
+        );
+        assert!(message.contains("nothing to ask"), "`{word}`: {message}");
+    }
+}
+
+// -- the rows level with the cut ---------------------------------------------
+
+/// dplyr's `slice_max` keeps ties by default and `take` drops them, so the same
+/// request in the two tools returned different rows with neither saying
+/// anything. That is the disagreement this word exists to end.
+#[test]
+fn with_ties_keeps_the_rows_level_with_the_last_one_taken() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE scores (who VARCHAR, points BIGINT);
+         INSERT INTO scores VALUES ('ana', 10), ('ben', 9), ('cal', 9), ('dee', 8);",
+    )
+    .expect("the fixture table");
+
+    let (_, plain) = run_on(&conn, "scores then sort [points] descending then take 2", "scores");
+    assert_eq!(plain.len(), 2, "a plain take gives exactly what it was asked for");
+
+    let (_, tied) = run_on(
+        &conn,
+        "scores then sort [points] descending then take 2 with ties",
+        "scores",
+    );
+    assert_eq!(tied.len(), 3, "ben and cal are level at 9 and both survive");
+}
+
+/// A cut that falls on no tie takes exactly what it asked for, so the word costs
+/// nothing when it is not needed.
+#[test]
+fn with_ties_changes_nothing_when_the_cut_is_clean() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE scores (who VARCHAR, points BIGINT);
+         INSERT INTO scores VALUES ('ana', 10), ('ben', 9), ('cal', 8);",
+    )
+    .expect("the fixture table");
+    let (_, tied) = run_on(
+        &conn,
+        "scores then sort [points] descending then take 2 with ties",
+        "scores",
+    );
+    assert_eq!(tied.len(), 2);
+}
+
+/// **The sharpest of the three sort demands on `take`.** Without a sort the
+/// other two would still give a defensible answer; this one would give none,
+/// because level with the last row *on what*?
+#[test]
+fn with_ties_refuses_without_a_sort() {
+    let conn = sales();
+    let message = refusal(&conn, "sales then take 2 with ties");
+    assert!(message.contains("level *on*"), "{message}");
+}
+
+#[test]
+fn with_takes_only_the_word_ties() {
+    let conn = sales();
+    let message = refusal(&conn, "sales then sort [revenue] then take 2 with rows");
+    assert!(message.contains("after `with` is `ties`"), "{message}");
+}

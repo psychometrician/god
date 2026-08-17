@@ -45,6 +45,29 @@ PYTHON_ONLY = {
     "god_table": "the book's tables, fetched by name from the published site",
 }
 
+# A grammar word both bindings spell differently, and identically to each other.
+#
+# **This is not `PYTHON_ONLY` and the difference matters.** That list is for
+# names Python has and the grammar does not. These are the grammar's own words
+# reached through a host that cannot say them: the text form writes `any` and
+# `every`, which it may because it evaluates nothing, and Python evaluates —
+# `any` is one of its builtins, and the vocabulary has avoided shadowing a
+# builtin since `total` was chosen over `sum`.
+#
+# **R could have used the short words and does not, on purpose.** R never
+# evaluates a condition either, so `any(...)` inside `keep` would only ever be a
+# symbol. One spelling across both bindings is worth more than each binding
+# matching the text form on its own, so R compounds them too — the way
+# `take_last` and `first_present` are already compounded.
+#
+# Each entry maps the binding's spelling to the grammar word it carries, so this
+# file cannot drift into a place to hide a name nobody checked.
+BINDING_SPELLING = {
+    "where_any": "any",
+    "where_every": "every",
+}
+
+
 # The launcher names R exports beside its verbs, for the same reason.
 #
 # **`use_engine` is R's and Python has no equivalent, which is idiom rather than
@@ -115,7 +138,7 @@ def main() -> int:
         problems.append(f"Python does not export the verb `{missing}`")
 
     # R exports verbs and the launcher, and nothing else.
-    for extra in sorted(r - verbs - R_EXTRA):
+    for extra in sorted(r - verbs - R_EXTRA - set(BINDING_SPELLING)):
         problems.append(
             f"R exports `{extra}`, which is not a verb. R reads expressions out "
             "of the syntax tree and should bind none of them"
@@ -123,12 +146,29 @@ def main() -> int:
 
     # Everything Python exports is a verb, a function, a grammar word, or on the
     # short list above with its reason.
-    known = verbs | functions | words | set(PYTHON_ONLY)
+    known = verbs | functions | words | set(PYTHON_ONLY) | set(BINDING_SPELLING)
     for extra in sorted(py - known):
         problems.append(
             f"Python exports `{extra}`, which the grammar does not have. Add it "
             "to the vocabulary, or to PYTHON_ONLY with the reason it is Python's"
         )
+
+    # **A binding spelling is only allowed while the word it carries is real.**
+    # Otherwise this list becomes a place to park a name nothing checks — which
+    # is the failure every other list in this file is shaped to prevent.
+    #
+    # Only Python has to *export* one. R reads its conditions out of the syntax
+    # tree and binds no expression name at all, so `where_any` is a symbol there
+    # exactly as `where` and `value` already are, and looking for it in
+    # `NAMESPACE` would be looking in the wrong place.
+    for spelled, word in sorted(BINDING_SPELLING.items()):
+        if word not in words:
+            problems.append(
+                f"`{spelled}` is recorded as the binding spelling of `{word}`, "
+                f"and the grammar has no word `{word}`"
+            )
+        if spelled not in py:
+            problems.append(f"Python does not export `{spelled}`")
 
     # And every function the engine has is reachable from Python, since Python
     # evaluates expressions and cannot read one out of a tree.

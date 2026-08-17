@@ -246,6 +246,25 @@ pub const FUNCTIONS: &[Function] = &[
     // has to check.
     Function { name: "between", kind: Kind::Scalar, arity: Arity::Exactly(3) },
 
+    // **What is left over after dividing.** Added 2026-08-16, and it is the one
+    // arithmetic operator with no composition in the grammar: every other gap
+    // on dplyr's math shelf can be written with what is already here — integer
+    // division is `([x] - remainder([x], n)) / n` once this exists, and a square
+    // is `[x] * [x]` — so Law 5 refuses a word for those and this one earns it.
+    //
+    // **`remainder` rather than `%%` or `mod`.** The grammar has no operator
+    // punctuation past arithmetic, `%%` is R's alone, and `mod` is an
+    // abbreviation of a word nobody says out loud. "The remainder" is what this
+    // is called in English before it is called anything in a language.
+    //
+    // **The sign is named rather than inherited, and this is the second
+    // `weekday`.** Asked plainly, R, Python, pandas and polars all answer 1 for
+    // `-7 % 2` and DuckDB and Spark both answer -1, with nothing raised. So the
+    // grammar names the floored convention — the answer takes the divisor's
+    // sign — because that is the one that makes bucketing work, and each SQL
+    // dialect is given `((a % b) + b) % b`, which produces it on both.
+    Function { name: "remainder", kind: Kind::Scalar, arity: Arity::Exactly(2) },
+
     // The parts of a date. Four of the five are spelled the same by every
     // engine; `weekday` is not, and it is the reason this family needed
     // measuring rather than writing.
@@ -284,6 +303,26 @@ pub const FUNCTIONS: &[Function] = &[
     // word.
     Function { name: "previous", kind: Kind::Window, arity: Arity::Between(1, 2) },
     Function { name: "following", kind: Kind::Window, arity: Arity::Between(1, 2) },
+
+    // **The last value that was there, reading down.** tidyr calls the verb
+    // `fill`, pandas `ffill`, polars `forward_fill`, and the term of art is
+    // "last observation carried forward" — which is exactly the kind of phrase
+    // §14.1 refuses, because it has to be learned rather than read.
+    //
+    // `latest` reads correctly on the row that needs it: if this row's value is
+    // missing, the latest one you have is the earlier one.
+    //
+    // **It is a window in `add` rather than a filler in `fill_missing`, and
+    // that is deliberate.** §14 refused a window in the filler's seat because a
+    // value walking the rows needs their order declared and a filler has no
+    // place to ask for a `sort`. `add` already demands one for every window, so
+    // this reaches the same answer without reopening the ruling.
+    //
+    // **It also replaces a workaround that was quietly wrong.** The refusal
+    // above told people to write `first_present([x], previous([x]))`, which
+    // looks back exactly one row, so a run of two holes left the second one
+    // open. Nothing said so.
+    Function { name: "latest", kind: Kind::Window, arity: Arity::Exactly(1) },
 ];
 
 pub fn lookup(name: &str) -> Option<&'static Function> {
@@ -338,6 +377,31 @@ pub const GRAMMAR_WORDS: &[&str] = &[
     // FUNCTIONS for that reason: the table that walks the functions builds
     // `name([column])` for each, which is not a sentence `matching` has.
     "matching",
+    // **The two quantifiers, for a condition asked of many columns at once.**
+    // `keep where any name starts "q" as value > 3`. dplyr spells these
+    // `when_any` and `when_all`, having renamed them from `if_any`/`if_all`;
+    // pandas and polars both spell them `.any(axis=1)` and `.all(axis=1)`.
+    //
+    // The selector is the same `where name ...` that `pick`, `add`, `summarize`
+    // and `lengthen` already take, so the only thing new is which way the
+    // matched conditions are joined — `or` for `any`, `and` for `every`. That
+    // asymmetry was the gap: four verbs took the selector and `keep` did not,
+    // for no reason anybody had written down.
+    //
+    // **`every` rather than `all`, because `all_but` is already a word.** The
+    // two would not collide as tokens, but a reader meeting `all` beside
+    // `all_but` has to stop and ask whether they are a pair, and they are not.
+    "any", "every",
+    // **What `take` keeps at the cut.** `sort [points] descending then take 3
+    // with ties` keeps every row tied with the third. Without it `take 3` means
+    // exactly three rows, which stays the default because a sentence whose row
+    // count cannot be read off it should have to say so.
+    //
+    // dplyr's `slice_max` has this the other way round — `with_ties = TRUE` is
+    // its default — so the same request written in the two tools gave different
+    // rows and neither said anything. That is the silent disagreement §3.1
+    // exists to refuse, and it is why this is a word rather than a footnote.
+    "with", "ties",
 ];
 
 /// `a, b or c`, for a message that has to offer a closed set of words.
