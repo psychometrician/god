@@ -80,8 +80,8 @@ before you use it on money.
 run('
   messy
     then add [as_text] as to_text([n]),
-         [rounded] as to_whole((to_number([n]) / 2))
-    then pick [n, as_text, rounded]
+         [halved] as to_whole((to_number([n]) / 2))
+    then pick [n, as_text, halved]
 ')
 ```
 
@@ -89,16 +89,75 @@ run('
 
 ```{r}
 messy |>
-  add(as_text = to_text(n), rounded = to_whole(to_number(n) / 2)) |>
-  pick(n, as_text, rounded)
+  add(as_text = to_text(n), halved = to_whole(to_number(n) / 2)) |>
+  pick(n, as_text, halved)
 ```
 
 ### Python
 
 ```{python}
 (messy
-  >> add(as_text = to_text(col.n), rounded = to_whole(to_number(col.n) / 2))
-  >> pick(col.n, col.as_text, col.rounded))
+  >> add(as_text = to_text(col.n), halved = to_whole(to_number(col.n) / 2))
+  >> pick(col.n, col.as_text, col.halved))
+```
+
+:::
+
+### Which way `to_whole` goes, and why
+
+Half of 7 is 3.5, and `to_whole` makes that 3. It throws the fraction away
+rather than rounding to the nearest, and it does that in both directions: -3.5
+becomes -3, not -4. The word for that is truncation, and it is toward zero.
+
+This is worth stating rather than leaving to be discovered, because the other
+answer is just as reasonable and you cannot tell which you have by reading the
+name. Two reasons decided it.
+
+The first is that this is what a conversion does everywhere else. Every
+host language god reaches already truncates when it turns a number into a whole
+one: R's `as.integer(7.5)` is 7, Python's `int(7.5)` is 7, and pandas, polars
+and Spark all agree. If you learned `to_whole` here and then read the dplyr or
+pandas version of your own pipeline, nothing changes under you.
+
+The second is that rounding is a different question wearing the same word.
+Rounding has to answer what happens exactly halfway, and there are at least
+three defensible answers to that: away from zero, toward the even number, or
+always up. A word that has to pick one of those silently is a word you have to
+look up, and the point of this vocabulary is that you should not have to. If
+rounding is ever added it will be its own word, saying which rule it follows.
+
+So `to_whole` is a conversion, not a rounding, and if what you want is the
+nearest whole number, add half before converting.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  messy
+    then add [down] as to_whole((to_number([n]) / 2))
+    then add [nearest] as to_whole((to_number([n]) / 2) + 0.5)
+    then pick [n, down, nearest]
+')
+```
+
+### R
+
+```{r}
+messy |>
+  add(down = to_whole(to_number(n) / 2)) |>
+  add(nearest = to_whole(to_number(n) / 2 + 0.5)) |>
+  pick(n, down, nearest)
+```
+
+### Python
+
+```{python}
+(messy
+  >> add(down = to_whole(to_number(col.n) / 2))
+  >> add(nearest = to_whole(to_number(col.n) / 2 + 0.5))
+  >> pick(col.n, col.down, col.nearest))
 ```
 
 :::

@@ -189,10 +189,42 @@ sales |>
 
 *`sales then sort [date] then add [n] as row_number() then keep where remainder([n], 3) is 0`*
 
-The answer takes the sign of what you divided by, so `remainder(-7, 2)` is 1
-rather than -1. That is R's answer and Python's; SQL engines give the other
-one, and the grammar names which it means so the same sentence cannot come
-back two ways depending on where it ran.
+The answer takes the sign of what you divided by, so a negative number still
+gives a remainder between 0 and one less than the divisor. That is worth
+seeing rather than taking on trust, because it is the half of this word people
+get wrong.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+steps <- data.frame(n = c(7, -7, 6, -6))
+
+run('steps then add [left_over] as remainder([n], 3)', steps = steps)
+```
+
+### R
+
+```{r}
+steps |> add(left_over = remainder(n, 3))
+```
+
+### Python
+
+```{python}
+steps = pd.DataFrame({"n": [7, -7, 6, -6]})
+
+steps >> add(left_over = remainder(col.n, 3))
+```
+
+:::
+
+That is R's answer and Python's. SQL engines give -1 where these give 2, and
+the grammar names which one it means, so the same sentence cannot come back
+two ways depending on where it ran. It is the same decision `weekday` needed,
+for the same reason: a difference nothing raises is worse than one that stops
+you.
 
 It is the only arithmetic word the grammar has beyond `+`, `-`, `*` and `/`,
 and that is because it is the only one you cannot already write. Whole
