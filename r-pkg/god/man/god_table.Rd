@@ -17,9 +17,11 @@ back as the numbers 1, 2, 3 unless it is named here.}
 A data frame.
 }
 \description{
-Fetches a table published beside the manual and returns it ready to pipe.
-The cast is declared in the book's preface: `sales`, `products`, `survey`,
-`answers`, `marks`, `messy`, `diary` and `gapminder`.
+Returns a table ready to pipe. A `data/<name>.csv` in the working directory
+or any directory above it is read first; failing that, the copy published
+beside the manual is fetched. The cast is declared in the book's preface:
+`sales`, `products`, `survey`, `answers`, `marks`, `messy`, `diary` and
+`gapminder`.
 }
 \examples{
 \dontrun{

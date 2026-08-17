@@ -338,17 +338,32 @@ survey = pd.DataFrame({
 :::
 
 Typing them in is one way. The other is one call. Every table in the cast is
-published beside this book, and `god_table` fetches one by name in either
+published beside this book, and `god_table` reads one by name in either
 language, so the rows in your session are the rows every page here computed
-from.
+from. It looks for a `data/<name>.csv` in your working directory or any
+directory above it before it reaches for the published copy, so a folder of
+your own takes precedence and nothing needs a connection once you have one.
 
-```r
+::: {.panel-tabset}
+
+### R
+
+```{r}
 sales <- god_table("sales")
+nrow(sales)
 ```
 
-```python
+### Python
+
+```{python}
 sales = god_table("sales")
+len(sales)
 ```
+
+:::
+
+Those are the same fifteen rows typed out above. This page runs both calls and
+the tables agree, which is the only reason to believe the sentence before them.
 
 ## Why there is another one of these
 

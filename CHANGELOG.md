@@ -5,6 +5,25 @@ a person using god can see.
 
 ## Unreleased
 
+### `god_table` reads a local copy before it reaches the network
+
+It now looks for a `data/<name>.csv` in your working directory, or in any
+directory above it, and only fetches the published copy if there is none. Keep
+a folder of your own and nothing needs a connection; keep none and it works
+exactly as before.
+
+```r
+sales <- god_table("sales")     # data/sales.csv if you have one
+```
+
+```python
+sales = god_table("sales")
+```
+
+A name is now checked to be a name. `god_table("../somewhere/else")` is refused
+with a message saying what a name is, because a name that used to make a bad
+web address now also names a file on your disk.
+
 ### One question, asked of many columns at once
 
 `pick`, `add` and `summarize` have always taken a rule instead of a list of

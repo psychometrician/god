@@ -11,7 +11,17 @@ wheel. The sibling project keeps its own tables the same way, under its own
 helper's name, and the two names differ on purpose: both packages are meant
 to be loaded together, and one of them masking the other's tables would be a
 collision the pair exists to avoid.
+
+**A local ``data/`` wins, and that is what makes this usable by the manual that
+needs it.** Reading only from the network meant a new table did not resolve
+until the book was published, and a render calling this thirty times needed a
+connection to build a page about a grammar that has nothing to do with one. So
+the walk-up comes first and the published copy is the fallback, which is the
+same order and the same reason as the engine's own resolution.
 """
+
+import re
+from pathlib import Path
 
 import pandas as pd
 
@@ -19,16 +29,33 @@ from .run import GodError
 
 GOD_BOOK_DATA_URL = "https://psychometrician.github.io/god-book/data/"
 
+_NAME = re.compile(r"^[A-Za-z0-9_-]+$")
+
 __all__ = ["god_table"]
+
+
+def _walk_up_data(start: Path, name: str) -> Path | None:
+    """``data/<name>.csv``, in this directory or any above it.
+
+    Deliberately not ``book/data/``: a package that knows the manual's
+    directory layout is a package with a second job. A reader keeping their own
+    copies puts them in ``data/`` and gets the same behaviour the book does.
+    """
+    for directory in (start, *start.parents):
+        candidate = directory / "data" / f"{name}.csv"
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def god_table(name, text=()):
     """Read one of the book's example tables.
 
-    Fetches a table published beside the manual and returns it ready to pipe.
-    The cast is declared in the book's preface: ``sales``, ``products``,
-    ``survey``, ``answers``, ``marks``, ``messy``, ``diary`` and
-    ``gapminder``.
+    Returns a table ready to pipe. A ``data/<name>.csv`` in the working
+    directory or any directory above it is read first; failing that, the copy
+    published beside the manual is fetched. The cast is declared in the book's
+    preface: ``sales``, ``products``, ``survey``, ``answers``, ``marks``,
+    ``messy``, ``diary`` and ``gapminder``.
 
     Args:
         name: The table's name without the extension, such as ``"sales"``.
@@ -41,9 +68,10 @@ def god_table(name, text=()):
 
     Examples
     --------
-    **This one reaches the network**, which is why it is shown rather than run:
-    the suites stay offline, and an example that needs a connection fails on a
-    train rather than reporting a defect.
+    **This one may reach the network**, which is why it is shown rather than
+    run: the suites stay offline, and an example that needs a connection fails
+    on a train rather than reporting a defect. With a ``data/sales.csv`` beside
+    it or above it, no connection is used at all.
 
     >>> import god                                          # doctest: +SKIP
     >>> sales = god.god_table("sales")                      # doctest: +SKIP
@@ -60,7 +88,15 @@ def god_table(name, text=()):
             "god: god_table() takes one table name, as in "
             'god_table("sales"). The cast is declared in the book\'s preface.'
         )
-    return pd.read_csv(
-        GOD_BOOK_DATA_URL + name + ".csv",
-        dtype={column: str for column in text},
-    )
+    # A name is a name, not a path. This mattered less when the only thing a
+    # name could do was make a bad URL; now that it also names a file on disk, a
+    # `/` or a `..` would reach outside `data/` entirely.
+    if not _NAME.match(name):
+        raise GodError(
+            f"god: {name!r} is not a table name. A name is letters, digits, "
+            '`_` and `-`, as in god_table("sales") — not a path and not a '
+            "file name."
+        )
+    local = _walk_up_data(Path.cwd(), name)
+    source = str(local) if local else GOD_BOOK_DATA_URL + name + ".csv"
+    return pd.read_csv(source, dtype={column: str for column in text})

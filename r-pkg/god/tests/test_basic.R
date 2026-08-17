@@ -1120,6 +1120,35 @@ local({
   check("and the message names the helper",    grepl("god_table", refusal, fixed = TRUE), TRUE)
   check("the tables come from the published book",
         god:::god_book_data_url, "https://psychometrician.github.io/god-book/data/")
+
+  # **A local `data/` wins, and that is the half the network cannot be asked
+  # about.** The fetch stays out of the suite; what is checked here is the
+  # resolution — that a `data/<name>.csv` above the working directory is found,
+  # read, and returned without anything reaching for a connection.
+  nest <- file.path(tempfile("god-data-"), "one", "two")
+  dir.create(file.path(dirname(dirname(nest)), "data"), recursive = TRUE)
+  dir.create(nest, recursive = TRUE)
+  writeLines(c("region,revenue", "West,10", "East,20"),
+             file.path(dirname(dirname(nest)), "data", "local_only.csv"))
+  was <- setwd(nest)
+  on.exit(setwd(was), add = TRUE)
+
+  found <- god_table("local_only")
+  check("a data/ above the working directory is read",  nrow(found), 2L)
+  check("and it is the local file, not a fetch",        found$region[1], "West")
+
+  # A name is a name. Before the walk-up, the worst a bad one could do was make
+  # a 404; now it names a file, so `..` has to stop at the check rather than at
+  # the filesystem.
+  escape <- tryCatch(god_table("../secrets"), error = function(e) conditionMessage(e))
+  check("god_table refuses a path",            grepl("not a table name", escape, fixed = TRUE), TRUE)
+  check("and says what a name is",             grepl("letters, digits", escape, fixed = TRUE), TRUE)
+
+  # The other direction: no `data/` anywhere above, so the published copy is
+  # what it would reach for. Checked through the resolver rather than by
+  # fetching, because the suite stays offline.
+  check("with no local data/, nothing is found and the URL is the fallback",
+        is.na(god:::god_walk_up_data(nest, "sales")), TRUE)
 })
 
 

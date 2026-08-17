@@ -995,6 +995,40 @@ check("the tables come from the published book",
 check_error("god_table with something that is not a name",
             lambda: god.god_table(42), "god_table")
 
+# **A local `data/` wins, and that is the half the network cannot be asked
+# about.** The fetch stays out of the suite; what is checked here is the
+# resolution — that a `data/<name>.csv` above the working directory is found,
+# read, and returned without anything reaching for a connection.
+with _tempfile.TemporaryDirectory() as _root:
+    _top = pathlib.Path(_root)
+    (_top / "data").mkdir()
+    (_top / "data" / "local_only.csv").write_text("region,revenue\nWest,10\nEast,20\n")
+    _nest = _top / "one" / "two"
+    _nest.mkdir(parents=True)
+
+    _was = os.getcwd()
+    os.chdir(_nest)
+    try:
+        _found = god.god_table("local_only")
+        check("a data/ above the working directory is read", len(_found), 2)
+        check("and it is the local file, not a fetch", _found["region"][0], "West")
+
+        # A name is a name. Before the walk-up, the worst a bad one could do was
+        # make a 404; now it names a file, so `..` has to stop at the check
+        # rather than at the filesystem.
+        check_error("god_table with a path", lambda: god.god_table("../secrets"),
+                    "not a table name")
+        check_error("and it says what a name is",
+                    lambda: god.god_table("../secrets"), "letters, digits")
+
+        # The other direction: no `data/` anywhere above, so the published copy
+        # is what it would reach for. Checked through the resolver rather than
+        # by fetching, because the suite stays offline.
+        check("with no local data/, nothing is found and the URL is the fallback",
+              god.tables._walk_up_data(pathlib.Path.cwd(), "sales"), None)
+    finally:
+        os.chdir(_was)
+
 # --- every example in every docstring, run ----------------------------------
 #
 # **A help page is a manual page, and this project does not ship a manual page
