@@ -434,6 +434,11 @@ def join(other, *, by=None, unmatched="this"):
     `by` names the columns that say which rows correspond. Left out, the columns
     both tables share are used and god says which it chose.
 
+    Where the two tables name a key differently, write both with ``==`` between
+    them and this table's first: ``by=col.customer_id == col.id``. The answer
+    keeps this table's name. Several keys go in a list, and the two forms mix:
+    ``by=[col.region, col.customer_id == col.id]``.
+
     `unmatched` says whose unmatched rows survive: ``"this"`` keeps this table's
     and is the default, ``"none"`` keeps neither, ``"both"`` keeps both. There is
     no ``"other"``, because that is this join with the tables the other way
@@ -520,8 +525,9 @@ def matching(other, *, by=None):
         sales >> keep(matching(products, by="id"))       # semi join
         sales >> keep(~matching(products, by="id"))      # anti join
 
-    `by` names the columns that say which rows correspond. Left out, the columns
-    both tables share are used and god says which it chose.
+    `by` works exactly as it does on `join`, down to the form for a key the two
+    tables name differently: ``by=col.product == col.item``. Left out, the
+    columns both tables share are used and god says which it chose.
 
     It cannot multiply rows, which is the one thing `join` cannot promise: a row
     either has a partner or it does not, however many it has.

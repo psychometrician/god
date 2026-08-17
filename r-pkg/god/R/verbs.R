@@ -410,7 +410,11 @@ take_last <- function(.data, n, by) {
 #' @param .data A table, or a pipeline.
 #' @param other The other table.
 #' @param by The columns that say which rows correspond. Left out, the columns
-#'   both tables share are used, and god says which it chose.
+#'   both tables share are used, and god says which it chose. Where the two
+#'   tables name a key differently, write both with `==` between them and this
+#'   table's first: `by = customer_id == id`. The answer keeps this table's
+#'   name. Several keys go in a `c()`, and the two forms mix:
+#'   `by = c(region, customer_id == id)`.
 #' @param unmatched Whose unmatched rows survive: `"this"` keeps this table's
 #'   and is the default, `"none"` keeps neither, `"both"` keeps both. There is
 #'   no `"other"`, because that is this join with the tables the other way
