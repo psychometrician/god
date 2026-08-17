@@ -494,7 +494,16 @@ fn put_chips(
 /// A second table, arriving partway down the pipeline.
 pub(crate) struct Arrival {
     pub other: String,
+    /// The keys as they read: `region` where both tables agree, `region is area`
+    /// where they do not.
     pub keys: Vec<String>,
+    /// **What the *other* table calls each key**, which is a separate field
+    /// because the two jobs stopped being the same job on 2026-08-16. `keys` is
+    /// for showing and may hold `region is area`; this is for asking which of
+    /// the other table's columns are keys, and a match against the display
+    /// string would never find `area`. It did not, and the drawing said `area`
+    /// crossed over when it is dropped.
+    pub theirs: Vec<String>,
     pub kind: Arriving,
 }
 
@@ -527,7 +536,7 @@ impl Arrival {
                     .map(|s| {
                         s.names()
                             .into_iter()
-                            .filter(|n| !self.keys.iter().any(|k| k == n))
+                            .filter(|n| !self.theirs.iter().any(|k| k == n))
                             .collect()
                     })
                     .unwrap_or_default();
@@ -547,11 +556,29 @@ pub(crate) fn tributaries(step: &Step) -> Vec<Arrival> {
     match step {
         Step::Join { other, by, unmatched, .. } => vec![Arrival {
             other: other.text.clone(),
-            keys: by.iter().map(|n| n.text.clone()).collect(),
+            // Drawn the way it was written, so a pair shows both names.
+            // A drawing that said only `customer_id` would hide exactly the
+            // fact the reader opened it to check.
+            keys: by
+                .iter()
+                .map(|k| {
+                    if k.is_same() {
+                        k.this.text.clone()
+                    } else {
+                        format!("{} is {}", k.this.text, k.other.text)
+                    }
+                })
+                .collect(),
+            theirs: by.iter().map(|k| k.other.text.clone()).collect(),
             kind: Arriving::Columns(*unmatched),
         }],
         Step::AddRows { other, .. } => {
-            vec![Arrival { other: other.text.clone(), keys: Vec::new(), kind: Arriving::Rows }]
+            vec![Arrival {
+                other: other.text.clone(),
+                keys: Vec::new(),
+                theirs: Vec::new(),
+                kind: Arriving::Rows,
+            }]
         }
         Step::Keep { condition, .. } => {
             let mut found = Vec::new();
@@ -575,7 +602,20 @@ fn find_matching(e: &Expr, negated: bool, out: &mut Vec<Arrival>) {
     match e {
         Expr::Matching { other, by, .. } => out.push(Arrival {
             other: other.text.clone(),
-            keys: by.iter().map(|n| n.text.clone()).collect(),
+            // Drawn the way it was written, so a pair shows both names.
+            // A drawing that said only `customer_id` would hide exactly the
+            // fact the reader opened it to check.
+            keys: by
+                .iter()
+                .map(|k| {
+                    if k.is_same() {
+                        k.this.text.clone()
+                    } else {
+                        format!("{} is {}", k.this.text, k.other.text)
+                    }
+                })
+                .collect(),
+            theirs: by.iter().map(|k| k.other.text.clone()).collect(),
             kind: Arriving::Nothing { negated },
         }),
         Expr::Not { inner, .. } => find_matching(inner, !negated, out),

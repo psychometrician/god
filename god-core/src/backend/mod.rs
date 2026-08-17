@@ -17,7 +17,7 @@
 
 use crate::check::Schema;
 use crate::diagnostic::Diagnostic;
-use crate::plan::Plan;
+use crate::plan::{Expr, Plan};
 
 pub mod dplyr;
 pub mod god;
@@ -70,4 +70,33 @@ pub fn find(name: &str) -> Option<Box<dyn Backend>> {
 
 pub fn names() -> Vec<&'static str> {
     all().iter().map(|b| b.name()).collect()
+}
+
+/// How far `previous` or `following` was told to look, as a target writes it.
+///
+/// **Every one of the five spells the offset as a plain trailing number** —
+/// `lag(x, 12)`, `shift(12)`, `F.lag(x, 12)` — so what differs between them is
+/// the punctuation around it and not the thing itself. It lives here rather
+/// than five times over because a default that drifts between backends is the
+/// quiet disagreement §3.1 exists to refuse.
+///
+/// Empty when nobody asked, so the common sentence keeps rendering as the short
+/// call it already did. The checker has already refused anything but a whole
+/// number of at least one, so this never has to decide what a bad one means.
+pub fn step(args: &[Expr]) -> String {
+    match args.get(1) {
+        Some(Expr::Whole { value, .. }) => format!(", {value}"),
+        _ => String::new(),
+    }
+}
+
+/// The same, for a target that writes the offset on its own: `.shift(12)`.
+///
+/// `sign` is what a backward step looks like there — polars and pandas both
+/// walk the other way on a negative — so `following` passes `-`.
+pub fn step_alone(args: &[Expr], sign: &str) -> String {
+    match args.get(1) {
+        Some(Expr::Whole { value, .. }) => format!("{sign}{value}"),
+        _ => format!("{sign}1"),
+    }
 }

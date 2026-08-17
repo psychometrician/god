@@ -451,7 +451,7 @@ join <- function(.data, other, by, unmatched = "this") {
 
   pipeline <- god_use_table(pipeline, name, other)
 
-  matched <- if (missing(by)) character() else god_names(substitute(by), "by")
+  matched <- if (missing(by)) "" else god_join_keys(substitute(by), "by")
   survivors <- if (identical(unmatched, "this")) {
     ""
   } else {
@@ -463,7 +463,7 @@ join <- function(.data, other, by, unmatched = "this") {
     sprintf(
       "join %s%s%s",
       name,
-      if (length(matched)) sprintf(" by [%s]", paste(matched, collapse = ", ")) else "",
+      if (nzchar(matched)) sprintf(" by %s", matched) else "",
       survivors
     )
   )

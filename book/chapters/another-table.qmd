@@ -69,6 +69,97 @@ sales >> join(products) >> take(2)
 
 :::
 
+Often the two tables call the key different things. A table of sales names its
+region `region`, and a table of managers names the same thing `area`. Say both,
+with `is` between them, and this table's name comes first.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+managers <- data.frame(
+  area    = c("West", "East", "North"),
+  manager = c("Ada", "Grace", "Alan"),
+  stringsAsFactors = FALSE
+)
+
+run('
+  sales
+    then join managers by [region] is [area]
+    then pick [region, manager, revenue]
+    then take 3
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(managers, by = region == area) |>
+  pick(region, manager, revenue) |>
+  take(3)
+```
+
+### Python
+
+```{python}
+managers = pd.DataFrame({
+    "area":    ["West", "East", "North"],
+    "manager": ["Ada", "Grace", "Alan"],
+})
+
+(sales
+  >> join(managers, by = col.region == col.area)
+  >> pick(col.region, col.manager, col.revenue)
+  >> take(3))
+```
+
+:::
+
+*`sales then join managers by [region] is [area]`*
+
+The answer keeps `region`, this table's name for it, and `area` does not
+arrive. The two hold the same value on every row that matched, so bringing
+both would be bringing one column twice. Keeping this table's name is what
+lets the rest of the sentence go on saying `region`.
+
+`is` here is the same word the grammar uses for equality everywhere else. R
+writes `==` and Python writes `==`, because neither language can put a bare
+`is` between two columns, and that is the only thing that moves.
+
+Keys of both kinds mix in one `by`, separated by commas.
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join managers by [region] is [area]
+    then summarize [total] as total([revenue]) by [manager]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(managers, by = region == area) |>
+  summarize(total = total(revenue), by = manager)
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(managers, by = col.region == col.area)
+  >> summarize(total = total(col.revenue), by = col.manager))
+```
+
+:::
+
 What varies between the four joins you may know by name is only this: what
 happens to a row that found no match. So that is what the argument is called.
 

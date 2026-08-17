@@ -50,12 +50,11 @@ impl Backend for Dplyr {
                 // only lets `matching` stand as the whole question.
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => {
-                        let keys: Vec<String> = by.iter().map(|k| k.text.clone()).collect();
                         format!(
                             "{}({}, by = join_by({}))",
                             if negated { "anti_join" } else { "semi_join" },
                             other.text,
-                            keys.join(", ")
+                            join_by(by)
                         )
                     }
                     None => format!("filter({})", expr(condition)),
@@ -266,18 +265,12 @@ impl Backend for Dplyr {
                 }
 
                 Step::Join { other, by, unmatched, .. } => {
-                    let keys: Vec<String> =
-                        by.iter().map(|k| k.text.clone()).collect();
                     let verb = match unmatched {
                         Unmatched::This => "left_join",
                         Unmatched::None => "inner_join",
                         Unmatched::Both => "full_join",
                     };
-                    format!(
-                        "{verb}({}, by = join_by({}))",
-                        other.text,
-                        keys.join(", ")
-                    )
+                    format!("{verb}({}, by = join_by({}))", other.text, join_by(by))
                 }
                 // dplyr names both ends, so this is the one target where the
                 // grammar's pair maps onto a pair rather than onto a mechanism.
@@ -484,9 +477,29 @@ fn expr(e: &Expr) -> String {
     }
 }
 
+/// The inside of dplyr's `join_by()`, for a join or for a filtering one.
+///
+/// **This is the one target where the grammar's `is` maps onto a word rather
+/// than onto a mechanism.** `join_by` already spells both shapes — a bare name
+/// where both tables agree, `customer_id == id` where they do not — and it
+/// writes the sides in the order god writes them, so the pair goes across
+/// unchanged.
+fn join_by(keys: &[JoinKey]) -> String {
+    keys.iter()
+        .map(|k| {
+            if k.is_same() {
+                k.this.text.clone()
+            } else {
+                format!("{} == {}", k.this.text, k.other.text)
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// The table and key of a `keep` that is really a filtering join, and whether it
 /// is the anti one.
-fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
+fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
     match condition {
         Expr::Matching { other, by, .. } => Some((other, by, false)),
         Expr::Not { inner, .. } => match inner.as_ref() {
@@ -543,8 +556,8 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // keep dplyr's own names, which is what a reader over there recognizes
         // even though the grammar refuses those two words for being jargon.
         "running_total" => format!("cumsum({})", arg(0)),
-        "previous" => format!("lag({})", arg(0)),
-        "following" => format!("lead({})", arg(0)),
+        "previous" => format!("lag({}{})", arg(0), super::step(args)),
+        "following" => format!("lead({}{})", arg(0), super::step(args)),
         "to_number" => format!("as.numeric({})", arg(0)),
         "to_whole" => format!("as.integer({})", arg(0)),
         "to_text" => format!("as.character({})", arg(0)),

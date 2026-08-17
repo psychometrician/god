@@ -327,7 +327,7 @@ pub enum Step {
         /// Empty when the caller did not say, which is not the same as none:
         /// the checker fills it in from the names both tables share and reports
         /// the choice as an assumption.
-        by: Vec<Name>,
+        by: Vec<JoinKey>,
         unmatched: Unmatched,
         span: Span,
     },
@@ -462,7 +462,7 @@ impl Step {
             },
             Step::Join { other, by, unmatched, .. } => Step::Join {
                 other: other.without_span(),
-                by: names(by),
+                by: by.iter().map(JoinKey::without_span).collect(),
                 unmatched: *unmatched,
                 span: flat,
             },
@@ -525,6 +525,48 @@ pub struct Named {
 pub struct SortKey {
     pub column: Name,
     pub descending: bool,
+}
+
+/// One key on each side of a `join`: `by [customer_id] is [id]`.
+///
+/// **The two halves are usually the same word and that is a convenience rather
+/// than the rule.** Real schemas name the primary key `id` and the foreign key
+/// `<thing>_id`, so `orders.customer_id` against `customers.id` is what a join
+/// ordinarily looks like; every neighbouring tool can say it — `on = .(a = b)`,
+/// `join_by(a == b)`, `left_on=`/`right_on=`, `ON a.x = b.y` — and god was the
+/// only one that could not until 2026-08-16.
+///
+/// **`is` rather than a new word**, because `is` is already how the grammar
+/// writes equality (§2.4), and the parser's own message for `=` has always sent
+/// people to it. Nothing was added to the vocabulary to buy this.
+///
+/// **This table's column is written first.** The verb has already named the
+/// other table, so the unqualified half belongs to the table being piped, and
+/// the pair reads in the direction the sentence runs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct JoinKey {
+    /// The column on the table the pipeline is carrying.
+    pub this: Name,
+    /// The column on the table being joined to. Equal to `this` for the
+    /// ordinary case, which is what a bare `by [id]` builds.
+    pub other: Name,
+}
+
+impl JoinKey {
+    /// One name standing for both sides: `by [id]`.
+    pub fn same(name: Name) -> JoinKey {
+        JoinKey { other: name.clone(), this: name }
+    }
+
+    /// Whether the two halves are the same word, which every backend asks
+    /// because most of them have a shorter spelling for that case.
+    pub fn is_same(&self) -> bool {
+        self.this.text == self.other.text
+    }
+
+    fn without_span(&self) -> JoinKey {
+        JoinKey { this: self.this.without_span(), other: self.other.without_span() }
+    }
 }
 
 /// One value written once and applied to every column whose name matches.
@@ -929,7 +971,13 @@ pub enum Expr {
         /// Empty when the caller did not say, and filled in by the checker from
         /// the names both tables share, exactly as `join` does. One rule for
         /// working out a key, not two.
-        by: Vec<Name>,
+        ///
+        /// **It takes a differently-named pair for the same reason**: a
+        /// filtering join asks the identical question a join asks, and a
+        /// grammar where `join products by [customer_id] is [id]` is a sentence
+        /// and `keep where matching(products, by [customer_id] is [id])` is not
+        /// would have an exception in it.
+        by: Vec<JoinKey>,
         span: Span,
     },
 }
@@ -1032,7 +1080,7 @@ impl Expr {
             },
             Expr::Matching { other, by, .. } => Expr::Matching {
                 other: other.without_span(),
-                by: by.iter().map(Name::without_span).collect(),
+                by: by.iter().map(JoinKey::without_span).collect(),
                 span: flat,
             },
         }

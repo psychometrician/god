@@ -190,3 +190,14 @@ sales >> add(tier = when(col.revenue > 250, "high", otherwise = "low")) >> add_c
 sales >> sort(col.revenue) >> take_last(3) >> pick(col.product, col.revenue)
 ---
 sales >> sort(col.revenue) >> take_last(1, by = col.region) >> pick(col.region, col.product, col.revenue)
+
+---
+sales >> join(regions, by = col.region == col.area) >> pick(col.region, col.manager, col.revenue) >> sort(descending(col.revenue)) >> take(3)
+---
+sales >> join(regions, by = col.region == col.area, unmatched = "none") >> summarize(total = total(col.revenue), by = col.manager)
+---
+sales >> keep(matching(regions, by = col.region == col.area)) >> summarize(n = row_count(), by = col.region)
+---
+sales >> sort(col.ordered_on) >> add(two_back = previous(col.revenue, 2), two_on = following(col.revenue, 2)) >> pick(col.ordered_on, col.revenue, col.two_back, col.two_on)
+---
+sales >> sort(col.ordered_on) >> add(before = previous(col.revenue, 2), by = col.region) >> pick(col.region, col.ordered_on, col.revenue, col.before)

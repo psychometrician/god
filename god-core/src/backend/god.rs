@@ -145,7 +145,7 @@ pub(crate) fn step_text(step: &Step) -> String {
             let matched = if by.is_empty() {
                 String::new()
             } else {
-                format!(" by {}", columns(by))
+                format!(" by {}", join_keys(by))
             };
             let survivors = if *unmatched == Unmatched::This {
                 String::new()
@@ -162,6 +162,33 @@ fn columns(names: &[Name]) -> String {
         "[{}]",
         names.iter().map(|n| n.text.clone()).collect::<Vec<_>>().join(", ")
     )
+}
+
+/// The keys of a `join` or a `matching`, written the way they were said.
+///
+/// **A run of same-named keys collapses back into one bracket group**, so
+/// `by [region, product]` round-trips as itself rather than as `by [region],
+/// [product]`. The two mean the same thing and only one of them is what the
+/// caller typed, and this backend's whole job is handing back the sentence.
+fn join_keys(keys: &[JoinKey]) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    let mut same: Vec<String> = Vec::new();
+    let flush = |same: &mut Vec<String>, parts: &mut Vec<String>| {
+        if !same.is_empty() {
+            parts.push(format!("[{}]", same.join(", ")));
+            same.clear();
+        }
+    };
+    for key in keys {
+        if key.is_same() {
+            same.push(key.this.text.clone());
+        } else {
+            flush(&mut same, &mut parts);
+            parts.push(format!("[{}] is [{}]", key.this.text, key.other.text));
+        }
+    }
+    flush(&mut same, &mut parts);
+    parts.join(", ")
 }
 
 fn assignments(values: &[Named]) -> String {
@@ -265,7 +292,7 @@ fn expr(e: &Expr) -> String {
             if by.is_empty() {
                 format!("matching({})", other.text)
             } else {
-                format!("matching({}, by {})", other.text, columns(by))
+                format!("matching({}, by {})", other.text, join_keys(by))
             }
         }
     }

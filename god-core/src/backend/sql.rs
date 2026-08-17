@@ -736,12 +736,17 @@ impl Dialect {
                         .map(|k| {
                             format!(
                                 "{from}.{} = {right}.{}",
-                                self.name(&k.text),
-                                self.name(&k.text)
+                                self.name(&k.this.text),
+                                self.name(&k.other.text)
                             )
                         })
                         .collect();
-                    let dropped: Vec<String> = by.iter().map(|k| self.name(&k.text)).collect();
+                    // **What is dropped is the other table's name for the key**,
+                    // which is the same column it always was: for a same-named
+                    // key the two halves are one word, and for a pair the value
+                    // is already here under this table's name.
+                    let dropped: Vec<String> =
+                        by.iter().map(|k| self.name(&k.other.text)).collect();
                     let kind = match unmatched {
                         Unmatched::This => "LEFT JOIN",
                         Unmatched::None => "JOIN",
@@ -766,12 +771,17 @@ impl Dialect {
                             .iter()
                             .map(|(column, _)| {
                                 let quoted = self.name(column);
-                                if by.iter().any(|k| &k.text == column) {
-                                    format!(
-                                        "COALESCE({from}.{quoted}, {right}.{quoted}) AS {quoted}"
-                                    )
-                                } else {
-                                    format!("{from}.{quoted}")
+                                // The pair is coalesced across its two names,
+                                // and keeps this table's. A row that exists only
+                                // in `customers` still answers with its `id`,
+                                // under the name `customer_id` the rest of the
+                                // sentence is written in.
+                                match by.iter().find(|k| &k.this.text == column) {
+                                    Some(key) => format!(
+                                        "COALESCE({from}.{quoted}, {right}.{}) AS {quoted}",
+                                        self.name(&key.other.text)
+                                    ),
+                                    None => format!("{from}.{quoted}"),
                                 }
                             })
                             .collect::<Vec<_>>()
@@ -1068,8 +1078,14 @@ impl Dialect {
                         "sum({inner}) OVER ({} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
                         clauses.join(" ")
                     ),
-                    "previous" => format!("lag({inner}) OVER ({})", clauses.join(" ")),
-                    _ => format!("lead({inner}) OVER ({})", clauses.join(" ")),
+                    // **How far is written out only when it was asked for.**
+                    // `lag(x)` and `lag(x, 1)` mean the same thing to both
+                    // dialects, and the shorter one is what a reader of the
+                    // sentence wrote.
+                    "previous" => {
+                        format!("lag({inner}{}) OVER ({})", super::step(args), clauses.join(" "))
+                    }
+                    _ => format!("lead({inner}{}) OVER ({})", super::step(args), clauses.join(" ")),
                 }
             }
 
@@ -1162,15 +1178,15 @@ impl Dialect {
     /// hand, rather than by threading it through every expression in the grammar for
     /// the sake of one of them.
     fn condition_sql(&self, condition: &Expr, from: &str) -> String {
-        let exists = |other: &Name, by: &[Name], negated: bool| {
+        let exists = |other: &Name, by: &[JoinKey], negated: bool| {
             let right = self.table(&other.text);
             let on: Vec<String> = by
                 .iter()
                 .map(|k| {
                     format!(
                         "{right}.{} = {from}.{}",
-                        self.name(&k.text),
-                        self.name(&k.text)
+                        self.name(&k.other.text),
+                        self.name(&k.this.text)
                     )
                 })
                 .collect();

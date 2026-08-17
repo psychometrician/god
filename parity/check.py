@@ -60,25 +60,30 @@ R_CORPUS = ROOT / "parity" / "corpus.R"
 PY_CORPUS = ROOT / "parity" / "corpus.py"
 FIXTURE = ROOT / "parity" / "sales.csv"
 OTHER = ROOT / "parity" / "products.csv"
+# A third table, whose key is *not* called what `sales` calls it: `regions.area`
+# against `sales.region`. That mismatch is the ordinary shape of a schema, and
+# it is the only thing that exercises `by [a] is [b]` end to end.
+REGIONS = ROOT / "parity" / "regions.csv"
 
 R_DRIVER = r"""
 suppressMessages(pkgload::load_all("r-pkg/god", export_all = FALSE, quiet = TRUE))
 args <- commandArgs(trailingOnly = TRUE)
 sales <- read.csv(args[[1]], stringsAsFactors = FALSE)
 products <- read.csv(sub("sales.csv", "products.csv", args[[1]]), stringsAsFactors = FALSE)
+regions <- read.csv(sub("sales.csv", "regions.csv", args[[1]]), stringsAsFactors = FALSE)
 pipeline <- readLines(args[[2]], warn = FALSE)
 pipeline <- paste(pipeline, collapse = "\n")
 mode <- args[[3]]
 if (mode == "sql") {
   wanted <- god:::god_needs(pipeline)
-  have <- list(sales = sales, products = products)[wanted]
+  have <- list(sales = sales, products = products, regions = regions)[wanted]
   cat(god:::god_call(god:::columns_args(have, wanted[[1]]), pipeline))
 } else if (mode == "native") {
   # The R spelling, evaluated, and asked what it wrote. Nothing runs: the verbs
   # build a sentence and this prints it.
   cat(format(eval(parse(text = pipeline))))
 } else {
-  answer <- run(pipeline, sales = sales, products = products)
+  answer <- run(pipeline, sales = sales, products = products, regions = regions)
   write.csv(answer, row.names = FALSE, na = "<missing>")
 }
 """
@@ -106,15 +111,16 @@ def r(pipeline: str, mode: str) -> str:
 def py(pipeline: str, mode: str) -> str:
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
+    regions = pd.read_csv(REGIONS)
     if mode == "sql":
         from god.run import _columns_args, _needs
 
-        tables = {"sales": sales, "products": products}
+        tables = {"sales": sales, "products": products, "regions": regions}
         wanted = _needs(pipeline)
         from god.run import _call
 
         return _call(_columns_args({k: tables[k] for k in wanted}, wanted[0]), pipeline).strip()
-    answer = god.run(pipeline, sales=sales, products=products)
+    answer = god.run(pipeline, sales=sales, products=products, regions=regions)
     return answer.to_csv(index=False, na_rep="<missing>").strip()
 
 
@@ -128,6 +134,7 @@ def py_native(sentence: str) -> str:
     scope = dict(vars(god))
     scope["sales"] = pd.read_csv(FIXTURE)
     scope["products"] = pd.read_csv(OTHER)
+    scope["regions"] = pd.read_csv(REGIONS)
     return eval(sentence, scope).written()
 
 
@@ -143,6 +150,7 @@ def canonical(pipeline: str) -> str:
     """
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
+    regions = pd.read_csv(REGIONS)
     from god.run import _binary, _columns_of
 
     result = subprocess.run(
@@ -150,6 +158,7 @@ def canonical(pipeline: str) -> str:
             _binary(),
             "--columns", _columns_of(sales),
             "--columns", f"products={_columns_of(products)}",
+            "--columns", f"regions={_columns_of(regions)}",
             "--as", "god",
         ],
         input=pipeline,

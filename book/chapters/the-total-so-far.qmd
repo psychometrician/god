@@ -36,8 +36,8 @@ diary >> sort(col.on_) >> add(so_far = running_total(col.x))
 
 *`diary then sort [on_] then add [so_far] as running_total([x])`*
 
-`by` restarts it for each group, and `previous` and `following` look one row back
-and one row on:
+`by` restarts it for each group, and `previous` and `following` look back and
+on by one row:
 
 ::: {.panel-tabset}
 
@@ -74,6 +74,70 @@ diary |>
 
 The first row of a group has nothing before it and the last has nothing after
 it, so those are missing.
+
+One row is the usual distance and not the only one. Say how far as a second
+argument, which is how you compare a month against the same month a year
+earlier:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  diary
+    then sort [on_]
+    then add [two_back] as previous([x], 2), [two_on] as following([x], 2)
+    then pick [on_, x, two_back, two_on]
+')
+```
+
+### R
+
+```{r}
+diary |>
+  sort(on_) |>
+  add(two_back = previous(x, 2), two_on = following(x, 2)) |>
+  pick(on_, x, two_back, two_on)
+```
+
+### Python
+
+```{python}
+(diary
+ >> sort(col.on_)
+ >> add(two_back = previous(col.x, 2), two_on = following(col.x, 2))
+ >> pick(col.on_, col.x, col.two_back, col.two_on))
+```
+
+:::
+
+How far is written out rather than worked out. A distance that changed from
+row to row would be a different question, and no engine underneath answers it
+here, so a column in that place is refused. Nought is refused too, because
+that is the column itself, and a negative is refused with the name of the word
+that goes the other way.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(diary |> sort(on_) |> add(back = previous(x, -2)))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(diary >> sort(col.on_) >> add(back = previous(col.x, -2)))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
 
 All three need a `sort` in front of them, and say so if they do not get one. A
 total *so far* means nothing until something has said so far in what order:

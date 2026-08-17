@@ -96,11 +96,14 @@ def main() -> int:
 
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
-    columns = [_columns_of(sales), f"products={_columns_of(products)}"]
+    regions = pd.read_csv(OTHER.parent / "regions.csv")
+    columns = [_columns_of(sales), f"products={_columns_of(products)}",
+               f"regions={_columns_of(regions)}"]
 
     duck = duckdb.connect()
     duck.register("sales", sales)
     duck.register("products", products)
+    duck.register("regions", regions)
 
     connection = dbsql.connect(
         server_hostname=os.environ["DATABRICKS_SERVER_HOSTNAME"],
@@ -110,6 +113,7 @@ def main() -> int:
     cursor = connection.cursor()
     views(cursor, "sales", sales)
     views(cursor, "products", products)
+    views(cursor, "regions", regions)
 
     agreed = disagreed = refused = 0
     for n, sentence in enumerate(sentences(CORPUS), 1):

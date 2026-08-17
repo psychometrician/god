@@ -64,6 +64,30 @@ sales >> keep(~matching(stocked, by = col.product))
 thing: god matches on the column names both tables share, and the note naming
 its choice arrives beside the answer, as it does for `join`.
 
+That sameness is the whole point, so it extends to keys the two tables name
+differently. Write `is` between them, this table's name first, exactly as
+[another table](another-table.qmd) does.
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+listed <- data.frame(item = c("Widget", "Gadget"), stringsAsFactors = FALSE)
+
+sales |> keep(matching(listed, by = product == item)) |> take(3)
+```
+
+### Python
+
+```{python}
+listed = pd.DataFrame({"item": ["Widget", "Gadget"]})
+
+sales >> keep(matching(listed, by = col.product == col.item)) >> take(3)
+```
+
+:::
+
 ::: {.panel-tabset}
 
 ### run

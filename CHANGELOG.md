@@ -5,6 +5,51 @@ a person using god can see.
 
 ## Unreleased
 
+### `join` on a key the two tables name differently
+
+Real tables rarely agree on what the key is called: one holds `id` and the
+other holds `customer_id`. Until now `by` took a single name used on both
+sides, so the only way through was to rename a column first and rename it
+back afterwards. Say both names instead, with `is` between them, and this
+table's comes first:
+
+```r
+orders |> join(customers, by = customer_id == id)
+```
+
+```python
+orders >> join(customers, by = col.customer_id == col.id)
+```
+
+The answer keeps this table's name for the key, so the rest of the sentence
+goes on reading the way it was written. Keys of both kinds mix in one `by`,
+separated by commas, and `matching` takes the same form:
+
+```r
+sales |> join(managers, by = c(product, region == area))
+sales |> keep(matching(listed, by = product == item))
+```
+
+The text form is `join managers by [region] is [area]`.
+
+### `previous` and `following` take how far to look
+
+One row back is still what you get by default. A second argument says how
+many, which is what a year-over-year comparison on monthly rows needs:
+
+```r
+sales |> sort(month) |> add(year_ago = previous(revenue, 12), by = region)
+```
+
+```python
+sales >> sort(col.month) >> add(year_ago = previous(col.revenue, 12), by = col.region)
+```
+
+It has to be a written whole number rather than a column, because a distance
+that changed from row to row would be a different question. Nought is refused
+as the column itself, and a negative is refused by naming the word that goes
+the other way.
+
 ### dplyr no longer takes god's verbs away, in R
 
 god and dplyr share four names: `collect`, `pick`, `rename` and

@@ -47,7 +47,7 @@ class Expr:
     0   East      120
     """
 
-    __slots__ = ("_text", "_negation", "_column", "_brings")
+    __slots__ = ("_text", "_negation", "_column", "_brings", "_pair")
 
     def __init__(
         self,
@@ -55,6 +55,7 @@ class Expr:
         negation: str | None = None,
         column: str | None = None,
         brings=None,
+        pair=None,
     ):
         self._text = text
         # The table this expression reads, when it reads one. `matching` is the
@@ -70,6 +71,10 @@ class Expr:
         # `by` and `sort` take names rather than values, and this is how they
         # tell the difference without parsing the text back.
         self._column = column
+        # The two column names, when this expression is one column `is`
+        # another. A join key names both sides and needs them apart; the same
+        # reason `_column` exists, one level up.
+        self._pair = pair
 
     def __str__(self) -> str:
         return self._text
@@ -320,7 +325,22 @@ col = _Columns()
 
 
 def _infix(left, word: str, right) -> Expr:
-    return Expr(f"({_operand(left)} {word} {_operand(right)})")
+    # **One column `is` another is remembered as a pair**, because `join` and
+    # `matching` need the two names rather than the finished text: a join key is
+    # written `by [customer_id] is [id]` with no parentheses, and reading them
+    # back out of `"([customer_id] is [id])"` would be parsing this file's own
+    # output. Everywhere else the pair is ignored and this is an ordinary
+    # condition.
+    pair = None
+    if (
+        word == "is"
+        and isinstance(left, Expr)
+        and isinstance(right, Expr)
+        and left._column is not None
+        and right._column is not None
+    ):
+        pair = (left._column, right._column)
+    return Expr(f"({_operand(left)} {word} {_operand(right)})", pair=pair)
 
 
 def _operand(value) -> str:

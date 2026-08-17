@@ -31,6 +31,7 @@ sys.path.insert(0, str(ROOT / "py-pkg" / "god"))
 CORPUS = Path(__file__).parent / "corpus.god"
 FIXTURE = Path(__file__).parent / "sales.csv"
 OTHER = Path(__file__).parent / "products.csv"
+REGIONS = Path(__file__).parent / "regions.csv"
 
 # The one sentence in the corpus a dialect is *expected* to turn away, and the
 # reason. An entry here is a decision on file, not a known bug: it says the
@@ -114,11 +115,14 @@ def main() -> int:
 
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
-    columns = [_columns_of(sales), f"products={_columns_of(products)}"]
+    regions = pd.read_csv(REGIONS)
+    columns = [_columns_of(sales), f"products={_columns_of(products)}",
+               f"regions={_columns_of(regions)}"]
 
     duck = duckdb.connect()
     duck.register("sales", sales)
     duck.register("products", products)
+    duck.register("regions", regions)
 
     os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
     spark = (
@@ -137,6 +141,7 @@ def main() -> int:
     spark.sparkContext.setLogLevel("ERROR")
     spark.createDataFrame(sales).createOrReplaceTempView("sales")
     spark.createDataFrame(products).createOrReplaceTempView("products")
+    spark.createDataFrame(regions).createOrReplaceTempView("regions")
 
     agreed = disagreed = refused = 0
     for n, sentence in enumerate(sentences(CORPUS), 1):

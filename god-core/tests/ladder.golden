@@ -606,3 +606,59 @@ sales                              region:text  product:text  revenue:number  co
 └ pick [region, product, revenue]  region  product  revenue
                                    -cost  -ordered_on
 ---
+sales then join regions by [region] is [area] then pick [region, manager, revenue] then sort [revenue] descending then take 3
+sales                                 region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ join regions by [region] is [area]  region  product  revenue  cost  ordered_on  +manager:text
+│   └ regions                         area:text  manager:text
+│     matched on region is area · manager crosses over
+│   every row of this table is kept
+│   rows may multiply — one for each time regions repeats a key
+├ pick [region, manager, revenue]     region  manager  revenue
+│                                     -product  -cost  -ordered_on
+├ sort [revenue] descending           region  manager  revenue
+└ take 3                              region  manager  revenue
+    at most 3 rows
+---
+sales then join regions by [region] is [area] unmatched "none" then summarize [total] as total([revenue]) by [manager]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ join regions by [region] is [area] unmatched "none"
+│                                       region  product  revenue  cost  ordered_on  +manager:text
+│   └ regions                           area:text  manager:text
+│     matched on region is area · manager crosses over
+│   only the rows that matched
+│   rows may multiply — one for each time regions repeats a key
+└ summarize [total] as total([revenue]) by [manager]
+                                        manager  +total:number
+                                        -region  -product  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then keep where matching(regions, by [region] is [area]) then summarize [n] as row_count() by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where matching(regions, by [region] is [area])
+│                                       region  product  revenue  cost  ordered_on
+│   └ regions                           area:text  manager:text
+│     matched on region is area · no columns cross, only rows go
+│   only the rows that match regions — never more than it started with
+└ summarize [n] as row_count() by [region]
+                                        region  +n:number
+                                        -product  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then sort [ordered_on] then add [two_back] as previous([revenue], 2), [two_on] as following([revenue], 2) then pick [ordered_on, revenue, two_back, two_on]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [two_back] as previous([revenue], 2), [two_on] as following([revenue], 2)
+│                                       region  product  revenue  cost  ordered_on  +two_back:number  +two_on:number
+└ pick [ordered_on, revenue, two_back, two_on]
+                                        ordered_on  revenue  two_back  two_on
+                                        -region  -product  -cost
+---
+sales then sort [ordered_on] then add [before] as previous([revenue], 2) by [region] then pick [region, ordered_on, revenue, before]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [before] as previous([revenue], 2) by [region]
+│                                       region  product  revenue  cost  ordered_on  +before:number
+└ pick [region, ordered_on, revenue, before]
+                                        region  ordered_on  revenue  before
+                                        -product  -cost
+---

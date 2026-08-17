@@ -148,3 +148,14 @@ sales then add [tier] as when([revenue] > 250, "high", otherwise "low") then add
 sales then sort [revenue] then take_last 3 then pick [product, revenue]
 ---
 sales then sort [revenue] then take_last 1 by [region] then pick [region, product, revenue]
+
+---
+sales then join regions by [region] is [area] then pick [region, manager, revenue] then sort [revenue] descending then take 3
+---
+sales then join regions by [region] is [area] unmatched "none" then summarize [total] as total([revenue]) by [manager]
+---
+sales then keep where matching(regions, by [region] is [area]) then summarize [n] as row_count() by [region]
+---
+sales then sort [ordered_on] then add [two_back] as previous([revenue], 2), [two_on] as following([revenue], 2) then pick [ordered_on, revenue, two_back, two_on]
+---
+sales then sort [ordered_on] then add [before] as previous([revenue], 2) by [region] then pick [region, ordered_on, revenue, before]

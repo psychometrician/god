@@ -454,11 +454,54 @@ god_matching <- function(args) {
   if (!length(by)) {
     return(sprintf("matching(%s)", other))
   }
-  sprintf(
-    "matching(%s, by [%s])",
-    other,
-    paste(god_names(by[[1L]], "by"), collapse = ", ")
-  )
+  sprintf("matching(%s, by %s)", other, god_join_keys(by[[1L]], "by"))
+}
+
+# The columns that say which rows of two tables correspond, as the text form
+# writes them.
+#
+# **R cannot spell the grammar's `is`**, which has no infix form here, so the
+# binding writes `==` and this turns it back. That is the same trade §2.4
+# records everywhere else: the vocabulary is identical and only the idiom moves,
+# and `==` is already what the translator turns into `is` inside a condition.
+#
+#   by = id                        one key, the same word on both sides
+#   by = c(region, product)        several, all the same word
+#   by = customer_id == id         one key, named differently on each side
+#   by = c(region, customer_id == id)     and the two mixed
+#
+# The pair is emitted as its own bracket group; a run of shared names collapses
+# into one, which is what the caller wrote and what the engine hands back.
+god_join_keys <- function(e, where) {
+  parts <- if (is.call(e) && identical(as.character(e[[1L]]), "c")) {
+    as.list(e)[-1L]
+  } else {
+    list(e)
+  }
+
+  written <- character()
+  shared <- character()
+  flush <- function() {
+    if (length(shared)) {
+      written <<- c(written, sprintf("[%s]", paste(shared, collapse = ", ")))
+      shared <<- character()
+    }
+  }
+
+  for (part in parts) {
+    if (is.call(part) && identical(as.character(part[[1L]]), "==")) {
+      flush()
+      written <- c(written, sprintf(
+        "[%s] is [%s]",
+        god_name(part[[2L]], where),
+        god_name(part[[3L]], where)
+      ))
+    } else {
+      shared <- c(shared, god_name(part, where))
+    }
+  }
+  flush()
+  paste(written, collapse = ", ")
 }
 
 # The columns in a `by =`, which is one name or several written as a list.

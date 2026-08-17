@@ -38,14 +38,25 @@ fn schema() -> Schema {
 fn pipeline_using(f: &vocabulary::Function) -> String {
     // A variadic function is given its floor plus one, so the sentence exercises
     // the list rather than the smallest legal case.
-    let count = match f.arity {
-        vocabulary::Arity::Exactly(n) => n,
-        vocabulary::Arity::AtLeast(n) => n + 1,
+    //
+    // **A function with an optional tail is given the tail**, for the same
+    // reason: the shorter call is the one that already worked, so exercising it
+    // proves nothing about the argument that was added.
+    let (count, tail) = match f.arity {
+        vocabulary::Arity::Exactly(n) => (n, None),
+        vocabulary::Arity::AtLeast(n) => (n + 1, None),
+        // The tail is a plain number rather than a column, because a number is
+        // the only thing that may stand there — which is itself the rule this
+        // sentence is here to exercise.
+        vocabulary::Arity::Between(low, high) => (low, (high > low).then_some("2")),
     };
     // The column of no particular kind, repeated. Using a number here meant the
     // sentence stopped compiling the day a text function was added, which is a
     // type check answering a coverage question.
-    let args = vec!["[anything]"; count].join(", ");
+    let mut args = vec!["[anything]"; count].join(", ");
+    if let Some(extra) = tail {
+        args.push_str(&format!(", {extra}"));
+    }
     match f.kind {
         // An aggregate collapses a group, which is what `summarize` is for, and
         // `summarize` refuses anything that does not.

@@ -437,6 +437,58 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// The columns that say which rows of two tables correspond.
+    ///
+    /// **One parser for `join` and for `matching`**, because it is one question
+    /// and a grammar that answered it two ways would have the exception §4.4
+    /// spends a paragraph refusing.
+    ///
+    /// Three shapes, and the third is what was added on 2026-08-16:
+    ///
+    /// ```text
+    /// by [id]                          one key, the same word on both sides
+    /// by [region, product]             several, all the same word
+    /// by [customer_id] is [id]         one key, named differently on each side
+    /// by [region], [customer_id] is [id]      and the two mixed
+    /// ```
+    ///
+    /// `is` is the grammar's equality word everywhere else (§2.4), so nothing
+    /// was added to the vocabulary to reach this.
+    fn join_keys(&mut self, why: &str) -> Result<Vec<JoinKey>, Diagnostic> {
+        let mut keys = Vec::new();
+        loop {
+            let span = self.peek_span();
+            let names = self.expect_columns(why)?;
+            if self.eat_word("is") {
+                // **The pair is one column against one column.** `by [a, b] is
+                // [c, d]` would be two keys wearing one `is`, and which pairs
+                // with which is exactly the thing a reader should not have to
+                // work out by counting.
+                let other_span = self.peek_span();
+                let others = self.expect_columns(
+                    "`is` needs the other table's column, in brackets: `by [customer_id] is [id]`",
+                )?;
+                if names.len() != 1 || others.len() != 1 {
+                    return Err(Diagnostic::illegal(
+                        "a key named differently on each side is one column against one column, so each side gets its own brackets: `by [customer_id] is [id]`. For several, separate them with commas",
+                        span.to(other_span),
+                    ));
+                }
+                keys.push(JoinKey {
+                    this: names.into_iter().next().unwrap(),
+                    other: others.into_iter().next().unwrap(),
+                });
+            } else {
+                keys.extend(names.into_iter().map(JoinKey::same));
+            }
+            if !matches!(self.peek(), Some(Tok::Comma)) {
+                break;
+            }
+            self.at += 1;
+        }
+        Ok(keys)
+    }
+
     fn one_column(&mut self, why: &str) -> Result<Name, Diagnostic> {
         let span = self.peek_span();
         let names = self.expect_columns(why)?;
@@ -1092,8 +1144,8 @@ impl<'a> Parser<'a> {
                 // table cannot. Leaving it out is answered by an assumption
                 // rather than a refusal (§10).
                 let by = if self.eat_word("by") {
-                    self.expect_columns(
-                        "`by` needs the columns that say which rows correspond, in brackets: `by [id]`",
+                    self.join_keys(
+                        "`by` needs the columns that say which rows correspond, in brackets: `by [id]`, or `by [customer_id] is [id]` where the two tables name it differently",
                     )?
                 } else {
                     Vec::new()
@@ -1646,8 +1698,8 @@ impl<'a> Parser<'a> {
                     self.peek_span(),
                 ));
             }
-            by = self.expect_columns(
-                "`by` needs the columns that say which rows correspond, in brackets: `matching(products, by [id])`",
+            by = self.join_keys(
+                "`by` needs the columns that say which rows correspond, in brackets: `matching(products, by [id])`, or `by [customer_id] is [id]` where the two tables name it differently",
             )?;
         }
 

@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT / "py-pkg" / "god"))
 CORPUS = Path(__file__).parent / "corpus.god"
 FIXTURE = Path(__file__).parent / "sales.csv"
 OTHER = Path(__file__).parent / "products.csv"
+REGIONS = Path(__file__).parent / "regions.csv"
 
 
 def sentences(path: Path) -> list[str]:
@@ -115,17 +116,22 @@ def targets():
 
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
+    regions = pd.read_csv(REGIONS)
     found = {}
 
     import numpy as np
 
-    found["pandas"] = ({"pd": pd, "np": np, "sales": sales, "products": products}, lambda f: f)
+    found["pandas"] = (
+        {"pd": pd, "np": np, "sales": sales, "products": products, "regions": regions},
+        lambda f: f,
+    )
 
     try:
         import polars as pl
 
         found["polars"] = (
-            {"pl": pl, "sales": pl.read_csv(FIXTURE), "products": pl.read_csv(OTHER)},
+            {"pl": pl, "sales": pl.read_csv(FIXTURE), "products": pl.read_csv(OTHER),
+             "regions": pl.read_csv(REGIONS)},
             lambda f: f.to_pandas(),
         )
     except ImportError:
@@ -157,6 +163,7 @@ def targets():
                 "Window": Window,
                 "sales": spark.createDataFrame(sales),
                 "products": spark.createDataFrame(products),
+                "regions": spark.createDataFrame(regions),
             },
             lambda f: f.toPandas(),
         )
@@ -173,7 +180,9 @@ def main() -> int:
 
     sales = pd.read_csv(FIXTURE)
     products = pd.read_csv(OTHER)
-    columns = [_columns_of(sales), f"products={_columns_of(products)}"]
+    regions = pd.read_csv(REGIONS)
+    columns = [_columns_of(sales), f"products={_columns_of(products)}",
+               f"regions={_columns_of(regions)}"]
 
     found = targets()
     for name in ("polars", "pyspark"):
@@ -184,6 +193,7 @@ def main() -> int:
     duck = duckdb.connect()
     duck.register("sales", sales)
     duck.register("products", products)
+    duck.register("regions", regions)
 
     failures = 0
     for backend, (scope, collect) in found.items():

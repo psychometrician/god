@@ -490,6 +490,56 @@ fn previous_and_following_look_one_row_each_way() {
     );
 }
 
+/// **How far is an optional second argument**, and one row back stays the
+/// default. A year-over-year comparison on monthly rows is `previous([x], 12)`,
+/// which every neighbour can say — `shift(x, 12)`, `lag(x, n = 12)`, `LAG(x,
+/// 12)` — and which god could not until 2026-08-16.
+#[test]
+fn previous_and_following_take_how_far_to_look() {
+    let conn = diary();
+    let (_, rows) = run(
+        &conn,
+        "diary",
+        "diary then sort [on_] then add [back] as previous([x], 2), [on] as following([x], 2) then pick [back, on]",
+    );
+    assert_eq!(
+        rows,
+        vec![
+            vec!["missing", "30"],
+            vec!["missing", "missing"],
+            vec!["10", "missing"],
+        ]
+    );
+}
+
+/// The offset is a plain whole number and cannot be worked out per row, which
+/// is not a limitation of the checker: no engine underneath takes a column in
+/// that position, so accepting one would mean writing a query that runs and
+/// answers something else.
+#[test]
+fn how_far_has_to_be_a_written_number() {
+    let conn = diary();
+    let message = refusal(&conn, "diary", "diary then sort [on_] then add [v] as previous([x], [x])");
+    assert!(message.contains("cannot be worked out per row"), "{message}");
+}
+
+/// Three mistakes, three sentences. **A negative is the interesting one**,
+/// because by the time the checker sees it the lexer has turned `-3` into
+/// `0 - 3`, so the shape has to be recognized or the reader gets the message
+/// about per-row offsets instead of the one about the other word.
+#[test]
+fn how_far_refuses_zero_and_negatives_by_name() {
+    let conn = diary();
+    let zero = refusal(&conn, "diary", "diary then sort [on_] then add [v] as previous([x], 0)");
+    assert!(zero.contains("is the column itself"), "{zero}");
+
+    let back = refusal(&conn, "diary", "diary then sort [on_] then add [v] as previous([x], -3)");
+    assert!(back.contains("use `following`"), "{back}");
+
+    let forward = refusal(&conn, "diary", "diary then sort [on_] then add [v] as following([x], -3)");
+    assert!(forward.contains("use `previous`"), "{forward}");
+}
+
 /// The same rule `row_number` has, and for the same reason: a total *so far*
 /// means nothing until something has said so far in what order. `rank` is the
 /// one window exempt, because it carries its own key.

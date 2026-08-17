@@ -72,6 +72,15 @@ pub enum Arity {
     /// Two or more, for a function whose arguments are a list rather than named
     /// roles. One would be legal and pointless, so the floor is two.
     AtLeast(usize),
+    /// A required count and an optional tail: `previous([x])` and
+    /// `previous([x], 2)`.
+    ///
+    /// **This does not break the rule above it**, which is that the *meaning*
+    /// may never vary with the number of arguments. `previous` means the same
+    /// thing either way; the second argument says how far back, and leaving it
+    /// out means one. That is a default, not a second meaning, and nobody has
+    /// to memorize which reading applies.
+    Between(usize, usize),
 }
 
 impl Arity {
@@ -79,6 +88,7 @@ impl Arity {
         match self {
             Arity::Exactly(n) => given == n,
             Arity::AtLeast(n) => given >= n,
+            Arity::Between(low, high) => given >= low && given <= high,
         }
     }
 
@@ -89,9 +99,13 @@ impl Arity {
             1 => "one column".to_string(),
             n => format!("{n} columns"),
         };
+        // **`Between` says "at most", not "n or m".** Its second argument is not
+        // a column — it is how far `previous` looks — so counting columns to
+        // describe it would name the wrong thing. The others are left alone.
         match self {
             Arity::Exactly(n) => count(n),
             Arity::AtLeast(n) => format!("at least {}", count(n)),
+            Arity::Between(_, high) => format!("at most {}", count(high)),
         }
     }
 }
@@ -255,8 +269,21 @@ pub const FUNCTIONS: &[Function] = &[
 
     // `lag` and `lead` are the words everywhere else, and nobody can say which
     // way `lead` goes without checking. These two can be read aloud.
-    Function { name: "previous", kind: Kind::Window, arity: Arity::Exactly(1) },
-    Function { name: "following", kind: Kind::Window, arity: Arity::Exactly(1) },
+    //
+    // **How far back is an optional second argument**, added 2026-08-16 because
+    // one row back is the common case and not the only one: a year-over-year
+    // comparison on monthly rows is `previous([revenue], 12)`, and every
+    // neighbour can already say it — `shift(x, 12)`, `lag(x, n = 12)`,
+    // `.shift(12)`, `LAG(x, 12)`. god was the only one that could not.
+    //
+    // **It is a plain whole number, the way `split_text([name], " ", 1)` takes a
+    // position.** It has to be written out rather than computed: a per-row
+    // offset is a different operation, and no engine underneath takes a column
+    // there. The checker refuses anything but a literal, and refuses 0 and
+    // negatives by name — 0 is the column itself and a negative is the other
+    // word.
+    Function { name: "previous", kind: Kind::Window, arity: Arity::Between(1, 2) },
+    Function { name: "following", kind: Kind::Window, arity: Arity::Between(1, 2) },
 ];
 
 pub fn lookup(name: &str) -> Option<&'static Function> {

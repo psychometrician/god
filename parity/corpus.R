@@ -183,3 +183,14 @@ sales |> add(tier = when(revenue > 250, "high", otherwise = "low")) |> add_combi
 sales |> sort(revenue) |> take_last(3) |> pick(product, revenue)
 ---
 sales |> sort(revenue) |> take_last(1, by = region) |> pick(region, product, revenue)
+
+---
+sales |> join(regions, by = region == area) |> pick(region, manager, revenue) |> sort(descending(revenue)) |> take(3)
+---
+sales |> join(regions, by = region == area, unmatched = "none") |> summarize(total = total(revenue), by = manager)
+---
+sales |> keep(matching(regions, by = region == area)) |> summarize(n = row_count(), by = region)
+---
+sales |> sort(ordered_on) |> add(two_back = previous(revenue, 2), two_on = following(revenue, 2)) |> pick(ordered_on, revenue, two_back, two_on)
+---
+sales |> sort(ordered_on) |> add(before = previous(revenue, 2), by = region) |> pick(region, ordered_on, revenue, before)

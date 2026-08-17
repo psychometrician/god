@@ -24,13 +24,23 @@ fn sales() -> Schema {
     ])
 }
 
-/// `products` is the corpus's second table. `archive` is this file's own, and it
-/// exists because `add_rows` needs both tables to hold the same columns — which
-/// `products` deliberately does not, so no corpus sentence can stack it. Named
-/// by nothing in the corpus, so it changes no drawing there.
+/// `products` is the corpus's second table and `regions` its third, the one
+/// whose key `sales` calls something else — `area` here against `region` there,
+/// which is what the corpus's `by [region] is [area]` sentences need.
+///
+/// **A table missing from here does not fail; it draws as a refusal**, and the
+/// golden would record that refusal as if it were the expected picture. So this
+/// list has to grow with the corpus, and the way you find out it did not is by
+/// reading the blessed diff rather than by a test going red.
+///
+/// `archive` is this file's own, and it exists because `add_rows` needs both
+/// tables to hold the same columns — which `products` deliberately does not, so
+/// no corpus sentence can stack it. Named by nothing in the corpus, so it
+/// changes no drawing there.
 fn others() -> Tables {
     Tables::new([
         ("products", Schema::new([("product", Type::Text), ("maker", Type::Text)])),
+        ("regions", Schema::new([("area", Type::Text), ("manager", Type::Text)])),
         ("archive", sales()),
     ])
 }
@@ -136,6 +146,32 @@ fn a_join_marks_the_key_in_both_strips() {
     assert!(
         drawn.contains("rows may multiply"),
         "a join can multiply rows and the grammar cannot know whether it will:\n{drawn}"
+    );
+}
+
+/// A key the two tables name differently shows **both** names, because hiding
+/// one is hiding the fact a reader opened the drawing to check.
+#[test]
+fn a_join_on_a_pair_draws_both_names() {
+    let drawn = ladder("sales then join regions by [region] is [area]");
+    assert!(drawn.contains("matched on region is area"), "{drawn}");
+}
+
+/// **The defect this test exists for**, found by reading a blessed golden rather
+/// than by anything going red. The line under an arriving table lists what
+/// crossed over, and it worked out "what crossed" by removing the keys — matched
+/// against the string the drawing *shows*. The moment that string became
+/// `region is area`, no name matched, and the drawing announced that `area`
+/// crossed over. It does not: it holds the key's own value and is dropped, and
+/// the column strip on the same line said so. Two lines of one picture
+/// disagreeing is worse than either being wrong alone.
+#[test]
+fn the_other_tables_key_is_not_listed_as_crossing_over() {
+    let drawn = ladder("sales then join regions by [region] is [area]");
+    assert!(drawn.contains("manager crosses over"), "{drawn}");
+    assert!(
+        !drawn.contains("area, manager cross over"),
+        "`area` is the key under another name and never arrives:\n{drawn}"
     );
 }
 

@@ -93,14 +93,19 @@ impl Backend for Pandas {
                     Some((other, by, negated)) => {
                         // A filtering join has no verb here, so it is spelled as
                         // what it does: keep the rows whose key is, or is not,
-                        // one of the keys over there.
-                        let key = by.first().map(|k| k.text.clone()).unwrap_or_default();
+                        // one of the keys over there. The two sides are named
+                        // separately, which costs nothing here — `isin` was
+                        // always reading one column against another and never
+                        // needed them to share a word.
+                        let mine = by.first().map(|k| k.this.text.clone()).unwrap_or_default();
+                        let theirs =
+                            by.first().map(|k| k.other.text.clone()).unwrap_or_default();
                         calls.push(format!(
                             "loc[lambda d: {}d[{}].isin({}[{}])]",
                             if negated { "~" } else { "" },
-                            text(&key),
+                            text(&mine),
                             other.text,
-                            text(&key)
+                            text(&theirs)
                         ));
                     }
                     None => calls.push(format!("loc[lambda d: {}]", expr(condition))),
@@ -175,11 +180,54 @@ impl Backend for Pandas {
                         Unmatched::None => "inner",
                         Unmatched::Both => "outer",
                     };
-                    calls.push(format!(
-                        "merge({}, on={}, how=\"{how}\")",
-                        other.text,
-                        list(by)
-                    ));
+                    // **`on=` and `left_on=`/`right_on=` cannot be mixed**, so
+                    // one differing key puts every key into the long form. That
+                    // is pandas' rule rather than a choice made here.
+                    if by.iter().all(JoinKey::is_same) {
+                        let keys: Vec<Name> = by.iter().map(|k| k.this.clone()).collect();
+                        calls.push(format!(
+                            "merge({}, on={}, how=\"{how}\")",
+                            other.text,
+                            list(&keys)
+                        ));
+                    } else {
+                        let mine: Vec<Name> = by.iter().map(|k| k.this.clone()).collect();
+                        let theirs: Vec<Name> = by.iter().map(|k| k.other.clone()).collect();
+                        calls.push(format!(
+                            "merge({}, left_on={}, right_on={}, how=\"{how}\")",
+                            other.text,
+                            list(&mine),
+                            list(&theirs)
+                        ));
+                        // **pandas keeps both key columns here and coalesces
+                        // neither**, which is the difference from `on=` and the
+                        // place this rendering would go quietly wrong. An outer
+                        // join's other-side-only rows carry the key under the
+                        // other table's name alone, so it is filled across
+                        // before the column is dropped — the same answer the SQL
+                        // backend gets from `COALESCE`.
+                        if *unmatched == Unmatched::Both {
+                            let filled: Vec<String> = by
+                                .iter()
+                                .filter(|k| !k.is_same())
+                                .map(|k| {
+                                    format!(
+                                        "{}=lambda d: d[{}].fillna(d[{}])",
+                                        k.this.text,
+                                        text(&k.this.text),
+                                        text(&k.other.text)
+                                    )
+                                })
+                                .collect();
+                            calls.push(format!("assign({})", filled.join(", ")));
+                        }
+                        let dropped: Vec<Name> = by
+                            .iter()
+                            .filter(|k| !k.is_same())
+                            .map(|k| k.other.clone())
+                            .collect();
+                        calls.push(format!("drop(columns={})", list(&dropped)));
+                    }
                 }
 
                 // **`pd.concat` is a function over two frames rather than a
@@ -513,7 +561,7 @@ fn value(e: &Expr) -> String {
     value_of(e)
 }
 
-fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
+fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
     match condition {
         Expr::Matching { other, by, .. } => Some((other, by, false)),
         Expr::Not { inner, .. } => match inner.as_ref() {
@@ -767,8 +815,8 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // order; only the origin differs.
         "weekday" => format!("({}.dt.dayofweek + 1)", arg(0)),
         "running_total" => windowed("cumsum()"),
-        "previous" => windowed("shift(1)"),
-        "following" => windowed("shift(-1)"),
+        "previous" => windowed(&format!("shift({})", super::step_alone(args, ""))),
+        "following" => windowed(&format!("shift({})", super::step_alone(args, "-"))),
         "to_number" => format!("pd.to_numeric({})", arg(0)),
         "to_whole" => format!("{}.astype(\"Int64\")", arg(0)),
         "to_text" => format!("{}.astype(\"string\")", arg(0)),

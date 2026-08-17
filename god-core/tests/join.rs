@@ -22,7 +22,9 @@ fn tables() -> Connection {
          CREATE TABLE products (id BIGINT, name VARCHAR);
          INSERT INTO products VALUES (1, 'Widget'), (2, 'Gadget'), (3, 'Doohickey'), (4, 'Gizmo');
          CREATE TABLE more_sales (id BIGINT, revenue DOUBLE);
-         INSERT INTO more_sales VALUES (11, 10), (12, 20);",
+         INSERT INTO more_sales VALUES (11, 10), (12, 20);
+         CREATE TABLE catalog (product_id BIGINT, label VARCHAR);
+         INSERT INTO catalog VALUES (1, 'One'), (2, 'Two'), (3, 'Three'), (4, 'Four');",
     )
     .expect("the fixture tables");
     conn
@@ -60,6 +62,7 @@ fn run(conn: &Connection, pipeline: &str) -> (Vec<String>, Vec<Vec<String>>) {
     let others = Tables::new([
         ("products", schema_of(conn, "products")),
         ("more_sales", schema_of(conn, "more_sales")),
+        ("catalog", schema_of(conn, "catalog")),
     ]);
     let compiled = match compile_tables(pipeline, &left, &others, "sql") {
         Ok(c) => c,
@@ -96,6 +99,7 @@ fn refusal(pipeline: &str) -> String {
     let others = Tables::new([
         ("products", schema_of(&conn, "products")),
         ("more_sales", schema_of(&conn, "more_sales")),
+        ("catalog", schema_of(&conn, "catalog")),
     ]);
     match compile_tables(pipeline, &left, &others, "sql") {
         Ok(_) => panic!("this was accepted, and should not have been:\n{pipeline}"),
@@ -211,7 +215,19 @@ fn a_key_the_other_table_does_not_have_names_that_table() {
     let message = refusal("sales then join products by [revenue]");
     assert_eq!(
         message,
-        "`products` has no column called `revenue`. It has: id, name"
+        "`products` has no column called `revenue`. If `products` calls it something else, say both: `by [revenue] is [their_name]`. It has: id, name"
+    );
+}
+
+/// **The nudge above is for the caller who wrote one name for both sides**, and
+/// it would be noise for the caller who already wrote two: they plainly know
+/// the two halves can differ, so telling them costs a line and says nothing.
+#[test]
+fn a_key_written_as_a_pair_is_not_told_about_pairs() {
+    let message = refusal("sales then join products by [revenue] is [price]");
+    assert_eq!(
+        message,
+        "`products` has no column called `price`. It has: id, name"
     );
 }
 
@@ -382,7 +398,8 @@ fn a_grouped_take_takes_the_row_the_sort_put_first() {
         "CREATE TABLE sales (id BIGINT, revenue DOUBLE);
          INSERT INTO sales VALUES (1, 10), (1, 99), (2, 20), (2, 77);
          CREATE TABLE products (id BIGINT, name VARCHAR);
-         CREATE TABLE more_sales (id BIGINT, revenue DOUBLE);",
+         CREATE TABLE more_sales (id BIGINT, revenue DOUBLE);
+         CREATE TABLE catalog (product_id BIGINT, label VARCHAR);",
     )
     .unwrap();
     let (_, rows) = run(&conn, "sales then sort [id], [revenue] descending then take 1 by [id]");
@@ -730,4 +747,157 @@ fn first_present_will_not_mix_what_a_column_holds() {
         Err(d) => d.message,
     };
     assert!(message.contains("same kind of thing"), "{message}");
+}
+
+// -- keys the two tables name differently ----------------------------------
+//
+// **The everyday case, and god could not say it until 2026-08-16.** A schema
+// names its primary key `id` and its foreign key `<thing>_id`, so the mismatch
+// is the ordinary shape of a join rather than an edge of one. `catalog` is in
+// the fixture for exactly this: it holds `product_id` where `sales` holds `id`.
+
+#[test]
+fn a_pair_joins_columns_the_two_tables_name_differently() {
+    let conn = tables();
+    let (names, rows) = run(
+        &conn,
+        "sales then join catalog by [id] is [product_id] then sort [id]",
+    );
+    // **This table's name survives and the other's is dropped**, which is what
+    // makes the rest of the sentence readable: the pipeline is still about
+    // `sales`, so it goes on saying `id`.
+    assert_eq!(names, ["id", "revenue", "label"]);
+    assert_eq!(rows.len(), 4);
+    assert_eq!(rows[0], ["1", "100", "One"]);
+    assert_eq!(rows[3], ["9", "50", "missing"]);
+}
+
+#[test]
+fn a_pair_matches_rows_rather_than_merely_running() {
+    // The query would run and answer nothing if the two halves were read in the
+    // wrong order, so this asserts the values that came across rather than the
+    // shape of the result.
+    let conn = tables();
+    let (_, rows) = run(
+        &conn,
+        r#"sales then join catalog by [id] is [product_id] unmatched "none" then sort [id]"#,
+    );
+    let labels: Vec<&str> = rows.iter().map(|r| r[2].as_str()).collect();
+    assert_eq!(labels, ["One", "Two", "Three"]);
+}
+
+#[test]
+fn a_full_join_on_a_pair_never_loses_the_key() {
+    // The same defect `a_full_join_never_loses_the_key_it_matched_on` guards,
+    // one step harder: the value has to be carried across from a column with a
+    // *different name*. Catalog's row 4 is in neither `sales` nor `products`.
+    let conn = tables();
+    let (names, rows) = run(
+        &conn,
+        r#"sales then join catalog by [id] is [product_id] unmatched "both" then sort [id]"#,
+    );
+    assert_eq!(names, ["id", "revenue", "label"]);
+    let four = rows.iter().find(|r| r[2] == "Four").expect("the row only catalog has");
+    assert_eq!(four[0], "4", "the key came back empty on a full join over a pair");
+}
+
+#[test]
+fn same_named_and_differently_named_keys_mix_in_one_join() {
+    // Two tables that agree on `region` and disagree on what the customer key
+    // is called, which is the ordinary shape of a warehouse schema and the one
+    // case that exercises both halves of the parser in one clause.
+    let conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(
+        "CREATE TABLE orders (region VARCHAR, customer_id BIGINT, amount DOUBLE);
+         INSERT INTO orders VALUES ('W', 1, 10), ('E', 2, 20), ('W', 9, 30);
+         CREATE TABLE customers (region VARCHAR, id BIGINT, name VARCHAR);
+         INSERT INTO customers VALUES ('W', 1, 'a'), ('E', 2, 'b'), ('N', 7, 'c');",
+    )
+    .unwrap();
+    let left = schema_of(&conn, "orders");
+    let others = Tables::new([("customers", schema_of(&conn, "customers"))]);
+    let pipeline = "orders then join customers by [region], [customer_id] is [id]";
+
+    let printed = compile_tables(pipeline, &left, &others, "god").expect("legal").text;
+    assert!(printed.contains("by [region], [customer_id] is [id]"), "{printed}");
+
+    // And it answers, rather than merely compiling. `region` matching by name
+    // and `customer_id` matching by pair have to happen in the same `ON`.
+    let compiled = compile_tables(pipeline, &left, &others, "sql").expect("legal");
+    assert_eq!(compiled.schema.names(), ["region", "customer_id", "amount", "name"]);
+    let mut stmt = conn.prepare(&compiled.text).expect("the query prepares");
+    let names: Vec<Option<String>> = stmt
+        .query_map([], |row| row.get::<_, Option<String>>(3))
+        .expect("rows")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("rows");
+    assert_eq!(names.iter().filter(|n| n.is_some()).count(), 2);
+}
+
+#[test]
+fn a_run_of_shared_names_round_trips_as_one_bracket_group() {
+    // `by [a, b]` and `by [a], [b]` mean the same thing and only one of them is
+    // what the caller typed. The god backend hands back the sentence, so it has
+    // to hand back that one.
+    let conn = tables();
+    let left = schema_of(&conn, "sales");
+    let others = Tables::new([("more_sales", schema_of(&conn, "more_sales"))]);
+    let printed = compile_tables(
+        "sales then join more_sales by [id, revenue]",
+        &left,
+        &others,
+        "god",
+    )
+    .expect("legal")
+    .text;
+    assert!(printed.contains("by [id, revenue]"), "{printed}");
+}
+
+#[test]
+fn a_pair_still_refuses_a_key_of_a_different_kind() {
+    // Naming the two sides separately does not buy an exemption from the rule
+    // that a text id and a number id can never match.
+    let message = refusal("sales then join catalog by [id] is [label]");
+    assert!(message.contains("can never match"), "{message}");
+    // and it names both columns, because one name would send the reader looking
+    // for a column that is not on the table they are reading.
+    assert!(message.contains("`[id]` against `[label]`"), "{message}");
+}
+
+#[test]
+fn the_other_tables_key_is_not_counted_as_a_clash() {
+    // `catalog.product_id` is not on `sales`, so nothing here is a clash; the
+    // guard is against the opposite mistake, where the exemption is written too
+    // wide and a genuine collision gets through. `label` is the non-key column
+    // and must still be free.
+    let conn = tables();
+    let (names, _) = run(&conn, "sales then join catalog by [id] is [product_id]");
+    assert!(names.contains(&"label".to_string()), "{names:?}");
+    assert!(!names.contains(&"product_id".to_string()), "{names:?}");
+}
+
+#[test]
+fn a_filtering_join_takes_a_pair_too() {
+    // The spec's own argument for `matching` is that it works out its key by the
+    // same code `join` does, so a pipeline cannot get one answer from a join and
+    // another from a filter over the same two tables. That has to hold for the
+    // pair form as well, or the grammar has an exception in it.
+    let conn = tables();
+    let (_, rows) = run(
+        &conn,
+        "sales then keep where matching(catalog, by [id] is [product_id]) then sort [id]",
+    );
+    assert_eq!(rows.len(), 3, "id 9 has no partner in catalog");
+    let (_, missing) = run(
+        &conn,
+        "sales then keep where not matching(catalog, by [id] is [product_id])",
+    );
+    assert_eq!(missing.len(), 1);
+    assert_eq!(missing[0][0], "9");
+}
+
+#[test]
+fn one_is_takes_one_column_on_each_side() {
+    let message = refusal("sales then join catalog by [id, revenue] is [product_id]");
+    assert!(message.contains("one column against one column"), "{message}");
 }

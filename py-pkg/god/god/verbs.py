@@ -461,14 +461,54 @@ def join(other, *, by=None, unmatched="this"):
             f"`join` needs another table, and this is {type(other).__name__}"
         )
     name = _name_in_caller(other)
-    keys = [] if by is None else [name_of(c, "by") for c in (by if isinstance(by, (list, tuple)) else [by])]
+    keys = _join_keys(by)
 
     def write():
-        matched = f" by [{', '.join(keys)}]" if keys else ""
+        matched = f" by {keys}" if keys else ""
         survivors = "" if unmatched == "this" else f' unmatched "{unmatched}"'
         return f"join {name}{matched}{survivors}"
 
     return _Verb("join", write, brings=(name, other))
+
+
+def _join_keys(by):
+    """The columns that say which rows of two tables correspond, as text.
+
+    Four shapes, and the last two are what arrived on 2026-08-16::
+
+        by=col.id                            the same word on both sides
+        by=[col.region, col.product]         several, all the same word
+        by=col.customer_id == col.id         named differently on each side
+        by=[col.region, col.customer_id == col.id]        the two mixed
+
+    `==` is what Python writes where the grammar writes `is`, which is the same
+    trade every condition already makes — the vocabulary is identical and only
+    the idiom moves.
+
+    A run of shared names collapses into one bracket group, so the sentence that
+    goes to the engine is the one the caller would have written by hand.
+    """
+    if by is None:
+        return ""
+    given = by if isinstance(by, (list, tuple)) else [by]
+
+    written = []
+    shared = []
+
+    def flush():
+        if shared:
+            written.append(f"[{', '.join(shared)}]")
+            shared.clear()
+
+    for one in given:
+        pair = getattr(one, "_pair", None)
+        if pair is not None:
+            flush()
+            written.append(f"[{pair[0]}] is [{pair[1]}]")
+        else:
+            shared.append(name_of(one, "by"))
+    flush()
+    return ", ".join(written)
 
 
 def matching(other, *, by=None):
@@ -506,12 +546,8 @@ def matching(other, *, by=None):
             f"`matching` needs another table, and this is {type(other).__name__}"
         )
     name = _name_in_caller(other)
-    keys = (
-        []
-        if by is None
-        else [name_of(c, "by") for c in (by if isinstance(by, (list, tuple)) else [by])]
-    )
-    written = f", by [{', '.join(keys)}]" if keys else ""
+    keys = _join_keys(by)
+    written = f", by {keys}" if keys else ""
     return Expr(f"matching({name}{written})", brings=(name, other))
 
 
@@ -1290,11 +1326,15 @@ def running_total(column):
     return Expr(f"running_total({_written(column, 'running_total')})")
 
 
-def previous(column):
+def previous(column, how_far=1):
     """This column's value in the row before: `previous(col.price)`.
 
     The first row of each group has nothing before it, so it is missing.
     Everywhere else this is called `lag`, which nobody can read aloud.
+
+    `how_far` says how many rows back, and one is the default. A year-over-year
+    comparison on monthly rows is `previous(col.revenue, 12)`. It is a plain
+    whole number and cannot be worked out per row.
 
     Examples
     --------
@@ -1308,13 +1348,16 @@ def previous(column):
     1   East      120     100
     2   West      150     120
     """
-    return Expr(f"previous({_written(column, 'previous')})")
+    return Expr(f"previous({_written(column, 'previous')}{_how_far(how_far)})")
 
 
-def following(column):
+def following(column, how_far=1):
     """This column's value in the row after: `following(col.price)`.
 
     The last row of each group has nothing after it, so it is missing.
+
+    `how_far` says how many rows on, and one is the default. It is a plain whole
+    number and cannot be worked out per row.
 
     Examples
     --------
@@ -1328,7 +1371,20 @@ def following(column):
     1   East      120    150
     2   West      150   <NA>
     """
-    return Expr(f"following({_written(column, 'following')})")
+    return Expr(f"following({_written(column, 'following')}{_how_far(how_far)})")
+
+
+def _how_far(how_far):
+    """How far `previous` or `following` looks, written only when it was asked for.
+
+    **The default renders as nothing**, so the common sentence stays the short
+    one it always was and the round trip hands back what the caller wrote.
+
+    Everything about what a legal offset *is* — a whole number, at least one,
+    never a column — is the engine's question and is answered there, once, for
+    both languages (Law 7). This passes the value along and does not judge it.
+    """
+    return "" if how_far == 1 else f", {_value(how_far)}"
 
 
 def rank(column):

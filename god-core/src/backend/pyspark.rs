@@ -64,9 +64,10 @@ impl Backend for PySpark {
             match step {
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => calls.push(format!(
-                        "join({}, on={}, how=\"{}\")",
+                        "join({}{}, on={}, how=\"{}\")",
                         other.text,
-                        list(by),
+                        renames(by),
+                        list(&by.iter().map(|k| k.this.clone()).collect::<Vec<_>>()),
                         if negated { "anti" } else { "semi" }
                     )),
                     None => calls.push(format!("filter({})", expr(condition))),
@@ -162,10 +163,20 @@ impl Backend for PySpark {
                         Unmatched::None => "inner",
                         Unmatched::Both => "outer",
                     };
+                    // **A differing pair is renamed rather than joined on a
+                    // condition**, and that is the whole reason this backend
+                    // reads the way it does. `on=` as a *condition* is what
+                    // PySpark reaches for, and it gives up the two things the
+                    // list form provides for free: Spark stops coalescing the
+                    // key on a full join, and both columns come back, one of
+                    // them ambiguous to refer to afterwards. Renaming the other
+                    // table's column first keeps the list form, so every join
+                    // kind behaves as the same-named case already does.
                     calls.push(format!(
-                        "join({}, on={}, how=\"{how}\")",
+                        "join({}{}, on={}, how=\"{how}\")",
                         other.text,
-                        list(by)
+                        renames(by),
+                        list(&by.iter().map(|k| k.this.clone()).collect::<Vec<_>>())
                     ));
                 }
 
@@ -491,7 +502,7 @@ fn column_text(e: &Expr) -> String {
     }
 }
 
-fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
+fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
     match condition {
         Expr::Matching { other, by, .. } => Some((other, by, false)),
         Expr::Not { inner, .. } => match inner.as_ref() {
@@ -505,6 +516,25 @@ fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
 fn list(names: &[Name]) -> String {
     let quoted: Vec<String> = names.iter().map(|n| text(&n.text)).collect();
     format!("[{}]", quoted.join(", "))
+}
+
+/// What the other table has to be renamed to before the join, so that every key
+/// is one word on both sides.
+///
+/// Empty where the two tables already agree, which is every join written before
+/// 2026-08-16 and most of them since.
+fn renames(keys: &[JoinKey]) -> String {
+    keys.iter()
+        .filter(|k| !k.is_same())
+        .map(|k| {
+            format!(
+                ".withColumnRenamed({}, {})",
+                text(&k.other.text),
+                text(&k.this.text)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("")
 }
 
 fn strings(names: &[String]) -> String {
@@ -700,8 +730,12 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             arg(0),
             window(&over, &[])
         ),
-        "previous" => format!("F.lag({}).over({})", arg(0), window(&over, &[])),
-        "following" => format!("F.lead({}).over({})", arg(0), window(&over, &[])),
+        "previous" => {
+            format!("F.lag({}{}).over({})", arg(0), super::step(args), window(&over, &[]))
+        }
+        "following" => {
+            format!("F.lead({}{}).over({})", arg(0), super::step(args), window(&over, &[]))
+        }
         "to_number" => format!("{}.cast(\"double\")", arg(0)),
         "to_whole" => format!("{}.cast(\"int\")", arg(0)),
         "to_text" => format!("{}.cast(\"string\")", arg(0)),

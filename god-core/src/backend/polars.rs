@@ -49,9 +49,9 @@ impl Backend for Polars {
                 // only lets `matching` stand as the whole question.
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => calls.push(format!(
-                        "join({}, on={}, how=\"{}\")",
+                        "join({}, {}, how=\"{}\")",
                         other.text,
-                        list(by),
+                        join_on(by),
                         if negated { "anti" } else { "semi" }
                     )),
                     None => calls.push(format!("filter({})", expr(condition))),
@@ -145,10 +145,20 @@ impl Backend for Polars {
                         Unmatched::None => "inner",
                         Unmatched::Both => "full",
                     };
+                    // **`coalesce=True` is what makes a differing pair come back
+                    // under this table's name**, which is the same entry the
+                    // full join already needed for its key. Without it polars
+                    // hands back `id` beside `customer_id` on every join kind,
+                    // not only the full one.
+                    let coalesce = if by.iter().all(JoinKey::is_same) {
+                        String::new()
+                    } else {
+                        ", coalesce=True".to_string()
+                    };
                     calls.push(format!(
-                        "join({}, on={}, how=\"{how}\")",
+                        "join({}, {}, how=\"{how}\"{coalesce})",
                         other.text,
-                        list(by)
+                        join_on(by)
                     ));
                 }
 
@@ -469,7 +479,7 @@ fn column_text(e: &Expr) -> String {
 
 /// The table and key of a `keep` that is really a filtering join, and whether it
 /// is the anti one.
-fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
+fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
     match condition {
         Expr::Matching { other, by, .. } => Some((other, by, false)),
         Expr::Not { inner, .. } => match inner.as_ref() {
@@ -483,6 +493,21 @@ fn filtering_join(condition: &Expr) -> Option<(&Name, &[Name], bool)> {
 fn list(names: &[Name]) -> String {
     let quoted: Vec<String> = names.iter().map(|n| text(&n.text)).collect();
     format!("[{}]", quoted.join(", "))
+}
+
+/// How a join names its keys: `on=` where both tables agree, and the two-sided
+/// pair where they do not.
+///
+/// polars refuses to mix them, so one differing key puts every key into the
+/// long form — the same rule pandas has, arrived at independently.
+fn join_on(keys: &[JoinKey]) -> String {
+    if keys.iter().all(JoinKey::is_same) {
+        let mine: Vec<Name> = keys.iter().map(|k| k.this.clone()).collect();
+        return format!("on={}", list(&mine));
+    }
+    let mine: Vec<Name> = keys.iter().map(|k| k.this.clone()).collect();
+    let theirs: Vec<Name> = keys.iter().map(|k| k.other.clone()).collect();
+    format!("left_on={}, right_on={}", list(&mine), list(&theirs))
 }
 
 fn strings(names: &[String]) -> String {
@@ -665,8 +690,8 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "running_total" => format!("{}.cum_sum()", arg(0)),
         // polars keeps the sign convention the grammar refused the words for:
         // one row back is a positive shift, one row forward is a negative one.
-        "previous" => format!("{}.shift(1)", arg(0)),
-        "following" => format!("{}.shift(-1)", arg(0)),
+        "previous" => format!("{}.shift({})", arg(0), super::step_alone(args, "")),
+        "following" => format!("{}.shift({})", arg(0), super::step_alone(args, "-")),
         "to_number" => format!("{}.cast(pl.Float64)", arg(0)),
         "to_whole" => format!("{}.cast(pl.Int64)", arg(0)),
         "to_text" => format!("{}.cast(pl.String)", arg(0)),

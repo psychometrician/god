@@ -1248,12 +1248,12 @@ fn check_widen(
 fn check_join(
     schema: &Schema,
     other: &Name,
-    by: &[Name],
+    by: &[JoinKey],
     _unmatched: Unmatched,
     span: Span,
     others: &Tables,
     assumptions: &mut Vec<Diagnostic>,
-) -> Result<(Schema, Vec<Name>), Diagnostic> {
+) -> Result<(Schema, Vec<JoinKey>), Diagnostic> {
     let Some(right) = others.get(&other.text) else {
         let known = others.names();
         let suggestion = nearest(&other.text, known.iter().map(|s| s.as_str()))
@@ -1275,7 +1275,7 @@ fn check_join(
 
     // The key. Given, or worked out from the names both tables share, which is
     // never fatal and never silent (§10).
-    let keys: Vec<Name> = if by.is_empty() {
+    let keys: Vec<JoinKey> = if by.is_empty() {
         let shared: Vec<String> = schema
             .names()
             .into_iter()
@@ -1284,8 +1284,8 @@ fn check_join(
         if shared.is_empty() {
             return Err(Diagnostic::illegal(
                 format!(
-                    "`join` needs to know which columns say that two rows correspond, and these tables share no column name. Write it: `join {} by [id]`",
-                    other.text
+                    "`join` needs to know which columns say that two rows correspond, and these tables share no column name. Write it: `join {} by [id]`, or `join {} by [customer_id] is [id]` where each table names it differently",
+                    other.text, other.text
                 ),
                 span,
             ));
@@ -1299,7 +1299,7 @@ fn check_join(
             ),
             span,
         ));
-        shared.into_iter().map(|text| Name { text, span }).collect()
+        shared.into_iter().map(|text| JoinKey::same(Name { text, span })).collect()
     } else {
         by.to_vec()
     };
@@ -1309,10 +1309,16 @@ fn check_join(
     // A column on both tables that is not a key would arrive twice. Suffixing it
     // to `name_x` and `name_y` is how pandas hands back a column nobody asked
     // for; refusing names the two tables and the fix.
+    //
+    // **A differently-named key is exempt on the other table's side only**, and
+    // getting that wrong is how the feature would break the join it was built
+    // for: `orders.customer_id` against `customers.id` leaves `id` on the other
+    // table, which is not a clash because it never arrives — it holds the key's
+    // own value and is dropped the way a same-named key is.
     let clashes: Vec<String> = right
         .names()
         .into_iter()
-        .filter(|n| schema.get(n).is_some() && !keys.iter().any(|k| &k.text == n))
+        .filter(|n| schema.get(n).is_some() && !keys.iter().any(|k| &k.other.text == n))
         .collect();
     if !clashes.is_empty() {
         let quoted: Vec<String> = clashes.iter().map(|c| format!("`{c}`")).collect();
@@ -1328,9 +1334,14 @@ fn check_join(
 
     // This table's columns, then the other's, minus the keys, which are already
     // here and hold the same values by construction.
+    //
+    // **The surviving name is this table's**, which is the choice a
+    // differently-named key forces and the one every neighbour makes: the
+    // pipeline goes on being about `orders`, so `customer_id` is the word the
+    // rest of the sentence is written in. The other table's `id` is dropped.
     let mut columns = schema.columns.clone();
     for (name, kind) in &right.columns {
-        if !keys.iter().any(|k| &k.text == name) {
+        if !keys.iter().any(|k| &k.other.text == name) {
             columns.push((name.clone(), *kind));
         }
     }
@@ -1346,36 +1357,56 @@ fn check_join(
 fn keys_agree(
     schema: &Schema,
     right: &Schema,
-    keys: &[Name],
+    keys: &[JoinKey],
     other: &Name,
 ) -> Result<(), Diagnostic> {
     for key in keys {
-        let mine = known(key, schema)?;
-        let Some(theirs) = right.get(&key.text) else {
+        let mine = known(&key.this, schema)?;
+        let Some(theirs) = right.get(&key.other.text) else {
             let names = right.names();
-            let suggestion = nearest(&key.text, names.iter().map(|s| s.as_str()))
+            let suggestion = nearest(&key.other.text, names.iter().map(|s| s.as_str()))
                 .map(|s| format!(" Did you mean `{s}`?"))
                 .unwrap_or_default();
+            // **The nudge differs by which shape was written.** Where the two
+            // sides were named separately the writer already knows they can
+            // differ, so repeating that would be noise; where one name was
+            // written for both, not knowing the pair form is the likeliest
+            // reason to be here at all.
+            let pair = if key.is_same() {
+                format!(
+                    " If `{}` calls it something else, say both: `by [{}] is [their_name]`.",
+                    other.text, key.this.text
+                )
+            } else {
+                String::new()
+            };
             return Err(Diagnostic::illegal(
                 format!(
-                    "`{}` has no column called `{}`.{suggestion} It has: {}",
+                    "`{}` has no column called `{}`.{suggestion}{pair} It has: {}",
                     other.text,
-                    key.text,
+                    key.other.text,
                     list(&names)
                 ),
-                key.span,
+                key.other.span,
             ));
         };
         if !mine.agrees_with(theirs) {
+            // Named the way it was written, so the message points at the two
+            // columns the reader can see rather than at one name they would
+            // then have to map back to two.
+            let named = if key.is_same() {
+                format!("`[{}]`", key.this.text)
+            } else {
+                format!("`[{}]` against `[{}]`", key.this.text, key.other.text)
+            };
             return Err(Diagnostic::illegal(
                 format!(
-                    "`[{}]` is {} here and {} in `{}`, so the two can never match. Convert one of them first",
-                    key.text,
+                    "{named} is {} here and {} in `{}`, so the two can never match. Convert one of them first",
                     mine.name(),
                     theirs.name(),
                     other.text
                 ),
-                key.span,
+                key.this.span,
             ));
         }
     }
@@ -1396,11 +1427,11 @@ fn keys_agree(
 fn check_matching(
     schema: &Schema,
     other: &Name,
-    by: &[Name],
+    by: &[JoinKey],
     span: Span,
     others: &Tables,
     assumptions: &mut Vec<Diagnostic>,
-) -> Result<Vec<Name>, Diagnostic> {
+) -> Result<Vec<JoinKey>, Diagnostic> {
     let Some(right) = others.get(&other.text) else {
         let known = others.names();
         let suggestion = nearest(&other.text, known.iter().map(|s| s.as_str()))
@@ -1420,7 +1451,7 @@ fn check_matching(
         ));
     };
 
-    let keys: Vec<Name> = if by.is_empty() {
+    let keys: Vec<JoinKey> = if by.is_empty() {
         let shared: Vec<String> = schema
             .names()
             .into_iter()
@@ -1444,7 +1475,7 @@ fn check_matching(
             ),
             span,
         ));
-        shared.into_iter().map(|text| Name { text, span }).collect()
+        shared.into_iter().map(|text| JoinKey::same(Name { text, span })).collect()
     } else {
         by.to_vec()
     };
@@ -2049,7 +2080,49 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                 // These hand back a value from another row, so they hand back
                 // whatever that column holds. A row with nothing before it, or
                 // nothing after it, gets `missing`.
-                "previous" | "following" => Ok(kinds[0]),
+                //
+                // **How far is optional, and it has to be written out.** A
+                // column there would be an offset that changes per row, which is
+                // a different operation and one no engine underneath takes in
+                // that position. The three refusals are separated because they
+                // are three different mistakes: a computed offset, a zero, and a
+                // negative each want a different sentence back.
+                "previous" | "following" => {
+                    if let Some(step) = args.get(1) {
+                        // **A negative is written `0 - n` by the time it gets
+                        // here**, because the lexer has no negative literal and
+                        // a leading `-` is parsed as subtraction from nothing.
+                        // It is matched rather than left to fall through, so
+                        // that `previous([x], -3)` gets the sentence about the
+                        // other word instead of the one about per-row offsets.
+                        let negated = matches!(
+                            step,
+                            Expr::Arithmetic { op: Arith::Subtract, left, right, .. }
+                                if matches!(**left, Expr::Whole { value: 0, .. })
+                                    && matches!(**right, Expr::Whole { .. })
+                        );
+                        if negated {
+                            let other = if name == "previous" { "following" } else { "previous" };
+                            return Err(Diagnostic::illegal(
+                                format!("`{name}` already says which way it goes, so how far is counted forwards from 1. To look the other way, use `{other}`"),
+                                step.span(),
+                            ));
+                        }
+                        let Expr::Whole { value, .. } = step else {
+                            return Err(Diagnostic::illegal(
+                                format!("the second thing `{name}` takes is how many rows to look, written as a plain whole number: `{name}([revenue], 12)`. It cannot be worked out per row"),
+                                step.span(),
+                            ));
+                        };
+                        if *value == 0 {
+                            return Err(Diagnostic::illegal(
+                                format!("`{name}([column], 0)` is the column itself, so it has no work to do. Use the column"),
+                                step.span(),
+                            ));
+                        }
+                    }
+                    Ok(kinds[0])
+                }
 
                 "first_present" => {
                     let mut settled = kinds[0];
