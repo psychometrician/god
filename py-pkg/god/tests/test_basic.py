@@ -983,6 +983,50 @@ check_error("a dot with nothing after it says so",
             "names a table in parts")
 
 
+# --- a refusal arrives as words, not as a bug report -------------------------
+#
+# **R shows `Error:` and the refusal. Python used to show three frames of this
+# package's plumbing first** — `verbs.collect`, `run._query`, `run._call` — and
+# only then the words. The same sentence refused the same way looked like a
+# defect in one language and an answer in the other, and the book's whole claim
+# is that the two spellings are one grammar.
+#
+# The boundary's own frame stays and is meant to: it names the call the reader
+# made. What must not come back is the plumbing underneath it.
+import traceback as _traceback  # noqa: E402
+
+_sales = pd.DataFrame({"region": ["West"], "revenue": [100]})
+
+
+def _frames_of(thunk):
+    """The function names on the traceback of the refusal a thunk raises.
+
+    Names rather than files, because `run` and `show_as` are themselves defined
+    in `run.py`: their own frame belongs there and is the one frame meant to
+    survive. What must not come back is the plumbing under it.
+    """
+    try:
+        thunk()
+    except GodError as refusal:
+        return [f.name for f in _traceback.extract_tb(refusal.__traceback__)]
+    return []
+
+
+_PLUMBING = {"_query", "_call", "_columns_args", "_draw"}
+
+for _label, _thunk in [
+    ("collect", lambda: god.collect(_sales >> god.keep(god.col.nope > 1))),
+    ("run", lambda: god.run("sales then keep where [nope] > 1", sales=_sales)),
+    ("show_as", lambda: god.show_as("sales then keep where [nope] > 1", "dplyr",
+                                    sales=_sales)),
+]:
+    _names = _frames_of(_thunk)
+    check(f"{_label} refuses with no plumbing on the traceback",
+          sorted(set(_names) & _PLUMBING), [])
+    check(f"and {_label}'s own frame is the one that survives",
+          _names[-1], _label)
+
+
 # --- god_table(): the book's tables, fetched by name -------------------------
 # Binding plumbing rather than a word of the grammar. The offline checks always
 # run; the fetch itself is never in the suite, because a suite has to pass on a

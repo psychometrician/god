@@ -68,7 +68,10 @@ def run(pipeline: str, **tables):
                 )
             tables[source] = found
 
-    return _query(pipeline, tables, sources[0])
+    try:
+        return _query(pipeline, tables, sources[0])
+    except GodError as refusal:
+        raise _surface(refusal) from None
 
 
 def _scannable(frame):
@@ -228,7 +231,10 @@ def show_as(pipeline: str, as_: str = "dplyr", **tables) -> _Written:
       filter((region == "West"))
     """
     args, sentence = _asking(pipeline, tables, _asked_from())
-    return _Written(_call(args + ["--as", as_], sentence))
+    try:
+        return _Written(_call(args + ["--as", as_], sentence))
+    except GodError as refusal:
+        raise _surface(refusal) from None
 
 
 class _Steps:
@@ -253,7 +259,10 @@ class _Steps:
 
     def _draw(self, way: str) -> str:
         if way not in self._drawn:
-            self._drawn[way] = _call(self._args + ["--draw", way], self._sentence)
+            try:
+                self._drawn[way] = _call(self._args + ["--draw", way], self._sentence)
+            except GodError as refusal:
+                raise _surface(refusal) from None
         return self._drawn[way]
 
     @property
@@ -354,7 +363,10 @@ def god_sql(pipeline: str, columns: str) -> str:
          step1 AS (SELECT * FROM step0 LIMIT 1)
     SELECT * FROM step1
     """
-    return _call(["--columns", columns], pipeline)
+    try:
+        return _call(["--columns", columns], pipeline)
+    except GodError as refusal:
+        raise _surface(refusal) from None
 
 
 # -- talking to the grammar -------------------------------------------------
@@ -378,6 +390,26 @@ def _columns_args(tables: dict, source: str) -> list[str]:
         if name != source:
             args += ["--columns", f"{name}={_columns_of(frame)}"]
     return args
+
+
+
+# **A refusal is a message for the reader, not a bug report about god.** An
+# uncaught `GodError` used to arrive under three frames of this package's own
+# plumbing — `verbs.collect`, `run._query`, `run._call` — and only then the
+# words. R shows `Error:` and the refusal, nothing else, so the same sentence
+# refused the same way looked like a defect in one language and an answer in the
+# other. The book's whole claim is that the two spellings are one grammar, and a
+# refusal is part of that surface.
+#
+# `with_traceback(None)` drops the frames the exception collected on its way up,
+# and `from None` stops Python printing the chain underneath. The public
+# function's own frame is still added as it re-raises, which is why this is
+# written out at each boundary rather than wrapped in a decorator: a decorator's
+# frame would read `wrapper`, and `collect` is the more useful word for a reader
+# to see beside their own line.
+def _surface(refusal: "GodError") -> "GodError":
+    """The refusal, with this package's plumbing taken off the traceback."""
+    return refusal.with_traceback(None)
 
 
 def _call(args: list[str], pipeline: str) -> str:

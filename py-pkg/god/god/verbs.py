@@ -1974,6 +1974,9 @@ def collect(pipeline: Pipeline):
     """
     if not isinstance(pipeline, Pipeline):
         raise GodExpressionError("`collect` runs a god pipeline, and this is not one")
-    from .run import _query
+    from .run import GodError, _query, _surface
 
-    return _query(pipeline.written(), pipeline.tables, pipeline.source)
+    try:
+        return _query(pipeline.written(), pipeline.tables, pipeline.source)
+    except GodError as refusal:
+        raise _surface(refusal) from None

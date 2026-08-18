@@ -5,6 +5,21 @@ a person using god can see.
 
 ## Unreleased
 
+### A refusal arrives as words, in Python too
+
+An uncaught refusal used to print three frames of god's own plumbing before the
+message, so a sentence refused in Python looked like a defect and the same
+sentence refused in R looked like an answer. Now it reads the way R's does, with
+your own call at the top:
+
+```
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+    collect(sales >> keep(col.nope > 1))
+god.columns.GodError:
+illegal: there is no column called `nope`. The table has: region, revenue
+```
+
 ### `god_table` reads a local copy before it reaches the network
 
 It now looks for a `data/<name>.csv` in your working directory, or in any
