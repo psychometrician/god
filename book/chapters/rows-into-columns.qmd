@@ -4,6 +4,16 @@ title: "Rows into columns"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+sparse <- god_table("sparse")
+```
+
+```{python}
+#| include: false
+sparse = god_table("sparse")
+```
+
 How do you get the wide table back, one row per student again? `widen` is the
 inverse, and it reads the same two words the other way. `name` points at the
 column holding column names in both verbs. Here it is being read rather than
@@ -130,6 +140,15 @@ expression, so an aggregation there is the answer:
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  twice
+    then widen name [question], value average([mark]) by [student]
+')
+```
+
 ### R
 
 ```{r}
@@ -145,6 +164,8 @@ twice |> widen(name = question, value = average(mark), by = student)
 ```
 
 :::
+
+*`twice then widen name [question], value average([mark]) by [student]`*
 
 ## What the columns became
 
@@ -246,18 +267,27 @@ stops the query instead of disappearing from the answer. And an empty cell can b
 filled, which needs `giving` for the same reason: saying what an empty cell holds
 means knowing which cells there are.
 
+`sparse` is short a mark: bob sat q1 and not q2.
+
+```{r}
+#| echo: false
+sparse
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sparse
+    then widen name [question], value [mark] by [student] missing 0 giving [q1, q2]
+')
+```
 
 ### R
 
 ```{r}
-sparse <- data.frame(
-  student  = c("ann", "ann", "bob"),
-  question = c("q1", "q2", "q1"),
-  mark     = c(1, 2, 4),
-  stringsAsFactors = FALSE
-)
-
 sparse |> widen(name = question, value = mark, by = student,
                 missing = 0, giving = c(q1, q2))
 ```
@@ -265,17 +295,13 @@ sparse |> widen(name = question, value = mark, by = student,
 ### Python
 
 ```{python}
-sparse = pd.DataFrame({
-    "student":  ["ann", "ann", "bob"],
-    "question": ["q1", "q2", "q1"],
-    "mark":     [1, 2, 4],
-})
-
 sparse >> widen(name = col.question, value = col.mark, by = col.student,
                 missing = 0, giving = [col.q1, col.q2])
 ```
 
 :::
+
+*`sparse then widen name [question], value [mark] by [student] missing 0 giving [q1, q2]`*
 
 Say what it makes with `giving`, say what fills the holes with `missing`,
 and a sparse table widens with no surprise in it.

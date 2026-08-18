@@ -4,6 +4,18 @@ title: "What a column holds"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+mixed <- god_table("mixed")
+notes <- god_table("notes")
+```
+
+```{python}
+#| include: false
+mixed = god_table("mixed")
+notes = god_table("notes")
+```
+
 What kind of thing does a column hold, and can you choose by that alone? It
 is the other question you can ask about a column without looking at a single
 row. `kind` is one of `"number"`, `"text"`, `"truth"` or `"date"`.
@@ -101,26 +113,39 @@ The name tests match exactly, so `name starts "q"` does not find a column called
 There is no flag for it, because a name is text and text has a case. Fold the
 case and ask the question.
 
+`mixed` names one column `Q1_score` and the next `q2_score`:
+
+```{r}
+#| echo: false
+mixed
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  mixed
+    then pick where lower(name) starts "q"
+')
+```
 
 ### R
 
 ```{r}
-mixed <- data.frame(Q1_score = 4, q2_score = 5, Region = "West",
-                    stringsAsFactors = FALSE)
-
 mixed |> pick(where(startsWith(tolower(name), "q")))
 ```
 
 ### Python
 
 ```{python}
-mixed = pd.DataFrame({"Q1_score": [4], "q2_score": [5], "Region": ["West"]})
-
 mixed >> pick(where(lower(name).starts("q")))
 ```
 
 :::
+
+*`mixed then pick where lower(name) starts "q"`*
 
 `lower` and `upper` are ordinary words, so they work on a value in exactly the
 same way.
@@ -205,24 +230,37 @@ R borrows `grepl`'s shape to ask the question, and the reading is still the
 grammar's: the marks that regular expressions treat as instructions, `%` and
 `.` among them, here only ever mean themselves.
 
+```{r}
+#| echo: false
+notes
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  notes
+    then keep where [note] contains "100%"
+')
+```
 
 ### R
 
 ```{r}
-notes <- data.frame(note = c("grew 100% this year", "flat since March"),
-                    stringsAsFactors = FALSE)
 notes |> keep(grepl("100%", note))
 ```
 
 ### Python
 
 ```{python}
-notes = pd.DataFrame({"note": ["grew 100% this year", "flat since March"]})
 notes >> keep(col.note.contains("100%"))
 ```
 
 :::
+
+*`notes then keep where [note] contains "100%"`*
 
 When the question really is a pattern, it belongs to the host language, a
 boundary the coverage appendix states with the rest of them.

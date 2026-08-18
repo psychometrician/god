@@ -7,11 +7,15 @@ title: "Missing values"
 ```{r}
 #| include: false
 patchy <- god_table("patchy")
+contacts <- god_table("contacts")
+sensors <- god_table("sensors")
 ```
 
 ```{python}
 #| include: false
 patchy = god_table("patchy")
+contacts = god_table("contacts")
+sensors = god_table("sensors")
 ```
 
 What should a hole in the table mean for your answer? `drop_missing` drops
@@ -109,36 +113,39 @@ except GodError as refusal:
 column, `first_present` reads across the columns you name and takes the first one
 that is there.
 
+`contacts` holds three ways of reaching someone and not everybody has all three:
+
+```{r}
+#| echo: false
+contacts
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  contacts
+    then add [reach] as first_present([mobile], [landline], [email])
+')
+```
 
 ### R
 
 ```{r}
-contacts <- data.frame(
-  name     = c("ana", "bo", "cy"),
-  mobile   = c("555-01", NA, NA),
-  landline = c("555-99", "555-02", NA),
-  email    = c("a@x", "b@x", "c@x"),
-  stringsAsFactors = FALSE
-)
-
 contacts |> add(reach = first_present(mobile, landline, email))
 ```
 
 ### Python
 
 ```{python}
-contacts = pd.DataFrame({
-    "name":     ["ana", "bo", "cy"],
-    "mobile":   ["555-01", None, None],
-    "landline": ["555-99", "555-02", None],
-    "email":    ["a@x", "b@x", "c@x"],
-})
-
 contacts >> add(reach = first_present(col.mobile, col.landline, col.email))
 ```
 
 :::
+
+*`contacts then add [reach] as first_present([mobile], [landline], [email])`*
 
 Two things about it are worth knowing before you rely on it, and both are places
 people are usually surprised.
@@ -152,23 +159,37 @@ all.
 The only thing it skips is a missing value. A zero, an empty text and a `no`
 are all values, and they come back.
 
+```{r}
+#| echo: false
+sensors
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sensors
+    then add [used] as first_present([sensor], [backup])
+')
+```
 
 ### R
 
 ```{r}
-readings <- data.frame(sensor = c(0, NA), backup = c(99, 99))
-readings |> add(used = first_present(sensor, backup))
+sensors |> add(used = first_present(sensor, backup))
 ```
 
 ### Python
 
 ```{python}
-readings = pd.DataFrame({"sensor": [0.0, None], "backup": [99.0, 99.0]})
-readings >> add(used = first_present(col.sensor, col.backup))
+sensors >> add(used = first_present(col.sensor, col.backup))
 ```
 
 :::
+
+*`sensors then add [used] as first_present([sensor], [backup])`*
 
 The first sensor read zero, which is a reading, so it is kept. Only the row where
 the sensor recorded nothing at all falls through to the backup. If you want zero

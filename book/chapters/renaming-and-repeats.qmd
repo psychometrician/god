@@ -4,6 +4,16 @@ title: "Renaming and repeats"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+repeats <- god_table("repeats")
+```
+
+```{python}
+#| include: false
+repeats = god_table("repeats")
+```
+
 Why is this row in the table twice? And why is the column called `revenue`
 when the report you owe someone says `earned`? Two small verbs do the
 housekeeping the core six leave behind: `rename` changes what a column is
@@ -52,21 +62,37 @@ answer comes back in a settled order, because dropping repeats says nothing
 about which order the rest should be in, and an answer that reorders itself
 between runs is an answer you cannot test.
 
+```{r}
+#| echo: false
+repeats
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  repeats
+    then drop_duplicates
+')
+```
 
 ### R
 
 ```{r}
-data.frame(a = c(1, 1, 2), b = c("x", "x", "y")) |> drop_duplicates()
+repeats |> drop_duplicates()
 ```
 
 ### Python
 
 ```{python}
-pd.DataFrame({"a": [1, 1, 2], "b": ["x", "x", "y"]}) >> drop_duplicates()
+repeats >> drop_duplicates()
 ```
 
 :::
+
+*`repeats then drop_duplicates`*
 
 ## Why it takes no columns
 

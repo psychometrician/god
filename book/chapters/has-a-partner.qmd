@@ -6,6 +6,16 @@ title: "Has a partner"
 
 ```{r}
 #| include: false
+listed <- god_table("listed")
+```
+
+```{python}
+#| include: false
+listed = god_table("listed")
+```
+
+```{r}
+#| include: false
 stocked <- god_table("stocked")
 ```
 
@@ -90,25 +100,40 @@ That sameness is the whole point, so it extends to keys the two tables name
 differently. Write `is` between them, this table's name first, exactly as
 [another table](another-table.qmd) does.
 
+`listed` names the same products under a column of its own:
+
+```{r}
+#| echo: false
+listed
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then keep where matching(listed, by [product] is [item])
+    then take 3
+')
+```
 
 ### R
 
 ```{r}
-listed <- data.frame(item = c("Widget", "Gadget"), stringsAsFactors = FALSE)
-
 sales |> keep(matching(listed, by = product == item)) |> take(3)
 ```
 
 ### Python
 
 ```{python}
-listed = pd.DataFrame({"item": ["Widget", "Gadget"]})
-
 sales >> keep(matching(listed, by = col.product == col.item)) >> take(3)
 ```
 
 :::
+
+*`sales then keep where matching(listed, by [product] is [item]) then take 3`*
 
 ::: {.panel-tabset}
 

@@ -4,6 +4,16 @@ title: "Dates"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+stamps <- god_table("stamps")
+```
+
+```{python}
+#| include: false
+stamps = god_table("stamps")
+```
+
 What year was that, what month, and did it land on a weekday? A date usually
 arrives as text. `to_date` reads one, and once a column holds a date there is
 a word for each part you might want out of it.
@@ -94,12 +104,27 @@ diary |>
 `hour` is the fifth, and it wants a value that carries a time. A plain date has
 no hour in it, so on the dates above it answers zero rather than refusing.
 
+```{r}
+#| echo: false
+stamps
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  stamps
+    then add [h] as hour(to_date([at]))
+    then pick [at, h]
+')
+```
 
 ### R
 
 ```{r}
-data.frame(at = c("2026-01-02 14:30:00", "2026-01-02")) |>
+stamps |>
   add(h = hour(to_date(at))) |>
   pick(at, h)
 ```
@@ -107,12 +132,14 @@ data.frame(at = c("2026-01-02 14:30:00", "2026-01-02")) |>
 ### Python
 
 ```{python}
-(pd.DataFrame({"at": ["2026-01-02 14:30:00", "2026-01-02"]})
+(stamps
   >> add(h = hour(to_date(col.at)))
   >> pick(col.at, col.h))
 ```
 
 :::
+
+*`stamps then add [h] as hour(to_date([at])) then pick [at, h]`*
 
 ## Text is not yet a date
 

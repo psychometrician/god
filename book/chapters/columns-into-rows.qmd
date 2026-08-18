@@ -4,6 +4,18 @@ title: "Columns into rows"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+terms <- god_table("terms")
+readings <- god_table("readings")
+```
+
+```{python}
+#| include: false
+terms = god_table("terms")
+readings = god_table("readings")
+```
+
 A survey arrives with a row per person and a column per question, so how do
 you total by question? Most things you want to ask of a wide table need the
 opposite shape.
@@ -206,17 +218,26 @@ taller by getting narrower.
 Column names often encode more than one thing: `q1_2020` is a question and a
 year. Say what the names look like, and name each piece:
 
+```{r}
+#| echo: false
+terms
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  terms
+    then lengthen all_but [id] as name "{question}_{year}", value [mark]
+    then take 4
+')
+```
 
 ### R
 
 ```{r}
-terms <- data.frame(
-  id = c(1, 2),
-  q1_2020 = c(10, 20), q1_2021 = c(11, 21),
-  q2_2020 = c(12, 22), q2_2021 = c(13, 23)
-)
-
 terms |>
   lengthen(all_but(id), name = "{question}_{year}", value = mark) |>
   take(4)
@@ -225,18 +246,14 @@ terms |>
 ### Python
 
 ```{python}
-terms = pd.DataFrame({
-    "id": [1, 2],
-    "q1_2020": [10, 20], "q1_2021": [11, 21],
-    "q2_2020": [12, 22], "q2_2021": [13, 23],
-})
-
 (terms
   >> lengthen(all_but(col.id), name = "{question}_{year}", value = col.mark)
   >> take(4))
 ```
 
 :::
+
+*`terms then lengthen all_but [id] as name "{question}_{year}", value [mark]`*
 
 The braces mark a piece, and everything outside them is the text that separates
 the pieces. That is the whole rule. It is not a regular expression, and it is not
@@ -248,33 +265,37 @@ which value column the row belongs to, rather than becoming a value itself. That
 is what to write when the names encode both what was measured and which measure
 it is:
 
+```{r}
+#| echo: false
+readings
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  readings
+    then lengthen all_but [site] as name "{medium}_{value}"
+')
+```
 
 ### R
 
 ```{r}
-readings <- data.frame(
-  site = c("north", "south"),
-  air_mean = c(12.5, 15.0), air_max = c(20.0, 24.0),
-  sea_mean = c(8.5, 9.0),   sea_max = c(11.0, 12.5)
-)
-
 readings |> lengthen(all_but(site), name = "{medium}_{value}")
 ```
 
 ### Python
 
 ```{python}
-readings = pd.DataFrame({
-    "site": ["north", "south"],
-    "air_mean": [12.5, 15.0], "air_max": [20.0, 24.0],
-    "sea_mean": [8.5, 9.0],   "sea_max": [11.0, 12.5],
-})
-
 readings >> lengthen(all_but(col.site), name = "{medium}_{value}")
 ```
 
 :::
+
+*`readings then lengthen all_but [site] as name "{medium}_{value}"`*
 
 Four columns became one column saying which medium, and two columns holding the
 two measures.

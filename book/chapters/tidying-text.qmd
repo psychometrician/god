@@ -70,6 +70,17 @@ somewhere else.
 
 ::: {.panel-tabset}
 
+### run
+
+```{r}
+run('
+  messy
+    then add [name] as trim([raw])
+    then add [greeting] as join_text("hello ", [name])
+    then pick [greeting, n]
+')
+```
+
 ### R
 
 ```{r}
@@ -89,6 +100,8 @@ messy |>
 ```
 
 :::
+
+*`messy then add [name] as trim([raw]) then add [greeting] as join_text("hello ", [name]) then pick [greeting, n]`*
 
 Numbers are refused rather than converted. `join_text([name], [n])` will not
 run, and the message names `to_text`, because how a number should look is a
