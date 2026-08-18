@@ -71,6 +71,30 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
     grepl(paste0("\\b", word, "\\b"), text, perl = TRUE)
   }
 
+  # **Being mentioned is not being used, and this guard accepted the first for
+  # the second until 2026-08-18.** A chunk holding `latest <- gapminder |> ...`
+  # made the *window function* `latest` count as demonstrated, on the strength
+  # of a variable that happens to share its name. That is the shape of defect
+  # this whole file exists to refuse, one level up: a word the book never shows
+  # anybody using, passing because the letters appear.
+  #
+  # So a word that can be *called* has to be seen called. A verb reaches the
+  # reader two ways and either counts: `keep(...)` in the two native spellings,
+  # `then keep` in the text form. Everything else with a kind is a function and
+  # is written the same way in all three.
+  #
+  # Grammar words keep the looser rule deliberately. `by`, `as`, `where` and
+  # the rest are not called and not written in one shape, so a pattern for them
+  # would be a guess; they are checked for a mention anywhere, prose included,
+  # which is what the paragraph below already says.
+  used <- function(word, kind, text) {
+    called <- grepl(paste0("\\b", word, "\\s*\\("), text, perl = TRUE)
+    if (identical(kind, "verb")) {
+      return(called || grepl(paste0("then\\s+", word, "\\b"), text, perl = TRUE))
+    }
+    called
+  }
+
   missing_run <- character()
   missing_any <- character()
   for (i in seq_len(nrow(words))) {
@@ -79,7 +103,7 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
     if (kind == "word") {
       if (!mentions(word, anywhere)) missing_any <- c(missing_any, word)
     } else {
-      if (!mentions(word, running)) missing_run <- c(missing_run, word)
+      if (!used(word, kind, running)) missing_run <- c(missing_run, word)
     }
   }
 
@@ -116,9 +140,10 @@ check_vocabulary <- function(dirs = "book", readme = "README.md") {
     if (length(missing_run)) {
       cat("FAIL: the grammar has words this book never runs\n")
       for (word in missing_run) {
-        cat("  ", word, " is in the vocabulary and appears in no executable chunk\n", sep = "")
+        cat("  ", word, " is in the vocabulary and no executable chunk uses it\n", sep = "")
       }
-      cat("  Write an example that uses it. Naming it in prose is not documenting it.\n")
+      cat("  Write an example that uses it. Naming it in prose is not documenting it,\n")
+      cat("  and neither is a variable that happens to share its name.\n")
     }
     if (length(missing_any)) {
       cat("FAIL: the grammar has words this book never mentions\n")
