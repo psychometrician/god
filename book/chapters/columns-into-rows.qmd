@@ -8,28 +8,33 @@ A survey arrives with a row per person and a column per question, so how do
 you total by question? Most things you want to ask of a wide table need the
 opposite shape.
 
+The table is `answers`, two students and three questions:
+
+```{r}
+#| echo: false
+answers
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  answers
+    then lengthen [q1, q2, q3]
+')
+```
 
 ### R
 
 ```{r}
-answers <- data.frame(
-  student = c("ann", "bob"),
-  q1 = c(1, 4), q2 = c(2, 5), q3 = c(3, 6),
-  stringsAsFactors = FALSE
-)
-
 answers |> lengthen(q1, q2, q3)
 ```
 
 ### Python
 
 ```{python}
-answers = pd.DataFrame({
-    "student": ["ann", "bob"],
-    "q1": [1, 4], "q2": [2, 5], "q3": [3, 6],
-})
-
 answers >> lengthen(col.q1, col.q2, col.q3)
 ```
 

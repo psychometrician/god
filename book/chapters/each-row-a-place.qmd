@@ -4,37 +4,49 @@ title: "Each row a place"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+races <- god_table("races")
+```
+
+```{python}
+#| include: false
+races = god_table("races")
+```
+
 Who came first, and what happens to second place when there is a tie? `rank`
 gives every row its place by some column. It is a value like any other, so it
 goes in `add`.
 
 The table below has a tie in it on purpose, because the tie is where ranking
-functions differ from each other and where most of the confusion lives.
+functions differ from each other and where most of the confusion lives:
+
+```{r}
+#| echo: false
+races
+```
 
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  races
+    then add [place] as rank([score])
+    then sort [place]
+')
+```
 
 ### R
 
 ```{r}
-races <- data.frame(
-  heat  = c("x", "x", "y", "y"),
-  name  = c("ana", "bo", "cy", "di"),
-  score = c(20, 20, 5, 50),
-  stringsAsFactors = FALSE
-)
-
 races |> add(place = rank(score)) |> sort(place)
 ```
 
 ### Python
 
 ```{python}
-races = pd.DataFrame({
-    "heat":  ["x", "x", "y", "y"],
-    "name":  ["ana", "bo", "cy", "di"],
-    "score": [20, 20, 5, 50],
-})
-
 races >> add(place = rank(col.score)) >> sort(col.place)
 ```
 

@@ -4,32 +4,49 @@ title: "Adding rows"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+more <- god_table("more")
+```
+
+```{python}
+#| include: false
+more = god_table("more")
+```
+
 A late order arrives in a table of its own, so where do its rows go?
 `add_rows` stacks another table underneath this one. Nothing is matched and
 no column is added; the rows just carry on where the first table stopped.
 
+The late order is `more`, one row with the same columns as `sales`:
+
+```{r}
+#| echo: false
+more
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add_rows more
+    then sort [date] descending
+    then take 3
+')
+```
 
 ### R
 
 ```{r}
-more <- data.frame(
-  date = "2026-10-30", region = "North", product = "Sprocket",
-  quantity = 20L, revenue = 300, cost = 240,
-  stringsAsFactors = FALSE
-)
-
 sales |> add_rows(more) |> sort(descending(date)) |> take(3)
 ```
 
 ### Python
 
 ```{python}
-more = pd.DataFrame({
-    "date": ["2026-10-30"], "region": ["North"], "product": ["Sprocket"],
-    "quantity": [20], "revenue": [300], "cost": [240],
-})
-
 sales >> add_rows(more) >> sort(descending(col.date)) >> take(3)
 ```
 

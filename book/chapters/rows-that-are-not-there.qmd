@@ -4,6 +4,16 @@ title: "The rows that are not there"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+sittings <- god_table("sittings")
+```
+
+```{python}
+#| include: false
+sittings = god_table("sittings")
+```
+
 Which region sold no Sprockets? Ask the sales table what each region sold of
 each product, and the answer comes back looking complete.
 
@@ -143,30 +153,31 @@ Crossing every value against every other is right for regions and products,
 and wrong as soon as a third column has an opinion. Every student sat their
 own school's paper:
 
+```{r}
+#| echo: false
+sittings
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sittings
+    then add_combinations [student, question] by [school]
+')
+```
 
 ### R
 
 ```{r}
-sittings <- data.frame(
-  school   = c("east", "east", "east", "west"),
-  student  = c("ann", "ann", "bob", "cal"),
-  question = c("q1", "q2", "q1", "q3"),
-  stringsAsFactors = FALSE
-)
-
 sittings |> add_combinations(student, question, by = school)
 ```
 
 ### Python
 
 ```{python}
-sittings = pd.DataFrame({
-    "school":   ["east", "east", "east", "west"],
-    "student":  ["ann", "ann", "bob", "cal"],
-    "question": ["q1", "q2", "q1", "q3"],
-})
-
 sittings >> add_combinations(col.student, col.question, by = col.school)
 ```
 

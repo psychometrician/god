@@ -24,6 +24,10 @@ A name is now checked to be a name. `god_table("../somewhere/else")` is refused
 with a message saying what a name is, because a name that used to make a bad
 web address now also names a file on your disk.
 
+Four more of the book's tables are reachable by name: `patchy`, `pupils`,
+`sittings` and `stocked`, the fixtures the chapters on missing values, `when`,
+`add_combinations` and `matching` are written around.
+
 ### One question, asked of many columns at once
 
 `pick`, `add` and `summarize` have always taken a rule instead of a list of

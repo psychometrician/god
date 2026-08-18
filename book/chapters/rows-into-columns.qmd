@@ -9,30 +9,33 @@ inverse, and it reads the same two words the other way. `name` points at the
 column holding column names in both verbs. Here it is being read rather than
 made, and the verb is what says which.
 
+The table is `marks`, the tall shape the last chapter made:
+
+```{r}
+#| echo: false
+marks
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  marks
+    then widen name [question], value [mark] by [student]
+')
+```
 
 ### R
 
 ```{r}
-marks <- data.frame(
-  student  = c("ann", "ann", "bob", "bob"),
-  question = c("q1", "q2", "q1", "q2"),
-  mark     = c(1, 2, 4, 5),
-  stringsAsFactors = FALSE
-)
-
 marks |> widen(name = question, value = mark, by = student)
 ```
 
 ### Python
 
 ```{python}
-marks = pd.DataFrame({
-    "student":  ["ann", "ann", "bob", "bob"],
-    "question": ["q1", "q2", "q1", "q2"],
-    "mark":     [1, 2, 4, 5],
-})
-
 marks >> widen(name = col.question, value = col.mark, by = col.student)
 ```
 

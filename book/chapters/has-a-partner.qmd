@@ -4,26 +4,48 @@ title: "Has a partner"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+stocked <- god_table("stocked")
+```
+
+```{python}
+#| include: false
+stocked = god_table("stocked")
+```
+
 Which of your rows have a partner in the other table? Sometimes that is the
 whole question: you do not want the other table's columns, only to keep the
 rows that appear in it. That is a question about a row, so it is written as
 one, and the verb that takes a question is `keep`.
 
+The other table is `stocked`, a list of one product:
+
+```{r}
+#| echo: false
+stocked
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then keep where matching(stocked, by [product])
+')
+```
 
 ### R
 
 ```{r}
-stocked <- data.frame(product = "Widget", stringsAsFactors = FALSE)
-
 sales |> keep(matching(stocked, by = product))
 ```
 
 ### Python
 
 ```{python}
-stocked = pd.DataFrame({"product": ["Widget"]})
-
 sales >> keep(matching(stocked, by = col.product))
 ```
 

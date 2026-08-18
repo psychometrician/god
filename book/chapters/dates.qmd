@@ -8,18 +8,28 @@ What year was that, what month, and did it land on a weekday? A date usually
 arrives as text. `to_date` reads one, and once a column holds a date there is
 a word for each part you might want out of it.
 
+The table is `diary`, three days held as text:
+
+```{r}
+#| echo: false
+diary
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  diary
+    then add [d] as to_date([on_])
+    then add [year] as year([d]), [month] as month([d]), [weekday] as weekday([d])
+')
+```
 
 ### R
 
 ```{r}
-diary <- data.frame(
-  g = c("a", "a", "b"),
-  on_ = c("2026-01-02", "2026-01-05", "2026-01-06"),
-  x = c(10, 20, 30),
-  stringsAsFactors = FALSE
-)
-
 diary |>
   add(d = to_date(on_)) |>
   add(year = year(d), month = month(d), weekday = weekday(d))
@@ -28,12 +38,6 @@ diary |>
 ### Python
 
 ```{python}
-diary = pd.DataFrame({
-    "g": ["a", "a", "b"],
-    "on_": ["2026-01-02", "2026-01-05", "2026-01-06"],
-    "x": [10, 20, 30],
-})
-
 (diary
  >> add(d = to_date(col.on_))
  >> add(year = year(col.d), month = month(col.d), weekday = weekday(col.d)))

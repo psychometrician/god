@@ -4,31 +4,47 @@ title: "Missing values"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+patchy <- god_table("patchy")
+```
+
+```{python}
+#| include: false
+patchy = god_table("patchy")
+```
+
 What should a hole in the table mean for your answer? `drop_missing` drops
 rows where a named column is missing. With no column named, it looks at
 every column.
 
+The table is `patchy`, three products with one revenue that never arrived:
+
+```{r}
+#| echo: false
+patchy
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  patchy
+    then drop_missing [revenue]
+')
+```
 
 ### R
 
 ```{r}
-patchy <- data.frame(
-  product = c("Widget", "Gadget", "Doohickey"),
-  revenue = c(100, NA, 300)
-)
-
 patchy |> drop_missing(revenue)
 ```
 
 ### Python
 
 ```{python}
-patchy = pd.DataFrame({
-    "product": ["Widget", "Gadget", "Doohickey"],
-    "revenue": [100.0, None, 300.0],
-})
-
 patchy >> drop_missing(col.revenue)
 ```
 

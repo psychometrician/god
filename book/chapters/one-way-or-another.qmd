@@ -4,20 +4,40 @@ title: "One way or another"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+pupils <- god_table("pupils")
+```
+
+```{python}
+#| include: false
+pupils = god_table("pupils")
+```
+
 Is 95 an A or a B, and who decides in which order the rules apply? `when`
 asks a question and gives the answer beside it, then asks the next one.
 
+The table is `pupils`, three scores that fall in three different bands:
+
+```{r}
+#| echo: false
+pupils
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  pupils
+    then add [band] as when(([score] >= 90), "A", ([score] >= 70), "B", otherwise "C")
+')
+```
 
 ### R
 
 ```{r}
-pupils <- data.frame(
-  name = c("ann", "bob", "cat"),
-  score = c(95, 75, 50),
-  stringsAsFactors = FALSE
-)
-
 pupils |>
   add(band = when(score >= 90, "A", score >= 70, "B", otherwise = "C"))
 ```
@@ -25,11 +45,6 @@ pupils |>
 ### Python
 
 ```{python}
-pupils = pd.DataFrame({
-    "name": ["ann", "bob", "cat"],
-    "score": [95, 75, 50],
-})
-
 pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B",
                           otherwise = "C"))
 ```

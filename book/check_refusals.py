@@ -25,13 +25,35 @@ of those are refusals.
 """
 
 import ast
+import contextlib
 import io
+import os
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK = ROOT / "book"
+
+
+@contextlib.contextmanager
+def working_directory(directory: Path):
+    """Run a chapter's chunks from the chapter's own directory, as knitr does.
+
+    **This guard runs from the repository root and the render does not**, which
+    did not matter until a chapter's table came from `god_table`. That walks up
+    from the working directory for a `data/<name>.csv`, so from `book/chapters/`
+    it finds `book/data/` and from the root it finds nothing and reaches for the
+    published copy — a table not yet published is then a `NameError` here and a
+    rendered page there. Matching knitr is the fix rather than special-casing
+    the walk: a guard that executes chunks should execute them where they run.
+    """
+    was = Path.cwd()
+    os.chdir(directory)
+    try:
+        yield
+    finally:
+        os.chdir(was)
 
 
 def python_chunks(lines: list[str]) -> list[dict]:
@@ -140,46 +162,47 @@ def main() -> int:
         namespace = dict(shared)
         last = max(i for i, r in enumerate(refusing) if r)
 
-        for i in range(last + 1):
-            chunk, tree = chunks[i], parsed[i]
-            where = f"{f.relative_to(ROOT)}:{chunk['line']}"
-            if tree is None:
-                continue
+        with working_directory(f.parent):
+            for i in range(last + 1):
+                chunk, tree = chunks[i], parsed[i]
+                where = f"{f.relative_to(ROOT)}:{chunk['line']}"
+                if tree is None:
+                    continue
 
-            if not refusing[i]:
-                # Run for its tables, not for its output.
-                try:
-                    with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-                        exec(compile(tree, str(f), "exec"), namespace)
-                except Exception:
-                    pass
-                continue
-
-            # A refusal chunk can carry setup around its `try`, so the chunk is
-            # executed statement by statement and only the `try` bodies are
-            # held to the promise.
-            for node in tree.body:
-                if isinstance(node, ast.Try) and catches_goderror(node):
-                    checked += 1
-                    shown = " ".join(
-                        ast.get_source_segment(chunk["code"], node.body[0]).split()
-                    ) if node.body else ""
+                if not refusing[i]:
+                    # Run for its tables, not for its output.
                     try:
                         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-                            value = run_statements(node.body, namespace, str(f))
-                            outcome = force(value, namespace)
-                    except harness as e:
-                        wrong.append(f"{where}: {type(e).__name__}: {e}")
-                        continue
-                    except Exception:
-                        continue  # it refused, which is the promise kept
-                    quiet.append(f"{where} ({outcome}): {shown}")
-                else:
-                    try:
-                        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-                            run_statements([node], namespace, str(f))
+                            exec(compile(tree, str(f), "exec"), namespace)
                     except Exception:
                         pass
+                    continue
+
+                # A refusal chunk can carry setup around its `try`, so the chunk
+                # is executed statement by statement and only the `try` bodies
+                # are held to the promise.
+                for node in tree.body:
+                    if isinstance(node, ast.Try) and catches_goderror(node):
+                        checked += 1
+                        shown = " ".join(
+                            ast.get_source_segment(chunk["code"], node.body[0]).split()
+                        ) if node.body else ""
+                        try:
+                            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                                value = run_statements(node.body, namespace, str(f))
+                                outcome = force(value, namespace)
+                        except harness as e:
+                            wrong.append(f"{where}: {type(e).__name__}: {e}")
+                            continue
+                        except Exception:
+                            continue  # it refused, which is the promise kept
+                        quiet.append(f"{where} ({outcome}): {shown}")
+                    else:
+                        try:
+                            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                                run_statements([node], namespace, str(f))
+                        except Exception:
+                            pass
 
     if not checked:
         print(

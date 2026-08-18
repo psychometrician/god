@@ -7,17 +7,30 @@ title: "Tidying text"
 What do you do with `"  ann marie  "`? Real tables arrive untidy, and these
 are the words for that.
 
+The table is `messy`, two names with the whitespace still on them:
+
+```{r}
+#| echo: false
+messy
+```
+
 ::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  messy
+    then add [name] as trim([raw])
+    then add [first] as split_text([name], " ", 1),
+             [size] as characters([name]),
+             [fixed] as replace_text([name], "a", "A")
+')
+```
 
 ### R
 
 ```{r}
-messy <- data.frame(
-  raw = c("  ann marie  ", "  bob  "),
-  n = c(7L, 99L),
-  stringsAsFactors = FALSE
-)
-
 messy |>
   add(name = trim(raw)) |>
   add(first = split_text(name, " ", 1),
@@ -28,11 +41,6 @@ messy |>
 ### Python
 
 ```{python}
-messy = pd.DataFrame({
-    "raw": ["  ann marie  ", "  bob  "],
-    "n": [7, 99],
-})
-
 (messy
  >> add(name = trim(col.raw))
  >> add(first = split_text(col.name, " ", 1),
