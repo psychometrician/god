@@ -7,15 +7,15 @@ wrong.
 
 The chapters run outward. Nothing runs until you ask for it, which is the
 first chapter and the fact every other one stands on. Any pipeline will print
-itself back in a language you already use, which is the way out when the
+itself back in a language you already use. That is the way out when the
 vocabulary does not cover what you need, and the reason adopting a small
 grammar is safe: the exit is part of the design. A table that lives in a
 warehouse can be read where it sits, and the same sentence runs there
-unchanged. Any pipeline will also draw what it does to the table, step by step,
-before it runs any of it, which is where you find out that the column you are
-missing was taken away four lines up. And when something is wrong, the whole
-pipeline is checked before any of it runs, so a refusal names the step you
-wrote rather than the middle of a query you did not.
+unchanged. Any pipeline will also draw what it does to the table, step by
+step, before it runs any of it. That is where you find out that the column you
+are missing was taken away four lines up. And when something is wrong, the
+whole pipeline is checked before any of it runs, so a refusal names the step
+you wrote rather than the middle of a query you did not.
 
 ![The machine, whole: three spellings build one plan, one checker reads it,
 and every backend writes it out.](../images/pipeline.svg){fig-alt="Three
@@ -26,7 +26,7 @@ Spark, or printed as SQL, Spark SQL, dplyr, pandas, polars or PySpark."}
 
 One law holds the part together: **nothing runs until you ask**, and its other
 half is that every refusal is the grammar's. The first half is what makes a
-pipeline safe to build in pieces; the second is what makes an error message
+pipeline safe to build in pieces. The second is what makes an error message
 useful, because one voice wrote all of them and every one names what to do
 next. The laws behind the whole vocabulary are collected at the end of the
 part, each with the temptation it exists to refuse.

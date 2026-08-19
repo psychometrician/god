@@ -15,14 +15,13 @@ the point. You have already met every idea in this part, in at least one
 other spelling.
 
 The part runs in one direction. The first chapter shows a whole pipeline, so
-you know what the pieces are for before you meet them one at a time, and the
-page after it lays out every word the grammar has, so you know how small the
-whole of it is before you start. Five
-short chapters then take the six verbs, with `sort` and `take` sharing one,
-a seventh adds renaming and dropping repeats, and an eighth gathers the
-small words (`by`, `as`, `where`,
-`all_but`, `descending`) that travel between verbs. Two practice chapters
-close the part: one where you read pipelines, and one where you write them.
+you know what the pieces are for before you meet them one at a time. The page
+after it lays out every word the grammar has, so you know how small the whole
+of it is before you start. Five short chapters then take the six verbs, with
+`sort` and `take` sharing one. Renaming and dropping repeats come next, and
+after them a chapter gathers the small words (`by`, `as`, `where`, `all_but`,
+`descending`) that travel between verbs. Two practice chapters close the part:
+one where you read pipelines, and one where you write them.
 
 One law holds the part together: **one word, one meaning**. `by` means the
 same thing after `summarize` as it does after `take`; `as` always names what
