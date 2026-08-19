@@ -165,6 +165,11 @@ number to a whole one is not a conversion and does not begin `to_`:
 **The conditional.** `when(question, answer, …, otherwise = )`, where the first
 question that is true wins.
 
+**The lookup table.** `look_up(column, from, to, …, otherwise = )`, written
+values becoming written values, pairs side by side. The `otherwise` is
+required: name the column to keep unpaired values, `missing` to drop them, or
+write a default.
+
 **The structure words**, which are how a sentence holds together: `then` joins
 steps, `where` asks a question, `as` names what a step makes, `by` groups,
 `descending` turns a sort key around, `all_but` inverts a column list,

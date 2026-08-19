@@ -758,3 +758,44 @@ fn a_window_cannot_stand_inside_a_functions_arguments() {
     assert!(scalar.contains("cannot stand inside `round_below(...)`"), "{scalar}");
     assert!(scalar.contains("Make it a column first"), "{scalar}");
 }
+
+// -- the lookup table --------------------------------------------------------
+
+/// `otherwise` is required, and the refusal is the design: the neighbours
+/// split into two words over what happens to an unpaired value, so a default
+/// either way would surprise half of everyone arriving. The message names all
+/// three endings.
+#[test]
+fn look_up_requires_its_otherwise() {
+    let message = refusal(r#"sales then add [r] as look_up([region], "W", "West")"#);
+    assert!(message.contains("ends with `otherwise`"), "{message}");
+    assert!(message.contains("`otherwise missing`"), "{message}");
+}
+
+/// The pairs are written values on both sides; anything computed is `when`'s
+/// job, and each refusal says so.
+#[test]
+fn look_up_pairs_written_values_and_names_when_for_the_rest() {
+    let from = refusal(
+        r#"sales then add [r] as look_up([region], [product], "x", otherwise [region])"#,
+    );
+    assert!(from.contains("`when` is the word"), "{from}");
+    let to = refusal(
+        r#"sales then add [r] as look_up([region], "W", upper([region]), otherwise [region])"#,
+    );
+    assert!(to.contains("`when` is the word"), "{to}");
+}
+
+/// A value looked up twice has a second answer that could never be reached,
+/// and a missing value never equals anything, so both are refused by name.
+#[test]
+fn look_up_refuses_a_duplicate_and_a_missing_from() {
+    let twice = refusal(
+        r#"sales then add [r] as look_up([region], "W", "a", "W", "b", otherwise [region])"#,
+    );
+    assert!(twice.contains("looked up twice"), "{twice}");
+    let hole = refusal(
+        r#"sales then add [r] as look_up([region], missing, "none", otherwise [region])"#,
+    );
+    assert!(hole.contains("`fill_missing` is the word for filling holes"), "{hole}");
+}

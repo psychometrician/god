@@ -144,3 +144,85 @@ it. Writing `"A" if col.score >= 90 else "B"` would decide the answer once, whil
 the pipeline was being built, and throw the question away. Nothing would report a
 problem. R's `if` wants a single yes or no, so a column of answers is an error
 there. So the word is `when` in both, and it is the same word in the text form.
+
+## The lookup table
+
+Half the time the question is the same question over and over: is the value
+this, is it that. Recoding survey answers, expanding country codes, tidying a
+categorical. `look_up` is that special case with the pairs side by side, each
+written value next to what it becomes:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then add [short] as look_up([region], "West", "W", "East", "E", otherwise [region])
+    then pick [region, short]
+    then drop_duplicates
+')
+```
+
+### R
+
+```{r}
+sales |>
+  add(short = look_up(region, "West", "W", "East", "E", otherwise = region)) |>
+  pick(region, short) |>
+  drop_duplicates()
+```
+
+### Python
+
+```{python}
+(sales
+ >> add(short = look_up(col.region, "West", "W", "East", "E",
+                        otherwise = col.region))
+ >> pick(col.region, col.short)
+ >> drop_duplicates())
+```
+
+:::
+
+`North` has no pair, and the `otherwise` said what happens to it: naming the
+column keeps it as it was. Naming `missing` drops it instead, and a written
+value is a default. Those three endings are the whole difference between the
+two functions dplyr gives this idea and the two polars gives it, so god writes
+the ending rather than naming the word twice.
+
+The ending is required, and leaving it off is refused rather than guessed:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(sales |> add(short = look_up(region, "West", "W")))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> add(short = look_up(col.region, "West", "W")))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Half of the neighbouring tools keep an unpaired value and half send it
+missing, so whichever way god leaned, the sentence would surprise someone
+arriving from the other half. Writing the ending is how you say you thought
+about it, exactly as `unmatched` says it for a join's rows.
+
+A pair may send a value missing, which is how "this value means absent" is
+written: `look_up([code], "", missing, otherwise [code])` turns empty text
+into a proper hole and leaves everything else alone. The pairs are written
+values on both sides, and that is the boundary between the two words: the
+moment a question is a comparison, or an answer is computed, the sentence
+belongs to `when`.

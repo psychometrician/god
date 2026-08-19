@@ -249,6 +249,13 @@ god_call_expr <- function(e) {
     return(god_when(e))
   }
 
+  # `look_up` reads the same way: pairs, and a named `otherwise`. The pairs'
+  # shape is the engine's question — a lopsided list gets the parser's own
+  # sentence about the value with nothing beside it.
+  if (identical(op, "look_up")) {
+    return(god_lookup(e))
+  }
+
   # `rank` takes a column in an ordering position, so it may carry `descending`
   # exactly as a `sort` key does. The general rule below reads every argument as
   # a value, which would turn `descending(revenue)` into a function call the
@@ -261,6 +268,38 @@ god_call_expr <- function(e) {
   # one is the grammar's question, not this file's: guessing here would mean a
   # list of function names maintained in three places that could drift apart.
   sprintf("%s(%s)", op, paste(vapply(args, god_expr, character(1)), collapse = ", "))
+}
+
+god_lookup <- function(e) {
+  parts <- as.list(e)[-1L]
+  named <- names(parts)
+  if (is.null(named)) named <- rep("", length(parts))
+
+  extra <- setdiff(named[nzchar(named)], "otherwise")
+  if (length(extra)) {
+    stop(
+      sprintf(
+        "`look_up` takes the column, pairs of written values, and `otherwise` for the rest. It does not take `%s`",
+        extra[[1L]]
+      ),
+      call. = FALSE
+    )
+  }
+
+  fallback <- parts[named == "otherwise"]
+  positional <- parts[named != "otherwise"]
+  if (!length(positional)) {
+    stop(
+      "`look_up` needs the value being looked up: look_up(code, \"W\", \"West\", otherwise = code)",
+      call. = FALSE
+    )
+  }
+
+  written <- vapply(positional, god_expr, character(1))
+  if (length(fallback)) {
+    written <- c(written, sprintf("otherwise %s", god_expr(fallback[[1L]])))
+  }
+  sprintf("look_up(%s)", paste(written, collapse = ", "))
 }
 
 god_infix <- function(word, left, right) {

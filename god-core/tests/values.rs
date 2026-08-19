@@ -872,3 +872,74 @@ fn rounding_wants_a_number() {
     let message = refusal(&conn, "pupils", "pupils then add [v] as round_below([name])");
     assert!(message.contains("moves a number to a whole one"), "{message}");
 }
+
+/// The lookup table, all three endings of the same sentence: keep the
+/// unpaired values, drop them, or hand them a default. One word, where the
+/// neighbours split into two over exactly this.
+#[test]
+fn look_up_maps_pairs_and_the_otherwise_says_where_the_rest_go() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE codes (code TEXT);
+         INSERT INTO codes VALUES ('W'), ('E'), ('X');",
+    )
+    .expect("the fixture table");
+
+    let (_, kept) = run(
+        &conn,
+        "codes",
+        r#"codes then add [r] as look_up([code], "W", "West", "E", "East", otherwise [code]) then pick [r]"#,
+    );
+    assert_eq!(kept, vec![vec!["West"], vec!["East"], vec!["X"]]);
+
+    let (_, dropped) = run(
+        &conn,
+        "codes",
+        r#"codes then add [r] as look_up([code], "W", "West", "E", "East", otherwise missing) then pick [r]"#,
+    );
+    assert_eq!(dropped, vec![vec!["West"], vec!["East"], vec!["missing"]]);
+
+    let (_, defaulted) = run(
+        &conn,
+        "codes",
+        r#"codes then add [r] as look_up([code], "W", "West", "E", "East", otherwise "elsewhere") then pick [r]"#,
+    );
+    assert_eq!(defaulted, vec![vec!["West"], vec!["East"], vec!["elsewhere"]]);
+}
+
+/// A pair may send a value missing, which is how "this value means absent" is
+/// written: `look_up([x], "", missing, otherwise [x])` is the whole of what
+/// dplyr spells `na_if`.
+#[test]
+fn look_up_can_send_a_value_missing() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE codes (code TEXT);
+         INSERT INTO codes VALUES ('W'), (''), ('E');",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "codes",
+        r#"codes then add [r] as look_up([code], "", missing, otherwise [code]) then pick [r]"#,
+    );
+    assert_eq!(rows, vec![vec!["W"], vec!["missing"], vec!["E"]]);
+}
+
+/// Numbers look up the way text does; the pairs are values, not text about
+/// values.
+#[test]
+fn look_up_reads_numbers_too() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE marks (score BIGINT);
+         INSERT INTO marks VALUES (1), (2), (9);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "marks",
+        r#"marks then add [word] as look_up([score], 1, "one", 2, "two", otherwise "many") then pick [word]"#,
+    );
+    assert_eq!(rows, vec![vec!["one"], vec!["two"], vec!["many"]]);
+}

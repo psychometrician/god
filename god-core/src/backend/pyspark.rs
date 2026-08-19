@@ -703,6 +703,22 @@ fn expr_over(e: &Expr, over: Over) -> String {
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args, over),
 
+        // The conditional's own chain, one `when` per pair, and the
+        // `otherwise` is always written because the sentence always has one.
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let subj = go(subject);
+            let mut out = String::new();
+            for (from, to) in pairs {
+                out.push_str(&format!(
+                    "{}when(({subj} == {}), {})",
+                    if out.is_empty() { "F." } else { "." },
+                    go(from),
+                    go(to)
+                ));
+            }
+            format!("{out}.otherwise({})", go(otherwise))
+        }
+
         // **The guard is written with `F.when` and no `otherwise`**, which is
         // how PySpark says "and missing everywhere else" — the full-window
         // rule. `F.median` refuses a frame on a live Spark session while

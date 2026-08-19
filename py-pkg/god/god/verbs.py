@@ -1310,6 +1310,52 @@ def when(*pairs, otherwise=None):
     return Expr("when({})".format(", ".join(written)))
 
 
+# `otherwise` must be tellable apart from `otherwise=None`, because None is how
+# Python writes `missing` and `otherwise=None` is a real sentence — the strict
+# lookup. Left out entirely, the clause is left out of the text and the engine
+# says what is owed.
+_UNSAID = object()
+
+
+def look_up(subject, *pairs, otherwise=_UNSAID):
+    """A lookup table: written values become written values, pairs side by side.
+
+    ``look_up(col.code, "W", "West", "E", "East", otherwise=col.code)``
+
+    The `otherwise` says where a value with no pair goes, and it is required:
+    the column itself keeps them, ``None`` drops them to missing, and a written
+    value is a default. The neighbours split into two functions over exactly
+    this — dplyr's ``replace_values`` and ``recode_values``, polars' ``replace``
+    and ``replace_strict`` — and god writes the difference instead of naming it
+    twice.
+
+    A pair may send a value missing, which is how "this value means absent" is
+    written: ``look_up(col.x, "", None, otherwise=col.x)``.
+
+    For a computed test or a computed answer, `when` is the word.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> codes = pd.DataFrame({"code": ["W", "E", "X"]})
+    >>> collect(codes >> add(region=look_up(col.code, "W", "West", "E", "East",
+    ...                                     otherwise=col.code)))
+      code region
+    0    W   West
+    1    E   East
+    2    X      X
+    """
+    written = [_written(subject, "look_up")]
+    for part in pairs:
+        written.append(part._text if isinstance(part, Expr) else _value(part))
+    if otherwise is not _UNSAID:
+        written.append(
+            f"otherwise {otherwise._text if isinstance(otherwise, Expr) else _value(otherwise)}"
+        )
+    return Expr("look_up({})".format(", ".join(written)))
+
+
 # -- the parts of a date ------------------------------------------------------
 
 

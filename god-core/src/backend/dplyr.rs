@@ -509,6 +509,25 @@ fn expr(e: &Expr) -> String {
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args),
 
+        // dplyr 1.2.0's own lookup — it deprecated `case_match` in this
+        // word's favour the same release, and a printing backend does not
+        // hand a reader a deprecation warning. `from` and `to` are parallel
+        // vectors, which is dplyr's idiom to spell even though the grammar
+        // refused the shape for its own sentence; `default` is the
+        // `otherwise`, always written because the sentence always carries
+        // one.
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let froms: Vec<String> = pairs.iter().map(|(from, _)| expr(from)).collect();
+            let tos: Vec<String> = pairs.iter().map(|(_, to)| expr(to)).collect();
+            format!(
+                "recode_values({}, from = c({}), to = c({}), default = {})",
+                expr(subject),
+                froms.join(", "),
+                tos.join(", "),
+                expr(otherwise)
+            )
+        }
+
         // **slider, which is the tidyverse's own rolling.** Base R has no
         // readable spelling for a moving window — `stats::filter` reads as
         // nothing and handles one aggregate — and this backend already writes

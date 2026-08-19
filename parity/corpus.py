@@ -215,3 +215,7 @@ sales >> add(bucket = remainder(col.revenue, 7)) >> keep(remainder(col.cost, 2) 
 sales >> summarize(spread = standard_deviation(col.revenue), by = col.region)
 ---
 sales >> sort(col.ordered_on) >> add(r3 = rolling(average(col.revenue), 3), by = col.region) >> pick(col.region, col.ordered_on, col.revenue, col.r3)
+---
+sales >> add(short = look_up(col.region, "West", "W", "East", "E", otherwise = "other")) >> pick(col.region, col.short)
+---
+sales >> add(coded = look_up(col.product, "Widget", 1, "Gadget", 2, otherwise = None)) >> summarize(t = total(col.coded), by = col.region)

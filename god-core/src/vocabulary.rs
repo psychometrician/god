@@ -442,6 +442,27 @@ pub const GRAMMAR_WORDS: &[&str] = &[
     // and Python parses it, calls `__bool__` on the expression, and picks a
     // branch while the sentence is still being built (§19.2).
     "when", "otherwise",
+    // The lookup table: `look_up([code], "W", "West", "E", "East", otherwise
+    // [code])` maps written values to written values, pairs side by side.
+    //
+    // **Grammar rather than a function, for the reason `when` is**: its
+    // arguments come in pairs and end with an `otherwise`, so `name([column])`
+    // is not a sentence it has. It reuses `when`'s marker because it *is* a
+    // conditional specialized to equality on one subject — and the marker is
+    // **required** here where `when` leaves it optional, because the neighbours
+    // split into two words over exactly this: dplyr's `replace_values` and
+    // polars' `replace` keep an unpaired value, dplyr's `recode_values`,
+    // polars' `replace_strict` and pandas' `.map` send it missing, and a
+    // default either way would surprise half of everyone arriving. Writing
+    // `otherwise [code]`, `otherwise missing` or a default is how you say you
+    // thought about it — the same move `join`'s `unmatched` makes for rows.
+    //
+    // **Neither of dplyr's names could be borrowed.** `replace_values` beside
+    // `replace_text` is one prefix with two granularities, which is Law 2
+    // failing quietly; `recode` is a term of art. `look_up` is what the
+    // capability is called in ordinary speech — a lookup table — spelled as
+    // the verb phrase it is.
+    "look_up",
     // `matching` is read as grammar rather than looked up as a function,
     // because its first argument is a table. It belongs here rather than in
     // FUNCTIONS for that reason: the table that walks the functions builds

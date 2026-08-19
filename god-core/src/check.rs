@@ -402,6 +402,15 @@ fn substitute_value(value: &Expr, column: &Name) -> Expr {
             count: Box::new(substitute_value(count, column)),
             span: *span,
         },
+        Expr::Lookup { subject, pairs, otherwise, span } => Expr::Lookup {
+            subject: recur(subject),
+            pairs: pairs
+                .iter()
+                .map(|(f, t)| (substitute_value(f, column), substitute_value(t, column)))
+                .collect(),
+            otherwise: recur(otherwise),
+            span: *span,
+        },
         other => other.clone(),
     }
 }
@@ -1972,6 +1981,123 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
         Expr::IsMissing { inner, .. } => {
             check_expr(inner, schema)?;
             Ok(Type::Truth)
+        }
+
+        // `look_up([code], "W", "West", …, otherwise [code])` — the lookup
+        // table. The pairs are written values on both sides, because the word
+        // means a table: a computed test or a computed answer is `when`'s job,
+        // and the refusals say so. `otherwise` is any ordinary value — the
+        // column itself is the canonical one — so keeping, dropping and
+        // defaulting are all the same sentence with a different ending.
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let subject_kind = check_expr(subject, schema)?;
+
+            // The key of a literal, for spotting the same value written twice.
+            // Only the shapes admitted below ever reach it.
+            let key_of = |e: &Expr| match e {
+                Expr::Text { value, .. } => format!("\"{value}\""),
+                Expr::Whole { value, .. } => value.to_string(),
+                Expr::Decimal { value, .. } => value.to_string(),
+                Expr::Truth { value, .. } => if *value { "yes" } else { "no" }.to_string(),
+                _ => unreachable!("refused before the key is taken"),
+            };
+
+            let mut seen: Vec<String> = Vec::new();
+            let mut becomes: Option<Type> = None;
+            for (from, to) in pairs {
+                match from {
+                    Expr::Text { .. }
+                    | Expr::Whole { .. }
+                    | Expr::Decimal { .. }
+                    | Expr::Truth { .. } => {}
+                    Expr::Missing { span } => {
+                        return Err(Diagnostic::illegal(
+                            "a missing value never equals anything, so it cannot be looked up. `fill_missing` is the word for filling holes, and `first_present` chooses around one",
+                            *span,
+                        ));
+                    }
+                    other => {
+                        return Err(Diagnostic::illegal(
+                            "`look_up` pairs written values, so each value looked up is written out. To test anything computed, `when` is the word: `when([x] > 3, \"high\", otherwise \"low\")`",
+                            other.span(),
+                        ));
+                    }
+                }
+                let from_kind = check_expr(from, schema)?;
+                if !from_kind.agrees_with(subject_kind) {
+                    return Err(Diagnostic::illegal(
+                        format!(
+                            "this looks up {} in a column holding {}, so it could never match. Write the value as {}",
+                            from_kind.name(),
+                            subject_kind.name(),
+                            subject_kind.name()
+                        ),
+                        from.span(),
+                    ));
+                }
+                let key = key_of(from);
+                if seen.contains(&key) {
+                    return Err(Diagnostic::illegal(
+                        format!("`{key}` is looked up twice, and the second answer could never be reached. Name each value once"),
+                        from.span(),
+                    ));
+                }
+                seen.push(key);
+
+                match to {
+                    Expr::Text { .. }
+                    | Expr::Whole { .. }
+                    | Expr::Decimal { .. }
+                    | Expr::Truth { .. }
+                    | Expr::Missing { .. } => {}
+                    other => {
+                        return Err(Diagnostic::illegal(
+                            "what a value becomes is written out too. For a computed answer, `when` is the word: `when([x] is \"W\", [region], otherwise ...)`",
+                            other.span(),
+                        ));
+                    }
+                }
+                let to_kind = check_expr(to, schema)?;
+                if to_kind != Type::Unknown {
+                    match becomes {
+                        None => becomes = Some(to_kind),
+                        Some(agreed) if !agreed.agrees_with(to_kind) => {
+                            return Err(Diagnostic::illegal(
+                                format!(
+                                    "`look_up` gives one column, so everything it gives has to hold the same kind of thing. One answer is {} and this is {}",
+                                    agreed.name(),
+                                    to_kind.name()
+                                ),
+                                to.span(),
+                            ));
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            // The fallback is an ordinary value seat, exactly as `when`'s
+            // branches are: whatever may stand in one of those may stand here,
+            // and the step's own rules govern the rest.
+            let otherwise_kind = check_expr(otherwise, schema)?;
+            if otherwise_kind != Type::Unknown {
+                match becomes {
+                    None => becomes = Some(otherwise_kind),
+                    Some(agreed) if !agreed.agrees_with(otherwise_kind) => {
+                        return Err(Diagnostic::illegal(
+                            format!(
+                                "`look_up` gives one column, and `otherwise` is {} where the answers are {}. Give the same kind of thing, or convert",
+                                otherwise_kind.name(),
+                                agreed.name()
+                            ),
+                            otherwise.span(),
+                        ));
+                    }
+                    _ => {}
+                }
+            }
+
+            Ok(becomes.unwrap_or(Type::Unknown))
         }
 
         // `rolling(average([x]), 7)` — an aggregate asked of the last n rows.

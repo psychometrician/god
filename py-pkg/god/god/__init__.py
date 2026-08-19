@@ -50,6 +50,7 @@ from .verbs import (
     largest,
     last,
     lengthen,
+    look_up,
     lower,
     matching,
     month,
@@ -141,6 +142,9 @@ __all__ = [
     # The conditional. Not Python's own `if`, which would pick a branch
     # while the pipeline is being built and discard the condition.
     "when",
+    # The lookup table, which is the conditional specialized to equality on
+    # one subject, with its `otherwise` required.
+    "look_up",
     # Materializing. Nothing runs until the answer is wanted.
     "collect",
     # The text form, for where there is no host language to bind into.

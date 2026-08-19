@@ -720,3 +720,19 @@ sales                                   region:text  product:text  revenue:numbe
                                         region  ordered_on  revenue  r3
                                         -product  -cost
 ---
+sales then add [short] as look_up([region], "West", "W", "East", "E", otherwise "other") then pick [region, short]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [short] as look_up([region], "West", "W", "East", "E", otherwise "other")
+│                                       region  product  revenue  cost  ordered_on  +short:text
+└ pick [region, short]                  region  short
+                                        -product  -revenue  -cost  -ordered_on
+---
+sales then add [coded] as look_up([product], "Widget", 1, "Gadget", 2, otherwise missing) then summarize [t] as total([coded]) by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [coded] as look_up([product], "Widget", 1, "Gadget", 2, otherwise missing)
+│                                       region  product  revenue  cost  ordered_on  +coded:number
+└ summarize [t] as total([coded]) by [region]
+                                        region  +t:number
+                                        -product  -revenue  -cost  -ordered_on  -coded
+    one row per group
+---

@@ -30,6 +30,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `bind_rows()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
 | `complete()`, `expand()` | `add_combinations`, with `by` | [The rows that are not there](../chapters/rows-that-are-not-there.qmd) |
 | `case_when()` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
+| `replace_values()`, `recode_values()` | `look_up`, with the ending written | [One way or another](../chapters/one-way-or-another.qmd) |
 | `coalesce()` | `first_present` | [Missing values](../chapters/missing-values.qmd) |
 | `across(starts_with())` | `where`, `name`, `value` | [One value per column](../chapters/one-value-per-column.qmd) |
 | `row_number()`, `min_rank()` | `row_number`, `rank` | [Each row a place](../chapters/each-row-a-place.qmd) |
@@ -65,6 +66,7 @@ back](a-two-languages.qmd#the-names-other-packages-take-back) is the whole of it
 | `concat()` | `add_rows` | [Adding rows](../chapters/adding-rows.qmd) |
 | `reindex(MultiIndex.from_product())` | `add_combinations` | [The rows that are not there](../chapters/rows-that-are-not-there.qmd) |
 | `np.select`, nested `where` | `when ... otherwise` | [One way or another](../chapters/one-way-or-another.qmd) |
+| `.replace({...})`, `.map({...})` | `look_up`, with the ending written | [One way or another](../chapters/one-way-or-another.qmd) |
 | `fillna()`, `dropna()` | `fill_missing`, `drop_missing` | [Missing values](../chapters/missing-values.qmd) |
 | `cumsum()`, `shift()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
 | `std()` | `standard_deviation` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |

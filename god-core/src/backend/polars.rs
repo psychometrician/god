@@ -676,6 +676,25 @@ fn expr(e: &Expr) -> String {
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args),
 
+        // polars' own strict lookup: the dict is the pairs and `default=` is
+        // the `otherwise`, which the sentence always carries. Its loose
+        // sibling `replace` is the same sentence with `otherwise` naming the
+        // column, so one spelling serves the whole word. The dict holds plain
+        // Python values; only the default needs `pl.lit`, because a bare
+        // string in that seat is read as a column name.
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let entries: Vec<String> = pairs
+                .iter()
+                .map(|(from, to)| format!("{}: {}", expr(from), expr(to)))
+                .collect();
+            format!(
+                "{}.replace_strict({{{}}}, default={})",
+                expr(subject),
+                entries.join(", "),
+                literal(otherwise)
+            )
+        }
+
         // **`min_samples` defaults to the window size and counts present
         // values**, so polars' own default is the grammar's rule: missing
         // until the window holds n values, a hole in a full window included.

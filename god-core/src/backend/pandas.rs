@@ -777,6 +777,24 @@ fn inner(e: &Expr, over: Over) -> String {
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args, over),
 
+        // `np.select`, the same spelling the conditional gets. pandas' own
+        // lookup is `.map`, and it sends every unpaired value missing — which
+        // would silently erase the `otherwise` the sentence wrote — so the
+        // faithful rendering is the one that carries the fallback.
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let tests: Vec<String> = pairs
+                .iter()
+                .map(|(from, _)| format!("({} == {})", go(subject), flat(from)))
+                .collect();
+            let values: Vec<String> = pairs.iter().map(|(_, to)| flat(to)).collect();
+            format!(
+                "np.select([{}], [{}], default={})",
+                tests.join(", "),
+                values.join(", "),
+                flat(otherwise)
+            )
+        }
+
         // **`.rolling(n)` counts present values toward its floor**, and its
         // floor defaults to the window size, so pandas' own default is the
         // grammar's rule already: missing until the window holds n values, a

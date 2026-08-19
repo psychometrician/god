@@ -173,3 +173,7 @@ sales then add [bucket] as remainder([revenue], 7) then keep where remainder([co
 sales then summarize [spread] as standard_deviation([revenue]) by [region]
 ---
 sales then sort [ordered_on] then add [r3] as rolling(average([revenue]), 3) by [region] then pick [region, ordered_on, revenue, r3]
+---
+sales then add [short] as look_up([region], "West", "W", "East", "E", otherwise "other") then pick [region, short]
+---
+sales then add [coded] as look_up([product], "Widget", 1, "Gadget", 2, otherwise missing) then summarize [t] as total([coded]) by [region]

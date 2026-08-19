@@ -1555,6 +1555,12 @@ impl<'a> Parser<'a> {
             return self.rolling(span);
         }
 
+        // `look_up` reads its arguments in pairs and ends with an `otherwise`,
+        // which is `when`'s shape, so it is read the way `when` is.
+        if word == "look_up" {
+            return self.lookup(span);
+        }
+
         // A name in front of a group applies that name to what is inside.
         if !matches!(self.peek(), Some(Tok::OpenParen)) {
             let suggestion = nearest(&word, vocabulary::FUNCTIONS.iter().map(|f| f.name))
@@ -1713,6 +1719,102 @@ impl<'a> Parser<'a> {
         self.at += 1;
 
         Ok(Expr::Window { kind, key, span: span.to(close) })
+    }
+
+    /// `look_up([code], "W", "West", …, otherwise [code])`, with `self.at`
+    /// sitting on the `(`.
+    ///
+    /// **The `otherwise` is required, and the refusal is the design.** The
+    /// neighbours split into two words over what happens to a value with no
+    /// pair — left alone against sent missing — so a default either way would
+    /// surprise half of everyone arriving. The sentence says where they go,
+    /// the way `join`'s `unmatched` says it for rows.
+    fn lookup(&mut self, span: Span) -> Result<Expr, Diagnostic> {
+        const SHAPE: &str = "`look_up` maps written values to written values, pairs side by side, and says where the rest go: `look_up([code], \"W\", \"West\", otherwise [code])`";
+
+        if !matches!(self.peek(), Some(Tok::OpenParen)) {
+            return Err(Diagnostic::illegal(SHAPE, span));
+        }
+        self.at += 1;
+
+        let subject = self.expression()?;
+        if !matches!(self.peek(), Some(Tok::Comma)) {
+            return Err(Diagnostic::illegal(SHAPE, self.peek_span()));
+        }
+        self.at += 1;
+
+        let mut pairs: Vec<(Expr, Expr)> = Vec::new();
+        let mut otherwise = None;
+        loop {
+            if matches!(self.peek(), Some(Tok::CloseParen)) {
+                break;
+            }
+            if self.eat_word("otherwise") {
+                otherwise = Some(self.expression()?);
+                // Nothing may follow it: a pair written after the catch-all
+                // could never be reached, exactly as in `when`.
+                if matches!(self.peek(), Some(Tok::Comma)) {
+                    return Err(Diagnostic::illegal(
+                        "`otherwise` is where the values with no pair go, so it comes last. Anything written after it could never be reached",
+                        self.peek_span(),
+                    ));
+                }
+                break;
+            }
+
+            let from = self.expression()?;
+            if !matches!(self.peek(), Some(Tok::Comma)) {
+                return Err(Diagnostic::illegal(
+                    "each value `look_up` maps needs what it becomes, right after it: `look_up([code], \"W\", \"West\", otherwise [code])`",
+                    from.span(),
+                ));
+            }
+            self.at += 1;
+            if self.at_word("otherwise") {
+                return Err(Diagnostic::illegal(
+                    "this value has nothing beside it to become. Every value looked up is followed by its answer: `look_up([code], \"W\", \"West\", otherwise [code])`",
+                    from.span(),
+                ));
+            }
+            let to = self.expression()?;
+            pairs.push((from, to));
+
+            if matches!(self.peek(), Some(Tok::Comma)) {
+                self.at += 1;
+                continue;
+            }
+            break;
+        }
+
+        let close = self.peek_span();
+        if !matches!(self.peek(), Some(Tok::CloseParen)) {
+            return Err(Diagnostic::illegal(
+                "`look_up(` is never closed. Add a `)` after its `otherwise`",
+                span,
+            ));
+        }
+        self.at += 1;
+        let whole = span.to(close);
+
+        let Some(otherwise) = otherwise else {
+            return Err(Diagnostic::illegal(
+                "`look_up` says where a value with no pair goes, so it ends with `otherwise`: keep those values with `otherwise [code]`, drop them with `otherwise missing`, or write a default",
+                whole,
+            ));
+        };
+        if pairs.is_empty() {
+            return Err(Diagnostic::illegal(
+                "`look_up` needs at least one pair to look up: `look_up([code], \"W\", \"West\", otherwise [code])`",
+                whole,
+            ));
+        }
+
+        Ok(Expr::Lookup {
+            subject: Box::new(subject),
+            pairs,
+            otherwise: Box::new(otherwise),
+            span: whole,
+        })
     }
 
     /// `rolling(average([revenue]), 7)`, with `self.at` sitting on the `(`.

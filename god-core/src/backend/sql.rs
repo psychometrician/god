@@ -1165,6 +1165,24 @@ impl Dialect {
                 }
             }
 
+            // The lookup table is what `CASE` always was in SQL: the pairs
+            // become `WHEN subject = from THEN to`, and the required
+            // `otherwise` is the `ELSE`, so unlike the conditional this one
+            // never renders without it.
+            Expr::Lookup { subject, pairs, otherwise, .. } => {
+                let subj = self.expr_over(subject, over);
+                let mut out = String::from("CASE");
+                for (from, to) in pairs {
+                    out.push_str(&format!(
+                        " WHEN {subj} = {} THEN {}",
+                        self.expr_over(from, over),
+                        self.expr_over(to, over)
+                    ));
+                }
+                out.push_str(&format!(" ELSE {} END", self.expr_over(otherwise, over)));
+                out
+            }
+
             // **The frame is the window and the guard is the meaning.** A
             // `ROWS BETWEEN n-1 PRECEDING AND CURRENT ROW` frame computes over
             // whatever rows it can reach, so at the top of the table SQL would

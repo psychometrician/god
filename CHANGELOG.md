@@ -5,6 +5,34 @@ a person using god can see.
 
 ## Unreleased
 
+### `look_up`, the lookup table
+
+Written values become written values, pairs side by side, and the `otherwise`
+says where a value with no pair goes:
+
+```r
+sales |> add(region = look_up(code, "W", "West", "E", "East", otherwise = code))
+```
+
+```python
+sales >> add(region=look_up(col.code, "W", "West", "E", "East", otherwise=col.code))
+```
+
+The `otherwise` is required. Naming the column keeps unpaired values as they
+were, `missing` (`NA` in R, `None` in Python) drops them, and a written value
+is a default. Those three endings are the whole difference between the two
+functions dplyr gives this idea (`replace_values`, `recode_values`) and the
+two polars gives it (`replace`, `replace_strict`), so god writes the ending
+rather than naming the word twice — and refuses to guess it, because half the
+neighbouring tools assume one way and half the other.
+
+A pair may send a value missing, which is how "this value means absent" is
+written: `look_up(x, "", missing, otherwise = x)` turns empty text into a
+proper hole. The pairs are written values on both sides; a computed test or a
+computed answer is `when`'s job, and the refusals say so. A value looked up
+twice is refused, and so is looking up `missing`, with `fill_missing` named
+instead.
+
 ### `hour` reads a time, and says so when there is none
 
 `hour(to_date(x))` used to answer. What it answered depended on where the

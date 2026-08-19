@@ -986,6 +986,32 @@ pub enum Expr {
         span: Span,
     },
 
+    /// `look_up([code], "W", "West", "E", "East", otherwise [code])`
+    ///
+    /// **A lookup table: written values become written values, each pair side
+    /// by side.** It is `when` specialized to equality on one subject, and a
+    /// variant for the same reason `when` is one — the arguments come in pairs
+    /// and end with a marker, so `name([column])` is not a sentence it has.
+    ///
+    /// **`otherwise` is required here where `when` leaves it optional.** The
+    /// neighbours split into two words over what happens to an unpaired value
+    /// — left alone against sent missing — so a default either way would
+    /// surprise half of everyone arriving. The sentence says where they go:
+    /// `otherwise [code]` keeps them, `otherwise missing` drops them, and a
+    /// written value is a default. The same move `join`'s `unmatched` makes
+    /// for rows, applied to values.
+    Lookup {
+        /// The value being looked up. A column, ordinarily.
+        subject: Box<Expr>,
+        /// Each written value and what it becomes. At least one pair, every
+        /// `from` a literal the checker has verified, no `from` twice.
+        pairs: Vec<(Expr, Expr)>,
+        /// Where a value with no pair goes. Never absent — the parser refuses
+        /// the sentence without it.
+        otherwise: Box<Expr>,
+        span: Span,
+    },
+
     /// `rolling(average([revenue]), 7)` — an aggregate asked of the last n
     /// rows, answered for every row.
     ///
@@ -1072,6 +1098,7 @@ impl Expr {
             | Expr::Matching { span, .. }
             | Expr::Quantified { span, .. }
             | Expr::Rolling { span, .. }
+            | Expr::Lookup { span, .. }
             | Expr::Call { span, .. } => *span,
         }
     }
@@ -1164,6 +1191,15 @@ impl Expr {
                 count: boxed(count),
                 span: flat,
             },
+            Expr::Lookup { subject, pairs, otherwise, .. } => Expr::Lookup {
+                subject: boxed(subject),
+                pairs: pairs
+                    .iter()
+                    .map(|(f, t)| (f.without_spans(), t.without_spans()))
+                    .collect(),
+                otherwise: boxed(otherwise),
+                span: flat,
+            },
         }
     }
 
@@ -1217,6 +1253,14 @@ impl Expr {
                 if let Some(e) = otherwise {
                     e.walk(f);
                 }
+            }
+            Expr::Lookup { subject, pairs, otherwise, .. } => {
+                subject.walk(f);
+                for (from, to) in pairs {
+                    from.walk(f);
+                    to.walk(f);
+                }
+                otherwise.walk(f);
             }
             _ => {}
         }
@@ -1280,7 +1324,26 @@ impl Expr {
                 arms.iter().any(|(t, v)| t.aggregates() || v.aggregates())
                     || otherwise.as_ref().is_some_and(|e| e.aggregates())
             }
-            _ => false,
+            Expr::Lookup { subject, pairs, otherwise, .. } => {
+                subject.aggregates()
+                    || pairs.iter().any(|(f, t)| f.aggregates() || t.aggregates())
+                    || otherwise.aggregates()
+            }
+            // The leaves, named rather than swept up, so that a new variant
+            // fails to compile here instead of quietly answering no. `Rolling`
+            // nearly slipped through a catch-all the day after one was left.
+            Expr::Column(_)
+            | Expr::Text { .. }
+            | Expr::Whole { .. }
+            | Expr::Decimal { .. }
+            | Expr::Truth { .. }
+            | Expr::Missing { .. }
+            | Expr::ColumnName { .. }
+            | Expr::ColumnValue { .. }
+            | Expr::ColumnKind { .. }
+            | Expr::Window { .. }
+            | Expr::Matching { .. }
+            | Expr::Quantified { .. } => false,
         }
     }
 }

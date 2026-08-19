@@ -289,6 +289,14 @@ fn expr(e: &Expr) -> String {
         Expr::Call { name, args, .. } => {
             format!("{name}({})", args.iter().map(expr).collect::<Vec<_>>().join(", "))
         }
+        Expr::Lookup { subject, pairs, otherwise, .. } => {
+            let mut parts = vec![expr(subject)];
+            for (from, to) in pairs {
+                parts.push(expr(from));
+                parts.push(expr(to));
+            }
+            format!("look_up({}, otherwise {})", parts.join(", "), expr(otherwise))
+        }
         Expr::Rolling { agg, args, count, .. } => format!(
             "rolling({agg}({}), {})",
             args.iter().map(expr).collect::<Vec<_>>().join(", "),
