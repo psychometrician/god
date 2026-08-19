@@ -32,7 +32,7 @@ sales then join products by [product] then pick [product, maker, revenue] then s
 ---
 sales then join products unmatched "none" then summarize [total] as total([revenue]) by [maker]
 ---
-sales then drop_duplicates then take 3
+sales then drop_duplicates then sort [ordered_on] then take 3
 ---
 sales then rename [area] as [region] then pick [area, revenue] then sort [revenue] descending then take 2
 ---
@@ -86,11 +86,11 @@ sales then add [shout] as upper([product]) then pick [product, shout] then take 
 ---
 sales then lengthen [revenue, cost]
 ---
-sales then lengthen [revenue, cost] as name [measure], value [amount] then take 4
+sales then lengthen [revenue, cost] as name [measure], value [amount] then sort [ordered_on], [measure] then take 4
 ---
 sales then lengthen all_but [region, product, ordered_on] as name [measure], value [amount] then keep where [measure] is "cost"
 ---
-sales then lengthen where name starts "c" as name [measure], value [amount] then take 3
+sales then lengthen where name starts "c" as name [measure], value [amount] then sort [ordered_on] then take 3
 ---
 sales then summarize [revenue] as total([revenue]) by [region, product] then widen name [product], value [revenue] by [region] giving [Widget, Gadget, Gizmo]
 ---

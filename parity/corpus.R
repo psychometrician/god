@@ -51,7 +51,7 @@ sales |>
   join(products, unmatched = "none") |>
   summarize(total = total(revenue), by = maker)
 ---
-sales |> drop_duplicates() |> take(3)
+sales |> drop_duplicates() |> sort(ordered_on) |> take(3)
 ---
 sales |>
   rename(area = region) |>
@@ -121,11 +121,11 @@ sales |> add(shout = toupper(product)) |> pick(product, shout) |> take(2)
 ---
 sales |> lengthen(revenue, cost)
 ---
-sales |> lengthen(revenue, cost, name = measure, value = amount) |> take(4)
+sales |> lengthen(revenue, cost, name = measure, value = amount) |> sort(ordered_on, measure) |> take(4)
 ---
 sales |> lengthen(all_but(region, product, ordered_on), name = measure, value = amount) |> keep(measure == "cost")
 ---
-sales |> lengthen(where(startsWith(name, "c")), name = measure, value = amount) |> take(3)
+sales |> lengthen(where(startsWith(name, "c")), name = measure, value = amount) |> sort(ordered_on) |> take(3)
 ---
 sales |> summarize(revenue = total(revenue), by = c(region, product)) |> widen(name = product, value = revenue, by = region, giving = c(Widget, Gadget, Gizmo))
 ---

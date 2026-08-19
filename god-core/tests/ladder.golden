@@ -120,11 +120,12 @@ sales                                   region:text  product:text  revenue:numbe
                                         -region  -product  -revenue  -cost  -ordered_on
     one row per group
 ---
-sales then drop_duplicates then take 3
-sales              region:text  product:text  revenue:number  cost:number  ordered_on:date
-├ drop_duplicates  region  product  revenue  cost  ordered_on
+sales then drop_duplicates then sort [ordered_on] then take 3
+sales                region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ drop_duplicates    region  product  revenue  cost  ordered_on
 │   one row per distinct combination
-└ take 3           region  product  revenue  cost  ordered_on
+├ sort [ordered_on]  region  product  revenue  cost  ordered_on
+└ take 3             region  product  revenue  cost  ordered_on
     at most 3 rows
 ---
 sales then rename [area] as [region] then pick [area, revenue] then sort [revenue] descending then take 2
@@ -325,12 +326,13 @@ sales                       region:text  product:text  revenue:number  cost:numb
                             -revenue  -cost
     more rows — one per column stacked
 ---
-sales then lengthen [revenue, cost] as name [measure], value [amount] then take 4
+sales then lengthen [revenue, cost] as name [measure], value [amount] then sort [ordered_on], [measure] then take 4
 sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
 ├ lengthen [revenue, cost] as name [measure], value [amount]
 │                                       region  product  ordered_on  +measure:text  +amount:number
 │                                       -revenue  -cost
 │   more rows — one per column stacked
+├ sort [ordered_on], [measure]          region  product  ordered_on  measure  amount
 └ take 4                                region  product  ordered_on  measure  amount
     at most 4 rows
 ---
@@ -342,12 +344,13 @@ sales                                   region:text  product:text  revenue:numbe
 │   more rows — one per column stacked
 └ keep where ([measure] is "cost")      region  product  ordered_on  measure  amount
 ---
-sales then lengthen where name starts "c" as name [measure], value [amount] then take 3
+sales then lengthen where name starts "c" as name [measure], value [amount] then sort [ordered_on] then take 3
 sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
 ├ lengthen [cost] as name [measure], value [amount]
 │                                       region  product  revenue  ordered_on  +measure:text  +amount:number
 │                                       -cost
 │   more rows — one per column stacked
+├ sort [ordered_on]                     region  product  revenue  ordered_on  measure  amount
 └ take 3                                region  product  revenue  ordered_on  measure  amount
     at most 3 rows
 ---

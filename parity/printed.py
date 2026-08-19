@@ -24,6 +24,15 @@ looked correct on the page:
 Each target is optional and skipped cleanly when its library is missing, the way
 the Spark harness is. **A skip is not a pass and it does not print as one.**
 
+**dplyr joined on 2026-08-19 and was the last printing backend read rather than
+run.** It needs R, so it does not fit the scope-and-`eval` shape the three
+Python targets share; it gets a driver of its own below. Its first run found
+three corpus sentences whose answer was not determined — `drop_duplicates` and
+`lengthen` reorder rows, DuckDB's order differs from dplyr's, and a `take` after
+either was picking different rows on different backends. The three now declare a
+`sort`, which is the rule the grammar already states: any order worth relying on
+is a sort away.
+
     python3 parity/printed.py
 """
 
@@ -103,6 +112,71 @@ def as_rows(frame) -> tuple[list[tuple[str, ...]], list[str]]:
                     out.append(str(v))
         rows.append(tuple(out))
     return sorted(rows), sorted(frame.columns)
+
+
+# **dplyr is the seventh backend and the only one no harness ran.** It cannot
+# join `targets()` below, because that dictionary holds Python scopes and a
+# `eval` — dplyr needs R. So it gets a driver of its own, in the shape
+# `parity/check.py` already uses for the R spelling: the printed code is written
+# to a scratch file, `Rscript` evaluates it against the same three fixtures, and
+# the answer comes back as CSV to be compared the way every other target's is.
+#
+# **The comparison is the table, never the text**, which is the whole point of
+# this file: printed dplyr was read by a person before today, and a rendering
+# that reads perfectly can still mean something else.
+R_DRIVER = r"""
+suppressMessages({
+  library(dplyr, warn.conflicts = FALSE)
+  library(tidyr, warn.conflicts = FALSE)
+})
+args <- commandArgs(trailingOnly = TRUE)
+sales <- read.csv(args[[1]], stringsAsFactors = FALSE)
+products <- read.csv(sub("sales.csv", "products.csv", args[[1]]), stringsAsFactors = FALSE)
+regions <- read.csv(sub("sales.csv", "regions.csv", args[[1]]), stringsAsFactors = FALSE)
+printed <- paste(readLines(args[[2]], warn = FALSE), collapse = "\n")
+# `write.csv` rather than printing the frame: a printed data.frame wraps, pads
+# and truncates, and every one of those would have to be undone on the other
+# side. A CSV is read back by the same pandas that reads the fixtures.
+answer <- eval(parse(text = printed))
+# A tibble, a grouped frame or a data.table all answer to as.data.frame; a
+# grouped result would otherwise carry its grouping into the CSV as an attribute
+# nobody compares.
+write.csv(as.data.frame(answer), stdout(), row.names = FALSE, na = "")
+"""
+
+
+def dplyr_answer(printed: str, scratch: Path) -> "pd.DataFrame":
+    """The printed dplyr, evaluated by R, as a frame. Raises what R said."""
+    import pandas as pd
+
+    driver = scratch / "printed-dplyr.R"
+    driver.write_text(R_DRIVER)
+    code = scratch / "printed.R"
+    code.write_text(printed)
+    result = subprocess.run(
+        ["Rscript", str(driver), str(FIXTURE), str(code)],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip().splitlines()[-1] if result.stderr.strip() else "Rscript failed")
+    import io
+
+    return pd.read_csv(io.StringIO(result.stdout))
+
+
+def have_r() -> bool:
+    """R, with the packages the corpus's printed dplyr reaches for.
+
+    Named rather than probed one at a time so the message can say which is
+    missing: `stringr`, `lubridate`, `slider` and `vctrs` are each reached by a
+    handful of sentences, and a missing one fails only those.
+    """
+    wanted = ["dplyr", "tidyr", "stringr", "lubridate", "slider", "vctrs"]
+    probe = ";".join(f'if (!requireNamespace("{p}", quietly=TRUE)) quit(status=1)' for p in wanted)
+    try:
+        return subprocess.run(["Rscript", "-e", probe], capture_output=True).returncode == 0
+    except FileNotFoundError:
+        return False
 
 
 def targets():
@@ -225,7 +299,40 @@ def main() -> int:
         failures += differed + broke
         print(f"{backend}: {agreed} agreed, {differed} differed, {broke} would not run")
 
-    if len(found) < 3:
+    # dplyr, through R, for the reason written beside `R_DRIVER`.
+    if have_r():
+        agreed = differed = broke = 0
+        with tempfile.TemporaryDirectory(prefix="god-dplyr-") as tmp:
+            scratch = Path(tmp)
+            for n, sentence in enumerate(sentences(CORPUS), 1):
+                short = " ".join(sentence.split())[:58]
+                query = render(sentence, "sql", columns)
+                printed = render(sentence, "dplyr", columns)
+                if query is None or printed is None:
+                    continue
+
+                wanted = duck.execute(query).fetch_df()
+                try:
+                    got = dplyr_answer(printed, scratch)
+                except Exception as e:
+                    broke += 1
+                    print(f"  WILL NOT RUN dplyr {n}. {short}\n        {str(e)[:96]}")
+                    continue
+
+                if as_rows(wanted) == as_rows(got):
+                    agreed += 1
+                else:
+                    differed += 1
+                    print(f"  DIFFERS dplyr {n}. {short}")
+                    print(f"        the sentence: {as_rows(wanted)[0][:2]}")
+                    print(f"        the printing: {as_rows(got)[0][:2]}")
+        failures += differed + broke
+        print(f"dplyr: {agreed} agreed, {differed} differed, {broke} would not run")
+    else:
+        print("R, or one of dplyr/tidyr/stringr/lubridate/slider/vctrs, is missing,")
+        print("so printed dplyr is unchecked here. It is not a required dependency.")
+
+    if len(found) < 3 or not have_r():
         print("A skip is not a pass. The targets above that were not installed")
         print("have not been checked, and a rendering can be wrong in silence.")
     return 1 if failures else 0

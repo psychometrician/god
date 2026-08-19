@@ -58,7 +58,7 @@ sales >> sort(descending(col.revenue), col.cost) >> take(4)
   >> join(products, unmatched = "none")
   >> summarize(total = total(col.revenue), by = col.maker))
 ---
-sales >> drop_duplicates() >> take(3)
+sales >> drop_duplicates() >> sort(col.ordered_on) >> take(3)
 ---
 (sales
   >> rename(area = col.region)
@@ -128,11 +128,11 @@ sales >> add(shout = upper(col.product)) >> pick(col.product, col.shout) >> take
 ---
 sales >> lengthen(col.revenue, col.cost)
 ---
-sales >> lengthen(col.revenue, col.cost, name = col.measure, value = col.amount) >> take(4)
+sales >> lengthen(col.revenue, col.cost, name = col.measure, value = col.amount) >> sort(col.ordered_on, col.measure) >> take(4)
 ---
 sales >> lengthen(all_but(col.region, col.product, col.ordered_on), name = col.measure, value = col.amount) >> keep(col.measure == "cost")
 ---
-sales >> lengthen(where(name.starts("c")), name = col.measure, value = col.amount) >> take(3)
+sales >> lengthen(where(name.starts("c")), name = col.measure, value = col.amount) >> sort(col.ordered_on) >> take(3)
 ---
 sales >> summarize(revenue = total(col.revenue), by = [col.region, col.product]) >> widen(name = col.product, value = col.revenue, by = col.region, giving = [col.Widget, col.Gadget, col.Gizmo])
 ---
