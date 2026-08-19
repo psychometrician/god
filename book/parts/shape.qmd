@@ -5,30 +5,30 @@ begin with: a year in four columns when you wanted a year in four rows, or the
 reverse.
 
 The target shape has a name and a paper of its own. A table is *tidy* when
-each variable is a column and each observation is a row [@wickham2014tidy],
-and most of what a pipeline can do, it can only do to a table in that shape.
-Real tables arrive the other way as often as not, because the shape that is
-easy to type into is rarely the shape that is easy to ask questions of.
+each variable is a column and each observation is a row [@wickham2014tidy].
+Most of what a pipeline can do, it can only do to a table in that shape.
+Real tables often arrive the other way, because the shape that is easy to
+type into is rarely the shape that is easy to ask questions of.
 
 Two verbs turn a table one way and back, and the names say which. `lengthen`
-makes it taller and `widen` makes it wider, because nobody could remember
-which of `melt` and `cast` did what, and a verb whose direction is not in its
-name has to be looked up every time. `lengthen` comes first in this part
-because it is the direction data usually needs on arrival; `widen` is the way
-back, for the table a person reads rather than the table a pipeline works on.
+makes it taller and `widen` makes it wider. Nobody could remember which of
+`melt` and `cast` did what, and a verb whose direction is not in its name has
+to be looked up every time. `lengthen` comes first in this part, because it is
+the direction data usually needs on arrival. `widen` is the way back, for the
+table a person reads rather than the table a pipeline works on.
 
-A third verb changes the shape without moving a single value. Both of those
-two rearrange what is there; `add_combinations` is for what is not, which
-means the combination nobody recorded, the one a grouped answer leaves out
-rather than reports as nothing. It closes this part because it is the case the
-first two cannot reach: no amount of turning a table one way or the other
-produces a row that was never in it.
+Those two rearrange what is already there. A third changes the shape without
+moving a value at all. `add_combinations` is for what is *not* there: the
+combination nobody recorded, the one a grouped answer leaves out rather than
+reports as nothing. It closes this part because it is the case the first two
+cannot reach. No amount of turning a table one way or the other produces a row
+that was never in it.
 
 One law holds the part together: **the same facts, either shape**. Reshaping
-moves values, and it never invents or discards one; where a verb has to
+moves values, and it never invents or discards one. Where a verb has to
 decide something you did not say, it prints the assumption back beside the
-answer, so the choice is said aloud rather than exercised in private, and
-[the laws](../chapters/design-laws.qmd) show the note arriving. A reader
+answer, so the choice is said aloud rather than exercised in private.
+[The laws](../chapters/design-laws.qmd) show the note arriving. A reader
 arriving from tidyr will recognize the job here and not the argument list,
 and the appendix on [the verb you know](../appendices/d-the-verb-you-know.qmd)
 holds the name-for-name map.

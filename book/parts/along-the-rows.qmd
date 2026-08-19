@@ -6,21 +6,22 @@ them: a rank, a row number, a running total, the value one row back.
 
 These are window functions, the one large addition the table algebra has
 taken since 1970. SQL standardized them decades after the rest, and they are
-where most tools get complicated: `OVER (PARTITION BY ... ORDER BY ...)` is a
-sentence's worth of machinery for the idea *within each group, in this
-order*. Here they are ordinary things to write inside `add`, and the two
-chapters split them by what they do: first the words that give each row a
-place, then the words that carry a value along the rows.
+where most tools get complicated. `OVER (PARTITION BY ... ORDER BY ...)` is a
+whole clause of machinery for the idea *within each group, in this order*.
+Here they are ordinary things to write inside `add`. The two chapters split
+them by what they do: first the words that give each row a place, then the
+words that carry a value along the rows.
 
 One law holds the part together, and it is the rule the machinery above
 exists to state: **nothing has an order until you sort**. A total *so far*
 and a *previous* value mean nothing until something has said in what order
 the rows are read. So the words that walk the rows require a `sort` in
-front (`rank` alone names its own order), and the grammar refuses them
-without one rather than picking an order you never chose. The refusal is on stage in both chapters, because meeting it on
-a page is cheaper than meeting it in a result that silently used arrival
-order.
+front, and the grammar refuses them without one rather than picking an order
+you never chose. `rank` alone names its own order, so it needs no `sort`.
+Both chapters show the refusal, because meeting it on a page is cheaper than
+meeting it in a result that silently used arrival order.
 
-The cast is built for this part too: `races`, the table these chapters run
-on, carries a tied score on purpose, so the difference between a rank and a
-row number is visible in the answer rather than asserted in prose.
+The cast is built for this part too. `races` carries a tied score on purpose,
+so the difference between a rank and a row number is visible in the answer
+rather than asserted in prose. `diary` follows it with three dated rows, which
+is what a total *so far* needs to be read down.
