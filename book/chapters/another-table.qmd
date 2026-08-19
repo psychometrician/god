@@ -283,7 +283,7 @@ except GodError as refusal:
 :::
 
 A join is the step where it is hardest to say what the table will hold
-afterwards, so it is worth looking before running.
+afterwards, so look before running.
 
 ::: {.panel-tabset}
 

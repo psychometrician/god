@@ -83,16 +83,16 @@ show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
 :::
 
 The two dialects differ in six ways, and the queries above show the first. A
-column is `` `revenue` `` on Spark and `"revenue"` here, and that one is worth
-knowing about. A double-quoted name on Spark is not a column at all: it is the
-text `'revenue'`. A query written for the wrong engine would therefore run
-happily and put the column's own name in every row. Two more are spelling:
-dropping a column is `EXCEPT` rather than `EXCLUDE`, and stopping a query is
+column is `` `revenue` `` on Spark and `"revenue"` here, and that one matters.
+A double-quoted name on Spark is not a column at all: it is the text
+`'revenue'`. A query written for the wrong engine would therefore run happily
+and put the column's own name in every row. Two more are spelling: dropping a
+column is `EXCEPT` rather than `EXCLUDE`, and stopping a query is
 `raise_error` rather than `error`. A backslash inside a text value has to be
 written twice on Spark. The word `weekday` is asked for through a different
-function on each engine, so that Monday can stay 1 on both. And a `widen`
-that names no columns is a sentence Spark cannot be given at all, which is
-the refusal staged later on this page.
+function on each engine, so that Monday can stay 1 on both. And a `widen` that
+names no columns is a sentence Spark cannot be given at all, which is the
+refusal staged later on this page.
 
 None of that is yours to remember. It is the difference between writing a
 pipeline and writing a query.
@@ -340,9 +340,8 @@ Three seats, one rule each:
 - **Around a sentence.** Single quotes, by convention: the double quotes
   inside then need no escape, in a shell, in R, or in Python.
 
-The first seat is worth seeing once, because the rule about doubles is easy
-to over-apply. In the native spellings, your language's quotes are your
-language's business:
+Look at the first seat, because the rule about doubles is easy to over-apply.
+In the native spellings, your language's quotes are your language's business:
 
 ::: {.panel-tabset}
 
@@ -420,6 +419,6 @@ An analyst calls `run` on it later, or a scheduled job does. The sentence
 crosses that handoff intact, because it is not code in either language, and it
 is still readable by the person who wrote it.
 
-One boundary is worth stating plainly. `run` is an R function and a Python
-function, so calling it needs one of those two languages installed. What travels
-without them is the sentence, not the call around it.
+One boundary matters here. `run` is an R function and a Python function, so
+calling it needs one of those two languages installed. What travels without
+them is the sentence, not the call around it.

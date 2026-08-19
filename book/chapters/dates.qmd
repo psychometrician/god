@@ -176,14 +176,14 @@ except GodError as refusal:
 
 :::
 
-That refusal is the shape worth having. The sentence is legal English and reads
-as though it should work, the answer would have been a number, and nothing about
-a column of zeros would have looked wrong on the page. Handing one back is what
-the grammar will not do.
+That refusal is the right shape. The sentence is legal English and reads as
+though it should work, the answer would have been a number, and nothing about
+a column of zeros would have looked wrong on the page. Handing one back is
+what the grammar will not do.
 
-`to_date` is no way around it, which is worth seeing once because it is the
-repair everybody reaches for. It makes a **date**, which is the thing that has
-no time in it, so it moves the sentence no closer:
+`to_date` is no way around it, and it is the repair everybody reaches for. It
+makes a **date**, which is the thing that has no time in it, so it moves the
+sentence no closer:
 
 ::: {.panel-tabset}
 

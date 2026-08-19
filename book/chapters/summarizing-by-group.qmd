@@ -320,9 +320,10 @@ the drawing in full.
   last chapter and will group windows in [giving each row a
   place](each-row-a-place.qmd): these rows belong together.
 - `as` names each answer, name first, exactly as it does in `add`.
-- The ten aggregations reappear inside `add ... by`, where they broadcast a
-  group's answer back onto its rows instead of collapsing them; the chapter
-  on the small words shows the share-of-group idiom this buys.
+- The eleven aggregations reappear inside `add ... by`, where they broadcast
+  a group's answer back onto its rows instead of collapsing them; the
+  chapter on [the small words](words-that-repeat.qmd) shows the
+  share-of-group idiom this buys.
 
 ## What it refuses
 

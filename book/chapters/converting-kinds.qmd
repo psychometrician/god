@@ -68,13 +68,13 @@ except GodError as refusal:
 makes rather than what it takes, so there is nothing to remember about
 direction.
 
-There were four of these, and the fourth was a mistake worth explaining because
-it is the kind that hides. `to_whole` turned a number into a whole one, which
-sounds like a conversion and is not: this grammar has one kind of number, so
-`to_whole` converted nothing. It was a rounding wearing a conversion's name, and
-because the name said nothing about direction, no reader could tell whether
--5.5 came back as -5 or as -6. It is two words now, and they are in the chapter
-on adding a column, where the arithmetic lives.
+There were four of these, and the fourth was a mistake of the kind that hides.
+`to_whole` turned a number into a whole one, which sounds like a conversion
+and is not: this grammar has one kind of number, so `to_whole` converted
+nothing. It was a rounding wearing a conversion's name, and because the name
+said nothing about direction, no reader could tell whether -5.5 came back as
+-5 or as -6. It is two words now, and they are in the chapter on adding a
+column, where the arithmetic lives.
 
 ::: {.panel-tabset}
 

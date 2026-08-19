@@ -172,11 +172,11 @@ the Python suite executes every one in every docstring, so a page that falls
 behind the engine fails a build instead of misleading the reader who went
 looking.
 
-One difference between those pages and these is worth knowing before it
-surprises you. This book tells Python to print a whole number without its
-decimal point, so that the two tabs of an example agree. Nothing has told your
-own session that, and a total of whole numbers arrives there as `250.0` rather
-than `250`. The help pages show the second, because that is what you will see.
+One difference between those pages and these can surprise you. This book tells
+Python to print a whole number without its decimal point, so that the two tabs
+of an example agree. Nothing has told your own session that, and a total of
+whole numbers arrives there as `250.0` rather than `250`. The help pages show
+the second, because that is what you will see.
 
 ## That is all of it
 

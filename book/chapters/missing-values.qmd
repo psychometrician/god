@@ -147,8 +147,7 @@ contacts >> add(reach = first_present(col.mobile, col.landline, col.email))
 
 *`contacts then add [reach] as first_present([mobile], [landline], [email])`*
 
-Two things about it are worth knowing before you rely on it, and both are places
-people are usually surprised.
+Two things about it surprise people, and both matter before you rely on it.
 
 The order is a priority rather than a set. It reads left to right and stops at the
 first column that has a value, so ana is reached on the mobile number even though

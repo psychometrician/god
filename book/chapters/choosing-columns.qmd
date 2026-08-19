@@ -81,11 +81,11 @@ the same word in both languages and in the text form.
 
 `pick` also settles column order, because the order you name the columns is
 the order the table comes back in. There is no separate rearranging verb: if
-you want `revenue` first, ask for it first. One small consequence is worth
-knowing now. A `pick` is a statement about the table it receives, so a column
-a previous step made is as pickable as one the table arrived with. And a
-column you picked away is gone for every later step. Each step sees only the
-table the last step handed it.
+you want `revenue` first, ask for it first. One small consequence follows. A
+`pick` is a statement about the table it receives, so a column a previous step
+made is as pickable as one the table arrived with. And a column you picked
+away is gone for every later step. Each step sees only the table the last step
+handed it.
 
 ## When names are not enough
 
@@ -167,6 +167,6 @@ except GodError as refusal:
 :::
 
 Both are `GodError`, which is the one exception either language asks you to
-catch. That is worth knowing because the mistake above is caught by the binding
-rather than by the engine, and a refusal you cannot catch the same way as every
-other refusal would be a second thing to remember for one idea.
+catch. That matters because the mistake above is caught by the binding rather
+than by the engine, and a refusal you cannot catch the same way as every other
+refusal would be a second thing to remember for one idea.

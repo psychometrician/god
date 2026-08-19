@@ -96,8 +96,7 @@ later.
 
 The note underneath says what became of the rows. It appears only where you
 could not have guessed: that `keep` returns fewer rows is not news, so no line
-says it, but `summarize` collapsing a table to one row per group is worth
-saying once.
+says it, but `summarize` collapsing a table to one row per group gets one.
 
 ## A second table
 
@@ -122,13 +121,13 @@ show_steps(sales >> join(products, by = col.product))
 :::
 :::
 
-Three things are worth reading here. The column both tables matched on carries
-an `=`, and it carries it **twice**, once in each table's row: it is on both
-sides and it arrives once, not as two columns with invented names. The column
-that crossed over carries a `+`, the same mark any new column gets. And the
-last line says the rows may multiply, because they may: whether `products`
-holds a product name more than once is a fact about the data, and the grammar
-has read the column names without reading a single row.
+Three things show here. The column both tables matched on carries an `=`, and
+it carries it **twice**, once in each table's row: it is on both sides and it
+arrives once, not as two columns with invented names. The column that crossed
+over carries a `+`, the same mark any new column gets. And the last line says
+the rows may multiply, because they may: whether `products` holds a product
+name more than once is a fact about the data, and the grammar has read the
+column names without reading a single row.
 
 ## What a second table sends
 

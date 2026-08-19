@@ -76,10 +76,10 @@ sales |>
 
 *`sales then summarize [orders] as row_count(), [revenue] as total([revenue]) by [region, product]`*
 
-Every combination that occurred gets a row, and one combination is absent:
-no North row mentions Sprocket, because the North never sold one. A grouped
-summary can only report what happened, which is worth remembering when a
-combination you expected is simply not there.
+Every combination that occurred gets a row, and one combination is absent: no
+North row mentions Sprocket, because the North never sold one. A grouped
+summary can only report what happened, which matters when a combination you
+expected is not there.
 
 ## What does each product sell for?
 

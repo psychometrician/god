@@ -62,10 +62,10 @@ The `sort` at the end is doing real work. Adding a column says nothing about wha
 order the rows come back in, so a sentence that wants a particular order asks for
 it.
 
-That is how a race is scored, and it is what people mean when they say rank. It
-is worth saying out loud because the alternative is just as common in other
-tools: numbering the *distinct values* instead would give 1, 2, 2, 3 and award a
-third place to the runner who came fourth.
+That is how a race is scored, and it is what people mean when they say rank.
+The alternative is just as common in other tools: numbering the *distinct
+values* instead would give 1, 2, 2, 3 and award a third place to the runner
+who came fourth.
 
 `descending` reverses it, and it is the same word `sort` takes, because a column
 in an ordering position is one idea wherever it appears.

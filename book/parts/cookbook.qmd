@@ -11,11 +11,11 @@ only the cast from the preface, so nothing on these pages needs introducing,
 and each one links back to the chapter that owns its verb, for the day you
 want the argument and not just the answer.
 
-The device that makes this part worth having is at the end of every recipe:
-**one verb away**. The neighboring questions are usually one word's
-difference, and the point of a grammar is that the recipes were never
-separate things to memorize. A cookbook of endpoints teaches recipes; this
-one tries to teach you that you already know the dish.
+The device that makes this part work is at the end of every recipe: **one verb
+away**. The neighboring questions are usually one word's difference, and the
+point of a grammar is that the recipes were never separate things to memorize.
+A cookbook of endpoints teaches recipes; this one tries to teach you that you
+already know the dish.
 
 If a question of yours is not here, the part has not failed you yet. Write
 the smallest sentence that names the table, and grow it one verb at a time,

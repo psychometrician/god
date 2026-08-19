@@ -191,9 +191,9 @@ something has to run it for you. `god-cli` reads one and writes the query for
 your engine, which you then run where your data already is. [What it
 wrote](chapters/what-it-wrote.qmd) shows both routes.
 
-That split is worth noticing early. Whoever writes a question and whoever runs
-it do not have to be the same person, and only one of them needs a language to
-run it in.
+Notice that split early. Whoever writes a question and whoever runs it do not
+have to be the same person, and only one of them needs a language to run it
+in.
 
 ## The rules this book is held to
 
@@ -387,18 +387,18 @@ you write them. dplyr has two ways to group.
 None of that is difficult in the sense that the *ideas* are difficult. The ideas
 are small: about fifteen operations, and you already know most of them.
 
-The ideas are also old, and that is worth knowing before learning a sixth
-spelling of them. Choosing rows, choosing columns, joining, grouping and
-totaling were set out as an algebra by E. F. Codd in 1970 [@codd1970], and the
-ambition to write that algebra as English sentences is nearly as old: SEQUEL,
-the query language that became SQL, stated it in its title in 1974
-[@chamberlin1974]. Little has been added since except window functions and the
-two directions of reshaping, and the pattern behind `summarize ... by` had a
-name, split-apply-combine, before this project existed [@wickham2011]. What
-changes every few years is the syntax, not the operations. pandas
-[@mckinney2010] and dplyr [@wickham2023dplyr; @wickham2019tidyverse] are the
-two homes this vocabulary answers to, and the shape its tables arrive in has a
-name and a paper of its own [@wickham2014tidy].
+The ideas are also old, which matters before you learn a sixth spelling of
+them. Choosing rows, choosing columns, joining, grouping and totaling were set
+out as an algebra by E. F. Codd in 1970 [@codd1970], and the ambition to write
+that algebra as English sentences is nearly as old: SEQUEL, the query language
+that became SQL, stated it in its title in 1974 [@chamberlin1974]. Little has
+been added since except window functions and the two directions of reshaping,
+and the pattern behind `summarize ... by` had a name, split-apply-combine,
+before this project existed [@wickham2011]. What changes every few years is
+the syntax, not the operations. pandas [@mckinney2010] and dplyr
+[@wickham2023dplyr; @wickham2019tidyverse] are the two homes this vocabulary
+answers to, and the shape its tables arrive in has a name and a paper of its
+own [@wickham2014tidy].
 
 ## Five engines, one vocabulary
 
@@ -532,11 +532,11 @@ That is the standard a physical skill meets and a syntax usually does not. It is
 the reason the vocabulary is closed, the reason a word means one thing in every
 sentence, and the reason several useful things are deliberately missing.
 
-It also sets what counts as success, which is worth saying plainly because it is
-not what a feature list would suggest. No vocabulary this small covers everything
-anyone does with data, and this one is not trying to. Covering enough of it, in a
-form that stays learned, is what this one is for. What happens when you
-reach the edge is the next thing this preface talks about.
+It also sets what counts as success, and that is not what a feature list would
+suggest. No vocabulary this small covers everything anyone does with data, and
+this one is not trying to. Covering enough of it, in a form that stays
+learned, is what this one is for. What happens when you reach the edge is the
+next thing this preface talks about.
 
 ## *A* grammar, not *the* grammar
 
@@ -799,8 +799,8 @@ day one and day two. The two are designed to sit next to each other. A question
 usually starts as a table you have to reshape and ends as a picture, so you
 start in god and finish in gog.
 
-[The closing chapter](chapters/with-gog.qmd) shows one question answered end to end
-that way. It is worth reading even if you never draw a plot, because it is the
+[The closing chapter](chapters/with-gog.qmd) shows one question answered end
+to end that way. Read it even if you never draw a plot, because it is the
 clearest statement of where this grammar's job ends.
 
 ## How to read the examples

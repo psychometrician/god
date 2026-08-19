@@ -22,7 +22,7 @@ in code you can read because you watched it being written.
 | `widen` with several value columns at once | one `name`, one `value` per `widen`; run it twice and `join` |
 | Joins on anything but equality (ranges, nearest) | equality joins only; inequality joins in the host |
 | Random sampling | neither built nor refused, for the reason below; sample in the host, then hand the table over |
-| The long aggregate shelf (quantiles, weighted means, mode) | ten aggregations; variance is the deviation squared, `standard_deviation([x]) * standard_deviation([x])`; the rest via `show_as` |
+| The long aggregate shelf (quantiles, weighted means, mode) | eleven aggregations; variance is the deviation squared, `standard_deviation([x]) * standard_deviation([x])`; the rest via `show_as` |
 | Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
 | Window frames beyond a count of rows (`RANGE`, a duration) | `rolling(average([x]), 7)` is the seven-row window; a window measured by a value's distance (the last seven *days*, however many rows) stays in the host |
 | Reading a file into a pipeline (`scan_csv`, `scan_parquet`) | read it in the host and hand the frame over; for data that outgrows the machine, [somewhere else](../chapters/somewhere-else.qmd) |

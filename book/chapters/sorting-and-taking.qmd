@@ -47,10 +47,10 @@ returns with force at the end of this chapter.
 `descending` reverses one key, and there is no matching word `ascending`,
 because ascending is what happens when you do not ask for anything. A word
 that means "do the default" is a second way to say the same thing, and every
-second way costs every reader a small doubt: if both spellings exist, do
-they differ? In this grammar, if two spellings existed they *would* differ,
-so the redundant one is simply absent. This is the smallest example of the
-one-way rule you will meet, and the cheapest place to get used to it.
+second way costs every reader a small doubt: if both spellings exist, do they
+differ? In this grammar, if two spellings existed they *would* differ, so the
+redundant one is absent. This is the smallest example of the one-way rule you
+will meet, and the cheapest place to get used to it.
 
 ## Several keys
 
@@ -293,7 +293,7 @@ Writing it down is what stops the two from quietly disagreeing.
 
 - `descending` belongs to the key it wraps, and only `sort` accepts it.
 - `by` after `take` means what `by` means everywhere: do this per group. The
-  chapter on the small words returns to it.
+  chapter on [the small words](words-that-repeat.qmd) returns to it.
 - `take` composes with everything that settles an order, and the windowed
   words in [giving each row a place](each-row-a-place.qmd) (`rank`,
   `row_number`) lean on `sort` in exactly the way `take ... by` does below.

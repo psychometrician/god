@@ -162,8 +162,8 @@ gains >> sort(col.gained) >> take(5)
 
 ## When you need `collect`
 
-Nothing above called `collect`, and the tables still appeared. That is worth
-explaining, because it is the question everyone asks once.
+Nothing above called `collect`, and the tables still appeared. Everyone asks
+about that once.
 
 A pipeline is a plan, and it does not run when you write it. Printing one runs
 it. That is why every example so far has shown a table: this book prints each
@@ -275,8 +275,8 @@ top line and the bottom one is the story the rest of this page moves through.
 
 ## What the whole world was doing
 
-The bar chart answers the question. This next one is why the pairing is worth
-having: the same panel, unsummarized, with one more channel.
+The bar chart answers the question. This next one is why the pairing exists:
+the same panel, unsummarized, with one more channel.
 
 `play` turns a column into time. Every country is a point, GDP per person runs
 along the bottom on a log scale, life expectancy up the side, and the year

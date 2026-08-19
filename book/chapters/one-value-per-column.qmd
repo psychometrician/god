@@ -103,9 +103,8 @@ except GodError as refusal:
 
 :::
 
-You can see what it expanded to, which is worth doing the first few times.
-`format` shows the sentence you wrote; `show_as` shows the one the grammar
-settled on.
+Look at what it expanded to the first few times. `format` shows the sentence
+you wrote; `show_as` shows the one the grammar settled on.
 
 ::: {.panel-tabset}
 

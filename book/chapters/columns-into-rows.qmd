@@ -188,7 +188,7 @@ except GodError as refusal:
 ## What the columns became
 
 Reshaping changes more of the table at once than any other step, so it is the
-one most worth looking at before it runs.
+one to look at before it runs.
 
 ::: {.panel-tabset}
 

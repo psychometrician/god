@@ -254,8 +254,8 @@ The two `keep` steps read as one sentence: first the rows with a partner,
 then the rows that clear the bar. However long the pipeline grows, `matching`
 can only remove rows, which is the property the word exists to keep.
 
-That property is the one worth seeing beside a join, because the two sentences
-look alike and mean different things.
+That property is what separates it from a join, because the two sentences look
+alike and mean different things.
 
 ::: {.panel-tabset}
 

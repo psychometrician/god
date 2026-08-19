@@ -14,12 +14,12 @@ will not.
 ## One word, one meaning
 
 `by` groups, wherever it appears. `as` names, wherever it appears. `where`
-asks, wherever it appears. The temptation is the convenience argument, a
-word that means roughly similar things in different places; the cost is that
-a reader can never again be sure, and checks the manual for the rest of
-their life. You met this law working in the chapter on the small words, and
-it is the reason a verb you have never seen is mostly made of words you
-have.
+asks, wherever it appears. The temptation is the convenience argument, a word
+that means roughly similar things in different places; the cost is that a
+reader can never again be sure, and checks the manual for the rest of their
+life. You met this law working in the chapter on [the small
+words](words-that-repeat.qmd), and it is the reason a verb you have never seen
+is mostly made of words you have.
 
 ## One way to say it
 

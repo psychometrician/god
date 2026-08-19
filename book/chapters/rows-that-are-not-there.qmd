@@ -136,11 +136,10 @@ declines to guess, and the second step is where you say which one you have.
 
 ## The values come from the table
 
-Only the values already in a column are crossed. That is worth saying plainly,
-because it is the boundary of what this verb can do: a product nobody has ever
-sold anywhere is not in the `product` column, so no row is made for it, and a
-month with no orders at all cannot be conjured from a table that never
-mentions it.
+Only the values already in a column are crossed. That is the boundary of what
+this verb can do: a product nobody has ever sold anywhere is not in the
+`product` column, so no row is made for it, and a month with no orders at all
+cannot be conjured from a table that never mentions it.
 
 The same rule settles what happens to a hole. A missing value is not a
 category, so it makes no combinations, and nothing is lost by that: the rows

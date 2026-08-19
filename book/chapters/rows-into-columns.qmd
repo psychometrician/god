@@ -170,7 +170,7 @@ twice |> widen(name = question, value = average(mark), by = student)
 ## What the columns became
 
 `widen` is the one step whose new columns come from the data rather than from
-the sentence, so what the drawing can say about it is worth knowing exactly.
+the sentence, so what the drawing can say about it has a limit.
 
 ::: {.panel-tabset}
 

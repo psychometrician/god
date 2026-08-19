@@ -24,12 +24,12 @@ plain text form, all building the same plan. One checker reads the whole plan
 before anything runs. From there the plan is either executed, on DuckDB or
 Spark, or printed as SQL, Spark SQL, dplyr, pandas, polars or PySpark."}
 
-One law holds the part together: **nothing runs until you ask**, and its
-other half is that every refusal is the grammar's. The first half is what makes a pipeline safe to
-build in pieces; the second is what makes an error message worth reading,
-because one voice wrote all of them and every one names what to do next. The
-laws behind the whole vocabulary are collected at the end of the part, each
-with the temptation it exists to refuse.
+One law holds the part together: **nothing runs until you ask**, and its other
+half is that every refusal is the grammar's. The first half is what makes a
+pipeline safe to build in pieces; the second is what makes an error message
+useful, because one voice wrote all of them and every one names what to do
+next. The laws behind the whole vocabulary are collected at the end of the
+part, each with the temptation it exists to refuse.
 
 Read this part if you are deciding whether to depend on god. It is where the
 claims made in the preface are demonstrated rather than asserted.
