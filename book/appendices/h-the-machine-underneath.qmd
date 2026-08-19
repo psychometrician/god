@@ -4,19 +4,20 @@ title: "The machine underneath"
 
 {{< include ../_setup.qmd >}}
 
-This appendix answers the questions a technical reader asks of any table
-tool: where the work happens, when it happens, who optimizes it, and what
-happens when the data outgrows the machine. The short answer to all four is
-one sentence: god compiles, and an engine executes.
+This appendix answers the questions a technical reader asks of any table tool.
+Where does the work happen, when does it happen, who optimizes it, and what
+happens when the data outgrows the machine? The short answer to all four is one
+sentence: god compiles, and an engine executes.
 
 ## One engine does the work
 
-A pipeline here is compiled into a single query, about five milliseconds of
-work, and the query is executed by software built for executing queries:
-DuckDB on this machine, Spark SQL or a warehouse wherever
+A pipeline here is compiled into a single query, a few milliseconds of work,
+and [the appendix on speed](g-where-the-speed-lives.qmd) clocks it live. The
+query is then executed by software built for executing queries: DuckDB on this
+machine, Spark SQL or a warehouse wherever
 [Somewhere else](../chapters/somewhere-else.qmd) points. god never touches a
-row. It owns the sentence, the checking, and the writing out; the scanning,
-joining and grouping are the engine's, which is why
+row. It owns the sentence, the checking, and the writing out, while the
+scanning, joining and grouping are the engine's. That is why
 [the appendix on speed](g-where-the-speed-lives.qmd) credits the engine by
 name.
 
@@ -78,10 +79,10 @@ grammar buys the optimizer by handing over text.
 
 Two sizes of big, two answers.
 
-A table bigger than memory, held as a frame: the engine can spill its work
-to disk, but a pipeline here begins at a table the host already holds, so on
-one machine the frame itself is the ceiling. god has no word for reading a
-file into a pipeline, and [the coverage appendix](e-coverage.qmd) records
+A table bigger than memory, held as a frame: the engine can spill its work to
+disk. But a pipeline here begins at a table the host already holds, so on one
+machine the frame is as large as the data can get. god has no word for reading
+a file into a pipeline, and [the coverage appendix](e-coverage.qmd) records
 that gap beside the others, with what to do today.
 
 A table bigger than the machine is the second answer, and it is the warehouse
@@ -90,7 +91,6 @@ the sentence goes there as text, and no data moves at all. At that size the
 honest question is not whether one process can stream one file, and the
 grammar's answer is to run where the data lives.
 
-One more property falls out of compiling to text: everything above is
-inspectable. `show_as` prints the exact query the engine will run, and the
-same pipeline in five libraries beside it, so nothing on this page is taken
-on faith.
+Compiling to text has one more property: everything above is inspectable.
+`show_as` prints the exact query the engine will run, and the same pipeline in
+every other target beside it, so nothing on this page is taken on faith.
