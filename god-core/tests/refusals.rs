@@ -649,3 +649,79 @@ fn take_last_needs_something_to_say_which_end() {
 fn take_is_still_allowed_without_a_sort() {
     assert!(compile("sales then take 3", &sales(), "sql").is_ok());
 }
+
+// -- an aggregate over the last few rows ------------------------------------
+
+/// The exclusions each carry their reason: `first` derives, `last` is the row
+/// itself, `row_count` answers the number that was written, and `unique_count`
+/// is a sentence one engine cannot write — measured, on a live Spark session,
+/// which refuses a distinct aggregate over any window frame.
+#[test]
+fn rolling_refuses_the_aggregates_that_cannot_slide() {
+    let sorted = "sales then sort [ordered_on] then add [r] as ";
+    assert!(refusal(&format!("{sorted}rolling(first([revenue]), 7)"))
+        .contains("`previous` already says that"));
+    assert!(refusal(&format!("{sorted}rolling(last([revenue]), 7)"))
+        .contains("the row's own value. Use the column"));
+    assert!(refusal(&format!("{sorted}rolling(row_count(), 7)"))
+        .contains("answers nothing the sentence did not already say"));
+    assert!(refusal(&format!("{sorted}rolling(unique_count([revenue]), 7)"))
+        .contains("on every engine underneath"));
+}
+
+/// A scalar and a window are each sent their own sentence, and both name the
+/// six words that do stand.
+#[test]
+fn rolling_names_the_aggregates_it_takes() {
+    let scalar = refusal(
+        "sales then sort [ordered_on] then add [r] as rolling(upper([region]), 7)",
+    );
+    assert!(scalar.contains("works on one value at a time"), "{scalar}");
+    assert!(scalar.contains("`standard_deviation`"), "{scalar}");
+    let window = refusal(
+        "sales then sort [ordered_on] then add [r] as rolling(running_total([revenue]), 7)",
+    );
+    assert!(window.contains("already a value worked out along them"), "{window}");
+}
+
+/// The width is judged the way `previous` judges how far: a plain whole
+/// number, written out, with each wrong shape sent its own sentence.
+#[test]
+fn rolling_judges_its_width_by_shape() {
+    let sorted = "sales then sort [ordered_on] then add [r] as ";
+    assert!(refusal(&format!("{sorted}rolling(average([revenue]), 0)"))
+        .contains("the smallest one is 2"));
+    assert!(refusal(&format!("{sorted}rolling(average([revenue]), 1)"))
+        .contains("nothing rolling about it"));
+    assert!(refusal(&format!("{sorted}rolling(average([revenue]), -3)"))
+        .contains("cannot be negative"));
+    assert!(refusal(&format!("{sorted}rolling(average([revenue]), [cost])"))
+        .contains("cannot be worked out per row"));
+}
+
+/// The computed value is an `add` away, which is the ruling an ordering
+/// position already has, applied to the column a window reads.
+#[test]
+fn rolling_reads_a_column_and_the_computed_value_is_an_add_away() {
+    let message = refusal(
+        "sales then sort [ordered_on] then add [r] as rolling(average([revenue] - [cost]), 7)",
+    );
+    assert!(message.contains("the computed value is an `add` away"), "{message}");
+}
+
+/// **A window inside a function's arguments loses the order it walks**, so it
+/// is refused wherever it stands: nested in an aggregate it reached the engine
+/// as SQL no engine runs, and wrapped in a scalar it dropped its `ORDER BY`
+/// and answered in whatever order the rows happened to be.
+#[test]
+fn a_window_cannot_stand_inside_a_functions_arguments() {
+    let aggregate = refusal(
+        "sales then sort [ordered_on] then add [r] as total(rank([revenue]))",
+    );
+    assert!(aggregate.contains("cannot stand inside `total(...)`"), "{aggregate}");
+    let scalar = refusal(
+        "sales then sort [ordered_on] then add [r] as round_below(running_total([revenue]))",
+    );
+    assert!(scalar.contains("cannot stand inside `round_below(...)`"), "{scalar}");
+    assert!(scalar.contains("Make it a column first"), "{scalar}");
+}

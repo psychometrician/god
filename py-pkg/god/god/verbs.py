@@ -1528,6 +1528,34 @@ def following(column, how_far=1):
     return Expr(f"following({_written(column, 'following')}{_how_far(how_far)})")
 
 
+def rolling(value, rows):
+    """An aggregate asked of the last few rows, answered for every row:
+    `rolling(average(col.revenue), 7)` is the seven-row average, sliding.
+
+    The aggregate goes inside — ``total``, ``average``, ``median``,
+    ``smallest``, ``largest`` or ``standard_deviation`` — and ``rows`` says how
+    many rows the window holds, the row itself included. Needs a ``sort``
+    before it, like every window, and ``by`` restarts it for each group.
+
+    **A window that is not yet full answers missing**, and so does a full
+    window with a missing value inside it: six values are not the seven-row
+    average. That is how pandas, polars and data.table answer it too, so the
+    printed code and the query agree without a word.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> walk = pd.DataFrame({"d": [1, 2, 3], "x": [1, 2, 4]})
+    >>> collect(walk >> sort(col.d) >> add(t=rolling(total(col.x), 2)))
+       d  x    t
+    0  1  1  NaN
+    1  2  2  3.0
+    2  3  4  6.0
+    """
+    return Expr(f"rolling({_written(value, 'rolling')}, {_value(rows)})")
+
+
 def _how_far(how_far):
     """How far `previous` or `following` looks, written only when it was asked for.
 
@@ -1716,6 +1744,33 @@ def largest(column):
     1   West   150
     """
     return _function("largest", column)
+
+
+def standard_deviation(column):
+    """How spread out the values are: `standard_deviation(col.revenue)`.
+
+    The sample deviation, which is what the bare word means on every engine
+    god writes — R's ``sd``, pandas' ``.std()``, polars' ``.std()``, DuckDB's
+    and Spark's ``stddev`` all answer 1 for the values 1, 2, 3. numpy's
+    ``.std()`` alone answers 0.816, the population deviation, and that quiet
+    disagreement is half the reason this is a word rather than a formula.
+    The other half is that the formula cannot be written: the grammar has no
+    square root.
+
+    One value has no spread to measure, so a group of one row answers missing.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> nums = pd.DataFrame({"g": ["a", "a", "a", "b", "b"],
+    ...                      "x": [1.0, 2.0, 3.0, 5.0, 7.0]})
+    >>> collect(nums >> summarize(spread=standard_deviation(col.x), by=col.g))
+       g    spread
+    0  a  1.000000
+    1  b  1.414214
+    """
+    return _function("standard_deviation", column)
 
 
 def first(column):

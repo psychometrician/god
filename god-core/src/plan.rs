@@ -986,6 +986,35 @@ pub enum Expr {
         span: Span,
     },
 
+    /// `rolling(average([revenue]), 7)` — an aggregate asked of the last n
+    /// rows, answered for every row.
+    ///
+    /// **A variant rather than an ordinary call, for the reason `matching` is
+    /// one**: its first argument is not a value. `average([revenue])` inside it
+    /// is the window's parameter — which question to ask of the rows in frame —
+    /// not a live aggregate, and a plan that stored it as one would collapse
+    /// where it should slide: `aggregates()` answers whether a value collapses
+    /// a group, and a rolling aggregate collapses nothing.
+    ///
+    /// The aggregate's name and argument are held apart so the checker can
+    /// judge each — the name against the aggregates a moving window can carry,
+    /// the argument against the aggregate's own rules — and so a backend reads
+    /// a name and a column rather than pattern-matching a nested call.
+    Rolling {
+        /// Which aggregate: `total`, `average`, `median`, `smallest`,
+        /// `largest` or `standard_deviation`. Checked there, not here, so the
+        /// refusals can name what to write instead.
+        agg: String,
+        agg_span: Span,
+        /// What the aggregate reads. A plain column, by the same ruling an
+        /// ordering position has: the computed value is one `add` away.
+        args: Vec<Expr>,
+        /// How many rows the window holds, the row itself included. A plain
+        /// whole number of at least two by the time the checker is done.
+        count: Box<Expr>,
+        span: Span,
+    },
+
     /// `matching(products, by [id])` — does this row have a partner over there?
     ///
     /// **A filtering join, spelled as what it is.** A semi join and an anti join
@@ -1042,6 +1071,7 @@ impl Expr {
             | Expr::When { span, .. }
             | Expr::Matching { span, .. }
             | Expr::Quantified { span, .. }
+            | Expr::Rolling { span, .. }
             | Expr::Call { span, .. } => *span,
         }
     }
@@ -1127,6 +1157,13 @@ impl Expr {
                 test: Box::new(test.without_spans()),
                 span: flat,
             },
+            Expr::Rolling { agg, args, count, .. } => Expr::Rolling {
+                agg: agg.clone(),
+                agg_span: flat,
+                args: args.iter().map(Expr::without_spans).collect(),
+                count: boxed(count),
+                span: flat,
+            },
         }
     }
 
@@ -1155,6 +1192,18 @@ impl Expr {
                 for a in args {
                     a.walk(f);
                 }
+            }
+            // The aggregate's argument and the count are both walked, so the
+            // rules that read column references — a column made in this same
+            // step, a table a condition names — see inside. What must *not*
+            // treat the inside as live is `aggregates()`, which is why that
+            // question is answered by its own recursion rather than by this
+            // walk.
+            Expr::Rolling { args, count, .. } => {
+                for a in args {
+                    a.walk(f);
+                }
+                count.walk(f);
             }
             // **Walking into a `when` is what keeps every existing rule
             // applying to it.** `aggregates` and `windows` are how the checker
@@ -1188,7 +1237,7 @@ impl Expr {
             // how three separate rules would quietly stop applying to the
             // second three.
             let window = match e {
-                Expr::Window { .. } => true,
+                Expr::Window { .. } | Expr::Rolling { .. } => true,
                 Expr::Call { name, .. } => crate::vocabulary::is_window(name),
                 _ => false,
             };
@@ -1206,16 +1255,33 @@ impl Expr {
     /// collapse. Answered by looking for an aggregating call anywhere inside,
     /// because `total([revenue]) - total([cost])` aggregates and neither half of
     /// it is a bare call.
+    ///
+    /// **Its own recursion rather than `walk`, and `Rolling` is why.** The
+    /// aggregate written inside `rolling(average([x]), 7)` is the window's
+    /// parameter, not a live call: a rolling aggregate answers once per row and
+    /// collapses nothing, so this stops at the variant instead of descending
+    /// into it. `walk` still descends there — the column rules need to see
+    /// inside — which is exactly why this question cannot be asked through it.
     pub fn aggregates(&self) -> bool {
-        let mut found = false;
-        self.walk(&mut |e| {
-            if let Expr::Call { name, .. } = e {
-                if crate::vocabulary::is_aggregate(name) {
-                    found = true;
-                }
+        match self {
+            Expr::Rolling { .. } => false,
+            Expr::Call { name, args, .. } => {
+                crate::vocabulary::is_aggregate(name) || args.iter().any(Expr::aggregates)
             }
-        });
-        found
+            Expr::Arithmetic { left, right, .. }
+            | Expr::Compare { left, right, .. }
+            | Expr::Logic { left, right, .. } => left.aggregates() || right.aggregates(),
+            Expr::Not { inner, .. } | Expr::IsMissing { inner, .. } => inner.aggregates(),
+            Expr::TextTest { left, value, .. } => left.aggregates() || value.aggregates(),
+            Expr::In { left, set, .. } => {
+                left.aggregates() || set.iter().any(Expr::aggregates)
+            }
+            Expr::When { arms, otherwise, .. } => {
+                arms.iter().any(|(t, v)| t.aggregates() || v.aggregates())
+                    || otherwise.as_ref().is_some_and(|e| e.aggregates())
+            }
+            _ => false,
+        }
     }
 }
 

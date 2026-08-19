@@ -289,6 +289,11 @@ fn expr(e: &Expr) -> String {
         Expr::Call { name, args, .. } => {
             format!("{name}({})", args.iter().map(expr).collect::<Vec<_>>().join(", "))
         }
+        Expr::Rolling { agg, args, count, .. } => format!(
+            "rolling({agg}({}), {})",
+            args.iter().map(expr).collect::<Vec<_>>().join(", "),
+            expr(count)
+        ),
         // The key is always printed, even where the caller left it out, because
         // by the time a plan reaches a backend the checker has settled it.
         // Printing the settled sentence is how someone sees what was assumed on

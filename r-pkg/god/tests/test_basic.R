@@ -158,7 +158,7 @@ check_error("a missing table says how to pass one",
             "Pass it by name")
 check_error("a window cannot fill a hole, and the repair is named",
             run("sales then fill_missing [revenue] as previous([revenue])"),
-            "first_present")
+            "latest")
 
 cat("\nthe same pipeline, written as dplyr\n")
 

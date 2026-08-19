@@ -579,13 +579,19 @@ fn latest_fills_a_run_of_holes_where_previous_fills_one() {
         vec![vec!["10"], vec!["10"], vec!["10"], vec!["40"], vec!["40"]]
     );
 
-    // The old advice, on the same rows, so the gap it left is on the record.
-    let (_, one_back) = run(
+    // The old advice, on the record still — and the record got stronger. It
+    // filled one row of a two-hole run and said nothing; now a window inside a
+    // function's arguments is refused outright, because the order it walks
+    // never reaches it there. The half-answer is no longer even writable.
+    let message = refusal(
         &conn,
         "gaps",
         "gaps then sort [d] then add [v] as first_present([x], previous([x])) then pick [v]",
     );
-    assert_eq!(one_back[2], ["missing"], "this is what `latest` was built to fix");
+    assert!(
+        message.contains("cannot stand inside `first_present(...)`"),
+        "the old workaround is refused rather than half-answered: {message}"
+    );
 }
 
 /// A row with nothing above it and nothing of its own stays missing, because
@@ -608,6 +614,153 @@ fn latest_needs_a_sort_like_every_other_window() {
     conn.execute_batch("CREATE TABLE gaps (d BIGINT, x BIGINT);").expect("the fixture");
     let message = refusal(&conn, "gaps", "gaps then add [v] as latest([x])");
     assert!(message.contains("nothing has said what that order is"), "{message}");
+}
+
+/// **A window that is not yet full answers `missing`, the row itself
+/// included.** Two rows are not the three-row total; they are a different
+/// question wearing its name, and SQL's own frame would quietly answer it —
+/// six averaged where seven were asked — so the query carries a guard that
+/// counts the window before it answers. pandas, polars, data.table and slider
+/// all answer this way by default; SQL is the one being corrected.
+#[test]
+fn rolling_answers_missing_until_the_window_is_full() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE walk (d BIGINT, x BIGINT);
+         INSERT INTO walk VALUES (1, 1), (2, 2), (3, 4), (4, 8), (5, 16);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "walk",
+        "walk then sort [d] then add [t] as rolling(total([x]), 3) then pick [t]",
+    );
+    assert_eq!(
+        rows,
+        vec![vec!["missing"], vec!["missing"], vec!["7"], vec!["14"], vec!["28"]]
+    );
+}
+
+/// **A missing value inside a full window answers `missing` too**, because the
+/// guard counts the values that are present rather than the rows that exist.
+/// That is what every neighbour's rolling does by default, and it is one rule
+/// answering both questions: a window is full when it holds n values.
+#[test]
+fn rolling_answers_missing_over_a_hole_in_a_full_window() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE walk (d BIGINT, x BIGINT);
+         INSERT INTO walk VALUES (1, 1), (2, NULL), (3, 4), (4, 8);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "walk",
+        "walk then sort [d] then add [t] as rolling(total([x]), 2) then pick [t]",
+    );
+    assert_eq!(
+        rows,
+        vec![vec!["missing"], vec!["missing"], vec!["missing"], vec!["12"]]
+    );
+}
+
+/// `by` restarts the window inside each group, exactly as it does for every
+/// other window, so the first rows of each group go back to `missing`.
+#[test]
+fn rolling_restarts_inside_each_group() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE walk (g TEXT, d BIGINT, x BIGINT);
+         INSERT INTO walk VALUES ('a', 1, 1), ('a', 2, 2), ('a', 3, 4), ('b', 4, 10), ('b', 5, 20);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "walk",
+        "walk then sort [d] then add [t] as rolling(total([x]), 2) by [g] then pick [g, t]",
+    );
+    assert_eq!(
+        rows,
+        vec![
+            vec!["a", "missing"],
+            vec!["a", "3"],
+            vec!["a", "6"],
+            vec!["b", "missing"],
+            vec!["b", "30"],
+        ]
+    );
+}
+
+/// The deviation slides like any other aggregate the window carries: a pair of
+/// equal values has none, and the sample rule divides by one for a pair.
+#[test]
+fn rolling_carries_the_deviation_like_any_other_aggregate() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE walk (d BIGINT, x DOUBLE);
+         INSERT INTO walk VALUES (1, 2), (2, 2), (3, 4);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "walk",
+        "walk then sort [d] then add [s] as rolling(standard_deviation([x]), 2) then pick [s]",
+    );
+    assert_eq!(
+        rows,
+        vec![vec!["missing"], vec!["0.0"], vec!["1.4142135623730951"]]
+    );
+}
+
+/// **The sample deviation, which is what the bare word means on every engine
+/// the grammar writes** — measured on DuckDB, Spark, R, pandas and polars, all
+/// answering 1 for the values 1, 2, 3. numpy alone answers 0.816, the
+/// population deviation, and numpy is not a backend; its existence is why the
+/// composition was never safe to recommend, and the missing square root is why
+/// there was no composition at all.
+#[test]
+fn standard_deviation_is_the_sample_deviation() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE nums (g TEXT, x DOUBLE);
+         INSERT INTO nums VALUES ('a', 1), ('a', 2), ('a', 3), ('b', 5);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "nums",
+        "nums then summarize [s] as standard_deviation([x]) by [g]",
+    );
+    // One value has no spread to measure, so `b` is missing — the answer every
+    // engine gives, and not a rule anybody had to invent.
+    assert_eq!(rows, vec![vec!["a", "1.0"], vec!["b", "missing"]]);
+}
+
+/// An aggregate in `add` broadcasts over the group, and the deviation is no
+/// different: each row learns how spread out its own group is.
+#[test]
+fn standard_deviation_broadcasts_over_the_group_in_add() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE TABLE nums (g TEXT, x DOUBLE);
+         INSERT INTO nums VALUES ('a', 1), ('a', 2), ('a', 3), ('b', 5), ('b', 7);",
+    )
+    .expect("the fixture table");
+    let (_, rows) = run(
+        &conn,
+        "nums",
+        "nums then add [s] as standard_deviation([x]) by [g] then pick [g, s] then sort [g]",
+    );
+    assert_eq!(
+        rows,
+        vec![
+            vec!["a", "1.0"],
+            vec!["a", "1.0"],
+            vec!["a", "1.0"],
+            vec!["b", "1.4142135623730951"],
+            vec!["b", "1.4142135623730951"],
+        ]
+    );
 }
 
 /// **The sign is the grammar's rather than the engine's**, which is the second

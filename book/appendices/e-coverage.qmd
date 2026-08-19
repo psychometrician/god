@@ -4,7 +4,7 @@ title: "What this grammar does not do"
 
 A tool's marketing lists what it has. A manual you can trust also lists what
 it lacks, so here are both directions, measured against dplyr and pandas as
-of god 0.2.0, in August 2026. The first list will shrink as the vocabulary
+of god 0.2.1, in August 2026. The first list will shrink as the vocabulary
 grows under its laws; the honest way to read it today is as the price of the
 small grammar the rest of this book sells.
 
@@ -16,16 +16,15 @@ in code you can read because you watched it being written.
 
 | the gap | what to do today |
 |---|---|
-| Rolling and sliding windows (a seven-day average) | `show_as` the pipeline, add the rolling step in the host |
 | Regular expressions | `starts`, `ends`, `contains`, `replace_text`, `split_text` cover the common cases; regex stays in the host |
 | Arbitrary functions in a cell (`apply`, a lambda) | the scalar vocabulary is closed; the host is the place for host code |
 | List-columns and nested data | god reads a table of plain values; nest and unnest in the host |
 | `widen` with several value columns at once | one `name`, one `value` per `widen`; run it twice and `join` |
 | Joins on anything but equality (ranges, nearest) | equality joins only; inequality joins in the host |
 | Random sampling | neither built nor refused, for the reason below; sample in the host, then hand the table over |
-| The long aggregate shelf (variance, quantiles, weighted means, mode) | nine aggregations; the rest via `show_as` |
+| The long aggregate shelf (quantiles, weighted means, mode) | ten aggregations; variance is the deviation squared, `standard_deviation([x]) * standard_deviation([x])`; the rest via `show_as` |
 | Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
-| Window frames (`ROWS BETWEEN 3 PRECEDING`) | `running_total`, `previous`, `following` are the whole windowed family today |
+| Window frames beyond a count of rows (`RANGE`, a duration) | `rolling(average([x]), 7)` is the seven-row window; a window measured by a value's distance (the last seven *days*, however many rows) stays in the host |
 | Reading a file into a pipeline (`scan_csv`, `scan_parquet`) | read it in the host and hand the frame over; for data that outgrows the machine, [somewhere else](../chapters/somewhere-else.qmd) |
 
 One of these is a refusal with a law behind it rather than an absence, and the

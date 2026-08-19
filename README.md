@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-five functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-seven functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
@@ -143,11 +143,13 @@ sequence of instructions, so a step named with a noun reads against the grain of
 what it is. That is why choosing columns is `pick` and not `columns`.
 
 **Functions.** `total` · `average` · `median` · `smallest` · `largest` ·
-`first` · `last` · `row_count` · `unique_count` · `first_present` · `between` ·
-`remainder`
+`standard_deviation` · `first` · `last` · `row_count` · `unique_count` ·
+`first_present` · `between` · `remainder`
 
 **Along the rows.** `rank` · `row_number` · `running_total` · `previous` ·
-`following` · `latest`, which fills a hole with the last value that was there
+`following` · `latest`, which fills a hole with the last value that was there ·
+`rolling`, which asks an aggregate of the last few rows —
+`rolling(average([revenue]), 7)` is the seven-row average, sliding
 
 **Dates.** `year` · `month` · `day` · `weekday` · `hour`, where `weekday` counts
 Monday as 1 wherever it runs

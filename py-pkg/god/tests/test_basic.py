@@ -170,7 +170,7 @@ check_error(
 check_error(
     "a window cannot fill a hole, and the repair is named",
     lambda: god.run("sales then fill_missing [revenue] as previous([revenue])"),
-    "first_present",
+    "latest",
 )
 
 print("\nthe same pipeline, written as dplyr")

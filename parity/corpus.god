@@ -169,3 +169,7 @@ sales then sort [revenue] descending then take 3 with ties then pick [product, r
 sales then sort [ordered_on] then add [carried] as latest([cost]) by [region] then pick [region, ordered_on, cost, carried]
 ---
 sales then add [bucket] as remainder([revenue], 7) then keep where remainder([cost], 2) is 0 then pick [product, revenue, bucket]
+---
+sales then summarize [spread] as standard_deviation([revenue]) by [region]
+---
+sales then sort [ordered_on] then add [r3] as rolling(average([revenue]), 3) by [region] then pick [region, ordered_on, revenue, r3]

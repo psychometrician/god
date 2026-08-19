@@ -366,6 +366,7 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         "median" => "median",
         "smallest" => "min",
         "largest" => "max",
+        "standard_deviation" => "sd",
         "first" => "dplyr::first",
         "last" => "dplyr::last",
         "unique_count" => "dplyr::n_distinct",
@@ -507,6 +508,35 @@ fn expr(e: &Expr) -> String {
         }
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args),
+
+        // **slider, which is the tidyverse's own rolling.** Base R has no
+        // readable spelling for a moving window — `stats::filter` reads as
+        // nothing and handles one aggregate — and this backend already writes
+        // `vctrs::` and `stringr::` by name for the same reason: recognized
+        // beats minimal. `.complete = TRUE` is the full-window rule the
+        // grammar names — `NA` until the window holds n rows — and the plain
+        // R function inside (no `na.rm`) is what makes a missing value in a
+        // full window answer missing, the way every engine here answers it.
+        Expr::Rolling { agg, args, count, .. } => {
+            let rfun = match agg.as_str() {
+                "total" => "sum",
+                "average" => "mean",
+                "median" => "median",
+                "smallest" => "min",
+                "largest" => "max",
+                "standard_deviation" => "sd",
+                other => unreachable!("`{other}` reached the dplyr backend inside `rolling`"),
+            };
+            let n = match count.as_ref() {
+                Expr::Whole { value, .. } => *value,
+                _ => unreachable!("the checker admits only a written whole number"),
+            };
+            format!(
+                "slider::slide_dbl({}, {rfun}, .before = {}, .complete = TRUE)",
+                expr(&args[0]),
+                n - 1
+            )
+        }
     }
 }
 
@@ -566,6 +596,9 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "median" => format!("median({}, na.rm = TRUE)", arg(0)),
         "smallest" => format!("min({}, na.rm = TRUE)", arg(0)),
         "largest" => format!("max({}, na.rm = TRUE)", arg(0)),
+        // R's own `sd` is the sample deviation, which is what the grammar's
+        // word means — measured against all five engines rather than assumed.
+        "standard_deviation" => format!("sd({}, na.rm = TRUE)", arg(0)),
         "first" => format!("first({})", arg(0)),
         "last" => format!("last({})", arg(0)),
         "unique_count" => format!("n_distinct({})", arg(0)),

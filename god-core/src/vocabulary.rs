@@ -132,6 +132,27 @@ pub const FUNCTIONS: &[Function] = &[
     Function { name: "median", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
     Function { name: "smallest", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
     Function { name: "largest", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
+
+    // **How spread out the values are, and it earned its word the way
+    // `remainder` did: it alone had no composition.** The variance derives —
+    // broadcast the mean with `add ... by`, then aggregate the squared
+    // differences — but the deviation is its square root, and the grammar
+    // refuses a square root, so the sentence could not be finished. That is
+    // §4.8's first question answered "no", which is the one answer that earns
+    // a word.
+    //
+    // **It is the sample deviation, and that is measured rather than
+    // preferred.** DuckDB's `stddev`, Spark's `stddev`, R's `sd`, pandas'
+    // `.std()` and polars' `.std()` all mean the sample one — 1.0 for the
+    // values 1, 2, 3 — so the bare word already means one thing everywhere the
+    // grammar writes. numpy alone answers 0.816, the population deviation,
+    // which is the famous quiet trap; numpy is not a backend, and its
+    // existence is why the composition was never safe to recommend.
+    //
+    // Two words, which §11 allows as the maximum: `sd` is an abbreviation,
+    // and `deviation` alone names a family — the mean absolute deviation is
+    // also one — where this names the member everyone means.
+    Function { name: "standard_deviation", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
     Function { name: "first", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
     Function { name: "last", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
     Function { name: "unique_count", kind: Kind::Aggregate, arity: Arity::Exactly(1) },
@@ -330,6 +351,28 @@ pub const FUNCTIONS: &[Function] = &[
     // word.
     Function { name: "previous", kind: Kind::Window, arity: Arity::Between(1, 2) },
     Function { name: "following", kind: Kind::Window, arity: Arity::Between(1, 2) },
+
+    // **An aggregate asked of the last n rows, answered for every row.** A
+    // seven-day average down a sorted table is `rolling(average([revenue]), 7)`,
+    // and the shape is the whole design: one word wrapping the aggregates the
+    // grammar already has, where polars spends twenty-four `rolling_*` names on
+    // the same idea. It is a window, so it stands only in `add`, after a `sort`
+    // has said which way the rows run — the rule `running_total` already
+    // follows, and the reason the neighbours' method-on-a-column spelling
+    // could not say the order is not a reason here.
+    //
+    // **A window that is not yet full answers `missing`**, the current row
+    // included in the count. Six rows are not the seven-day average; they are a
+    // different question wearing its name. pandas, polars, data.table and
+    // slider all answer this way by default, and SQL does not — it averages
+    // what it has — so the query carries a guard that counts the window before
+    // it answers. A missing value inside a full window answers `missing` for
+    // the same reason, which is also what every one of those four does.
+    //
+    // Parsed rather than looked up here, the way `rank` is: its first argument
+    // is an aggregate call rather than a value, and its second is how many
+    // rows, a plain whole number of at least two.
+    Function { name: "rolling", kind: Kind::Window, arity: Arity::Exactly(2) },
 
     // **The last value that was there, reading down.** tidyr calls the verb
     // `fill`, pandas `ffill`, polars `forward_fill`, and the term of art is

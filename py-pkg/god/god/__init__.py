@@ -64,8 +64,10 @@ from .verbs import (
     row_number,
     latest,
     remainder,
+    rolling,
     running_total,
     smallest,
+    standard_deviation,
     split_text,
     sort,
     summarize,
@@ -109,7 +111,7 @@ __all__ = [
     "matching",
     # The functions. These are real functions in Python and are names in a
     # syntax tree in R, because Python evaluates an expression and R does not.
-    "total", "average", "median", "smallest", "largest",
+    "total", "average", "median", "smallest", "largest", "standard_deviation",
     "first", "last", "unique_count", "row_count",
     # The rank family. Two, where dplyr has six.
     "rank", "row_number",
@@ -131,8 +133,9 @@ __all__ = [
     # The parts of a date. `weekday` counts Monday as 1 wherever it runs, which
     # the engines left to themselves do not agree on.
     "year", "month", "day", "weekday", "hour",
-    # Looking along the rows. All three need a `sort` before them.
-    "running_total", "previous", "following", "latest", "remainder",
+    # Looking along the rows. All of them need a `sort` before them, and
+    # `rolling` carries an aggregate over the last few rows.
+    "running_total", "previous", "following", "latest", "rolling", "remainder",
     # Choosing columns by the shape of their name.
     "where", "where_any", "where_every", "name", "value", "kind",
     # The conditional. Not Python's own `if`, which would pick a branch

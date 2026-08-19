@@ -395,6 +395,13 @@ fn substitute_value(value: &Expr, column: &Name) -> Expr {
             args: args.iter().map(|e| substitute_value(e, column)).collect(),
             span: *span,
         },
+        Expr::Rolling { agg, agg_span, args, count, span } => Expr::Rolling {
+            agg: agg.clone(),
+            agg_span: *agg_span,
+            args: args.iter().map(|e| substitute_value(e, column)).collect(),
+            count: Box::new(substitute_value(count, column)),
+            span: *span,
+        },
         other => other.clone(),
     }
 }
@@ -539,6 +546,9 @@ fn window_needing_order(step: &Step) -> Option<(&'static str, Span)> {
                 Expr::Window { kind: Window::RowNumber, span, .. } => {
                     Some(("row_number()", *span))
                 }
+                // A window of the last n rows means nothing until something
+                // has said which way the rows run, the same as a total so far.
+                Expr::Rolling { span, .. } => Some(("rolling(...)", *span)),
                 Expr::Call { name, span, .. }
                     if matches!(
                         name.as_str(),
@@ -913,7 +923,7 @@ fn check_step(
                 }
                 if value.windows() {
                     return Err(Diagnostic::illegal(
-                        "`fill_missing` fills each hole from its own row, and a value that looks along the rows needs their order settled first. Make it a column: `then sort [day] then add [x] as first_present([x], previous([x]))`",
+                        "`fill_missing` fills each hole from its own row, and a value that looks along the rows needs their order settled first. Fill down in `add`, where the sort is asked for: `then sort [day] then add [x] as latest([x])`",
                         value.span(),
                     ));
                 }
@@ -1964,6 +1974,146 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
             Ok(Type::Truth)
         }
 
+        // `rolling(average([x]), 7)` — an aggregate asked of the last n rows.
+        //
+        // **Six aggregates may stand inside it, and each exclusion has a
+        // reason a message can say.** `first` derives, `last` is the row
+        // itself, `row_count` answers the number that was written, and
+        // `unique_count` is a sentence one engine cannot write — measured:
+        // Spark refuses a distinct aggregate over any window frame, and a
+        // sentence that runs on one engine and is refused by another is the
+        // quiet disagreement §3.1 exists to end.
+        Expr::Rolling { agg, agg_span, args, count, .. } => {
+            let Some(function) = vocabulary::lookup(agg) else {
+                let suggestion = nearest(agg, vocabulary::FUNCTIONS.iter().map(|f| f.name))
+                    .map(|s| format!(" Did you mean `{s}`?"))
+                    .unwrap_or_default();
+                return Err(Diagnostic::illegal(
+                    format!(
+                        "there is no function called `{agg}`.{suggestion} The grammar has: {}",
+                        vocabulary::FUNCTIONS
+                            .iter()
+                            .map(|f| f.name)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    ),
+                    *agg_span,
+                ));
+            };
+
+            const ROLLING_AGGREGATES: &str =
+                "`total`, `average`, `median`, `smallest`, `largest` and `standard_deviation`";
+            match function.kind {
+                vocabulary::Kind::Window => {
+                    return Err(Diagnostic::illegal(
+                        format!("`rolling` holds an aggregate — a value that spans rows — and `{agg}` is already a value worked out along them. The aggregates are {ROLLING_AGGREGATES}"),
+                        *agg_span,
+                    ));
+                }
+                vocabulary::Kind::Scalar => {
+                    return Err(Diagnostic::illegal(
+                        format!("`rolling` asks about a stretch of rows, and `{agg}` works on one value at a time. The aggregates are {ROLLING_AGGREGATES}"),
+                        *agg_span,
+                    ));
+                }
+                vocabulary::Kind::Aggregate => {}
+            }
+
+            match agg.as_str() {
+                "first" => {
+                    return Err(Diagnostic::illegal(
+                        "the first value of the last few rows is a value from a fixed distance back, and `previous` already says that: `previous([x], 6)` is the first of a window of 7",
+                        *agg_span,
+                    ));
+                }
+                "last" => {
+                    return Err(Diagnostic::illegal(
+                        "the last value of the last few rows is the row's own value. Use the column",
+                        *agg_span,
+                    ));
+                }
+                "row_count" => {
+                    return Err(Diagnostic::illegal(
+                        "every full window holds the number of rows that was written, and a window that is not yet full answers `missing`, so counting them answers nothing the sentence did not already say",
+                        *agg_span,
+                    ));
+                }
+                "unique_count" => {
+                    return Err(Diagnostic::illegal(
+                        "no query can count distinct values over a moving window on every engine underneath, so the sentence would answer on one and be refused by another. `unique_count` works at full width in `summarize`",
+                        *agg_span,
+                    ));
+                }
+                _ => {}
+            }
+
+            if !function.arity.accepts(args.len()) {
+                let wants = function.arity.wanted();
+                return Err(Diagnostic::illegal(
+                    format!(
+                        "`{agg}` takes {wants}, and {} {} written",
+                        args.len(),
+                        if args.len() == 1 { "was" } else { "were" }
+                    ),
+                    *agg_span,
+                ));
+            }
+
+            // **A plain column, the ruling an ordering position already has**:
+            // the computed value is one `add` away, and a second spelling of
+            // that `add` is what this refusal declines to be.
+            let Some(Expr::Column(column)) = args.first() else {
+                return Err(Diagnostic::illegal(
+                    format!("`rolling` reads a column, and the computed value is an `add` away: `then add [v] as ... then add [answer] as rolling({agg}([v]), 7)`"),
+                    args.first().map(Expr::span).unwrap_or(*agg_span),
+                ));
+            };
+            let kind = known(column, schema)?;
+            if !kind.agrees_with(Type::Number) {
+                return Err(Diagnostic::illegal(
+                    format!("`{agg}` works on numbers, and this column is {}. Convert the column first", kind.name()),
+                    column.span,
+                ));
+            }
+
+            // How many rows, judged the way `previous` judges how far: a plain
+            // whole number, written out, with each wrong shape sent its own
+            // sentence. A negative arrives as `0 - n` because the lexer has no
+            // negative literal.
+            let negated = matches!(
+                count.as_ref(),
+                Expr::Arithmetic { op: Arith::Subtract, left, right, .. }
+                    if matches!(**left, Expr::Whole { value: 0, .. })
+                        && matches!(**right, Expr::Whole { .. })
+            );
+            if negated {
+                return Err(Diagnostic::illegal(
+                    "the window reaches back from the row itself, so how many rows it holds cannot be negative",
+                    count.span(),
+                ));
+            }
+            let Expr::Whole { value, .. } = count.as_ref() else {
+                return Err(Diagnostic::illegal(
+                    "the second thing `rolling` takes is how many rows the window holds, written as a plain whole number: `rolling(average([revenue]), 7)`. It cannot be worked out per row",
+                    count.span(),
+                ));
+            };
+            if *value == 0 {
+                return Err(Diagnostic::illegal(
+                    "a window of no rows asks nothing. It holds the row itself and the rows above it, so the smallest one is 2",
+                    count.span(),
+                ));
+            }
+            if *value == 1 {
+                return Err(Diagnostic::illegal(
+                    "a window of one row is the row itself, so there is nothing rolling about it. Use the column, or widen the window",
+                    count.span(),
+                ));
+            }
+
+            Ok(Type::Number)
+        }
+
         Expr::Call { name, args, span } => {
             let Some(function) = vocabulary::lookup(name) else {
                 // **A word the grammar used to have gets its own sentence.**
@@ -2014,6 +2164,20 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                         arg.span(),
                     ));
                 }
+                // **A window inside a function's argument loses the order it
+                // walks.** A function renders its arguments without knowing
+                // where it stands, so a place worked out along the rows gets no
+                // rows to be along — `total(rank([x]))` reached the engine as a
+                // window nested in an aggregate, which no engine runs, and a
+                // scalar around one dropped the `ORDER BY` and answered in
+                // whatever order the rows happened to be. Both are the same
+                // refusal: make it a column, then use the column.
+                if arg.windows() {
+                    return Err(Diagnostic::illegal(
+                        format!("a value worked out along the rows cannot stand inside `{name}(...)`, because the order it walks does not reach it there. Make it a column first: `then add [t] as running_total([x]) then ... {name}([t])`"),
+                        arg.span(),
+                    ));
+                }
             }
 
             let mut kinds = Vec::new();
@@ -2024,7 +2188,7 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
             match name.as_str() {
                 // These reduce whatever they are given to a number, so they need
                 // numbers to reduce.
-                "total" | "average" | "median" => {
+                "total" | "average" | "median" | "standard_deviation" => {
                     if !kinds[0].agrees_with(Type::Number) {
                         return Err(Diagnostic::illegal(
                             format!("`{name}` works on numbers, and this column is {}. Count the rows instead with `row_count()`, or convert the column first", kinds[0].name()),

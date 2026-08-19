@@ -5,6 +5,65 @@ a person using god can see.
 
 ## Unreleased
 
+### `standard_deviation`, the tenth aggregation
+
+How spread out a column is, in `summarize`, broadcast in `add ... by`, and in
+`widen`'s cell. It is the sample deviation, which is what R's `sd`, pandas'
+`.std()`, polars' `.std()` and both SQL engines' `stddev` all mean by their
+bare word, so the answer does not change with the engine. A group of one row
+answers missing, because one value has no spread.
+
+```r
+sales |> summarize(spread = standard_deviation(revenue), by = region)
+```
+
+```python
+sales >> summarize(spread=standard_deviation(col.revenue), by=col.region)
+```
+
+It earned its word by having no composition: the variance can be written out,
+and the deviation is its square root, which the grammar does not have.
+Variance stays a composition, the deviation squared.
+
+### `rolling`, an aggregate of the last few rows
+
+A seven-row average, sliding, is one word wrapping another:
+
+```r
+sales |> sort(day) |> add(week = rolling(average(revenue), 7), by = region)
+```
+
+```python
+sales >> sort(col.day) >> add(week=rolling(average(col.revenue), 7), by=col.region)
+```
+
+The aggregate goes inside, one of `total`, `average`, `median`, `smallest`,
+`largest` and `standard_deviation`, and the number says how many rows the
+window holds, the row itself included. It needs a `sort` before it, like every
+window, and `by` restarts it for each group.
+
+A window that is not yet full answers missing, and so does a full window with
+a missing value inside it: six values are not the seven-row average. That is
+how pandas, polars and data.table answer by default too, so the printed code
+and the query agree without a word. `first`, `last`, `row_count` and
+`unique_count` are refused inside it, each with the reason and the spelling to
+use instead.
+
+### A window inside a function's arguments is refused
+
+`total(rank([x]))` used to check and then die in the engine, and
+`round_below(running_total([x]))` quietly lost the order it walked. Both are
+now refused up front, with the repair named: make it a column, then use the
+column. Windows still compose through arithmetic, comparisons and `when`,
+which carry the order down.
+
+### The window-as-filler refusal points at `latest` now
+
+`fill_missing [x] as previous([x])` is still refused, and the message now
+names the spelling that fills a whole run of holes, `sort` then
+`add [x] as latest([x])`, instead of the one-row workaround it used to
+recommend.
+
 ### A refusal arrives as words, in Python too
 
 An uncaught refusal used to print three frames of god's own plumbing before the

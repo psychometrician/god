@@ -704,3 +704,19 @@ sales                                   region:text  product:text  revenue:numbe
 └ pick [product, revenue, bucket]       product  revenue  bucket
                                         -region  -cost  -ordered_on
 ---
+sales then summarize [spread] as standard_deviation([revenue]) by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+└ summarize [spread] as standard_deviation([revenue]) by [region]
+                                        region  +spread:number
+                                        -product  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then sort [ordered_on] then add [r3] as rolling(average([revenue]), 3) by [region] then pick [region, ordered_on, revenue, r3]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [r3] as rolling(average([revenue]), 3) by [region]
+│                                       region  product  revenue  cost  ordered_on  +r3:number
+└ pick [region, ordered_on, revenue, r3]
+                                        region  ordered_on  revenue  r3
+                                        -product  -cost
+---

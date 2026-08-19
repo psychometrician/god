@@ -508,6 +508,7 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         "median" => "median",
         "smallest" => "min",
         "largest" => "max",
+        "standard_deviation" => "stddev",
         "first" => "first",
         "last" => "last",
         "unique_count" => "countDistinct",
@@ -701,6 +702,34 @@ fn expr_over(e: &Expr, over: Over) -> String {
         }
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args, over),
+
+        // **The guard is written with `F.when` and no `otherwise`**, which is
+        // how PySpark says "and missing everywhere else" — the full-window
+        // rule. `F.median` refuses a frame on a live Spark session while
+        // `F.percentile` takes the same frame and answers the same middle, so
+        // the median goes through the second, exactly as the SQL dialect does.
+        Expr::Rolling { agg, args, count, .. } => {
+            let value = expr_over(&args[0], over.clone());
+            let n = match count.as_ref() {
+                Expr::Whole { value, .. } => *value,
+                _ => unreachable!("the checker admits only a written whole number"),
+            };
+            let spec = format!(
+                "{}.rowsBetween(-{}, Window.currentRow)",
+                window(&over, &[]),
+                n - 1
+            );
+            let asked = match agg.as_str() {
+                "total" => format!("F.sum({value})"),
+                "average" => format!("F.avg({value})"),
+                "median" => format!("F.percentile({value}, 0.5)"),
+                "smallest" => format!("F.min({value})"),
+                "largest" => format!("F.max({value})"),
+                "standard_deviation" => format!("F.stddev({value})"),
+                other => unreachable!("`{other}` reached the PySpark backend inside `rolling`"),
+            };
+            format!("F.when(F.count({value}).over({spec}) == {n}, {asked}.over({spec}))")
+        }
     }
 }
 
@@ -729,6 +758,9 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         "median" => format!("F.median({})", arg(0)),
         "smallest" => format!("F.min({})", arg(0)),
         "largest" => format!("F.max({})", arg(0)),
+        // `F.stddev` is an alias for `stddev_samp` in Spark's own words, which
+        // is the sample deviation the grammar's word names.
+        "standard_deviation" => format!("F.stddev({})", arg(0)),
         "first" => format!("F.first({})", arg(0)),
         "last" => format!("F.last({})", arg(0)),
         "unique_count" => format!("F.countDistinct({})", arg(0)),

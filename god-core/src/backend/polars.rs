@@ -482,6 +482,7 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         "median" => "median",
         "smallest" => "min",
         "largest" => "max",
+        "standard_deviation" => "std",
         "first" => "first",
         "last" => "last",
         "unique_count" => "len",
@@ -674,6 +675,28 @@ fn expr(e: &Expr) -> String {
         }
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args),
+
+        // **`min_samples` defaults to the window size and counts present
+        // values**, so polars' own default is the grammar's rule: missing
+        // until the window holds n values, a hole in a full window included.
+        // The step's `.over(...)` wraps the whole value where a `by` is
+        // present, so the grouped form needs nothing said here.
+        Expr::Rolling { agg, args, count, .. } => {
+            let method = match agg.as_str() {
+                "total" => "rolling_sum",
+                "average" => "rolling_mean",
+                "median" => "rolling_median",
+                "smallest" => "rolling_min",
+                "largest" => "rolling_max",
+                "standard_deviation" => "rolling_std",
+                other => unreachable!("`{other}` reached the polars backend inside `rolling`"),
+            };
+            let n = match count.as_ref() {
+                Expr::Whole { value, .. } => *value,
+                _ => unreachable!("the checker admits only a written whole number"),
+            };
+            format!("{}.{method}({n})", expr(&args[0]))
+        }
     }
 }
 
@@ -692,6 +715,9 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "median" => format!("{}.median()", arg(0)),
         "smallest" => format!("{}.min()", arg(0)),
         "largest" => format!("{}.max()", arg(0)),
+        // `.std()` defaults to `ddof=1`, the sample deviation, which is the
+        // definition the grammar's word names.
+        "standard_deviation" => format!("{}.std()", arg(0)),
         "first" => format!("{}.first()", arg(0)),
         "last" => format!("{}.last()", arg(0)),
         "unique_count" => format!("{}.n_unique()", arg(0)),

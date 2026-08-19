@@ -123,6 +123,18 @@ pub struct Dialect {
     ///
     /// `{}` is the value being looked at.
     last_present: &'static str,
+    /// How this engine takes a median over a window frame, which is what
+    /// `rolling(median(...), n)` is built from.
+    ///
+    /// **The seventh entry, measured on a live Spark 4.2 session on
+    /// 2026-08-18.** DuckDB's `median` accepts a frame; Spark's refuses one —
+    /// `INVALID_WINDOW_SPEC_FOR_AGGREGATION_FUNC` — while its `percentile(x,
+    /// 0.5)` accepts the same frame and answers the same interpolated middle.
+    /// One idea, two spellings, so it is a table entry rather than a
+    /// workaround.
+    ///
+    /// `{}` is the value being measured.
+    rolling_median: &'static str,
 }
 
 /// DuckDB, which is what `--as sql` has always meant.
@@ -134,6 +146,7 @@ const DUCKDB: Dialect = Dialect {
     weekday: "isodow({})",
     dynamic_pivot: true,
     last_present: "last_value({} IGNORE NULLS)",
+    rolling_median: "median({})",
 };
 
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
@@ -147,6 +160,7 @@ const SPARK: Dialect = Dialect {
     weekday: "extract(DAYOFWEEK_ISO FROM {})",
     dynamic_pivot: false,
     last_present: "last_value({}, true)",
+    rolling_median: "percentile({}, 0.5)",
 };
 
 pub struct Sql;
@@ -1151,6 +1165,61 @@ impl Dialect {
                 }
             }
 
+            // **The frame is the window and the guard is the meaning.** A
+            // `ROWS BETWEEN n-1 PRECEDING AND CURRENT ROW` frame computes over
+            // whatever rows it can reach, so at the top of the table SQL would
+            // quietly answer a narrower question wearing the sentence's name —
+            // six rows averaged where seven were asked for. The `CASE` counts
+            // the values actually in frame and answers `missing` until all n
+            // are present, which also settles a missing value *inside* a full
+            // window the way pandas, polars, data.table and slider all settle
+            // it: an average over a hole is not the average that was asked for.
+            Expr::Rolling { agg, args, count, .. } => {
+                let mut clauses = Vec::new();
+                if !over.partition.is_empty() {
+                    let groups: Vec<String> =
+                        over.partition.iter().map(|n| self.name(&n.text)).collect();
+                    clauses.push(format!("PARTITION BY {}", groups.join(", ")));
+                }
+                let ordering: Vec<String> = over
+                    .order
+                    .unwrap_or_default()
+                    .iter()
+                    .map(|k| {
+                        format!(
+                            "{}{}",
+                            self.name(&k.column.text),
+                            if k.descending { " DESC" } else { "" }
+                        )
+                    })
+                    .collect();
+                if !ordering.is_empty() {
+                    clauses.push(format!("ORDER BY {}", ordering.join(", ")));
+                }
+                let inner = self.expr_over(&args[0], Over::default());
+                let n = match count.as_ref() {
+                    Expr::Whole { value, .. } => *value,
+                    _ => unreachable!("the checker admits only a written whole number"),
+                };
+                let call = match agg.as_str() {
+                    "total" => format!("sum({inner})"),
+                    "average" => format!("avg({inner})"),
+                    "median" => self.rolling_median.replace("{}", &inner),
+                    "smallest" => format!("min({inner})"),
+                    "largest" => format!("max({inner})"),
+                    "standard_deviation" => format!("stddev({inner})"),
+                    other => unreachable!("`{other}` reached the SQL backend inside `rolling`"),
+                };
+                let frame = format!(
+                    "{} ROWS BETWEEN {} PRECEDING AND CURRENT ROW",
+                    clauses.join(" "),
+                    n - 1
+                );
+                format!(
+                    "CASE WHEN count({inner}) OVER ({frame}) = {n} THEN {call} OVER ({frame}) END"
+                )
+            }
+
             // **An aggregate under a grouping takes its own `OVER`, and it has
             // to be here rather than around the whole value.** `add [share] as
             // [revenue] / total([revenue]) by [product]` means the row's revenue
@@ -1281,6 +1350,9 @@ impl Dialect {
             "median" => format!("median({})", arg(0)),
             "smallest" => format!("min({})", arg(0)),
             "largest" => format!("max({})", arg(0)),
+            // The sample deviation, which is what a bare `stddev` means on both
+            // engines — measured, 1.0 for the values 1, 2, 3 on each.
+            "standard_deviation" => format!("stddev({})", arg(0)),
             "first" => format!("first({})", arg(0)),
             "last" => format!("last({})", arg(0)),
             "unique_count" => format!("count(DISTINCT {})", arg(0)),

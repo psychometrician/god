@@ -211,3 +211,7 @@ sales >> sort(descending(col.revenue)) >> take(3, ties = True) >> pick(col.produ
 sales >> sort(col.ordered_on) >> add(carried = latest(col.cost), by = col.region) >> pick(col.region, col.ordered_on, col.cost, col.carried)
 ---
 sales >> add(bucket = remainder(col.revenue, 7)) >> keep(remainder(col.cost, 2) == 0) >> pick(col.product, col.revenue, col.bucket)
+---
+sales >> summarize(spread = standard_deviation(col.revenue), by = col.region)
+---
+sales >> sort(col.ordered_on) >> add(r3 = rolling(average(col.revenue), 3), by = col.region) >> pick(col.region, col.ordered_on, col.revenue, col.r3)

@@ -36,6 +36,14 @@ fn schema() -> Schema {
 /// vocabulary with a kind this does not handle fails loudly rather than being
 /// quietly skipped.
 fn pipeline_using(f: &vocabulary::Function) -> String {
+    // `rolling` is the one function whose first argument is not a value — it
+    // holds an aggregate call and a width — so the generic argument builder
+    // below cannot spell it. The same exception `rank` gets from the parser,
+    // made here.
+    if f.name == "rolling" {
+        return "sales then sort [revenue] descending then add [answer] as rolling(average([anything]), 3)"
+            .to_string();
+    }
     // A variadic function is given its floor plus one, so the sentence exercises
     // the list rather than the smallest legal case.
     //

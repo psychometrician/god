@@ -501,6 +501,7 @@ fn aggregation(value: &Expr, by: &[Name]) -> (String, &'static str) {
         "median" => "median",
         "smallest" => "min",
         "largest" => "max",
+        "standard_deviation" => "std",
         "first" => "first",
         "last" => "last",
         "unique_count" => "nunique",
@@ -555,6 +556,7 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         "median" => "median",
         "smallest" => "min",
         "largest" => "max",
+        "standard_deviation" => "std",
         "first" => "first",
         "last" => "last",
         "unique_count" => "nunique",
@@ -774,6 +776,39 @@ fn inner(e: &Expr, over: Over) -> String {
         }
         Expr::ColumnName { .. } => "name".to_string(),
         Expr::Call { name: fname, args, .. } => call(fname, args, over),
+
+        // **`.rolling(n)` counts present values toward its floor**, and its
+        // floor defaults to the window size, so pandas' own default is the
+        // grammar's rule already: missing until the window holds n values, a
+        // hole in a full window included. The grouped form goes through
+        // `transform` because `.rolling` on a grouped column hands back a
+        // two-level index that `assign` cannot line up.
+        Expr::Rolling { agg, args, count, .. } => {
+            let method = match agg.as_str() {
+                "total" => "sum",
+                "average" => "mean",
+                "median" => "median",
+                "smallest" => "min",
+                "largest" => "max",
+                "standard_deviation" => "std",
+                other => unreachable!("`{other}` reached the pandas backend inside `rolling`"),
+            };
+            let n = match count.as_ref() {
+                Expr::Whole { value, .. } => *value,
+                _ => unreachable!("the checker admits only a written whole number"),
+            };
+            match args.first() {
+                Some(Expr::Column(c)) if !over.partition.is_empty() => format!(
+                    "d.groupby({})[{}].transform(lambda s: s.rolling({n}).{method}())",
+                    list(over.partition),
+                    text(&c.text)
+                ),
+                Some(Expr::Column(c)) => {
+                    format!("d[{}].rolling({n}).{method}()", text(&c.text))
+                }
+                _ => unreachable!("the checker admits only a plain column"),
+            }
+        }
     }
 }
 
@@ -793,6 +828,7 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             "median" => "median",
             "smallest" => "min",
             "largest" => "max",
+            "standard_deviation" => "std",
             "first" => "first",
             "last" => "last",
             "unique_count" => "nunique",
@@ -824,6 +860,9 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         "median" => format!("{}.median()", arg(0)),
         "smallest" => format!("{}.min()", arg(0)),
         "largest" => format!("{}.max()", arg(0)),
+        // `.std()` is the sample deviation — `ddof=1` is pandas' own default,
+        // which is the definition the grammar's word names.
+        "standard_deviation" => format!("{}.std()", arg(0)),
         "first" => format!("{}.iloc[0]", arg(0)),
         "last" => format!("{}.iloc[-1]", arg(0)),
         "unique_count" => format!("{}.nunique()", arg(0)),

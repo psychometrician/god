@@ -1547,6 +1547,14 @@ impl<'a> Parser<'a> {
             return self.conditional(span);
         }
 
+        // `rolling` takes an aggregate call where every other function takes a
+        // value, so it is read here for the reason `matching` is: the argument
+        // loop below parses values, and would hand the checker a shape it
+        // could only refuse with the wrong words.
+        if word == "rolling" {
+            return self.rolling(span);
+        }
+
         // A name in front of a group applies that name to what is inside.
         if !matches!(self.peek(), Some(Tok::OpenParen)) {
             let suggestion = nearest(&word, vocabulary::FUNCTIONS.iter().map(|f| f.name))
@@ -1705,6 +1713,65 @@ impl<'a> Parser<'a> {
         self.at += 1;
 
         Ok(Expr::Window { kind, key, span: span.to(close) })
+    }
+
+    /// `rolling(average([revenue]), 7)`, with `self.at` sitting on the `(`.
+    ///
+    /// **The aggregate call is taken apart here rather than kept whole**,
+    /// because the plan holds the name and the arguments separately: the call
+    /// inside is the window's parameter, not a live aggregate, and storing it
+    /// as one would make the plan answer "this collapses a group" about a
+    /// value that slides along it. What the name may be — and what the count
+    /// may be — is the checker's question, asked there so the refusals can
+    /// name what to write instead.
+    fn rolling(&mut self, span: Span) -> Result<Expr, Diagnostic> {
+        const SHAPE: &str = "`rolling` asks an aggregate of the last few rows, so it takes the aggregate and how many rows: `rolling(average([revenue]), 7)`";
+
+        if !matches!(self.peek(), Some(Tok::OpenParen)) {
+            return Err(Diagnostic::illegal(SHAPE, span));
+        }
+        self.at += 1;
+
+        let first = self.expression()?;
+        let (agg, agg_span, args) = match first {
+            Expr::Call { name, args, span } => (name, span, args),
+            // `rank` and `row_number` parse to their own variant, so a reader
+            // who reaches for one here is told the real difference rather than
+            // shown the general shape.
+            Expr::Window { span, .. } => {
+                return Err(Diagnostic::illegal(
+                    "`rolling` holds an aggregate — a value that spans rows — and this is already a value worked out along them. The aggregates are `total`, `average`, `median`, `smallest`, `largest` and `standard_deviation`",
+                    span,
+                ));
+            }
+            other => return Err(Diagnostic::illegal(SHAPE, other.span())),
+        };
+
+        if !matches!(self.peek(), Some(Tok::Comma)) {
+            return Err(Diagnostic::illegal(
+                "`rolling` also needs how many rows the window holds, after the aggregate: `rolling(average([revenue]), 7)`",
+                self.peek_span(),
+            ));
+        }
+        self.at += 1;
+        let count = self.expression()?;
+
+        let close = self.peek_span();
+        if !matches!(self.peek(), Some(Tok::CloseParen)) {
+            return Err(Diagnostic::illegal(
+                "`rolling(` is never closed. Add a `)` after how many rows",
+                span,
+            ));
+        }
+        self.at += 1;
+
+        Ok(Expr::Rolling {
+            agg,
+            agg_span,
+            args,
+            count: Box::new(count),
+            span: span.to(close),
+        })
     }
 
     /// `matching(products)` or `matching(products, by [id])`, with `self.at`

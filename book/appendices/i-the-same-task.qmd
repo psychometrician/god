@@ -162,8 +162,8 @@ comparison rather than god's own output wearing five costumes.
 **What this page is not** is a claim that god does everything these libraries
 do. It does not, on purpose, and
 [what this grammar does not do](e-coverage.qmd) is the list: regular
-expressions, rolling windows, arbitrary functions in a cell, and six more, each
-with the exit named. What this page claims is narrower and more useful: the
+expressions, arbitrary functions in a cell, and eight more, each with the exit
+named. What this page claims is narrower and more useful: the
 ordinary work, the operations that make up most days, are all sayable in one
 small vocabulary that reads the same in two languages.
 

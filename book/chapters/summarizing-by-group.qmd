@@ -138,13 +138,16 @@ is that `summarize ... by ...`, read aloud, is the spelling you will still
 have when the others have faded, because it is the one that says what the
 operation does in the words you would use to describe it.
 
-## The nine ways to collapse a group
+## The ten ways to collapse a group
 
-`total` and `average` are the two you will use most. There are nine
+`total` and `average` are the two you will use most. There are ten
 altogether, and the list is closed on purpose: a small shelf you can hold
 whole beats a long one you have to search.
 
-`total`, `average` and `median` combine numbers into one. `smallest` and
+`total`, `average` and `median` combine numbers into one, and
+`standard_deviation` says how spread out they are: the sample deviation,
+which is what R, pandas, polars and both SQL engines all mean by their own
+bare word, so the answer does not change with the engine. `smallest` and
 `largest` take the ends. `first` and `last` take a value by position, which
 is why they want the rows in a known order. `row_count` counts the rows and
 takes no column at all. `unique_count` counts how many different values a
@@ -159,6 +162,7 @@ run('
   sales
     then summarize [cheapest] as smallest([cost]),
          [dearest] as largest([cost]), [middle] as median([revenue]),
+         [spread] as standard_deviation([revenue]),
          [kinds] as unique_count([product]) by [region]
 ')
 ```
@@ -170,6 +174,7 @@ sales |> summarize(
   cheapest = smallest(cost),
   dearest  = largest(cost),
   middle   = median(revenue),
+  spread   = standard_deviation(revenue),
   kinds    = unique_count(product),
   by = region
 )
@@ -182,6 +187,7 @@ sales >> summarize(
   cheapest = smallest(col.cost),
   dearest  = largest(col.cost),
   middle   = median(col.revenue),
+  spread   = standard_deviation(col.revenue),
   kinds    = unique_count(col.product),
   by = col.region
 )
@@ -314,7 +320,7 @@ the drawing in full.
   last chapter and will group windows in [giving each row a
   place](each-row-a-place.qmd): these rows belong together.
 - `as` names each answer, name first, exactly as it does in `add`.
-- The nine aggregations reappear inside `add ... by`, where they broadcast a
+- The ten aggregations reappear inside `add ... by`, where they broadcast a
   group's answer back onto its rows instead of collapsing them; the chapter
   on the small words shows the share-of-group idiom this buys.
 
