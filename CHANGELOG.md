@@ -47,6 +47,10 @@ the opposite of `join_text`, where a missing part makes the whole answer
 missing. The order is the order the rows are in, so a `sort` before it is what
 makes the answer the same every time.
 
+Inside `rolling` it is refused, and says why: both SQL engines will join text
+over a moving window, and pandas and polars have no such thing, so the sentence
+would answer where it runs and be unspellable where it prints.
+
 ### The package card carries the current sticker again
 
 The hex on R-universe was the one drawn before the nose became `then`, because

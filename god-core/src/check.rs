@@ -2202,6 +2202,23 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                         *agg_span,
                     ));
                 }
+                // **The same shape as `unique_count`'s refusal, and it is the
+                // printed side that decides it.** Both SQL engines will run a
+                // text join over a window frame; pandas and polars have no
+                // moving text join at all, their rolling families being numeric
+                // throughout. So the sentence would answer where it executes
+                // and be unspellable where it prints, which is the quiet
+                // disagreement a refusal exists to end.
+                //
+                // Without this arm the word fell through to the numeric check
+                // below and was refused for working on numbers, which is the
+                // opposite of what it does.
+                "join_rows" => {
+                    return Err(Diagnostic::illegal(
+                        "`join_rows` runs text together, and no moving window of text can be spelled on every target the grammar writes. Join at full width in `summarize`, or give the rows a group and join within it",
+                        *agg_span,
+                    ));
+                }
                 _ => {}
             }
 
