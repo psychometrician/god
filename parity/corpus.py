@@ -219,3 +219,17 @@ sales >> sort(col.ordered_on) >> add(r3 = rolling(average(col.revenue), 3), by =
 sales >> add(short = look_up(col.region, "West", "W", "East", "E", otherwise = "other")) >> pick(col.region, col.short)
 ---
 sales >> add(coded = look_up(col.product, "Widget", 1, "Gadget", 2, otherwise = None)) >> summarize(t = total(col.coded), by = col.region)
+---
+(sales
+  >> join(products, by = col.product)
+  >> sort(col.maker, col.revenue)
+  >> pick(col.product, col.maker, col.revenue))
+---
+(sales
+  >> join(products, by = col.product)
+  >> sort(col.maker, col.revenue, missing = "first")
+  >> pick(col.product, col.maker, col.revenue))
+---
+(sales
+  >> sort(col.product)
+  >> summarize(sold = join_rows(col.product, ", "), by = col.region))

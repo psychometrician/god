@@ -169,8 +169,37 @@ pub enum Step {
         span: Span,
     },
 
-    /// `sort [a], [b] descending`
-    Sort { keys: Vec<SortKey>, span: Span },
+    /// `sort [a], [b] descending`, and where the missing values go.
+    ///
+    /// **`missing_first` exists because the answer was unstated, not because
+    /// anybody wanted a knob.** Every backend used to emit a bare ordering and
+    /// inherit whatever its engine did with an absent value, and the engines do
+    /// not agree: DuckDB, dplyr and pandas put missing last in both directions;
+    /// polars puts it first in both; Spark puts it first ascending and last
+    /// descending. Measured on live sessions 2026-08-19, not recalled. So the
+    /// same sentence returned three different tables and nothing said so — the
+    /// parity corpus has no missing value in it, which is why thirty-one sorted
+    /// sentences never caught it.
+    ///
+    /// **The default is missing last**, which is three of the five engines and
+    /// the reading a person gives it: the values you have, then the ones you do
+    /// not.
+    ///
+    /// **Each backend writes the placement only where its engine would
+    /// otherwise disagree**, which is the same trade every irregularity here
+    /// makes: the printed code stays the code a person would have written, and
+    /// whoever is closest to the engine pays. So polars and PySpark always say
+    /// it — their defaults are missing *first* — while dplyr and pandas say
+    /// nothing for the default and spell only the other way. SQL says it every
+    /// time, because one renderer serves two dialects that disagree with each
+    /// other and generated SQL is not read for its looks.
+    ///
+    /// **It is one flag for the whole step rather than one per key**, and that
+    /// is pandas' constraint rather than a preference: `na_position` takes a
+    /// single value for the call, where polars' `nulls_last` takes a list.
+    /// Measured. A per-key clause would have been a shape one backend could not
+    /// write, which is the thing Law 7 exists to prevent.
+    Sort { keys: Vec<SortKey>, missing_first: bool, span: Span },
 
     /// `take 10`, or `take 1 by [id]` for the first n rows of each group.
     ///
@@ -429,7 +458,7 @@ impl Step {
                 across: across.as_ref().map(Across::without_spans),
                 span: flat,
             },
-            Step::Sort { keys, .. } => Step::Sort {
+            Step::Sort { keys, missing_first, .. } => Step::Sort {
                 keys: keys
                     .iter()
                     .map(|k| SortKey {
@@ -437,6 +466,7 @@ impl Step {
                         descending: k.descending,
                     })
                     .collect(),
+                missing_first: *missing_first,
                 span: flat,
             },
             Step::Take { count, by, last, ties, .. } => {

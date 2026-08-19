@@ -5,6 +5,48 @@ a person using god can see.
 
 ## Unreleased
 
+### Sorting says where the missing values go, and now it means the same thing everywhere
+
+`sort` used to leave the answer to whichever tool was underneath, and they do
+not agree: DuckDB, dplyr and pandas put the absent rows last, polars puts them
+first, and Spark puts them first going up and last coming down. The same
+sentence returned different tables depending on where it ran.
+
+It is pinned now. **Missing values sort last, in both directions**, and every
+target is told so explicitly. Say `missing first` when you want the other way:
+
+```r
+sales |> sort(revenue, missing = "first")
+```
+
+```python
+sales >> sort(col.revenue, missing="first")
+```
+
+It applies to the whole sort rather than to one key, because one of the targets
+can only say it that way.
+
+If you sorted a column with holes in it and read the answer off polars or
+Spark, that answer has changed.
+
+### `join_rows`, a group run together into one line
+
+`join_text` reaches across the columns of one row. `join_rows` reaches down the
+rows of a group and hands back a single piece of text:
+
+```r
+sales |> sort(product) |> summarize(sold = join_rows(product, ", "), by = region)
+```
+
+```python
+sales >> sort(col.product) >> summarize(sold=join_rows(col.product, ", "), by=col.region)
+```
+
+A missing value is skipped, the way every other aggregate skips one — which is
+the opposite of `join_text`, where a missing part makes the whole answer
+missing. The order is the order the rows are in, so a `sort` before it is what
+makes the answer the same every time.
+
 ### The package card carries the current sticker again
 
 The hex on R-universe was the one drawn before the nose became `then`, because

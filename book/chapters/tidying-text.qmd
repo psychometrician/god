@@ -135,6 +135,61 @@ from a name nobody recorded comes back looking finished. If you would rather
 fill the hole than lose the row, say what to fill it with:
 `join_text([first], " ", first_present([last], ""))`.
 
+## A whole group, run together
+
+`join_text` reaches across the columns of one row. `join_rows` reaches down the
+rows of a group, and hands back one piece of text for the lot. The names carry
+the direction, because that is the only thing that differs between them.
+
+It is an aggregate, so it belongs in `summarize` beside `total` and `row_count`:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then sort [product]
+    then summarize [products] as join_rows([product], ", ") by [region]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  sort(product) |>
+  summarize(products = join_rows(product, ", "), by = region)
+```
+
+### Python
+
+```{python}
+(sales
+  >> sort(col.product)
+  >> summarize(products = join_rows(col.product, ", "), by = col.region))
+```
+
+:::
+
+*`sales then sort [product] then summarize [products] as join_rows([product], ", ") by [region]`*
+
+The `sort` is what makes the answer the same every time. Without one the rows
+arrive in whatever order the engine had them in, which is the promise `first`
+and `last` make too.
+
+A missing value is skipped here, where `join_text` would have made the whole
+answer missing. The two words answer differently on purpose. An aggregate
+reduces the rows it is handed, and every other one ignores the absent ones:
+`total` does not come back missing because a single row was empty. A scalar
+builds one value out of parts you named, and quietly dropping one would hand
+back a label that looks finished.
+
+The separator is written out rather than read from a column. The rows are being
+collapsed into one answer, so a separator that varied by row would have no row
+left to have come from.
+
 ## Case, both ways
 
 `lower` and `upper` fold a value's case. They are ordinary functions on a value,

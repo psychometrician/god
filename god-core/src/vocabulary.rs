@@ -169,6 +169,41 @@ pub const FUNCTIONS: &[Function] = &[
     // `unique_count` and both read as the quantity they return.
     Function { name: "row_count", kind: Kind::Aggregate, arity: Arity::Exactly(0) },
 
+    // **Every value in the group, run together into one text.** SQL calls it
+    // `string_agg`, `listagg` or `group_concat` depending on the engine; dplyr
+    // says `paste(collapse = )`, polars `str.join`, Spark
+    // `array_join(collect_list(...))`. Five spellings for the one idea, which is
+    // the shape this grammar exists to answer.
+    //
+    // **It cleared §4.8 on the same answer `join_text` did: it does not
+    // derive.** Nothing in the vocabulary could say it at all — every other
+    // aggregate returns a number, and the only text-building word is
+    // `join_text`, which is a scalar and reaches across the columns of one row
+    // rather than down the rows of a group.
+    //
+    // **The name says the direction, which is Law 4.** `join_text` goes across
+    // a row and this goes down the rows, so the pair is distinguished by the
+    // thing that actually differs. It is not `join_text` with another arity:
+    // the meaning may never vary with the number of arguments, and here even
+    // the *kind* would vary, a scalar becoming an aggregate. `join_rows` also
+    // joins the vocabulary's existing row words, `add_rows` and `row_count`,
+    // both of which are about many rows at once.
+    //
+    // **A missing value is skipped rather than propagated, which is the
+    // opposite of `join_text`'s ruling and deliberate.** An aggregate reduces
+    // the rows it is given and every other one here ignores the absent ones —
+    // `total` does not answer missing because one row is empty. A scalar builds
+    // one value out of parts the writer named, so dropping one silently would
+    // hand back a label that looks finished; that asymmetry is the reason the
+    // two words answer differently. Measured on all six targets: DuckDB, Spark,
+    // pandas and polars skip a null on their own, and R's `paste` is the one
+    // that does not — it renders the characters `NA` into the middle of the
+    // answer, the same trap `join_text` found there.
+    //
+    // **The order is the order the rows are in**, which is a `sort` away and
+    // the same promise `first` and `last` make.
+    Function { name: "join_rows", kind: Kind::Aggregate, arity: Arity::Exactly(2) },
+
     // The rank family, which dplyr spells six ways: `row_number`, `min_rank`,
     // `dense_rank`, `percent_rank`, `cume_dist` and `ntile`. Two here, and the
     // other four are refused until somebody asks for one (§20.5).

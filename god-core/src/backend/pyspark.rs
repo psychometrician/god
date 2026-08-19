@@ -92,7 +92,7 @@ impl Backend for PySpark {
                     }
                     if values.iter().any(|v| v.value.windows()) {
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
                     }
                 }
@@ -117,7 +117,9 @@ impl Backend for PySpark {
                     }
                 }
 
-                Step::Sort { keys, .. } => calls.push(sort_by(keys)),
+                Step::Sort { keys, missing_first, .. } => {
+                    calls.push(sort_by(keys, *missing_first))
+                }
 
                 Step::Take { count, by, last, ties, .. } if *ties => {
                     // Spark already needs a numbered window for a grouped
@@ -137,7 +139,7 @@ impl Backend for PySpark {
                     ));
                     calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                     calls.push(format!("drop({})", text(RANK)));
-                    calls.push(sort_by(sorted));
+                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
                 }
 
                 Step::Take { count, by, last, .. } => {
@@ -149,9 +151,9 @@ impl Backend for PySpark {
                             // from that end, and the caller's order is restored.
                             let keys = last_sort(plan, i)
                                 .expect("take_last is only reached after a sort");
-                            calls.push(sort_by(&flipped(keys)));
+                            calls.push(sort_by(&flipped(keys), !last_missing_first(plan, i)));
                             calls.push(format!("limit({count})"));
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         } else {
                         calls.push(format!("limit({count})"));
                         }
@@ -173,7 +175,7 @@ impl Backend for PySpark {
                         calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                         calls.push(format!("drop({})", text(RANK)));
                         if !keys.is_empty() {
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
                     }
                 }
@@ -483,9 +485,36 @@ fn flipped(keys: &[SortKey]) -> Vec<SortKey> {
         .collect()
 }
 
-fn sort_by(keys: &[SortKey]) -> String {
-    let written: Vec<String> = keys.iter().map(sort_key).collect();
+fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
+    // **PySpark's own default is the one that disagrees**: ascending puts a
+    // missing value first and descending puts it last, so the same column read
+    // both ways moves the absent rows from one end to the other. Both ends are
+    // therefore written out, and the four `asc_nulls_*`/`desc_nulls_*` methods
+    // are what say it.
+    let written: Vec<String> = keys
+        .iter()
+        .map(|k| {
+            format!(
+                "F.col({}).{}_nulls_{}()",
+                text(&k.column.text),
+                if k.descending { "desc" } else { "asc" },
+                if missing_first { "first" } else { "last" }
+            )
+        })
+        .collect();
     format!("orderBy({})", written.join(", "))
+}
+
+/// Where that same `sort` put its missing values, which a restatement carries.
+fn last_missing_first(plan: &Plan, before: usize) -> bool {
+    plan.steps[..before]
+        .iter()
+        .rev()
+        .find_map(|step| match step {
+            Step::Sort { missing_first, .. } => Some(*missing_first),
+            _ => None,
+        })
+        .unwrap_or(false)
 }
 
 fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
@@ -767,6 +796,10 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
     }
     let arg = |i: usize| args.get(i).map(|a| expr_over(a, over.clone())).unwrap_or_default();
     match fname {
+        // Spark has no `string_agg`: the group is collected into an array and
+        // the array is joined. `collect_list` already drops the absent values,
+        // which is this word's rule.
+        "join_rows" => format!("F.array_join(F.collect_list({}), {})", arg(0), arg(1)),
         // Spark skips the absent value in an aggregate, which is what the
         // grammar's `total` means, so none of these needs an argument saying so.
         "total" => format!("F.sum({})", arg(0)),

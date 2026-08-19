@@ -2443,6 +2443,47 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                     }
                     Ok(Type::Text)
                 }
+                // **The same rule as `join_text`, for the same reason**: a
+                // number is refused rather than converted, because how it
+                // should look is the writer's decision and `to_text` is where
+                // it is made.
+                //
+                // **The column has to be a column, which is this word alone.**
+                // Every other aggregate reduces whatever expression it is
+                // handed; pandas reaches a group's answer through one named
+                // column, so a computed value here would be a sentence one
+                // backend could not write. Refusing it is Law 7's answer —
+                // the check belongs to the grammar, not to the binding — and
+                // the repair is one step, which is what the message says.
+                "join_rows" => {
+                    if !matches!(args[0], Expr::Column(_)) {
+                        return Err(Diagnostic::illegal(
+                            "`join_rows` runs a column's values together, so it takes the column itself rather than a value worked out from one. Make it a column first: `then add [t] as ... then summarize [all] as join_rows([t], \", \")`",
+                            args[0].span(),
+                        ));
+                    }
+                    // **The separator is a fixed piece of text, and this is
+                    // where it differs from `split_text`.** There, a pattern
+                    // per row means something: each row is cut on its own. Here
+                    // the rows are being collapsed into one answer, so a
+                    // separator that varies by row has no reading — there is no
+                    // row left to have taken it from.
+                    if !matches!(args[1], Expr::Text { .. }) {
+                        return Err(Diagnostic::illegal(
+                            "`join_rows` puts the same text between every pair, so its separator is written out rather than read from a column: `join_rows([product], \", \")`",
+                            args[1].span(),
+                        ));
+                    }
+                    for (i, kind) in kinds.iter().enumerate() {
+                        if !kind.agrees_with(Type::Text) {
+                            return Err(Diagnostic::illegal(
+                                format!("`join_rows` joins text, and this is {}. Convert it first with `to_text(...)`, which is where you say how it should look", kind.name()),
+                                args[i].span(),
+                            ));
+                        }
+                    }
+                    Ok(Type::Text)
+                }
                 "split_text" => {
                     for i in [0usize, 1] {
                         if !kinds[i].agrees_with(Type::Text) {

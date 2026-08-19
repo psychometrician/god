@@ -212,3 +212,17 @@ sales |> sort(ordered_on) |> add(r3 = rolling(average(revenue), 3), by = region)
 sales |> add(short = look_up(region, "West", "W", "East", "E", otherwise = "other")) |> pick(region, short)
 ---
 sales |> add(coded = look_up(product, "Widget", 1, "Gadget", 2, otherwise = NA)) |> summarize(t = total(coded), by = region)
+---
+sales |>
+  join(products, by = product) |>
+  sort(maker, revenue) |>
+  pick(product, maker, revenue)
+---
+sales |>
+  join(products, by = product) |>
+  sort(maker, revenue, missing = "first") |>
+  pick(product, maker, revenue)
+---
+sales |>
+  sort(product) |>
+  summarize(sold = join_rows(product, ", "), by = region)

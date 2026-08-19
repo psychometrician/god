@@ -87,7 +87,7 @@ impl Backend for Polars {
                     // back, so a sort written earlier has to be said again.
                     if values.iter().any(|v| v.value.windows()) {
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
                     }
                 }
@@ -111,18 +111,8 @@ impl Backend for Polars {
                     }
                 }
 
-                Step::Sort { keys, .. } => {
-                    let columns: Vec<String> =
-                        keys.iter().map(|k| text(&k.column.text)).collect();
-                    let mut args = vec![format!("[{}]", columns.join(", "))];
-                    if keys.iter().any(|k| k.descending) {
-                        let flags: Vec<String> = keys
-                            .iter()
-                            .map(|k| if k.descending { "True" } else { "False" }.to_string())
-                            .collect();
-                        args.push(format!("descending=[{}]", flags.join(", ")));
-                    }
-                    calls.push(format!("sort({})", args.join(", ")));
+                Step::Sort { keys, missing_first, .. } => {
+                    calls.push(sort_by(keys, *missing_first));
                 }
 
                 Step::Take { count, by, last, ties, .. } if *ties => {
@@ -144,7 +134,7 @@ impl Backend for Polars {
                         format!("{ranked}.over({})", list(by))
                     };
                     calls.push(format!("filter({scoped} <= {count})"));
-                    calls.push(sort_by(sorted));
+                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
                 }
 
                 Step::Take { count, by, last, .. } => {
@@ -156,7 +146,7 @@ impl Backend for Polars {
                         // Taking the first rows of each group regroups them, so
                         // the order the sort established has to survive it.
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
                     }
                 }
@@ -426,7 +416,7 @@ fn ordered(names: &[Name]) -> String {
 }
 
 /// `sort` over keys that may carry a direction.
-fn sort_by(keys: &[SortKey]) -> String {
+fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
     let columns: Vec<String> = keys.iter().map(|k| text(&k.column.text)).collect();
     let mut args = vec![format!("[{}]", columns.join(", "))];
     if keys.iter().any(|k| k.descending) {
@@ -436,7 +426,27 @@ fn sort_by(keys: &[SortKey]) -> String {
             .collect();
         args.push(format!("descending=[{}]", flags.join(", ")));
     }
+    // **Always written here, because polars is the backend that disagrees.**
+    // Its `sort` puts a missing value *first* by default, in both directions,
+    // where every other target the grammar writes puts it last. So the default
+    // is the case that needs saying, and leaving it off is the bug this
+    // argument was added to fix.
+    args.push(format!("nulls_last={}", if missing_first { "False" } else { "True" }));
     format!("sort({})", args.join(", "))
+}
+
+/// Where that same `sort` put its missing values, which a restatement has to
+/// carry as well. Restating the keys and dropping the placement would reorder
+/// the rows the sort had deliberately placed.
+fn last_missing_first(plan: &Plan, before: usize) -> bool {
+    plan.steps[..before]
+        .iter()
+        .rev()
+        .find_map(|step| match step {
+            Step::Sort { missing_first, .. } => Some(*missing_first),
+            _ => None,
+        })
+        .unwrap_or(false)
 }
 
 /// The most recent `sort` before a step, whose order a later step has to restate.
@@ -737,6 +747,19 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // `.std()` defaults to `ddof=1`, the sample deviation, which is the
         // definition the grammar's word names.
         "standard_deviation" => format!("{}.std()", arg(0)),
+        // `drop_nulls` is written out rather than relied on: `str.join` already
+        // skips a null, but saying so keeps this word's rule visible beside the
+        // one `join_text` follows, which is the opposite.
+        //
+        // **`expr` and not `literal` here, which is the exact reverse of
+        // `join_text` two arms down, and it was caught by running it.**
+        // `concat_str` reads a bare piece of text in its list as a *column
+        // name*, so a separator there has to be wrapped in `pl.lit`.
+        // `str.join` takes its separator as a plain Python string and rejects
+        // an expression outright — `'Expr' object is not an instance of 'str'`.
+        // Two functions in one library, opposite requirements, and neither
+        // fails until it runs.
+        "join_rows" => format!("{}.drop_nulls().str.join({})", arg(0), expr(&args[1])),
         "first" => format!("{}.first()", arg(0)),
         "last" => format!("{}.last()", arg(0)),
         "unique_count" => format!("{}.n_unique()", arg(0)),

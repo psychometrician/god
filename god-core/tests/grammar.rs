@@ -44,6 +44,13 @@ fn pipeline_using(f: &vocabulary::Function) -> String {
         return "sales then sort [revenue] descending then add [answer] as rolling(average([anything]), 3)"
             .to_string();
     }
+    // The second exception, and it is the same shape: `join_rows`'s separator is
+    // a fixed piece of text rather than a column, because the rows it is
+    // collapsing leave no row for a varying one to have come from. The generic
+    // builder writes a column in every slot, so it cannot spell this either.
+    if f.name == "join_rows" {
+        return "sales then summarize [answer] as join_rows([anything], \", \")".to_string();
+    }
     // A variadic function is given its floor plus one, so the sentence exercises
     // the list rather than the smallest legal case.
     //

@@ -53,7 +53,7 @@ pub(crate) fn step_text(step: &Step) -> String {
             format!("summarize {}{}", assignments(values), grouping(by))
         }
 
-        Step::Sort { keys, .. } => {
+        Step::Sort { keys, missing_first, .. } => {
             let written: Vec<String> = keys
                 .iter()
                 .map(|k| {
@@ -64,7 +64,14 @@ pub(crate) fn step_text(step: &Step) -> String {
                     )
                 })
                 .collect();
-            format!("sort {}", written.join(", "))
+            // Only the clause that was written comes back. `missing last` is
+            // what a bare sort already means, so printing it would put a word
+            // in the reader's sentence that they did not write.
+            format!(
+                "sort {}{}",
+                written.join(", "),
+                if *missing_first { " missing first" } else { "" }
+            )
         }
 
         Step::Take { count, by, last, ties, .. } => {

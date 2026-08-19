@@ -177,3 +177,9 @@ sales then sort [ordered_on] then add [r3] as rolling(average([revenue]), 3) by 
 sales then add [short] as look_up([region], "West", "W", "East", "E", otherwise "other") then pick [region, short]
 ---
 sales then add [coded] as look_up([product], "Widget", 1, "Gadget", 2, otherwise missing) then summarize [t] as total([coded]) by [region]
+---
+sales then join products by [product] then sort [maker], [revenue] then pick [product, maker, revenue]
+---
+sales then join products by [product] then sort [maker], [revenue] missing first then pick [product, maker, revenue]
+---
+sales then sort [product] then summarize [sold] as join_rows([product], ", ") by [region]

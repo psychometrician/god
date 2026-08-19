@@ -966,8 +966,27 @@ impl<'a> Parser<'a> {
                     }
                     self.at += 1;
                 }
+                // `missing first` / `missing last`, once, after every key.
+                //
+                // **It follows the keys rather than attaching to one**, because
+                // one backend cannot write it per key: pandas' `na_position`
+                // takes a single value for the whole call. Reading it as a
+                // trailing clause is also what the sentence sounds like — the
+                // keys say what to order by, and this says what to do with the
+                // rows that cannot answer.
+                let mut missing_first = false;
+                if self.eat_word("missing") {
+                    if self.eat_word("first") {
+                        missing_first = true;
+                    } else if !self.eat_word("last") {
+                        return Err(Diagnostic::illegal(
+                            "`missing` says where the rows with no value go, and takes `first` or `last`: `sort [amount] missing first`. Without it they go last",
+                            self.peek_span(),
+                        ));
+                    }
+                }
                 let span = start.to(keys.last().map(|k| k.column.span).unwrap_or(start));
-                Ok(Step::Sort { keys, span })
+                Ok(Step::Sort { keys, missing_first, span })
             }
 
             // One arm for both ends. They differ in which rows survive and in

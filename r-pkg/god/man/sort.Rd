@@ -4,7 +4,7 @@
 \alias{sort}
 \title{Order the rows}
 \usage{
-sort(.data, ...)
+sort(.data, ..., missing = "last")
 }
 \arguments{
 \item{.data}{A table, or a pipeline.}
@@ -12,6 +12,10 @@ sort(.data, ...)
 \item{...}{Columns to order by. Wrap one in `descending()` to reverse it.
 There is deliberately no `ascending()`: ascending is what happens when you
 do not ask for anything.}
+
+\item{missing}{Where the rows with no value go: `"last"`, the default, or
+`"first"`. It applies to the whole sort rather than to one key, because
+one of the targets can only say it that way.}
 }
 \value{
 A pipeline.

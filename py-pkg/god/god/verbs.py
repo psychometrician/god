@@ -345,11 +345,15 @@ def _one_across(across, verb: str):
     return rule
 
 
-def sort(*keys):
+def sort(*keys, missing="last"):
     """Order the rows.
 
     Wrap a key in ``descending`` to reverse it. There is deliberately no
     ``ascending``: ascending is what happens when you do not ask for anything.
+
+    ``missing`` says where the rows with no value go — ``"last"``, the default,
+    or ``"first"``. It applies to the whole sort rather than to one key, because
+    one of the targets can only say it that way.
 
     Examples
     --------
@@ -365,6 +369,11 @@ def sort(*keys):
     """
     if not keys:
         raise GodExpressionError("`sort` needs at least one column to order by")
+    if missing not in ("last", "first"):
+        raise GodExpressionError(
+            '`sort(missing=)` takes "last" or "first", saying where the rows '
+            "with no value go"
+        )
 
     written = []
     for key in keys:
@@ -373,7 +382,11 @@ def sort(*keys):
         else:
             written.append(f"[{name_of(key, 'sort')}]")
     line = ", ".join(written)
-    return _Verb("sort", lambda: f"sort {line}")
+    # Only the clause that was asked for is written. `missing="last"` is what a
+    # bare sort already means, so spelling it would put a word into the sentence
+    # the caller did not write — and the sentence is what parity compares.
+    clause = " missing first" if missing == "first" else ""
+    return _Verb("sort", lambda: f"sort {line}{clause}")
 
 
 def take(n, *, by=None, ties=False):
@@ -1136,6 +1149,47 @@ def split_text(column, cut_on, piece):
             _written(column, "split_text"),
             _written(cut_on, "split_text"),
             _written(piece, "split_text"),
+        )
+    )
+
+
+def join_rows(column, separator):
+    """A group's values run together into one text: ``join_rows(col.product, ", ")``.
+
+    This is the aggregate beside ``join_text``'s scalar, and the names say which
+    way each one goes: ``join_text`` reaches across the columns of one row, and
+    this reaches down the rows of a group. It belongs in ``summarize``.
+
+    **A missing value is skipped**, which is the opposite of ``join_text``'s
+    rule and is what every other aggregate does — ``total`` does not answer
+    missing because one row is empty.
+
+    The order is the order the rows are in, so a ``sort`` before it is what
+    makes the answer the same every time.
+
+    The separator is written out rather than read from a column: the rows are
+    being collapsed into one answer, so a separator that varied by row would
+    have no row left to come from.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> from god import *
+    >>> sales = pd.DataFrame({"region": ["West", "East", "West"],
+    ...                       "product": ["Widget", "Gadget", "Gizmo"]})
+    >>> collect(sales >> sort(col.product) >> summarize(all=join_rows(col.product, ", "), by=col.region))
+      region             all
+    0   East          Gadget
+    1   West  Gizmo, Widget
+    """
+    if not isinstance(separator, str):
+        raise GodExpressionError(
+            "`join_rows` puts the same text between every pair, so its "
+            'separator is written out: join_rows(col.product, ", ")'
+        )
+    return Expr(
+        "join_rows({}, {})".format(
+            _written(column, "join_rows"), _written(separator, "join_rows")
         )
     )
 

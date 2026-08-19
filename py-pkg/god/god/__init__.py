@@ -43,6 +43,7 @@ from .verbs import (
     first_present,
     following,
     join,
+    join_rows,
     join_text,
     keep,
     kind,
@@ -128,6 +129,7 @@ __all__ = [
     "trim", "characters", "replace_text", "split_text",
     # Text put together, which is `split_text` read the other way. A
     # separator is written as a value where it goes, not as a setting.
+    "join_rows",
     "join_text",
     # Whether a value sits between two ends, counting both.
     "between",

@@ -302,3 +302,96 @@ readings = pd.DataFrame({
 A row with nothing above it and nothing of its own stays missing, because
 there is no earlier value to carry. `fill_missing` after it puts a value
 there if you want one.
+
+## Where the holes go when you sort
+
+Holes arrive on their own once tables meet. `sales` sells a Sprocket and
+`products` has never heard of one, so joining them leaves rows whose `maker`
+nobody recorded:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then summarize [total] as total([revenue]) by [maker]
+    then sort [maker]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(products, by = product) |>
+  summarize(total = total(revenue), by = maker) |>
+  sort(maker)
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(products, by = col.product)
+  >> summarize(total = total(col.revenue), by = col.maker)
+  >> sort(col.maker))
+```
+
+:::
+
+*`sales then join products by [product] then summarize [total] as total([revenue]) by [maker] then sort [maker]`*
+
+Sorting raises a question the sort itself does not answer: the row with no maker
+has nothing to be ordered by, so where does it go? The grammar's answer is
+**last**, and you get it without asking. Reading it aloud is the reason: the
+values you have, then the ones you do not. It stays last when you reverse the
+sort, too. `descending` reverses the values, and a row with no value has nothing
+to reverse.
+
+When you want the holes first, say so. `missing first` goes after the keys,
+because it applies to the whole sort rather than to one of them:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then summarize [total] as total([revenue]) by [maker]
+    then sort [maker] missing first
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(products, by = product) |>
+  summarize(total = total(revenue), by = maker) |>
+  sort(maker, missing = "first")
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(products, by = col.product)
+  >> summarize(total = total(col.revenue), by = col.maker)
+  >> sort(col.maker, missing = "first"))
+```
+
+:::
+
+*`sales then join products by [product] then summarize [total] as total([revenue]) by [maker] then sort [maker] missing first`*
+
+This is a place where the tools underneath genuinely disagree, and the grammar
+picks one answer for all of them. Left to themselves, DuckDB, dplyr and pandas
+put the absent rows last; polars puts them first; Spark puts them first going up
+and last coming down. The same question, five tools, three answers. So each one
+is told explicitly where they go, and the sentence means the same thing wherever
+it runs, which is the whole of what this grammar is for.

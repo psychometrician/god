@@ -136,7 +136,7 @@ impl Backend for Pandas {
                             let (column, how) = aggregation(&v.value, by);
                             assignment(
                                 &v.name.text,
-                                &format!("({}, {})", text(&column), text(how)),
+                                &format!("({}, {})", text(&column), how),
                             )
                         })
                         .collect();
@@ -160,7 +160,7 @@ impl Backend for Pandas {
                     }
                 }
 
-                Step::Sort { keys, .. } => calls.push(sort_by(keys)),
+                Step::Sort { keys, missing_first, .. } => calls.push(sort_by(keys, *missing_first)),
 
                 Step::Take { count, by, last, ties, .. } if *ties => {
                     // **No `with_ties` anywhere in pandas**, so this renders the
@@ -184,7 +184,7 @@ impl Backend for Pandas {
                     calls.push(format!(
                         "loc[lambda d: {grouped}.rank(method=\"min\", ascending={ascend}) <= {count}]"
                     ));
-                    calls.push(sort_by(sorted));
+                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
                 }
 
                 Step::Take { count, by, last, .. } => {
@@ -194,7 +194,7 @@ impl Backend for Pandas {
                     } else {
                         calls.push(format!("groupby({}, as_index=False).{end}({count})", list(by)));
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys));
+                            calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
                     }
                 }
@@ -486,15 +486,23 @@ fn separator_of(stacked: &[String], pieces: &[String]) -> String {
 /// expression, so they come apart here. `row_count` names no column at all, so
 /// it is counted over one of the grouping columns, which is always present and
 /// never missing.
-fn aggregation(value: &Expr, by: &[Name]) -> (String, &'static str) {
+fn aggregation(value: &Expr, by: &[Name]) -> (String, String) {
     let fallback = by.first().map(|n| n.text.clone()).unwrap_or_default();
     let Expr::Call { name: fname, args, .. } = value else {
-        return (fallback, "first");
+        return (fallback, text("first"));
     };
     let column = match args.first() {
         Some(Expr::Column(n)) => n.text.clone(),
         _ => fallback,
     };
+    // **The one aggregate here that is a callable rather than a method name.**
+    // pandas has no `str.join` among the named aggregations, so this is the
+    // lambda a pandas user would write, and `dropna` is what makes it skip the
+    // absent values the way the grammar's word says.
+    if fname == "join_rows" {
+        let separator = args.get(1).map(value_of).unwrap_or_else(|| text(""));
+        return (column, format!("lambda s: {separator}.join(s.dropna())"));
+    }
     let how = match fname.as_str() {
         "total" => "sum",
         "average" => "mean",
@@ -508,7 +516,7 @@ fn aggregation(value: &Expr, by: &[Name]) -> (String, &'static str) {
         "row_count" => "size",
         _ => "first",
     };
-    (column, how)
+    (column, text(how))
 }
 
 /// A `summarize` with no grouping, as the single row it produces.
@@ -603,7 +611,7 @@ fn sorted(names: &[Name]) -> String {
     format!("sort_values({})", list(names))
 }
 
-fn sort_by(keys: &[SortKey]) -> String {
+fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
     let columns: Vec<String> = keys.iter().map(|k| text(&k.column.text)).collect();
     let mut args = vec![format!("[{}]", columns.join(", "))];
     if keys.iter().any(|k| k.descending) {
@@ -613,7 +621,26 @@ fn sort_by(keys: &[SortKey]) -> String {
             .collect();
         args.push(format!("ascending=[{}]", flags.join(", ")));
     }
+    // pandas already puts a missing value last, in both directions, so the
+    // default needs nothing written. `na_position` takes one value for the
+    // whole call rather than one per column — which is why the grammar's clause
+    // is a trailing one.
+    if missing_first {
+        args.push("na_position=\"first\"".to_string());
+    }
     format!("sort_values({})", args.join(", "))
+}
+
+/// Where that same `sort` put its missing values, which a restatement carries.
+fn last_missing_first(plan: &Plan, before: usize) -> bool {
+    plan.steps[..before]
+        .iter()
+        .rev()
+        .find_map(|step| match step {
+            Step::Sort { missing_first, .. } => Some(*missing_first),
+            _ => None,
+        })
+        .unwrap_or(false)
 }
 
 fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
@@ -897,6 +924,9 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             "({})",
             args.iter().map(|a| inner(a, plain)).collect::<Vec<_>>().join(" + ")
         ),
+        // The same idea off a group: the column's absent values dropped, the
+        // rest run together.
+        "join_rows" => format!("{}.join({}.dropna())", inner(&args[1], plain), arg(0)),
         "year" => format!("{}.dt.year", arg(0)),
         "month" => format!("{}.dt.month", arg(0)),
         "day" => format!("{}.dt.day", arg(0)),

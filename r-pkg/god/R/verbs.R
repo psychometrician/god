@@ -335,6 +335,9 @@ summarize <- function(.data, ..., by) {
 #' @param ... Columns to order by. Wrap one in `descending()` to reverse it.
 #'   There is deliberately no `ascending()`: ascending is what happens when you
 #'   do not ask for anything.
+#' @param missing Where the rows with no value go: `"last"`, the default, or
+#'   `"first"`. It applies to the whole sort rather than to one key, because
+#'   one of the targets can only say it that way.
 #' @return A pipeline.
 #' @examples
 #' sales <- data.frame(
@@ -347,12 +350,18 @@ summarize <- function(.data, ..., by) {
 #' #> 2   East     120
 #' #> 3   West     100
 #' @export
-sort <- function(.data, ...) {
+sort <- function(.data, ..., missing = "last") {
   pipeline <- god_head(.data, substitute(.data), "sort")
   keys <- as.list(substitute(list(...)))[-1L]
 
   if (!length(keys)) {
     stop("`sort` needs at least one column to order by", call. = FALSE)
+  }
+  if (!identical(missing, "last") && !identical(missing, "first")) {
+    stop(
+      "`sort(missing = )` takes \"last\" or \"first\", saying where the rows with no value go",
+      call. = FALSE
+    )
   }
 
   written <- vapply(keys, function(key) {
@@ -366,7 +375,15 @@ sort <- function(.data, ...) {
     sprintf("[%s]", god_name(key, "sort"))
   }, character(1))
 
-  god_step(pipeline, sprintf("sort %s", paste(written, collapse = ", ")))
+  # Only the clause that was asked for is written. `missing = "last"` is what a
+  # bare sort already means, so spelling it would put a word into the sentence
+  # the caller did not write — and the sentence is what the parity harness
+  # compares.
+  clause <- if (identical(missing, "first")) " missing first" else ""
+  god_step(
+    pipeline,
+    sprintf("sort %s%s", paste(written, collapse = ", "), clause)
+  )
 }
 
 #' The first n rows

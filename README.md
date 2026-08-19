@@ -106,7 +106,7 @@ same person.
 
 | | |
 |---|---|
-| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-seven functions |
+| The grammar: parse, check, compile | ✅ sixteen verbs, thirty-eight functions |
 | Backends: SQL, Spark SQL, dplyr, pandas, polars, PySpark, and god itself | ✅ |
 | A command line, and running it from R and Python | ✅ |
 | The verbs written natively in both languages | ✅ |
@@ -248,7 +248,8 @@ table you describe, and R's `use_engine` points execution at any DBI
 connection, the way a Python pipeline follows its frames to Spark.
 
 Text is taken apart with `split_text` and put back together with `join_text`,
-which is the same word read the other way.
+which is the same word read the other way. `join_rows` is the one that reaches
+down a group instead of across a row, running every value in it into one line.
 
 **`show_steps` draws what a pipeline does to the table**, step by step, without
 running any of it: the columns each step makes, the ones it takes away, and what

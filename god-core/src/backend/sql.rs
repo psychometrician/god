@@ -135,6 +135,19 @@ pub struct Dialect {
     ///
     /// `{}` is the value being measured.
     rolling_median: &'static str,
+    /// How this engine runs a group's values together into one text, which is
+    /// what `join_rows` is built from.
+    ///
+    /// **The eighth entry, and the two engines share no spelling at all.**
+    /// DuckDB has `string_agg(value, separator)`; Spark has no such function and
+    /// reaches it by collecting the group into an array and joining that,
+    /// `array_join(collect_list(value), separator)`. Neither name exists on the
+    /// other engine, so this is a table entry rather than one form with a
+    /// workaround. Both skip a missing value, which is the rule the grammar
+    /// settled on — measured on live sessions rather than read.
+    ///
+    /// `{value}` is the column and `{separator}` is the text between.
+    group_concat: &'static str,
 }
 
 /// DuckDB, which is what `--as sql` has always meant.
@@ -147,6 +160,7 @@ const DUCKDB: Dialect = Dialect {
     dynamic_pivot: true,
     last_present: "last_value({} IGNORE NULLS)",
     rolling_median: "median({})",
+    group_concat: "string_agg({value}, {separator})",
 };
 
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
@@ -161,6 +175,7 @@ const SPARK: Dialect = Dialect {
     dynamic_pivot: false,
     last_present: "last_value({}, true)",
     rolling_median: "percentile({}, 0.5)",
+    group_concat: "array_join(collect_list({value}), {separator})",
 };
 
 pub struct Sql;
@@ -339,14 +354,21 @@ impl Dialect {
                     }
                     out
                 }
-                Step::Sort { keys, .. } => {
+                Step::Sort { keys, missing_first, .. } => {
+                    // **`NULLS FIRST`/`NULLS LAST` is written every time, even
+                    // where it agrees with the engine.** Both dialects take the
+                    // standard clause, and both need it: DuckDB defaults to
+                    // nulls last in both directions while Spark defaults to
+                    // first ascending and last descending, so a bare `ORDER BY`
+                    // means two different things. Measured on live sessions.
                     let ordered: Vec<String> = keys
                         .iter()
                         .map(|k| {
                             format!(
-                                "{}{}",
+                                "{}{} {}",
                                 self.name(&k.column.text),
-                                if k.descending { " DESC" } else { "" }
+                                if k.descending { " DESC" } else { "" },
+                                if *missing_first { "NULLS FIRST" } else { "NULLS LAST" }
                             )
                         })
                         .collect();
@@ -1440,6 +1462,10 @@ impl Dialect {
             "between" => format!("({} BETWEEN {} AND {})", arg(0), arg(1), arg(2)),
             "lower" => format!("lower({})", arg(0)),
             "upper" => format!("upper({})", arg(0)),
+            "join_rows" => self
+                .group_concat
+                .replace("{value}", &arg(0))
+                .replace("{separator}", &arg(1)),
             other => unreachable!("`{other}` reached the SQL backend without a spelling"),
         }
     }

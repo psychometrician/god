@@ -91,17 +91,26 @@ impl Backend for Dplyr {
                     format!("summarise({})", args.join(", "))
                 }
 
-                Step::Sort { keys, .. } => {
-                    let ordered: Vec<String> = keys
-                        .iter()
-                        .map(|k| {
-                            if k.descending {
-                                format!("desc({})", name(&k.column.text))
-                            } else {
-                                name(&k.column.text)
-                            }
-                        })
-                        .collect();
+                Step::Sort { keys, missing_first, .. } => {
+                    // **dplyr already puts a missing value last, in both
+                    // directions, and there is no argument to say otherwise** —
+                    // `arrange` has no `na_position`. So the default needs
+                    // nothing written and the other way is spelled with a key
+                    // in front: `!is.na(x)` is FALSE where the value is absent,
+                    // and FALSE sorts before TRUE. Measured against dplyr
+                    // rather than read: `arrange(!is.na(x), x)` returns the
+                    // absent rows first, ascending and descending alike.
+                    let mut ordered: Vec<String> = Vec::new();
+                    for k in keys {
+                        if *missing_first {
+                            ordered.push(format!("!is.na({})", name(&k.column.text)));
+                        }
+                        ordered.push(if k.descending {
+                            format!("desc({})", name(&k.column.text))
+                        } else {
+                            name(&k.column.text)
+                        });
+                    }
                     format!("arrange({})", ordered.join(", "))
                 }
 
@@ -636,6 +645,18 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "join_text" => format!(
             "stringr::str_c({})",
             args.iter().map(expr).collect::<Vec<_>>().join(", ")
+        ),
+        // **`paste` here where `join_text` refused it, and the subsetting is
+        // what makes that safe.** Base R stringifies a missing value, so a bare
+        // `paste(x, collapse = ", ")` writes the characters `NA` into the middle
+        // of the answer — measured, not assumed. This aggregate skips absent
+        // values the way every other aggregate does, and `x[!is.na(x)]` is how
+        // R says that. `str_c(collapse = )` would propagate instead, which is
+        // the other word's rule and not this one's.
+        "join_rows" => format!(
+            "paste({0}[!is.na({0})], collapse = {1})",
+            arg(0),
+            arg(1)
         ),
         // lubridate is named explicitly rather than assumed to be attached,
         // because `year` and `month` are not in base R and a reader copying this

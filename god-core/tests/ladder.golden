@@ -739,3 +739,34 @@ sales                                   region:text  product:text  revenue:numbe
                                         -product  -revenue  -cost  -ordered_on  -coded
     one row per group
 ---
+sales then join products by [product] then sort [maker], [revenue] then pick [product, maker, revenue]
+sales                             region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ join products by [product]      region  =product  revenue  cost  ordered_on  +maker:text
+│   └ products                    =product  maker:text
+│     matched on product · maker crosses over
+│   every row of this table is kept
+│   rows may multiply — one for each time products repeats a key
+├ sort [maker], [revenue]         region  product  revenue  cost  ordered_on  maker
+└ pick [product, maker, revenue]  product  maker  revenue
+                                  -region  -cost  -ordered_on
+---
+sales then join products by [product] then sort [maker], [revenue] missing first then pick [product, maker, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ join products by [product]            region  =product  revenue  cost  ordered_on  +maker:text
+│   └ products                          =product  maker:text
+│     matched on product · maker crosses over
+│   every row of this table is kept
+│   rows may multiply — one for each time products repeats a key
+├ sort [maker], [revenue] missing first
+│                                       region  product  revenue  cost  ordered_on  maker
+└ pick [product, maker, revenue]        product  maker  revenue
+                                        -region  -cost  -ordered_on
+---
+sales then sort [product] then summarize [sold] as join_rows([product], ", ") by [region]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [product]                        region  product  revenue  cost  ordered_on
+└ summarize [sold] as join_rows([product], ", ") by [region]
+                                        region  +sold:text
+                                        -product  -revenue  -cost  -ordered_on
+    one row per group
+---
