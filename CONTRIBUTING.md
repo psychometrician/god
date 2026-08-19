@@ -210,6 +210,7 @@ python3 parity/printed.py                 # the printed code executed, tables co
 Rscript book/check_grammar.R              # every pipeline and transcript the book shows, run
 Rscript book/check_prose.R                # the book's voice, the half a machine can hold
 Rscript book/check_vocabulary.R           # every word demonstrated by a chunk, and named in the README
+Rscript book/check_counts.R               # every prose count of a thing the engine can count
 Rscript book/check_refusals.R             # every refusal chunk actually refuses (the R half)
 python3 book/check_refusals.py            # the same promise, kept by the Python half
 Rscript book/check_tabs.R                 # every tabset holds both languages

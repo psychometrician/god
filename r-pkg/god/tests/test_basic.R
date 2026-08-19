@@ -928,6 +928,13 @@ book_guard("the book's voice is consistent",
 # word without any page mentioning it.
 book_guard("every word the grammar has, the book demonstrates",
            "book/check_vocabulary.R", "check_vocabulary")
+# **A count is a copy of the vocabulary written where nothing reads it.** The
+# check above proves every word is demonstrated; it cannot see a sentence that
+# says how many there are. "The ten aggregations" sat beside an eleven-word
+# vocabulary in two files, and "four conversions that say what they give" outlived
+# `to_whole` by weeks, with every guard green throughout.
+book_guard("every count the engine can check, the book gets right",
+           "book/check_counts.R", "check_counts")
 # **`error: true` tolerates an error; it never asserts one.** So a chunk the book
 # presents as a refusal can quietly stop refusing, render a table, and the build
 # still exits 0. A pipeline is lazy, so this one has to force each chunk or it
