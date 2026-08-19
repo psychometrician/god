@@ -27,6 +27,23 @@ pub enum Type {
     Text,
     Truth,
     Date,
+    /// A date that carries a time of day, which a plain date does not.
+    ///
+    /// **The two are one kind to a reader and two to the checker, and that
+    /// split is the whole point of this variant.** `kind` reports both as
+    /// `"date"`, so `pick where kind is "date"` picks a column of either —
+    /// which is what somebody asking for the date columns means. Every
+    /// comparison, sort and join treats them as one, through `agrees_with`.
+    ///
+    /// One word tells them apart, and it is the word that proves they are not
+    /// the same thing: `hour`. A year, a month, a day and a weekday are parts
+    /// of the calendar and every date has them; an hour is not, and a plain
+    /// date has none. Before this variant existed the bindings collapsed both
+    /// into `Date`, so `hour` of a plain date was accepted and answered nought
+    /// on DuckDB while printed polars refused the operation outright — one
+    /// sentence, two answers, which is the disagreement this grammar exists to
+    /// end.
+    Timestamp,
     /// A type the grammar has no opinion about, which passes every test rather
     /// than failing them. Refusing what it cannot classify would refuse working
     /// pipelines over columns the grammar simply has not met.
@@ -42,7 +59,10 @@ impl Type {
             Type::Number => "number",
             Type::Text => "text",
             Type::Truth => "truth",
-            Type::Date => "date",
+            // **Both answer to `"date"`, deliberately.** This is the spelling
+            // `kind is "..."` compares against, and a person asking which
+            // columns hold dates means both.
+            Type::Date | Type::Timestamp => "date",
             Type::Unknown => "",
         }
     }
@@ -59,12 +79,24 @@ impl Type {
             Type::Text => "text",
             Type::Truth => "yes or no",
             Type::Date => "a date",
+            Type::Timestamp => "a date and a time",
             Type::Unknown => "a value",
         }
     }
 
     fn agrees_with(self, other: Type) -> bool {
-        self == Type::Unknown || other == Type::Unknown || self == other
+        if self == Type::Unknown || other == Type::Unknown || self == other {
+            return true;
+        }
+        // **A date and a date-with-a-time agree everywhere except `hour`.**
+        // They compare, they sort, they join, and a reader thinks of them as
+        // one kind. Splitting them here would refuse working pipelines to buy
+        // nothing: the one place the difference is real is checked on its own,
+        // below, where `hour` asks for a time and will not take a date.
+        matches!(
+            (self, other),
+            (Type::Date, Type::Timestamp) | (Type::Timestamp, Type::Date)
+        )
     }
 }
 
@@ -2453,37 +2485,41 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                     Ok(Type::Truth)
                 }
 
-                // **A date part takes a date.** Asking a number for its year is
-                // a mistake worth naming, and `to_date(...)` is the answer when
-                // the date arrived as text.
-                "year" | "month" | "day" | "weekday" | "hour" => {
+                // **A calendar part takes a date, and either kind of date has
+                // one.** Asking a number for its year is a mistake worth
+                // naming, and `to_date(...)` is the answer when the date
+                // arrived as text.
+                "year" | "month" | "day" | "weekday" => {
                     if !kinds[0].agrees_with(Type::Date) {
                         return Err(Diagnostic::illegal(
                             format!("`{name}` reads part of a date, and this is {}. Convert it first with `to_date(...)`", kinds[0].name()),
                             args[0].span(),
                         ));
                     }
-                    // **`hour(to_date(...))` is refused, and it is the one
-                    // composition here whose answer is knowable in advance.**
-                    // `to_date` makes a *date*, and a date has no time in it,
-                    // so the hour of one is midnight — every row, always. The
-                    // engines do not even agree on how to say that: DuckDB and
-                    // Spark answer 0, and polars refuses the operation outright.
-                    // Handing back a zero that quietly assumed midnight is the
-                    // thing this grammar refuses to do, so it says so instead.
-                    //
-                    // The other four parts are untouched: a year, a month, a
-                    // day and a weekday all survive the conversion, and are the
-                    // reason `to_date` exists.
-                    if name == "hour" {
-                        if let Expr::Call { name: inner, .. } = &args[0] {
-                            if inner == "to_date" {
-                                return Err(Diagnostic::illegal(
-                                    "`to_date` makes a date, and a date has no time in it, so this hour would be nought on every row. `hour` wants a column that arrived carrying a time",
-                                    args[0].span(),
-                                ));
-                            }
-                        }
+                    Ok(Type::Number)
+                }
+
+                // **`hour` reads the clock, and a plain date has no clock.**
+                // This is the one place the two date kinds differ, and it is
+                // why they are two kinds at all.
+                //
+                // Answering nought would be handing back a number that quietly
+                // assumed midnight, and the engines do not even agree on that
+                // much: DuckDB and Spark answer 0 where polars refuses the
+                // operation outright. Refusing is the only answer that means
+                // one thing everywhere.
+                //
+                // **`to_date` is named in the message on purpose**, because it
+                // is the repair a reader reaches for and the one that cannot
+                // work: it makes a date, which is what they already have.
+                "hour" => {
+                    if !matches!(kinds[0], Type::Timestamp | Type::Unknown) {
+                        let why = if kinds[0].agrees_with(Type::Date) {
+                            "`hour` reads the time of day a column carries, and a plain date carries none, so this would be nought on every row. It wants a column that arrived carrying one, which `to_date` does not make".to_string()
+                        } else {
+                            format!("`hour` reads the time of day a column carries, and this is {}. It wants a column that arrived as a date and a time", kinds[0].name())
+                        };
+                        return Err(Diagnostic::illegal(why, args[0].span()));
                     }
                     Ok(Type::Number)
                 }

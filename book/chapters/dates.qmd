@@ -149,12 +149,11 @@ stamps |>
 
 *`stamps then add [h] as hour([at]) then pick [at, h]`*
 
-## Why `hour` will not read a converted date
+## Why `hour` will not read a plain date
 
-`to_date` is the conversion the four calendar words rely on, and it is exactly
-the wrong thing to put under `hour`. It makes a **date**, and a date has no time
-in it, so the answer would be midnight on every row. The grammar refuses rather
-than hand back a column of noughts:
+A column either carries a time or it does not, and the grammar knows which. Ask
+`hour` of one that does not and it refuses, rather than hand back a column of
+noughts that quietly assumed midnight:
 
 ::: {.panel-tabset}
 
@@ -182,10 +181,42 @@ as though it should work, the answer would have been a number, and nothing about
 a column of zeros would have looked wrong on the page. Handing one back is what
 the grammar will not do.
 
+`to_date` is no way around it, which is worth seeing once because it is the
+repair everybody reaches for. It makes a **date**, which is the thing that has
+no time in it, so it moves the sentence no closer:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(diary |> add(h = hour(to_date(on_))))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(diary >> add(h = hour(to_date(col.on_))))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Splitting it over two steps does not help either, and the grammar says so in the
+same words: what it reads is the column, not the spelling that made it.
+
 A time has to reach the table as a time, then. Where the values are text, the
 conversion belongs to the language you are calling from, above the pipeline: R
 has `as.POSIXct` and Python has `pd.to_datetime`, and that is how `at` above
 became a timestamp before any of these examples ran.
+
+The four calendar words are untouched by all of this. A year, a month, a day and
+a weekday are parts of the calendar, and every date has them whether or not a
+time came with it.
 
 ## Text is not yet a date
 

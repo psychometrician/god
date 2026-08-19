@@ -1436,9 +1436,11 @@ def hour(column):
 
     **It needs a column that arrived carrying a time.** The other four date
     words read parts of the calendar, which every date has; an hour is not part
-    of the calendar, so the column has to have brought one with it. Converting
-    text with ``to_date`` makes a *date*, and ``hour`` of one is refused rather
-    than answered with a column of noughts.
+    of the calendar, so the column has to have brought one with it.
+
+    A plain date column is refused rather than answered with a column of
+    noughts, and ``to_date`` is no way around it: it makes a *date*, which is
+    the thing that has no time in it.
 
     Examples
     --------

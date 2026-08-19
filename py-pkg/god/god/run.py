@@ -582,7 +582,11 @@ def _kinds(frame) -> list[str]:
 def _god_type_named(kind: str) -> str:
     """A type the host names in a word, in the grammar's words."""
     kind = kind.lower()
-    if kind.startswith("date") or kind.startswith("timestamp"):
+    # A timestamp carries a time and a date does not; `hour` is the one word
+    # that depends on the difference. Both still answer to `kind is "date"`.
+    if kind.startswith("timestamp") or kind.startswith("datetime"):
+        return "timestamp"
+    if kind.startswith("date"):
         return "date"
     if kind.startswith("bool"):
         return "truth"
@@ -597,7 +601,12 @@ def _god_type_named(kind: str) -> str:
 
 def _god_type(column) -> str:
     kind = str(getattr(column, "dtype", "")).lower()
-    if "datetime" in kind or "date" in kind or "timestamp" in kind:
+    # pandas spells a timestamp column `datetime64[...]`; a column of plain
+    # `datetime.date` objects arrives as `object` and is not caught here, the
+    # same as before.
+    if "datetime" in kind or "timestamp" in kind:
+        return "timestamp"
+    if "date" in kind:
         return "date"
     if "bool" in kind:
         return "truth"

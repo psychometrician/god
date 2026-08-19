@@ -465,22 +465,71 @@ fn a_refusal_puts_a_caret_under_the_word_that_caused_it() {
 
 // -- an hour that could only ever be midnight ------------------------------
 
-/// **`hour` of a converted date is refused, and it is the only date part that
-/// is.** A year, a month, a day and a weekday all survive `to_date`, which is
-/// what the conversion is for. An hour does not: `to_date` makes a date, a date
-/// has no time in it, and the answer would be nought on every row.
+/// **`hour` of a plain date is refused, and it is the only date word that
+/// tells the two date kinds apart.** A year, a month, a day and a weekday are
+/// parts of the calendar and every date has them. An hour is not, and a plain
+/// date carries none, so the answer would be nought on every row.
 ///
 /// The engines cannot even agree on how to say that — DuckDB and Spark answer
 /// 0, and polars refuses the operation outright — so a sentence that reached
 /// them would mean two things. Refusing is the only answer that means one.
+const NO_CLOCK: &str = "`hour` reads the time of day a column carries, and a \
+     plain date carries none, so this would be nought on every row. It wants a \
+     column that arrived carrying one, which `to_date` does not make";
+
 #[test]
 fn the_hour_of_a_converted_date_is_refused() {
+    assert_refused("sales then add [h] as hour(to_date([ordered_on]))", NO_CLOCK);
+}
+
+/// **The same sentence spread over two steps, which is the shape a type
+/// system catches and a syntactic check cannot.** The first version of this
+/// refusal looked for `to_date` inside `hour`'s brackets and missed this
+/// entirely; the column is what carries the answer, not the spelling.
+#[test]
+fn the_hour_of_a_date_made_in_an_earlier_step_is_refused() {
     assert_refused(
-        "sales then add [h] as hour(to_date([ordered_on]))",
-        "`to_date` makes a date, and a date has no time in it, so this hour \
-         would be nought on every row. `hour` wants a column that arrived \
-         carrying a time",
+        "sales then add [d] as to_date([ordered_on]) then add [h] as hour([d])",
+        NO_CLOCK,
     );
+}
+
+/// **And a plain date that never met `to_date` at all**, which is the case
+/// that proves this is about the column rather than about the conversion: a
+/// `Date` column handed straight in by the host.
+#[test]
+fn the_hour_of_a_date_column_from_the_host_is_refused() {
+    let schema = Schema::new([("d", Type::Date)]);
+    match compile("t then add [h] as hour([d])", &schema, "sql") {
+        Ok(_) => panic!("an hour of a plain date column was accepted"),
+        Err(d) => assert_eq!(d.message, NO_CLOCK),
+    }
+}
+
+/// The half that must keep working: a column that *does* carry a time.
+#[test]
+fn the_hour_of_a_time_is_read() {
+    let schema = Schema::new([("at", Type::Timestamp)]);
+    assert!(
+        compile("t then add [h] as hour([at])", &schema, "sql").is_ok(),
+        "an hour of a column carrying a time should be read"
+    );
+}
+
+/// **`kind` reports both date kinds as `"date"`, and that is load-bearing.**
+/// A sentence selecting the date columns means both, so splitting the type
+/// must not split the word a reader writes.
+#[test]
+fn both_date_kinds_answer_to_the_word_date() {
+    let schema = Schema::new([("d", Type::Date), ("at", Type::Timestamp), ("n", Type::Text)]);
+    let kept: Vec<String> = compile("t then pick where kind is \"date\"", &schema, "sql")
+        .expect("selecting by kind should work")
+        .schema
+        .columns
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect();
+    assert_eq!(kept, vec!["d".to_string(), "at".to_string()]);
 }
 
 /// The other four go through the same conversion untouched, which is the half

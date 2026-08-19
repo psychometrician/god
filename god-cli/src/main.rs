@@ -44,8 +44,10 @@ god — a grammar of data
 
 Options
     --columns <list>   the table's columns, as name:type separated by commas.
-                       Types: text, number, truth, date. Anything else is read
-                       as a type the grammar has no opinion about.
+                       Types: text, number, truth, date, timestamp. Anything
+                       else is read as a type the grammar has no opinion about.
+                       A timestamp is a date carrying a time. The two differ for
+                       `hour` alone, and `kind` reports both as a date.
     --as <backend>     what to write out. Default: sql
     --draw <way>       draw what the pipeline does to the table, step by step,
                        and run nothing. `text` for a terminal, `svg` for a page.
@@ -371,7 +373,11 @@ fn read_schema(list: &str) -> Result<Schema, Failure> {
             "text" | "string" | "character" | "varchar" => Type::Text,
             "number" | "numeric" | "double" | "integer" | "int" | "float" => Type::Number,
             "truth" | "boolean" | "bool" | "logical" => Type::Truth,
-            "date" | "timestamp" | "datetime" => Type::Date,
+            "date" => Type::Date,
+            // **Told apart from a plain date for one word's sake, `hour`.**
+            // Everything else treats the two as one kind, and `kind` reports
+            // both as "date".
+            "timestamp" | "datetime" | "posixct" => Type::Timestamp,
             _ => Type::Unknown,
         };
         columns.push((name.to_string(), kind));

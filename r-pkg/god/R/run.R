@@ -460,7 +460,13 @@ columns_of <- function(table) {
 }
 
 god_type <- function(column) {
-  if (inherits(column, c("Date", "POSIXct", "POSIXt"))) return("date")
+  # **A POSIXct carries a time and a Date does not, and the grammar now knows
+  # the difference.** One word depends on it, `hour`, and telling them apart
+  # here is what lets the checker refuse an hour a plain date cannot answer.
+  # Everything else treats the two as one kind, and `kind` reports both as
+  # "date", so a sentence selecting date columns is unaffected.
+  if (inherits(column, c("POSIXct", "POSIXt"))) return("timestamp")
+  if (inherits(column, "Date")) return("date")
   if (is.logical(column)) return("truth")
   if (is.numeric(column)) return("number")
   if (is.character(column)) return("text")

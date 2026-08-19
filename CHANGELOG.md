@@ -35,16 +35,17 @@ instead.
 
 ### `hour` reads a time, and says so when there is none
 
-`hour(to_date(x))` used to answer. What it answered depended on where the
-pipeline ran: **0 when god ran it, and 14 when the same sentence was printed as
-pandas or polars and run there.** `to_date` makes a date, and a date has no time
-in it, so the four calendar words survive the conversion and `hour` cannot.
+`hour` used to answer on a column that carries no time. What it answered
+depended on where the pipeline ran: **0 when god ran it, and an error when the
+same sentence was printed as polars and run there.**
 
-It is now refused, with the repair in the message:
+A plain date has no hour in it, so it is now refused, wherever the date came
+from — a column your table already had, or one `to_date` made:
 
 ```
-illegal: `to_date` makes a date, and a date has no time in it, so this hour
-would be nought on every row. `hour` wants a column that arrived carrying a time
+illegal: `hour` reads the time of day a column carries, and a plain date
+carries none, so this would be nought on every row. It wants a column that
+arrived carrying one, which `to_date` does not make
 ```
 
 `hour` still reads any column that arrived carrying a time, which is how it was
@@ -60,7 +61,11 @@ stamps >> add(h = hour(col.at))
 
 Where the values are text, the conversion belongs above the pipeline —
 `as.POSIXct` in R, `pd.to_datetime` in Python. **`year`, `month`, `day` and
-`weekday` are untouched** and still read a `to_date` conversion.
+`weekday` are untouched** and still read a date of either sort.
+
+**Nothing else changes.** A date and a date-carrying-a-time compare, sort and
+join against each other exactly as before, and `pick where kind is "date"` picks
+columns of both, as it always did.
 
 ### Printed pandas and polars agree with the engine about `to_date`
 
