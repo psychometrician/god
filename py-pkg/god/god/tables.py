@@ -94,8 +94,8 @@ def god_table(name, text=()):
     if not _NAME.match(name):
         raise GodError(
             f"god: {name!r} is not a table name. A name is letters, digits, "
-            '`_` and `-`, as in god_table("sales") — not a path and not a '
-            "file name."
+            '`_` and `-`, as in god_table("sales"). It is not a path and not '
+            "a file name."
         )
     local = _walk_up_data(Path.cwd(), name)
     source = str(local) if local else GOD_BOOK_DATA_URL + name + ".csv"

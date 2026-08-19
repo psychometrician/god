@@ -5,6 +5,17 @@ a person using god can see.
 
 ## Unreleased
 
+### The package card carries the current sticker again
+
+The hex on R-universe was the one drawn before the nose became `then`, because
+`man/figures/logo.png` is a separate rendering from the book's and had not been
+redrawn since August 8. It is rendered from the same SVG the book uses.
+
+The refusal for a bad `god_table` name reads `It is not a path and not a file
+name.` where it used to join those with a dash. The wording is the same; the
+dash was outside ASCII, which `R CMD check` refuses inside R code, and it had
+turned seven of the package farm's nine targets amber.
+
 ### `look_up`, the lookup table
 
 Written values become written values, pairs side by side, and the `otherwise`

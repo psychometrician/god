@@ -1070,6 +1070,41 @@ local({
   }
 })
 
+cat("\nthe package is portable, which R CMD check reads narrowly\n")
+
+# **`R CMD check` refuses a non-ASCII character in R code and lets one pass in a
+# comment**, and that distinction is the whole of this test. The sources are full
+# of em dashes, all of them in comments, and none is a problem. One in a *string*
+# is, and on 2026-08-19 there was one: a `god_table` refusal added two days
+# earlier said "not a path and not a file name" with an em dash in it, and the
+# package farm turned seven of its nine targets amber on the public package page.
+#
+# **The farm is the only thing that was checking, and it checks after the push.**
+# By the time the card says WARNING the code is already published, so this asks
+# the question here instead. It is also cheaper than it looks: the answer is a
+# grep once the comments are gone.
+#
+# Comments are stripped by shape rather than parsed, which is approximate in one
+# direction only — a `#` inside a string would hide the rest of that line from
+# this check. That is the safe direction: it can miss, and it cannot cry wolf,
+# and `R CMD check` on the farm remains the authority behind it.
+local({
+  offenders <- character()
+  for (f in list.files(file.path(pkg_src, "R"), pattern = "[.]R$", full.names = TRUE)) {
+    if (!file.exists(f)) next
+    src <- readLines(f, warn = FALSE)
+    bare <- sub("^[[:space:]]*#.*$", "", src)
+    bare <- sub("[[:space:]]#[^\"']*$", "", bare)
+    hit <- which(grepl("[^\001-\177]", bare))
+    for (h in hit) {
+      offenders <- c(offenders, sprintf("%s:%d %s", basename(f), h,
+                                        substr(trimws(bare[h]), 1, 50)))
+    }
+  }
+  check("no R source has a non-ASCII character outside a comment",
+        offenders, character())
+})
+
 cat("\nrunning somewhere other than this machine\n")
 
 # **A warehouse table is not a local variable and never will be.** Given a

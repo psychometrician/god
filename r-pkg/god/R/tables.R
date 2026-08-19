@@ -66,8 +66,8 @@ god_table <- function(name, text = character()) {
   # or a `..` would reach outside `data/` entirely.
   if (!grepl("^[A-Za-z0-9_-]+$", name)) {
     stop("god: `", name, "` is not a table name. A name is letters, digits, ",
-         "`_` and `-`, as in `god_table(\"sales\")` — not a path and not a ",
-         "file name.", call. = FALSE)
+         "`_` and `-`, as in `god_table(\"sales\")`. It is not a path and not ",
+         "a file name.", call. = FALSE)
   }
   classes <- rep("character", length(text))
   names(classes) <- text
