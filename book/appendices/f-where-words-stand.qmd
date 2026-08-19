@@ -4,13 +4,15 @@ title: "Where each word can stand"
 
 {{< include ../_setup.qmd >}}
 
-The vocabulary says what the words are; this page says where they may stand.
-Every seat below is a place in a step that takes a computed value, and the
-grid is asked from the engine while this page is built, from the same table
-its checker answers to, so what you are reading cannot drift from what the
-engine does. The engine's own tests run every cell of it through the parser
-and checker besides, so a cell that moved without its rule moving would fail
-the build before it could mislead this page.
+[Every word in the grammar](b-every-word.qmd) says what the words are. This
+page says where they may stand.
+
+Every seat below is a place in a step that takes a computed value. The grid
+is asked from the engine while this page is built, from the same table its
+checker answers to. So what you read here cannot drift from what the engine
+does. The engine's own tests also run every cell through the parser and the
+checker. A cell that moved without its rule moving would fail those tests
+before it could mislead this page.
 
 ```{r}
 #| echo: false
@@ -34,19 +36,28 @@ for (k in c("scalar", "aggregate", "window")) {
 knitr::kable(grid, row.names = FALSE)
 ```
 
-Read a row and you are reading what one seat is for. A **condition** asks one
-row a question, so a scalar can decide it and a group's answer cannot: the
-group's answer does not exist until the rows are chosen. A **value** in `add`
-is the one seat with a row for every kind of answer, which is why a group's
-total can land on every row of its group there, and a running total can walk
-the rows once a `sort` has said in what order. A **group's answer** in
-`summarize` must span its group, so its head is an aggregate and scalars ride
-inside it. An **ordering position** names a column and never an expression,
-in `sort` and inside `rank` alike, because the computed key is one `add`
-away and a second spelling of that `add` is what the refusal declines to be.
-A **filler** and a **cell** each hold one value, and where a group's answer
-or a look along the rows would help, the road is the same as everywhere
-else: make it a column first.
+Read a row and you are reading what one seat is for.
+
+A **condition** asks one row a question. A scalar can decide it and a group's
+answer cannot, because the group's answer does not exist until the rows are
+chosen.
+
+A **value** in `add` is the one seat that accepts every kind of answer. A group's
+total is repeated on every row of its group there, and a running total can
+walk the rows once a `sort` has said in what order.
+
+A **group's answer** in `summarize` must span its group. Its head is
+therefore an aggregate, and a scalar stands inside an aggregate's argument.
+
+An **ordering position** names a column and never an expression, in `sort`
+and inside `rank` alike. The computed key is one `add` away, and the grammar
+refuses to offer a second spelling of that `add`.
+
+A **filler** in `fill_missing` holds one value, and only a scalar may stand
+there. A **cell** in `widen` takes a scalar or an aggregate, and the
+aggregate is the answer when two rows want the same cell. Neither seat takes
+a look along the rows, and for anything else that is refused, make it a
+column first.
 
 Some cells carry one more sentence, and the engine says those too:
 
@@ -61,7 +72,7 @@ knitr::kable(
 ```
 
 What the grid never says is *useful*. A sentence these seats accept is
-answered however strange it is, because well-formed and worthwhile are
-different judgments belonging to different people: the engine settles the
+answered however strange it is. Well-formed and worthwhile are different
+judgments, and they belong to different people: the engine settles the
 first, always, and the second is yours. That split is a law of its own, and
 [the laws](../chapters/design-laws.qmd) show it working beside the rest.
