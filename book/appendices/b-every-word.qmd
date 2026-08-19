@@ -168,8 +168,8 @@ help(god.add_combinations)
 The two show the same example in the two spellings, down to the same table and
 the same numbers, which is this book's claim stated one word at a time. They are
 run rather than written: the R suite executes the example on every help page and
-the Python suite executes every one in every docstring, so a page that falls
-behind the engine fails a build instead of misleading the reader who went
+the Python suite executes every one in every docstring, so a page that no longer
+matches the engine fails a build instead of misleading the reader who went
 looking.
 
 One difference between those pages and these can surprise you. This book tells

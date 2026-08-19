@@ -241,9 +241,25 @@ check_prose <- function(dirs = "book") {
       if (grepl(numbered, prose)) bad_number <- c(bad_number, where(i))
 
       # --- Idiom ------------------------------------------------------------
-      low <- tolower(line)
+      # **Matched across the line break, not within it.** Book prose is
+      # hard-wrapped, so a phrase can start on one line and finish on the next,
+      # and a check that reads one line at a time cannot see it. This one
+      # missed `falls behind` in the vocabulary appendix for exactly that
+      # reason, while catching every instance that happened to sit on one line.
+      #
+      # The window is this line plus the next, whitespace collapsed, which is
+      # enough for any phrase in the list: the longest is five words and no
+      # wrap splits a five-word phrase across three lines. The report still
+      # names the line the phrase *starts* on.
+      window <- if (i < length(lines)) paste(line, lines[i + 1L]) else line
+      low <- tolower(gsub("[[:space:]]+", " ", window))
       for (p in idioms) {
-        if (grepl(p, low, fixed = TRUE))
+        # Only report a hit that begins on this line, or a wrapped phrase is
+        # reported twice, once from each end of the break.
+        if (grepl(p, low, fixed = TRUE) &&
+            !grepl(p, tolower(gsub("[[:space:]]+", " ",
+                                   if (i < length(lines)) lines[i + 1L] else "")),
+                   fixed = TRUE))
           bad_idiom <- c(bad_idiom, sprintf("  %s:%d  \"%s\"", short, i, p))
       }
 
