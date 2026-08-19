@@ -907,7 +907,20 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         "round_below" => format!("np.floor({}).astype(\"Int64\")", arg(0)),
         "round_above" => format!("np.ceil({}).astype(\"Int64\")", arg(0)),
         "to_text" => format!("{}.astype(\"string\")", arg(0)),
-        "to_date" => format!("pd.to_datetime({})", arg(0)),
+        // **`format="mixed"` and `.dt.normalize()` are both corrections, and both
+        // were found by running this against the engine rather than reading it.**
+        //
+        // `normalize` is the one that matters: a bare `pd.to_datetime` keeps the
+        // time, and every other target — DuckDB, Spark, dplyr, PySpark — throws
+        // it away, because `to_date` converts into a *date* and a date has no
+        // hour in it. Keeping it made one sentence answer 14 on the printed
+        // pandas and 0 on the engine that ran it.
+        //
+        // `format="mixed"` is the second: a column holding both
+        // `2026-01-02 14:30:00` and `2026-03-15` is one DuckDB parses without
+        // complaint and a bare `pd.to_datetime` *raises* on, so the printed code
+        // did not merely disagree, it stopped.
+        "to_date" => format!("pd.to_datetime({}, format=\"mixed\").dt.normalize()", arg(0)),
         "trim" => format!("{}.str.strip()", arg(0)),
         "characters" => format!("{}.str.len()", arg(0)),
         // `regex=False` because the grammar's word looks for text a person

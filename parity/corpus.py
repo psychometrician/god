@@ -173,7 +173,7 @@ sales >> summarize(kinds = unique_count(col.product), by = col.region)
 ---
 sales >> add(as_text = to_text(col.revenue)) >> add(back = to_number(col.as_text)) >> summarize(t = total(col.back))
 ---
-sales >> add(d = to_date(col.ordered_on)) >> add(h = hour(col.d)) >> pick(col.ordered_on, col.h) >> sort(col.ordered_on)
+sales >> add(d = to_date(col.ordered_on)) >> add(back = to_text(col.d)) >> pick(col.ordered_on, col.back) >> sort(col.ordered_on)
 ---
 sales >> add(share = col.revenue / total(col.revenue)) >> sort(descending(col.share), col.ordered_on) >> pick(col.ordered_on, col.product, col.share) >> take(3)
 ---

@@ -522,13 +522,13 @@ sales                                  region:text  product:text  revenue:number
                                        -region  -product  -revenue  -cost  -ordered_on  -as_text  -back
     one row, for the whole table
 ---
-sales then add [d] as to_date([ordered_on]) then add [h] as hour([d]) then pick [ordered_on, h] then sort [ordered_on]
+sales then add [d] as to_date([ordered_on]) then add [back] as to_text([d]) then pick [ordered_on, back] then sort [ordered_on]
 sales                               region:text  product:text  revenue:number  cost:number  ordered_on:date
 ├ add [d] as to_date([ordered_on])  region  product  revenue  cost  ordered_on  +d:date
-├ add [h] as hour([d])              region  product  revenue  cost  ordered_on  d  +h:number
-├ pick [ordered_on, h]              ordered_on  h
+├ add [back] as to_text([d])        region  product  revenue  cost  ordered_on  d  +back:text
+├ pick [ordered_on, back]           ordered_on  back
 │                                   -region  -product  -revenue  -cost  -d
-└ sort [ordered_on]                 ordered_on  h
+└ sort [ordered_on]                 ordered_on  back
 ---
 sales then add [share] as [revenue] / total([revenue]) then sort [share] descending, [ordered_on] then pick [ordered_on, product, share] then take 3
 sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date

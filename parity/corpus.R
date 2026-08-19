@@ -166,7 +166,7 @@ sales |> summarize(kinds = unique_count(product), by = region)
 ---
 sales |> add(as_text = to_text(revenue)) |> add(back = to_number(as_text)) |> summarize(t = total(back))
 ---
-sales |> add(d = to_date(ordered_on)) |> add(h = hour(d)) |> pick(ordered_on, h) |> sort(ordered_on)
+sales |> add(d = to_date(ordered_on)) |> add(back = to_text(d)) |> pick(ordered_on, back) |> sort(ordered_on)
 ---
 sales |> add(share = revenue / total(revenue)) |> sort(descending(share), ordered_on) |> pick(ordered_on, product, share) |> take(3)
 ---

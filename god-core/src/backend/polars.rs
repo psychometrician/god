@@ -757,12 +757,21 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "round_below" => format!("{}.floor().cast(pl.Int64)", arg(0)),
         "round_above" => format!("{}.ceil().cast(pl.Int64)", arg(0)),
         "to_text" => format!("{}.cast(pl.String)", arg(0)),
-        // Not a cast: polars deprecated the string one, and `pl.Date` was the
-        // wrong target anyway. DuckDB reads `to_date` as a timestamp, so
-        // `hour` has an answer there, and a Date here threw the time away in
-        // silence. Found by running the printed code, which is the only way
-        // this class is ever found.
-        "to_date" => format!("{}.str.to_datetime(time_unit=\"us\")", arg(0)),
+        // **Parsed as a timestamp and then taken down to a date, and it needs
+        // both halves.** `str.to_date` alone cannot parse `2026-01-02 14:30:00`
+        // at all — it fails on the whole column — which is why this stopped
+        // being a cast. But stopping at `to_datetime` kept the time, and every
+        // other target drops it: `to_date` converts into a *date*, and a date
+        // has no hour in it.
+        //
+        // **This line read `str.to_datetime` alone until 2026-08-19, under a
+        // comment saying "DuckDB reads `to_date` as a timestamp, so `hour` has
+        // an answer there".** DuckDB does not: `CAST('2026-01-02 14:30:00' AS
+        // DATE)` is the DATE `2026-01-02` and `hour` of it is 0, measured three
+        // ways. The defect that comment describes was real and the direction
+        // was backwards, so the fix made printed polars answer 14 where the
+        // engine answered 0.
+        "to_date" => format!("{}.str.to_datetime(time_unit=\"us\").dt.date()", arg(0)),
         "trim" => format!("{}.str.strip_chars()", arg(0)),
         "characters" => format!("{}.str.len_chars()", arg(0)),
         // `literal=True` for the same reason `contains` needs it: the value is

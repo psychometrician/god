@@ -5,6 +5,46 @@ a person using god can see.
 
 ## Unreleased
 
+### `hour` reads a time, and says so when there is none
+
+`hour(to_date(x))` used to answer. What it answered depended on where the
+pipeline ran: **0 when god ran it, and 14 when the same sentence was printed as
+pandas or polars and run there.** `to_date` makes a date, and a date has no time
+in it, so the four calendar words survive the conversion and `hour` cannot.
+
+It is now refused, with the repair in the message:
+
+```
+illegal: `to_date` makes a date, and a date has no time in it, so this hour
+would be nought on every row. `hour` wants a column that arrived carrying a time
+```
+
+`hour` still reads any column that arrived carrying a time, which is how it was
+always meant to be used:
+
+```r
+stamps |> add(h = hour(at))
+```
+
+```python
+stamps >> add(h = hour(col.at))
+```
+
+Where the values are text, the conversion belongs above the pipeline —
+`as.POSIXct` in R, `pd.to_datetime` in Python. **`year`, `month`, `day` and
+`weekday` are untouched** and still read a `to_date` conversion.
+
+### Printed pandas and polars agree with the engine about `to_date`
+
+Both kept the time where every other target dropped it, so a pipeline printed
+to pandas or polars and run there could answer differently from the same
+pipeline run by god. They now make a date, as DuckDB, Spark, dplyr and PySpark
+always did.
+
+Printed pandas also stopped crashing on a column holding both
+`2026-01-02 14:30:00` and `2026-03-15`: `pd.to_datetime` raises on mixed
+formats, where the engine parses them without complaint.
+
 ### `standard_deviation`, the tenth aggregation
 
 How spread out a column is, in `summarize`, broadcast in `add ... by`, and in

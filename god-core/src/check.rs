@@ -2337,6 +2337,28 @@ fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
                             args[0].span(),
                         ));
                     }
+                    // **`hour(to_date(...))` is refused, and it is the one
+                    // composition here whose answer is knowable in advance.**
+                    // `to_date` makes a *date*, and a date has no time in it,
+                    // so the hour of one is midnight — every row, always. The
+                    // engines do not even agree on how to say that: DuckDB and
+                    // Spark answer 0, and polars refuses the operation outright.
+                    // Handing back a zero that quietly assumed midnight is the
+                    // thing this grammar refuses to do, so it says so instead.
+                    //
+                    // The other four parts are untouched: a year, a month, a
+                    // day and a weekday all survive the conversion, and are the
+                    // reason `to_date` exists.
+                    if name == "hour" {
+                        if let Expr::Call { name: inner, .. } = &args[0] {
+                            if inner == "to_date" {
+                                return Err(Diagnostic::illegal(
+                                    "`to_date` makes a date, and a date has no time in it, so this hour would be nought on every row. `hour` wants a column that arrived carrying a time",
+                                    args[0].span(),
+                                ));
+                            }
+                        }
+                    }
                     Ok(Type::Number)
                 }
 

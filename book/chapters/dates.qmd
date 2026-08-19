@@ -6,12 +6,17 @@ title: "Dates"
 
 ```{r}
 #| include: false
+# **`at` is made a real timestamp here, in R and in Python**, because that is
+# what `hour` reads and a CSV cannot carry one: every value in a CSV is text.
+# The chapter says so in prose below rather than hiding it.
 stamps <- god_table("stamps")
+stamps$at <- as.POSIXct(stamps$at, tz = "UTC")
 ```
 
 ```{python}
 #| include: false
 stamps = god_table("stamps")
+stamps["at"] = pd.to_datetime(stamps["at"])
 ```
 
 What year was that, what month, and did it land on a weekday? A date usually
@@ -101,8 +106,11 @@ diary |>
 
 :::
 
-`hour` is the fifth, and it wants a value that carries a time. A plain date has
-no hour in it, so on the dates above it answers zero rather than refusing.
+`hour` is the fifth, and it is the one that needs a column carrying a time. The
+four above read parts of the calendar, which every date has. An hour is not part
+of the calendar, so a column has to have brought one with it.
+
+`stamps` did. Its `at` column arrived as a timestamp rather than as a date:
 
 ```{r}
 #| echo: false
@@ -116,7 +124,7 @@ stamps
 ```{r}
 run('
   stamps
-    then add [h] as hour(to_date([at]))
+    then add [h] as hour([at])
     then pick [at, h]
 ')
 ```
@@ -125,7 +133,7 @@ run('
 
 ```{r}
 stamps |>
-  add(h = hour(to_date(at))) |>
+  add(h = hour(at)) |>
   pick(at, h)
 ```
 
@@ -133,13 +141,51 @@ stamps |>
 
 ```{python}
 (stamps
-  >> add(h = hour(to_date(col.at)))
+  >> add(h = hour(col.at))
   >> pick(col.at, col.h))
 ```
 
 :::
 
-*`stamps then add [h] as hour(to_date([at])) then pick [at, h]`*
+*`stamps then add [h] as hour([at]) then pick [at, h]`*
+
+## Why `hour` will not read a converted date
+
+`to_date` is the conversion the four calendar words rely on, and it is exactly
+the wrong thing to put under `hour`. It makes a **date**, and a date has no time
+in it, so the answer would be midnight on every row. The grammar refuses rather
+than hand back a column of noughts:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+collect(stamps |> add(h = hour(to_date(at))))
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(stamps >> add(h = hour(to_date(col.at))))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+That refusal is the shape worth having. The sentence is legal English and reads
+as though it should work, the answer would have been a number, and nothing about
+a column of zeros would have looked wrong on the page. Handing one back is what
+the grammar will not do.
+
+A time has to reach the table as a time, then. Where the values are text, the
+conversion belongs to the language you are calling from, above the pipeline: R
+has `as.POSIXct` and Python has `pd.to_datetime`, and that is how `at` above
+became a timestamp before any of these examples ran.
 
 ## Text is not yet a date
 

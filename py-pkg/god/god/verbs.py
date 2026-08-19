@@ -1386,18 +1386,33 @@ def weekday(column):
 
 
 def hour(column):
-    """The hour of a time, 0 to 23. A date with no time in it is 0.
+    """The hour of a time, 0 to 23.
+
+    **It needs a column that arrived carrying a time.** The other four date
+    words read parts of the calendar, which every date has; an hour is not part
+    of the calendar, so the column has to have brought one with it. Converting
+    text with ``to_date`` makes a *date*, and ``hour`` of one is refused rather
+    than answered with a column of noughts.
 
     Examples
     --------
     >>> import pandas as pd
     >>> from god import *
-    >>> diary = pd.DataFrame({"on_": ["2026-01-02", "2026-01-05"],
-    ...                       "x": [10, 20]})
-    >>> collect(diary >> add(h=hour(to_date(col.on_))) >> pick(col.h))
-       h
-    0  0
-    1  0
+    >>> stamps = pd.DataFrame({"at": pd.to_datetime(
+    ...     ["2026-01-02 14:30:00", "2026-03-15 09:05:00"])})
+    >>> collect(stamps >> add(h=hour(col.at)) >> pick(col.h))
+        h
+    0  14
+    1   9
+
+    Where the values are text, the conversion belongs above the pipeline, in
+    the language you are calling from:
+
+    >>> text = pd.DataFrame({"at": ["2026-01-02 14:30:00"]})
+    >>> text["at"] = pd.to_datetime(text["at"])
+    >>> collect(text >> add(h=hour(col.at)) >> pick(col.h))
+        h
+    0  14
     """
     return Expr(f"hour({_written(column, 'hour')})")
 

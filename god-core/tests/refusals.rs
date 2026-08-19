@@ -463,6 +463,39 @@ fn a_refusal_puts_a_caret_under_the_word_that_caused_it() {
     assert_eq!(d.render(pipeline), expected);
 }
 
+// -- an hour that could only ever be midnight ------------------------------
+
+/// **`hour` of a converted date is refused, and it is the only date part that
+/// is.** A year, a month, a day and a weekday all survive `to_date`, which is
+/// what the conversion is for. An hour does not: `to_date` makes a date, a date
+/// has no time in it, and the answer would be nought on every row.
+///
+/// The engines cannot even agree on how to say that — DuckDB and Spark answer
+/// 0, and polars refuses the operation outright — so a sentence that reached
+/// them would mean two things. Refusing is the only answer that means one.
+#[test]
+fn the_hour_of_a_converted_date_is_refused() {
+    assert_refused(
+        "sales then add [h] as hour(to_date([ordered_on]))",
+        "`to_date` makes a date, and a date has no time in it, so this hour \
+         would be nought on every row. `hour` wants a column that arrived \
+         carrying a time",
+    );
+}
+
+/// The other four go through the same conversion untouched, which is the half
+/// that would break if the refusal above were written too widely.
+#[test]
+fn the_other_date_parts_still_read_a_converted_date() {
+    for part in ["year", "month", "day", "weekday"] {
+        let pipeline = format!("sales then add [p] as {part}(to_date([ordered_on]))");
+        assert!(
+            compile(&pipeline, &sales(), "sql").is_ok(),
+            "{part} should read a converted date"
+        );
+    }
+}
+
 // -- the guard has to be able to fail --------------------------------------
 
 /// Proof that the assertions above measure the words rather than merely running.
