@@ -5,14 +5,14 @@ title: "What this grammar does not do"
 A tool's marketing lists what it has. A manual you can trust also lists what
 it lacks, so here are both directions, measured against dplyr and pandas as
 of god 0.2.1, in August 2026. The first list will shrink as the vocabulary
-grows under its laws; the honest way to read it today is as the price of the
+grows under its laws. The honest way to read it today is as the price of the
 small grammar the rest of this book sells.
 
 ## The gaps, and their exits
 
-Each row names the gap and the exit. The exit is always real: `show_as`
-renders your pipeline in the host tool, and you finish the last step there,
-in code you can read because you watched it being written.
+Each row names the gap and the exit. The exit is always real. `show_as`
+renders your pipeline in the host tool, and you finish the last step there, in
+code you can read because you watched it being written.
 
 | the gap | what to do today |
 |---|---|
@@ -25,15 +25,16 @@ in code you can read because you watched it being written.
 | The long aggregate shelf (quantiles, weighted means, mode) | eleven aggregations; variance is the deviation squared, `standard_deviation([x]) * standard_deviation([x])`; the rest via `show_as` |
 | Row-wise aggregates across many columns | [one value per column](../chapters/one-value-per-column.qmd) sweeps a calculation across columns one at a time; a row-wise `sum` of fifty columns is the host's |
 | Window frames beyond a count of rows (`RANGE`, a duration) | `rolling(average([x]), 7)` is the seven-row window; a window measured by a value's distance (the last seven *days*, however many rows) stays in the host |
+| Joining every row to every row (a cross join) | no spelling; `add_combinations` crosses the values two columns already hold, and a cross join of two whole tables stays in the host |
 | Reading a file into a pipeline (`scan_csv`, `scan_parquet`) | read it in the host and hand the frame over; for data that outgrows the machine, [somewhere else](../chapters/somewhere-else.qmd) |
 
 One of these is a refusal with a law behind it rather than an absence, and the
-distinction matters: an arbitrary function in a cell will not arrive later,
+distinction matters. An arbitrary function in a cell will not arrive later,
 because the closed-cell law refuses it on purpose.
 
 Random sampling is the row to read carefully, because it is neither a refusal
-nor an ordinary absence. Randomly chosen rows are everyday work, and what
-stands in the way is the seed: a seed written into a sentence is a value that
+nor an ordinary absence. Randomly chosen rows are everyday work, and the
+seed is what stands in the way. A seed written into a sentence is a value that
 changes the answer without changing the question, which is the thing the
 settled-answer law forbids. Refusing it outright is not obviously right
 either, so it is recorded as a lead and left open. If it is ever taken, this
@@ -58,9 +59,9 @@ the growth test every candidate faces.
 - **The same sentence wherever it goes.** DuckDB and Spark execute it; dplyr,
   pandas, polars and PySpark receive it as readable code; a warehouse runs
   it where the table lives.
-- **An exit that is part of the design.** Leaving god costs one `show_as`
-  per pipeline, which is the strongest promise a small tool can make and
-  the reason its smallness is safe to depend on.
+- **An exit that is part of the design.** Leaving god costs one `show_as` per
+  pipeline. That is the strongest promise a small tool can make, and the reason
+  its smallness is safe to depend on.
 
 ## How this list stays honest
 
