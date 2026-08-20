@@ -5,8 +5,8 @@ title: "Every word in the grammar"
 {{< include ../_setup.qmd >}}
 
 The whole vocabulary, on one page. If you are deciding whether to learn this,
-read the list and see how long it takes: that is the argument, and it is shorter
-than the argument for it.
+read the list and see how long it takes. That is the argument, and it is
+shorter than the argument for it.
 
 Nothing here is typed by hand. The engine is asked what words it has when this
 page is built, so the list cannot describe a word that was removed or miss one
@@ -51,9 +51,10 @@ paste0("`", vocabulary$word[vocabulary$kind == "verb"], "`", collapse = " · ") 
 
 `keep` and `pick` are the two that choose: rows and columns. `add` and
 `summarize` are the two that make a column: one per row, and one per group.
-`sort` and `take` order and cut. Everything after those six is a second
-table, a missing value, a change of shape, or the housekeeping pair that
-renames a column and drops repeated rows.
+`sort` and `take` order and cut, and `take_last` cuts from the other end.
+Everything after those seven is a second table, a missing value, a change of
+shape, or the housekeeping pair that renames a column and drops repeated
+rows.
 
 ## The aggregations
 
@@ -146,9 +147,9 @@ knitr::kable(data.frame(
 ))
 ```
 
-The grammar words are not in the table on purpose: `in`, `is`, `not` and
-their siblings are also words the host languages use, so a scan would
-confidently attribute the wrong page. They are everywhere above instead.
+The grammar words are not in the table on purpose. `in`, `is`, `not` and their
+siblings are also words the host languages use, so a scan would confidently
+attribute the wrong page. They are everywhere above instead.
 
 ## Every word answers for itself
 
@@ -166,20 +167,21 @@ help(god.add_combinations)
 ```
 
 The two show the same example in the two spellings, down to the same table and
-the same numbers, which is this book's claim stated one word at a time. They are
-run rather than written: the R suite executes the example on every help page and
-the Python suite executes every one in every docstring, so a page that no longer
-matches the engine fails a build instead of misleading the reader who went
-looking.
+the same numbers. That is this book's claim stated one word at a time. They are
+run rather than written. The R suite executes the example on every help page,
+and the Python suite executes every one in every docstring. A page that no
+longer matches the engine fails a build rather than misleading the reader who
+went looking.
 
 One difference between those pages and these can surprise you. This book tells
 Python to print a whole number without its decimal point, so that the tabs
 of an example agree. Nothing has told your own session that, and a total of
-whole numbers arrives there as `250.0` rather than `250`. The help pages show
-the second, because that is what you will see.
+whole numbers arrives there as `250.0` rather than `250`. The Python help pages show
+`250.0`, because that is what you will see.
 
 ## That is all of it
 
 There is no second list, no set of helpers, and no dialect that adds a few more
-on a cluster. A word that is not above is not in the grammar, and asking for one
-gets a refusal that names the nearest word that is.
+on a cluster. A word that is not above is not in the grammar. Asking for one gets a refusal
+that lists the words it could have been, and names the nearest when the
+spelling is close.
