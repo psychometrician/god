@@ -111,9 +111,9 @@ In this grammar, grouping is a word inside the step it affects. It is not a
 mode you switch the table into. Nothing needs ungrouping afterwards, no verb
 behaves differently because of what an earlier verb declared, and a pipeline
 read a year from now says everything it does, where it does it. dplyr readers
-will recognize the disease this avoids: a `group_by()` three steps up
+will recognize the failure this avoids: a `group_by()` three steps up
 silently changing what `summarise()` and `mutate()` mean, and the ritual
-`ungroup()` that follows every recipe like an apology. Here there is nothing
+`ungroup()` that follows every recipe. Here there is nothing
 to forget, because there is nothing being remembered.
 
 ## One spelling where you have learned five
@@ -129,29 +129,32 @@ data.table  df[, .(total = sum(x)), by = g]
 SQL         SELECT g, SUM(x) AS total FROM df GROUP BY g
 ```
 
-Every one of these describes the same act, the one Codd's algebra called
-aggregation over a partition [@codd1970] and the R world later named
-split-apply-combine [@wickham2011]: split the rows by a key, apply a
-collapse, combine the answers. The ideas have been stable for fifty years.
-The spelling is what churns, and the spelling is what you forget. god's bet
-is that `summarize ... by ...`, read aloud, is the spelling you will still
-have when the others have faded, because it is the one that says what the
-operation does in the words you would use to describe it.
+Every one of these describes the same act: split the rows by a key, apply a
+collapse, combine the answers. The act is aggregation over a partition,
+older than the relational model itself [@codd1970], and the R world later
+named the pattern split-apply-combine [@wickham2011]. The ideas have been
+stable for fifty years. The spelling is what churns, and the spelling is
+what you forget. god's claim is that `summarize ... by ...`, read aloud, is
+the spelling you will still have when the others have faded, because it is
+the one that says what the operation does in the words you would use to
+describe it.
 
-## The ten ways to collapse a group
+## The eleven ways to collapse a group
 
-`total` and `average` are the two you will use most. There are ten
-altogether, and the list is closed on purpose: a small shelf you can hold
-whole beats a long one you have to search.
+`total` and `average` are the two you will use most. There are eleven
+aggregations altogether, and the list is closed on purpose: a small shelf
+you can hold whole beats a long one you have to search.
 
 `total`, `average` and `median` combine numbers into one, and
-`standard_deviation` says how spread out they are: the sample deviation,
-which is what R, pandas, polars and both SQL engines all mean by their own
-bare word, so the answer does not change with the engine. `smallest` and
-`largest` take the ends. `first` and `last` take a value by position, which
-is why they want the rows in a known order. `row_count` counts the rows and
-takes no column at all. `unique_count` counts how many different values a
-column holds.
+`standard_deviation` says how spread out they are. It is the sample
+deviation, which is what R, pandas, polars and both SQL engines all mean by
+their own bare word. The answer does not change with the engine. `smallest`
+and `largest` take the ends. `first` and `last` take a value by position,
+which is why they want the rows in a known order. `row_count` counts the
+rows and takes no column at all. `unique_count` counts how many different
+values a column holds. `join_rows` joins a group's text values into one
+cell, with a separator you choose; [tidying text](tidying-text.qmd) teaches
+it.
 
 ::: {.panel-tabset}
 
@@ -278,9 +281,9 @@ gapminder |>
 
 *`gapminder then keep where [year] is 2007 then summarize [life] as average([life]), [countries] as row_count() by [continent] then sort [life] descending`*
 
-Gapminder's 1,704 rows went in; five came out, one per continent,
-with the count beside each average so the answer carries its own weight of
-evidence. The sentence is the same length it was on fifteen rows, and that is
+Gapminder's 1,704 rows went in; five came out, one per continent, with the
+count beside each average, so you can see how many countries went into each
+number. The sentence is the same length it was on fifteen rows, and that is
 the point of the demonstration: nothing about the grammar knows or cares how
 big the table is. [Somewhere else](somewhere-else.qmd)
 shows the same indifference reaching a warehouse.
