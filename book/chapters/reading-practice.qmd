@@ -39,8 +39,8 @@ sales >> keep(col.revenue >= 200)
 
 *`sales then keep where [revenue] >= 200`*
 
-Four orders clear the bar, and every region appears at least once, so size
-is not a story about one place.
+Four orders survive, and every region appears at least once, so size is
+not a story about one place.
 
 ## What did each region sell, product by product?
 
@@ -154,6 +154,8 @@ sales >> sort(descending(col.cost)) >> take(2)
 :::
 
 *`sales then sort [cost] descending then take 2`*
+
+Both are Gadget orders, the product with the highest unit cost.
 
 ## Who joined the survey before April?
 

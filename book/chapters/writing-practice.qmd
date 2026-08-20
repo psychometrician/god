@@ -6,9 +6,9 @@ title: "Writing practice"
 
 Reading back a sentence and producing one are different skills, so which one
 do you actually have? Recognition came free with the chapters behind you.
-Recall is the day-two promise, it is the one that pays for itself every
-working day, and the only way to get it is the way this chapter is built:
-you write, look, and refine.
+Recall is the day-two promise, the one you will use every working day. The
+only way to get it is the way this chapter is built: you write, look, and
+refine.
 
 The method is always the same. Start from the smallest legal sentence, which
 is the table's name and one verb. Look at what came back. Add one word or one
@@ -126,9 +126,9 @@ sales |>
 
 ## Third question: who is the strongest respondent?
 
-From the survey, say each respondent's best single score and read the top
-three people. You have not seen this question, and you own every word it
-needs.
+From the survey, say each respondent's score on the first question and
+read the top three people. You have not seen this question, and you own
+every word it needs.
 
 ::: {.panel-tabset}
 
@@ -168,16 +168,16 @@ survey |>
 
 *`survey then add [best] as largest([q1_score]) by [respondent] then pick [name, region, best] then sort [best] descending, [name] then take 3`*
 
-The second sort key is doing quiet, honest work: two respondents share a
-score at the cut, and without a tiebreak "top three" would be leaving the
-choice to chance. Naming the tiebreak is naming the choice.
+The second sort key is doing quiet work: two respondents share a score at
+the cut, and without a tiebreak "top three" would be leaving the choice to
+chance. Naming the tiebreak is naming the choice.
 
-One honest limitation is in view: `best` here reads one score column, and
-the survey has eight. Asking for the largest across all eight, without
-naming them one by one, is a real question and this part cannot say it yet.
-[Choosing columns without naming them](../parts/choosing-columns.qmd) can,
-in one sentence, and knowing exactly where your current words stop is part
-of owning them.
+One limitation is in view: `best` here reads one score column, and the
+survey has eight. Asking for the largest across all eight, without naming
+them one by one, is a real question and this part cannot say it yet.
+[Columns into rows](columns-into-rows.qmd) can, in one sentence, by turning
+the eight into one column a `largest` can read. Knowing exactly where your
+current words stop is part of owning them.
 
 ## When the engine says no
 
@@ -307,8 +307,9 @@ a sentence will answer or refuse. If any of the three fails, the chapter
 that repairs it is never far back, and they are all short.
 
 From here the book forks, and both branches are honest. Read on in order,
-and [the next part](../parts/shape.qmd) changes the shape of a table. Or jump to the cookbook near the
-end of the book, which answers questions in exactly the vocabulary you now
-hold, and come back to the middle parts as your questions demand them. A
-grammar is not a syllabus; from this page on, you are allowed to need
-things in your own order.
+and [the next part](../parts/shape.qmd) changes the shape of a table. Or
+jump to [the cookbook](../parts/cookbook.qmd) near the end of the book,
+which answers questions in exactly the vocabulary you now hold, and come
+back to the middle parts as your questions demand them. A grammar is not a
+syllabus; from this page on, you are allowed to need things in your own
+order.
