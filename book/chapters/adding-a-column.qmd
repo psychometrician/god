@@ -43,20 +43,19 @@ sales |>
 
 *`sales then add [margin] as [revenue] - [cost], [price] as [revenue] / [quantity] then pick [product, quantity, margin, price]`*
 
-Read the price column down and you will notice it repeats by product; each
-product sells at one price all year in this table, which is what makes its
-totals easy to check by eye. The new columns are ordinary columns from here
-on: pickable, keepable, sortable, and summable like anything the table
-arrived with.
+Read the price column down and it repeats by product. Each product sells at
+one price all year in this table, which makes its totals easy to check by
+eye. The new columns are ordinary columns from here on: pickable, keepable,
+sortable, and summable like anything the table arrived with.
 
 ## The name goes first
 
 `as` is the word that names what was made, and the name comes first: new name,
 then the value. In R and Python you type `=`, and it is playing `as`'s part;
 the text form writes the word out. That is the order assignment reads in
-almost every language, and it is the same order `rename` and `summarize`
-will use, so there is one direction to remember across the whole grammar
-rather than one per verb.
+almost every language, and `rename` and `summarize` will use it too. There
+is one direction to remember across the whole grammar rather than one per
+verb.
 
 ## A step is one step
 
@@ -101,8 +100,8 @@ sales |>
 
 :::
 
-This is worth meeting early if you are arriving from dplyr or pandas, because
-`mutate` and `assign` both let the second column read the first. This grammar
+This matters most if you are arriving from dplyr or pandas, because `mutate`
+and `assign` both let the second column read the first. This grammar
 does not, for the same reason SQL does not: a step is one step, not a
 sequence hiding inside one. The moment two values in a step can depend on
 each other, the order they are written in starts to matter, and a reader has
@@ -113,8 +112,8 @@ query. And they read as what they are.
 
 ## Replacing a column
 
-Replacing is a different thing from self-reference, and it works exactly as
-you would expect, because the old value is on the table when the step begins:
+Replacing is a different thing from self-reference, and it is allowed,
+because the old value is on the table when the step begins:
 
 ::: {.panel-tabset}
 
@@ -143,11 +142,13 @@ sales >> add(revenue = col.revenue * 2) >> pick(col.product, col.revenue)
 :::
 
 The doubled `revenue` exists only in the pipeline's answer. The `sales` your
-session holds is unchanged, the way it always is.
+session holds is unchanged, the way every verb leaves its table.
 
 ## What is left over
 
-`remainder` divides and hands back what did not divide evenly. It is how you
+Everything so far was written with the four arithmetic signs. One operation
+needs a word of its own. `remainder` divides and hands back what did not
+divide evenly. It is how you
 say "every third row", or sort rows into a fixed number of buckets, or ask
 whether a number is even.
 
@@ -190,9 +191,8 @@ sales |>
 *`sales then sort [date] then add [n] as row_number() then keep where remainder([n], 3) is 0`*
 
 The answer takes the sign of what you divided by, so a negative number still
-gives a remainder between 0 and one less than the divisor. That is worth
-seeing rather than taking on trust, because it is the half of this word people
-get wrong.
+gives a remainder between 0 and one less than the divisor. The table below
+shows it, because this is the half of `remainder` people get wrong.
 
 ::: {.panel-tabset}
 
@@ -222,16 +222,16 @@ steps >> add(left_over = remainder(col.n, 3))
 
 That is R's answer and Python's. SQL engines give -1 where these give 2, and
 the grammar names which one it means, so the same sentence cannot come back
-two ways depending on where it ran. It is the same decision `weekday` needed,
-for the same reason: a difference nothing raises is worse than one that stops
-you.
+two ways depending on where it ran. It is the same decision
+[`weekday`](dates.qmd) needed, for the same reason: a difference that never
+announces itself is worse than one that stops you.
 
-It is the only arithmetic word the grammar has beyond `+`, `-`, `*` and `/`,
-and that is because it is the only one you cannot already write. Whole
-division is `([n] - remainder([n], 3)) / 3`, and a square is `[x] * [x]`, so
-neither gets a word of its own.
+Of the arithmetic words the grammar has beyond `+`, `-`, `*` and `/`, this
+is the one you cannot write any other way. Whole division is
+`round_below([n] / 3)`, using a word the next section introduces, and a
+square is `[x] * [x]`, so neither gets a word of its own.
 
-## Down to a whole number, or up
+## `round_below` and `round_above`
 
 Dividing rarely comes out even. `round_below` gives the whole number below the
 answer and `round_above` gives the one above, and a value that is already whole
@@ -275,9 +275,9 @@ sales |>
 
 The words say `below` and `above` rather than down and up, and the reason is
 negative numbers. Below always means the smaller number, so `round_below(-5.5)`
-is -6, not -5. Spreadsheets round "down" the other way, toward zero, and a word
-that means one thing here and the opposite in the tool on the next screen is
-the kind of difference nobody notices until an invoice is wrong.
+is -6, not -5. Spreadsheets round "down" the other way, toward zero. That
+gives one word two opposite meanings on two screens, and nobody notices a
+difference like that until an invoice is wrong.
 
 ::: {.panel-tabset}
 
@@ -343,13 +343,13 @@ edges >> add(nearest = round_below(col.n + 0.5))
   dates, and conditionals, all written in this same seat.
 - `by` can follow an `add` whose value summarizes a group, which turns a
   collapse into a broadcast: the group's one answer written onto every row
-  of the group. The chapter on the small words shows it, and share-of-group
-  is the idiom it exists for.
+  of the group. [The chapter on the small words](words-that-repeat.qmd)
+  shows it, and share-of-group is the idiom it exists for.
 
 ## What it refuses
 
-The law above is enforced, not advised. A value that reads a column made in
-its own step is refused whole, before anything runs:
+That a step is one step is enforced, not advised. A value that reads a
+column made in its own step is refused whole, before anything runs:
 
 ::: {.panel-tabset}
 
@@ -373,9 +373,9 @@ except GodError as refusal:
 
 :::
 
-The message does not stop at no: it names the two-step spelling that works.
-The same law refuses a second mistake that only the text form can spell,
-making one name twice in a single step, and it is refused with the same
-directness, because a column silently thrown away is work silently thrown
+The message does more than refuse: it names the two-step spelling that
+works. The same law refuses a second mistake, one only the text form can
+spell: making one name twice in a single step. It is refused just as
+directly, because a column silently thrown away is work silently thrown
 away. If you remember that a step is one step, you will never meet either
 message again.
