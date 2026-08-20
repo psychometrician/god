@@ -93,9 +93,10 @@ knitr::kable(
 
 ## One sentence in full
 
-The table above shortens the long lines so that six languages fit across a page.
-Here is one sentence written out completely in each, so you can see the shape
-rather than the abbreviation.
+The tables above shorten the long lines, and take the six languages two at a
+time, because six columns do not fit across a page. Here is one sentence
+written out completely in each, so you can see the shape rather than the
+abbreviation.
 
 ```{r}
 #| echo: false
@@ -116,8 +117,9 @@ The sentence above is two steps, chosen to stay readable. The translation
 does not thin as a pipeline grows, and a technical reader deciding whether
 to trust that should see it on a hard case. Six steps this time: a join, a
 computed column, a grouped total, a sort, a rank, and a cut. The seventh
-answer is the grammar's own text form, which is what `show_as` prints when
-you ask for `"god"`, and it is the one spelling that runs anywhere.
+answer is the grammar's own text form, and it is printed first. It is what
+`show_as` gives when you ask for `"god"`, and it is the one spelling that runs
+anywhere.
 
 ```{r}
 #| echo: false
@@ -143,7 +145,8 @@ for (language in c("god", "sql", "spark", "dplyr", "pandas", "polars", "pyspark"
 ## What the table is showing
 
 Read down a column and you are reading one library's idea of how a pipeline is
-written. Read across a row and you are reading one idea, six ways.
+written. Read one god sentence across all three tables and you are reading one idea,
+six ways.
 
 The lengths differ, and the differences are the honest result rather than a
 selection. polars and PySpark have a method per verb, so a pipeline maps onto a
