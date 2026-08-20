@@ -4,10 +4,10 @@ title: "Which rows do you want?"
 
 {{< include ../_setup.qmd >}}
 
-Which rows does the question actually need? Half of daily work is narrowing,
-and the recipes here are the narrowings that recur: the top few, the top few
-per group, the latest, the ones above a bar, the ones without a twin. The
-owning chapters are [Keeping rows](../chapters/keeping-rows.qmd) and
+Which rows does the question actually need? Half of daily work is narrowing.
+The recipes here are the narrowings that recur: the top few, the top one per
+group, the ones above a bar, the ones without a twin. The owning chapters
+are [Keeping rows](../chapters/keeping-rows.qmd) and
 [Sorting and taking](../chapters/sorting-and-taking.qmd).
 
 ## The top few
@@ -43,7 +43,8 @@ sales >> sort(descending(col.revenue)) >> take(5)
 **One verb away.** The bottom few: `take_last(5)`, with the sort left as it
 is. Dropping `descending` instead reaches the same rows in the opposite
 order, which is a different table. The top few of a different measure: change
-the sort key, and nothing else.
+the sort key, and nothing else. The top five *scores* rather than five rows:
+`take(5, ties = TRUE)`, which keeps every row level with the fifth.
 
 ## The top one per group
 
@@ -75,9 +76,9 @@ sales >> sort(descending(col.revenue)) >> take(1, by = col.region)
 
 *`sales then sort [revenue] descending then take 1 by [region]`*
 
-**One verb away.** The top two: `take(2, by = region)`. The *latest* per
-group instead of the largest: sort by `date` instead of `revenue`, which is
-the closing example of sorting and taking.
+**One verb away.** The top two: `take(2, by = region)`. The most recent per
+group instead of the largest: sort by `date` instead of `revenue`, which has
+its own section in sorting and taking.
 
 ## The rows above a bar
 
@@ -110,10 +111,11 @@ sales >> keep(col.quantity >= 5) >> sort(descending(col.quantity))
 *`sales then keep where [quantity] >= 5 then sort [quantity] descending`*
 
 **One verb away.** A bar on a derived number: `add` the number first, then
-keep on it. A bar per group ("orders above their region's average") waits
-for the windowed words in
-[giving each row a place](../chapters/each-row-a-place.qmd); it is one
-sentence there too.
+keep on it. A bar per group ("orders above their region's average") is the
+same two steps with `by` on the `add`:
+`add(avg = average(revenue), by = region)`, then keep the rows above it.
+[The words that repeat](../chapters/words-that-repeat.qmd) teaches that use
+of `by`.
 
 ## The rows without a twin
 
@@ -146,7 +148,12 @@ sales >> pick(col.region, col.product) >> drop_duplicates()
 *`sales then pick [region, product] then drop_duplicates`*
 
 Every region-product pairing that occurred, once each. Narrow first, then
-drop: the columns you pick are the definition of what counts as a twin.
+drop: the columns you pick are the definition of what counts as a twin. The
+owning chapter is
+[Renaming and repeats](../chapters/renaming-and-repeats.qmd). The pairings
+that never occurred are the opposite question, which
+[the rows that are not there](../chapters/rows-that-are-not-there.qmd)
+answers.
 
 **One verb away.** Whole rows, one per group, is a different question with a
 forced honesty in it: `sort` then `take 1 by`, saying which row you mean.
@@ -178,6 +185,8 @@ except GodError as refusal:
 :::
 
 The repair is one sort, and the refusal names it. Every recipe on this page
-that took a first or a top said its order out loud, which is why each of
-them means the same thing on every run, on every engine, this year and
-next.
+that took a first or a top said its order aloud. Saying the order is what
+makes a sentence mean the same thing on every run, on every engine, this
+year and next. One pick is still the engine's: a cut that falls inside a
+tie. `with ties`, from sorting and taking, keeps the whole tie, so nothing
+is left to pick.
