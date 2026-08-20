@@ -4,8 +4,8 @@ title: "A whole question"
 
 {{< include ../_setup.qmd >}}
 
-The chapters before this one take one verb at a time, which is the right way to
-meet them and not how anyone uses them. Here is a question that needs most of
+The chapters that teach the verbs take one verb at a time, which is the right
+way to meet them and not how anyone uses them. Here is a question that needs most of
 the book.
 
 The table is a set of survey returns. Each respondent answered three questions,
@@ -121,11 +121,10 @@ answers
 :::
 
 Read it aloud and it is the question. Keep the rows matching a place the
-lookup knows.
-Take the backup answer for question one where the first is missing. Drop the
-backup column. Bring in the area names. For each area, average every column whose
-name starts with `q`. Rank the areas by question one, highest first. Sort by that
-rank.
+lookup knows. Take the backup answer for question one where the first is
+missing. Drop the backup column. Bring in the area names. For each area,
+average every column whose name starts with `q`. Rank the areas by question
+one, highest first. Sort by that rank.
 
 Two things that would have been easy to get wrong are done by single clauses.
 `matching` drops respondent 5, whose code `N` is in no lookup row, and it cannot
@@ -157,8 +156,13 @@ Here is the grouping mistyped:
 ```{r}
 #| error: true
 returns |>
+  keep(matching(places, by = code)) |>
+  add(q1 = first_present(q1, q1_alt)) |>
+  pick(all_but(q1_alt)) |>
   join(places, by = code) |>
-  summarize(q1 = average(q1), by = aera) |>
+  summarize(where(startsWith(name, "q"), average(value)), by = aera) |>
+  add(place = rank(descending(q1))) |>
+  sort(place) |>
   collect()
 ```
 
@@ -167,13 +171,22 @@ returns |>
 ```{python}
 #| classes: refusal
 try:
-    collect(returns >> join(places, by = col.code)
-            >> summarize(q1 = average(col.q1), by = col.aera))
+    collect(returns
+      >> keep(matching(places, by = col.code))
+      >> add(q1 = first_present(col.q1, col.q1_alt))
+      >> pick(all_but(col.q1_alt))
+      >> join(places, by = col.code)
+      >> summarize(where(name.starts("q"), average(value)), by = col.aera)
+      >> add(place = rank(descending(col.q1)))
+      >> sort(col.place))
 except GodError as refusal:
     print(refusal)
 ```
 
 :::
+
+The columns it lists are the table as it stands at that step, which is why
+`q1_alt` is not among them. The third step dropped it.
 
 Seven steps became one query. The query is the proof rather than the point:
 the sentence above it is the version a person can read aloud, and still
