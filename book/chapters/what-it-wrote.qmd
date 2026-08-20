@@ -27,12 +27,12 @@ show_as(sales >> keep(col.region == "West") >> take(10), "dplyr")
 :::
 
 `show_as` also takes the sentence itself, with any tables passed by name, as
-`show_as('sales then take 3', "dplyr", sales = sales)`; the phrasebook
-appendix is generated that way. And the two languages hand the result back
-differently, on purpose. R prints the code and returns it invisibly, the way
-R's printers behave. Python returns it as a string, for `print` or for
-storing, because printing and returning both made a notebook say everything
-twice.
+`show_as('sales then take 3', "dplyr", sales = sales)`; the
+[phrasebook appendix](../appendices/c-phrasebook.qmd) is generated that way.
+And the two languages hand the result back differently, on purpose. R prints
+the code and returns it invisibly, the way R's print methods behave. Python
+returns it as a string, for `print` or for storing, because printing and
+returning both made a notebook say everything twice.
 
 ::: {.panel-tabset}
 
@@ -51,13 +51,13 @@ show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
 
 :::
 
-The query has a shape a hand would not choose, and the shape is deliberate.
-Each `then` becomes one named step in a `WITH` chain, so the sentence and
-the query match line for line, and a longer pipeline is more named steps
-rather than a deeper nest. A person would fuse steps and name them after
-their meaning; a machine's first duty is that you can check its work. The
-engine flattens the chain into one plan before reading a row, so the shape
-costs nothing at run time.
+The query has a shape nobody would write by hand, and the shape is
+deliberate. Each `then` becomes one named step in a `WITH` chain, so the
+sentence and the query match line for line, and a longer pipeline is more
+named steps rather than a deeper nest. A person would fuse steps and name
+them after their meaning; a machine's first duty is that you can check its
+work. The engine flattens the chain into one plan before reading a row, so
+the shape costs nothing at run time.
 
 ## The same sentence, on a cluster
 
@@ -82,17 +82,19 @@ show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
 
 :::
 
-The two dialects differ in six ways, and the queries above show the first. A
-column is `` `revenue` `` on Spark and `"revenue"` here, and that one matters.
-A double-quoted name on Spark is not a column at all: it is the text
-`'revenue'`. A query written for the wrong engine would therefore run happily
-and put the column's own name in every row. Two more are spelling: dropping a
-column is `EXCEPT` rather than `EXCLUDE`, and stopping a query is
-`raise_error` rather than `error`. A backslash inside a text value has to be
-written twice on Spark. The word `weekday` is asked for through a different
-function on each engine, so that Monday can stay 1 on both. And a `widen` that
-names no columns is a sentence Spark cannot be given at all, which is the
-refusal staged later on this page.
+The two dialects differ in nine ways, and the queries above show the first.
+A column is `` `revenue` `` on Spark and `"revenue"` here, and that one
+matters. A double-quoted name on Spark is not a column at all: it is the
+text `'revenue'`. A query written for the wrong engine would therefore run
+without error and put the column's own name in every row. Two more are
+spelling: dropping a column is `EXCEPT` rather than `EXCLUDE`, and stopping
+a query is `raise_error` rather than `error`. A backslash inside a text
+value has to be written twice on Spark. The word `weekday` is asked for
+through a different function on each engine, so that Monday can stay 1 on
+both. `latest`, a rolling `median`, and `join_rows` are three more, each
+written differently on the two engines. And a `widen` that names no columns
+is a sentence Spark cannot be given at all, which is the refusal staged
+later on this page.
 
 None of that is yours to remember. It is the difference between writing a
 pipeline and writing a query.
@@ -174,11 +176,11 @@ changes is how a column is named. polars writes `pl.col`, PySpark writes `F.col`
 and pandas has no name of its own, so it borrows the frame it was handed and
 writes `d["margin"]` inside a small function.
 
-That last one is why the pandas rendering is the longest of the three, and it is
-the honest answer rather than a failure to find a shorter one. pandas has no
-single way to chain steps, so the idiom that does chain is `.assign` and
-`.loc[lambda d: ...]`, and a column inside either of those has to name the frame
-again. The grammar says `[margin]` once.
+That last one is why the pandas rendering reads the least like the other
+two, and it is the honest answer rather than a failure to find a plainer
+one. pandas has no single way to chain steps, so the idiom that does chain
+is `.assign` and `.loc[lambda d: ...]`, and a column inside either of those
+has to name the frame again. The grammar says `[margin]` once.
 
 One R dialect is missing from the list on purpose, and the reason is meaning
 rather than effort. Idiomatic data.table works by reference: `:=` changes
@@ -189,7 +191,7 @@ translation neither side recognizes serves nobody.
 
 Where an engine cannot say what a sentence means, you get a refusal rather than
 a query that says something close. Spark has to be told which columns a `widen`
-makes, because its pivot cannot work them out from the data:
+makes, because its pivot cannot find them in the data:
 
 ::: {.panel-tabset}
 
@@ -217,9 +219,9 @@ except GodError as refusal:
 
 ## When the query is all you want
 
-`show_as` starts from a pipeline and a table you are holding. `god_sql` is the
-shortcut for the other situation: you have the sentence and you know the
-columns, and the query itself is the thing you are after, for a scheduler, a
+`show_as` starts from a pipeline and a table you are holding. `god_sql` is
+the shortcut for the other situation: you have the sentence and you know the
+columns. The query itself is the thing you are after, for a scheduler, a
 dashboard, or a warehouse console that will run it far from here.
 
 ::: {.panel-tabset}
@@ -290,9 +292,10 @@ $ god --columns 'region:text' --as excel 'sales then take 1'
 illegal: there is no backend called `excel`. There is: sql, spark, dplyr, pandas, polars, pyspark, god
 ```
 
-An assumption is the third voice, and it costs nothing. Where the grammar
-decided something you did not say, the note lands on standard error while
-the answer still arrives with exit `0`, so nothing is decided silently.
+An assumption is a note rather than a refusal, and it costs nothing. Where
+the grammar decided something you did not say, the note lands on standard
+error while the answer still arrives with exit `0`, so nothing is decided
+silently.
 
 ## When the table is what you want
 
@@ -316,10 +319,10 @@ run('sales then keep where [region] is "West" then take 3')
 
 :::
 
-Read what sits inside the parentheses in each tab. It is the same string, to the
-character. Everywhere else in this book the two languages differ in the pipe
-glyph and in how a column is named, and a sentence in the text form has neither
-of those, so nothing is left to respell.
+Read what sits inside the parentheses in each tab. It is the same string,
+to the character. Everywhere else in this book the two languages differ in
+the pipe glyph and in how a column is named. A sentence in the text form has
+neither of those, so nothing is left to respell.
 
 The table at the head of the sentence is looked up where you are calling from,
 which is how `sales` was found here. Pass it by name when it is somewhere else,
@@ -338,10 +341,11 @@ Three seats, one rule each:
 - **Inside a sentence.** Double quotes only: `[region] is "West"`. The
   sentence is the grammar's, and the grammar has one spelling.
 - **Around a sentence.** Single quotes, by convention: the double quotes
-  inside then need no escape, in a shell, in R, or in Python.
+  inside need no escape, in a shell, in R, or in Python.
 
-Look at the first seat, because the rule about doubles is easy to over-apply.
-In the native spellings, your language's quotes are your language's business:
+Look at the first seat, because the rule about double quotes is easy to
+over-apply. In the native spellings, your language's quotes are your
+language's business:
 
 ::: {.panel-tabset}
 
@@ -364,7 +368,7 @@ sees this sentence the value is `"West"` either way. This book writes double
 quotes in host code as one habit fewer, and nothing depends on it.
 
 Around a sentence, single quotes are the transcripts' convention, kept for
-the same reason everywhere: the double quotes inside then need no escape,
+the same reason everywhere. The sentence's own double quotes need no escape,
 and the string pastes into a shell, an R script or a Python one unchanged.
 
 Swap the two out of habit and the grammar catches the half that reaches it.
@@ -395,7 +399,7 @@ except GodError as refusal:
 The other half belongs to the hosts: a single quote inside a single-quoted
 string is a syntax error R and Python report themselves, before god is ever
 called. And when a text value genuinely needs an apostrophe, each host has
-its own door. Python's triple quotes, `run('''…''')`, and R's raw string,
+its own answer. Python's triple quotes, `run('''…''')`, and R's raw string,
 `run(r"(…)")`, both hold either kind of quote unescaped.
 
 ## Who writes it, and who runs it
@@ -422,3 +426,5 @@ is still readable by the person who wrote it.
 One boundary matters here. `run` is an R function and a Python function, so
 calling it needs one of those two languages installed. What travels without
 them is the sentence, not the call around it.
+[The next chapter](somewhere-else.qmd) follows the sentence to tables that
+are not in front of you.
