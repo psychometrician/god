@@ -6,7 +6,8 @@ title: "Another table"
 
 The sale knows its product, so who knows the maker? Another table does.
 `join` adds that table's columns to this one, matching rows by the columns
-that say which rows correspond. `products` holds a maker for each product.
+that say which rows correspond. `products` holds a maker for each product
+it lists.
 
 ::: {.panel-tabset}
 
@@ -37,6 +38,11 @@ sales |> join(products, by = product) |> pick(product, maker, revenue)
 :::
 
 *`sales then join products by [product] then pick [product, maker, revenue]`*
+
+The Sprocket rows come back with `maker` missing. `sales` sold a product
+that `products` has never heard of, so there was no row to bring columns
+from. The rows themselves stay: a join keeps this table's rows whether or
+not they matched, until you say otherwise.
 
 Leave `by` out and god matches on the column names both tables share, then
 prints the choice back as a note beside the answer, the way [the
@@ -125,10 +131,13 @@ both would be bringing one column twice. Keeping this table's name is what
 lets the rest of the sentence go on saying `region`.
 
 `is` here is the same word the grammar uses for equality everywhere else. R
-writes `==` and Python writes `==`, because neither language can put a bare
-`is` between two columns, and that is the only thing that moves.
+writes `==` and Python writes `==`: R has no bare `is`, and Python's `is`
+already means something else. That one word is the only difference.
 
 Keys of both kinds mix in one `by`, separated by commas.
+
+What arrives is a column like any other. The next step groups by `manager`,
+a column `sales` never had.
 
 ::: {.panel-tabset}
 
@@ -170,7 +179,7 @@ happens to a row that found no match. So that is what the argument is called.
 | `"both"` | both tables' | full join |
 
 There is no `"other"`, and that is not an omission. A right join is this join
-with the tables the other way round, so it adds no meaning and gets no word.
+with the tables swapped, so it adds no meaning and gets no word.
 
 ::: {.panel-tabset}
 
@@ -230,9 +239,9 @@ except GodError as refusal:
 
 :::
 
-Two more refusals guard the key itself, because a join that could never match
-would come back empty and look like a fact about your data. The key must hold
-the same kind of thing in both tables:
+Two more refusals guard the key itself. A join that could never match finds
+no partner for any row, and that looks like a fact about your data. The key
+must hold the same kind of thing in both tables:
 
 ::: {.panel-tabset}
 
@@ -258,8 +267,9 @@ except GodError as refusal:
 
 :::
 
-And the key must exist on both sides, with the usual suggestion when it is
-only a spelling away:
+And the key must exist on both sides. `maker` belongs to `products` alone,
+so asking `sales` for it is refused, and the refusal names the columns
+`sales` does have:
 
 ::: {.panel-tabset}
 
@@ -311,3 +321,7 @@ holds two rows for one key, your rows multiply, and that is a fact about the
 rows rather than about the sentence. The checker reads column names and
 never a row, so this one stays yours to know. The drawing says so on its last
 line rather than promising a number it cannot know.
+
+When the question is only which rows have a partner over there, nothing
+needs to arrive at all. [The next chapter](has-a-partner.qmd) asks it with a
+word that cannot multiply anything.
