@@ -4,22 +4,20 @@ title: "The laws"
 
 {{< include ../_setup.qmd >}}
 
-Every refusal you have met in this book is a consequence, not a policy. The
-laws on this page sit under the whole grammar, and each one exists to refuse
-a specific temptation: something another tool does, that costs its users more
-than it gives them. This chapter collects the laws in one place, with the
+Every refusal you have met in this book is a consequence, not a policy. The laws on this page sit under the whole grammar, and each one exists to
+refuse a specific temptation. Each temptation is something another tool does,
+that costs its users more than it gives them. This chapter collects the laws in one place, with the
 temptation beside each, because the vocabulary above them will grow and these
 will not.
 
 ## One word, one meaning
 
 `by` groups, wherever it appears. `as` names, wherever it appears. `where`
-asks, wherever it appears. The temptation is the convenience argument, a word
-that means roughly similar things in different places; the cost is that a
-reader can never again be sure, and checks the manual for the rest of their
-life. You met this law working in the chapter on [the small
-words](words-that-repeat.qmd), and it is the reason a verb you have never seen
-is mostly made of words you have.
+asks, wherever it appears. The temptation is the convenience argument, a word that means roughly similar
+things in different places. The cost is that a reader can never again be sure,
+and checks the manual for the rest of their life. You met this law working in the chapter on [the small
+words](words-that-repeat.qmd). It is the reason a verb you have never seen is
+mostly made of words you have.
 
 ## One way to say it
 
@@ -76,9 +74,9 @@ wanted it; the chapter that opens this part shows what the plan buys.
 
 ## Every refusal is the grammar's
 
-One checker reads the whole pipeline before anything runs, so every message
-in every language is written by the same voice, names the step you wrote,
-and carries its repair. The temptation is delegating errors to whatever
+One checker reads the whole pipeline before anything runs. So every message in
+every language is written by the same voice, names the step you wrote, and
+carries its repair. The temptation is delegating errors to whatever
 engine hits the problem first, which is how a beginner meets a Java stack
 trace with their column name somewhere inside it. The previous chapter is
 this law's whole demonstration.
@@ -93,9 +91,9 @@ answer could vary, the grammar either settles it or asks you to.
 
 ## It writes what you could have written
 
-`show_as` renders any pipeline as dplyr, pandas, polars, PySpark, two
-dialects of SQL, or the grammar itself, and the printed code is executed by
-this project's own checks, not merely printed. The temptation being refused
+`show_as` renders any pipeline as dplyr, pandas, polars, PySpark, two dialects
+of SQL, or the grammar itself. The printed code is executed by this project's
+own checks, not merely printed. The temptation being refused
 is on the other side of the fence this time: a tool that holds your work
 hostage to its own continued existence. The whole argument for adopting a
 small grammar stands on this exit being real, and it has [its own
@@ -161,9 +159,9 @@ table, asked from the engine, whose every cell the engine's own tests hold.
 
 ## What the laws are for
 
-None of these laws is about data. They are about what a person can retain,
-which is the promise this book opened with: a grammar with no exceptions is
-the only kind that survives a year of not being used. The laws are how the
+None of these laws is about data. They are about what a person can retain, which is the promise this book opened
+with. A grammar with no exceptions is the only kind that survives a year of not
+being used. The laws are how the
 promise is enforced against the vocabulary's own growth, and they bind the
 author before they bind you. A proposed word that would break one does not
 get in, however useful its best day looks.

@@ -50,7 +50,7 @@ sales >> rename(earned = col.revenue) >> pick(col.product, col.earned)
 `rename` changes the name and nothing else: not the values, not the order,
 not the kind. The new name goes first, the way assignment reads and the way
 every naming verb in this grammar already works. If you are arriving from
-pandas, read that direction twice: `rename(columns={"old": "new"})` is the
+pandas, read that direction twice. `rename(columns={"old": "new"})` is the
 other way around, and nothing about the shape of the line tells you which
 convention you are in. Here the rule is single, the new name first, so a
 pipeline stays readable without a glossary.
@@ -58,9 +58,9 @@ pipeline stays readable without a glossary.
 ## Dropping repeats
 
 `drop_duplicates` drops the rows that are identical across every column. The
-answer comes back in a settled order, because dropping repeats says nothing
-about which order the rest should be in, and an answer that reorders itself
-between runs is an answer you cannot test.
+answer comes back in a settled order. Dropping repeats says nothing about which
+order the rest should be in, and an answer that reorders itself between runs is
+an answer you cannot test.
 
 ```{r}
 #| echo: false
@@ -97,9 +97,9 @@ repeats >> drop_duplicates()
 ## Why it takes no columns
 
 Other tools let you write `distinct(g)` or `drop_duplicates(subset="g")`, and
-the argument means two different things depending on the tool and the day:
-sometimes "the distinct values of `g`", sometimes "whole rows, one per value
-of `g`". The second reading has a hole in it that no tool can fill: *which*
+the argument means two different things depending on the tool and the day.
+Sometimes it means "the distinct values of `g`", sometimes "whole rows, one per
+value of `g`". The second reading has a hole in it that no tool can fill: *which*
 whole row, out of the several that share a `g`? Any answer is an arbitrary
 choice dressed as a function.
 
@@ -135,11 +135,11 @@ sales >> pick(col.region, col.product) >> drop_duplicates()
 
 *`sales then pick [region, product] then drop_duplicates`*
 
-And one whole row per group is the closing idiom of the chapter on sorting
-and taking, `sort` then `take 1 by`, which forces you to say *which* row,
-because "the latest" or "the largest" was always the real question hiding
-inside "one per group".
-Two meanings, two spellings, and neither has an arbitrary choice inside it.
+And one whole row per group is `sort` then `take 1 by`, which
+[sorting and taking](sorting-and-taking.qmd) answers under *the latest one of
+each*. It forces you to say *which* row, because "the latest" or "the largest"
+was always the real question hiding inside "one per group". Two meanings, two
+spellings, and neither has an arbitrary choice inside it.
 
 ## What travels with it
 
