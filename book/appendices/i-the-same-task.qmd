@@ -6,13 +6,13 @@ title: "The same task, five ways"
 
 ```{r}
 #| include: false
-# The four neighbours, attached quietly. `data.table` is the one that needs
+# The four neighbors, attached quietly. `data.table` is the one that needs
 # saying: it is not a `show_as` target and is not going to be one, so its column
 # here is written by hand where the other three could have been generated. That
 # is why every entry on this page is *executed and compared* rather than read:
 # a hand-written cell can be wrong in a way no reader would see.
 #
-# **The neighbours are attached first and god is attached after them, and the
+# **The neighbors are attached first and god is attached after them, and the
 # order is load-bearing.** god and dplyr export four names in common
 # (`collect`, `pick`, `rename` and `summarize`), so whichever is attached last
 # wins. With dplyr last, a god pipeline handed to `collect()` reaches dplyr's
@@ -112,7 +112,7 @@ suppressMessages({
 #| include: false
 import polars as pl
 
-# The two Python neighbours run on the same rows as the R ones. pandas already
+# The two Python neighbors run on the same rows as the R ones. pandas already
 # arrived with the setup; polars is built from it so that no fixture is defined
 # twice and drifts.
 pl_sales = pl.from_pandas(sales)
@@ -142,29 +142,29 @@ def for_r(df):
 
 If you write dplyr, tidyr, pandas, polars or data.table today, this appendix is
 the one that answers the question you actually have: *can it do what I already
-do?* Each entry states a task in English, gives god's sentence in all three of
-its spellings, gives what you would write in each of the five libraries, and
-then shows the answer once, because all seven produce the same table and the
-page refuses to build if any of them does not.
+do?* Each entry states a task in English. It gives god's sentence in all
+three of its spellings, then what you would write in each of four neighbors.
+The first of the four is dplyr or tidyr, depending on the task. The answer is
+shown once, because all seven produce the same table and the page refuses to
+build if any of them does not.
 
-god's three come first, in the book's usual order: the text form that `run`
-takes, then R, then Python. They are one sentence, and this page is where that
-is checked rather than claimed: all three execute and all three are compared
-against each other before any neighbour is looked at.
+god's three come first: the text form that `run` takes, then R, then Python.
+They are one sentence, and this page is where that is checked rather than
+claimed: all three execute and all three are compared against each other
+before any neighbor is looked at.
 
 That last part is the difference between this appendix and a comparison table.
 Nothing here is asserted. Every cell runs when the book is built, and the
 tables are compared value by value; a disagreement stops the build rather than
-reaching you. The code in each neighbour's column is written the way somebody
-fluent in it would write it, not generated, so what you are reading is a fair
+reaching you. The code in each neighbor's column is written the way somebody
+fluent in it would write it, not generated. What you are reading is a fair
 comparison rather than god's own output wearing five costumes.
 
-**What this page is not** is a claim that god does everything these libraries
-do. It does not, on purpose, and
-[what this grammar does not do](e-coverage.qmd) is the list: regular
-expressions, arbitrary functions in a cell, and eight more, each with the exit
-named. What this page claims is narrower and more useful: the
-ordinary work, the operations that make up most days, are all sayable in one
+This page is not a claim that god does everything these libraries do. It does
+not, on purpose, and [what this grammar does not do](e-coverage.qmd) is the
+list: regular expressions, arbitrary functions in a cell, and nine more, each
+with the exit named. What this page claims is narrower and more useful: the
+ordinary work, the operations that fill most days, can all be said in one
 small vocabulary that reads the same in two languages.
 
 The tables are the book's usual cast, described in
@@ -231,7 +231,7 @@ by_dt <- as.data.table(sales)[revenue > 150]
 answer
 ```
 
-Seven spellings of one idea, and three of them are god's. Its four neighbours
+Seven spellings of one idea, and three of them are god's. Its four neighbors
 each read as an operation on a frame; god's reads as a sentence, and reads the
 same whichever of the three you write it in.
 
@@ -378,12 +378,12 @@ answer
 Five names for one idea: `pivot_wider`, `pivot`, `pivot`, `dcast`, and `widen`.
 Only one of them says in the verb what happens to the table.
 
-The `by` is written out here, and it did not have to be. Left off, god works
-out that the rows going together are the ones agreeing on every other column,
-and then *says so*: the answer arrives with the assumption printed above it,
-naming `student` and offering the phrasing that would have removed the doubt.
-That is the behaviour, not a warning about it. It is written out above so that
-all three of god's spellings on this page are the same sentence.
+The `by` is written out here, and it did not have to be. Without it, god
+decides that the rows going together are the ones agreeing on every other
+column, and then *says so*. The answer arrives with the assumption printed
+above it, naming `student` and offering the phrasing that would have removed
+the doubt. That is the behavior, not a warning about it. It is written out
+above so that all three of god's spellings on this page are the same sentence.
 
 ## Keep the rows matching a word
 
@@ -510,8 +510,8 @@ by_dt <- as.data.table(sales)[, .(product, revenue)]
 answer
 ```
 
-Four of the five name the columns they want. god does too, and says `pick`,
-which is a verb where `select` and `[[ ]]` are not.
+All four neighbors name the columns they want, and so does god. `pick` and
+`select` are words; `[[ ]]` and `.( )` are punctuation.
 
 ## Drop a column
 
@@ -574,7 +574,7 @@ by_dt <- as.data.table(sales)[, !"cost"]
 answer
 ```
 
-`all_but` is the same word wherever it stands, where the neighbours reach for
+`all_but` is the same word wherever it stands, where the neighbors reach for
 a minus sign, a `drop`, and a `!`.
 
 ## Add a computed column
@@ -642,7 +642,7 @@ by_dt <- as.data.table(sales)[, .(product, margin = revenue - cost)]
 answer
 ```
 
-`mutate`, `assign`, `with_columns`, `:=`, and `add`. Only the last one is a
+`mutate`, `assign`, `with_columns`, `.( )`, and `add`. Only the last one is a
 word a reader who has never seen it would guess correctly.
 
 ## Average a column for each group
@@ -796,10 +796,10 @@ The second sort key is not decoration, and this page needed it to build.
 Two orders earned 150, so the fifth row of a top five is a tie, and which of
 them wins is whatever each library's sort happened to do. pandas sorts with an
 unstable algorithm by default, so it answered one way on one machine and the
-other way on another, and the comparison here refused to build until the
-question was made a fair one. A top five over a column with repeats is not a
-settled answer, which is the law this grammar is built on, and the repair is the
-same in all six spellings: name a second key.
+other way on another. The comparison here refused to build until the question
+was made a fair one. A top five over a column with repeats is not a settled
+answer, which is the law this grammar is built on. The repair is the same in
+all seven spellings: name a second key.
 
 ## Take the rows at the far end
 
@@ -871,9 +871,9 @@ by_dt <- tail(as.data.table(sales)[order(-revenue)], 3)[, .(product, revenue)]
 answer
 ```
 
-This is the entry that produced a word. `take_last` came out of the polars and
-pandas sweeps, both of which called it `tail`, because sorting the other way
-and taking the first three returns the same rows backwards.
+This is the entry that produced a word. polars and pandas both call this end
+`tail`. Before `take_last`, god's only spelling was to sort the other way and
+take the first three, which returns the same rows backwards.
 
 ## Bring in a column from another table
 
@@ -947,14 +947,14 @@ answer
 ```
 
 god has one `join` and an `unmatched` word for whose rows survive, where the
-neighbours have four verbs or a `how=` argument. Note which way the default
-falls: god keeps the rows it started with, so `Sprocket` survives with no
-maker rather than disappearing. Writing this entry with `inner_join` is what
-the page's own comparison caught, on the row count.
+neighbors have a verb for each kind or an argument for it. Note which way the
+default falls: god keeps the rows it started with, so `Sprocket` survives with
+no maker rather than disappearing. Writing this entry with `inner_join` is
+what the page's own comparison caught, on the row count.
 
 ## Ask whether a row has a partner
 
-Which orders are for a product the catalogue lists?
+Which orders are for a product the catalog lists?
 
 ::: {.panel-tabset}
 
@@ -1020,8 +1020,9 @@ by_dt <- as.data.table(sales)[product %chin% products$product, .(product, revenu
 answer
 ```
 
-`matching` is a question rather than a join, so it cannot multiply rows. That
-is a promise `merge` and `isin` do not make in the same breath.
+`matching` is a question rather than a join, so it cannot multiply rows. A
+`merge` makes no such promise: when the other table repeats a key, the rows
+multiply.
 
 ## Turn columns into rows
 
@@ -1097,8 +1098,8 @@ by_dt <- melt(as.data.table(sales)[, .(product, revenue, cost)],
 answer
 ```
 
-`lengthen` and `widen` are one idea read in both directions, and they are the
-only pair here that says so in the words themselves.
+`lengthen` and `widen` are one idea read in both directions. tidyr's pair
+says so too; god's says it in one word each.
 
 ## Choose between values
 
@@ -1181,8 +1182,8 @@ answer
 ```
 
 polars needs `pl.lit` around every one of those words, because a bare string
-there is read as a column name. That is the defect class this book's printed-code
-harness was built to catch, and it is why this page runs everything it shows.
+there is read as a column name. That is a mistake a printed example can carry
+without looking wrong, and it is why this page runs everything it shows.
 
 ## Number the rows in order
 
@@ -1339,8 +1340,8 @@ answer
 ```
 
 god refuses `running_total` without a `sort` in front of it. The other four
-compute happily on whatever order the rows happen to be in, which is an answer
-that can change between runs.
+compute on whatever order the rows happen to be in, which is an answer that
+can change between runs.
 
 ## Trim the spaces off a text column
 
@@ -1407,11 +1408,11 @@ answer
 ```
 
 `trimws`, `str.strip`, `str.strip_chars`, `trimws`, `trim`. The same operation,
-five spellings, and no two libraries agree.
+and the only agreement is the two R libraries borrowing base R's `trimws`.
 
 ## Change a column's case
 
-Shout the region.
+The region in capital letters.
 
 ::: {.panel-tabset}
 
@@ -1622,12 +1623,12 @@ by_dt <- as.data.table(sales)[, .(label = paste0(region, " ", product), revenue)
 answer
 ```
 
-`join_text` is the sweep's second finding: god could take text apart with
-`split_text` and could not put it back, which is an asymmetry no law asked for.
+`join_text` exists because `split_text` does: taking text apart and not being
+able to put it back is an asymmetry no law asked for.
 
 ## Pull the year out of a date
 
-Which year did each order land in?
+The year and the month of each order.
 
 ::: {.panel-tabset}
 
@@ -1706,12 +1707,13 @@ by_dt <- as.data.table(sales)[, {
 answer
 ```
 
-Every library here needs the text turned into a date first, and god is the
-only one that makes you say so: `to_date` is never applied on your behalf.
+Every library here needs the text turned into a date first. god never applies
+`to_date` on your behalf: `year` asked of text is a refusal that names the
+conversion.
 
 ## Fill the holes in a column
 
-The catalogue does not list every product. Say so rather than leaving a blank.
+The catalog does not list every product. Say so rather than leaving a blank.
 
 ::: {.panel-tabset}
 
@@ -1789,12 +1791,11 @@ answer
 ```
 
 `fill_missing` refuses a filler of the wrong kind: a number into a text
-column is a refusal rather than a silent coercion, which is the one place
-this list's neighbours differ from each other most.
+column is a refusal rather than a silent coercion.
 
 ## Drop the rows with a hole
 
-Only the orders whose product the catalogue lists.
+Only the orders whose product the catalog lists.
 
 ::: {.panel-tabset}
 
@@ -2028,10 +2029,10 @@ answer
 ```
 
 This is the entry where the five diverge most, and the reason is that the
-absent rows have to be conjured rather than found. god splits it in two on
+absent rows have to be made rather than found. god splits it in two on
 purpose: `add_combinations` makes the rows and `fill_missing` says what a new
-one holds, because whether an absent pair means zero is a question about your
-data rather than about the verb.
+one holds. Whether an absent pair means zero is a question about your data
+rather than about the verb.
 
 ```{r}
 #| echo: false
@@ -2041,6 +2042,6 @@ cat(sprintf(
   .checked))
 ```
 
-Whichever of the five you arrived with, the sentence you would write in god is
-the same sentence, in either language, and it was checked against your own
+Whichever of the five you arrived with, the sentence you would write in god
+is the same sentence, in either language. It was checked against your own
 tool's answer before this page reached you.
