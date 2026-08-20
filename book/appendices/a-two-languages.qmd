@@ -6,9 +6,10 @@ title: "The two languages"
 
 A pipeline is the same sentence in both languages.
 [Your first pipeline](../chapters/first-pipeline.qmd) showed the two
-places they differ. This appendix is the rest of it: why the pipe is what it is,
-the three rules Python adds, how R's own habits are read, and what god does to
-the names already in your session.
+places they differ. This appendix is the rest of it: why the pipe is what it
+is, the three rules Python adds, and how R's own habits are read. Then it
+turns to names: the ones god takes over, the ones other packages take back,
+and the one god shares with gog.
 
 Everything else in the book is written once, with a tab for each language,
 because everywhere else the two really are the same sentence.
@@ -16,19 +17,22 @@ because everywhere else the two really are the same sentence.
 ## The two differences
 
 `>>` is the pipe in Python, and it is an operator rather than a method call for
-the reason the preface gives: an arrow points at the next step and a dot ends a
-sentence. Python cannot have `|>` itself. Its operator set is fixed by the
+the reason the preface gives. An arrow points at the next step, and a dot ends
+a sentence. Python cannot have `|>` itself. Its operator set is fixed by the
 language, and `|>` does not even tokenize.
 
-Of the operators a frame leaves free, `>>` is the only one available everywhere,
-which makes it the choice rather than a preference. `|` was considered and would
-have been a disaster, because pandas defines it, so `frame | verb` never reaches
-the verb at all. It does an elementwise or and hands back a frame of `True`,
-which is a wrong answer with no error attached.
+Only two operators are left free by pandas, polars and PySpark alike: `>>` and
+`<<`, the same arrow in two directions. The one that points at the next step
+is the pipe, which makes it the choice rather than a preference. `|` was
+considered and rejected, because pandas defines it, so `frame | verb` never
+reaches the verb at all. It tries an elementwise *or* with the verb as one more
+value, and the error that stops it comes from inside pandas, saying nothing
+about the pipe you meant.
 
-`col.name` is how Python names a column. R can look a name up in your data before
-it looks in your session, so a bare `revenue` is unambiguous there. Python has no
-such hook, so a column says that it is one.
+`col.name` is how Python names a column. R hands a verb the expression you
+wrote, unevaluated, so a bare `revenue` can be read as a column. Python
+evaluates every argument before god sees it: a bare `revenue` there is a
+session variable or an error, so a column says that it is one.
 
 A name that is not a Python identifier is still a column. Write it in
 brackets, `col["order date"]`, and it is the same expression the dot would
@@ -54,9 +58,9 @@ orders |> keep(`order date` > "2026-01-03")
 None of them comes from the grammar, and this book states them here rather
 than letting you find them in an error message.
 
-Comparisons joined by `&` need parentheses, because `&` binds more tightly than
-`==` in Python. Negation is `~`, because `not` is a keyword whose result Python
-turns into a bool, so an object cannot see it.
+Comparisons joined by `&` need parentheses, because `&` binds more tightly
+than a comparison in Python. Negation is `~`, because `not` is a keyword whose
+result Python turns into a bool, so an object cannot see it.
 
 ```{python}
 sales >> keep((col.revenue > 150) & (col.cost < 100))
@@ -76,6 +80,9 @@ sales >> keep(col.region.is_in(["West", "East"]))
 Write the values as a list when the order matters to you. A set works too, and
 gets sorted before it is written, because Python's hashing changes between runs
 and the same pipeline has to read the same way every time.
+
+Asking whether a value is missing is a method of the same shape:
+`col.cost.is_missing()`, where R writes `is.na(cost)`.
 
 The third rule is a refusal rather than a spelling. Python's own `and`, `or`,
 `in` and `if` all ask a value to become one plain yes or no, and a column
@@ -100,7 +107,7 @@ word in the vocabulary is spelled differently in the two languages.
 
 Two host-side calls do differ, and neither is a word of the vocabulary.
 Asking a pipeline for its text form is `format(p)` in R and `p.written()` in
-Python: `format` is the word R already owns for turning a thing into text,
+Python. `format` is the word R already owns for turning a thing into text,
 and Python's `format` means something else, so its method says what it
 gives. And `show_as` prints in R while it returns in Python, for the
 notebook reason [What it wrote](../chapters/what-it-wrote.qmd) explains.
@@ -115,8 +122,8 @@ shows what they wrote.
 cat(format(sales |> keep(region != "West" & !is.na(cost))))
 ```
 
-`!=` became `is not` and `is.na` became `is missing`. The full set of
-replacements is small.
+`!=` became `is not` and `is.na` became `is missing`. The everyday
+replacements fit in one table.
 
 ```{r}
 #| echo: false
@@ -128,6 +135,10 @@ translations <- data.frame(
 )
 knitr::kable(translations)
 ```
+
+R's text spellings translate the same way: `startsWith` becomes `starts`,
+`endsWith` becomes `ends`, `grepl` becomes `contains`, and `tolower` and
+`toupper` become `lower` and `upper`.
 
 A set of values is written out, because the grammar has no variables yet and
 will not guess at one.
@@ -163,8 +174,8 @@ So the cost is your own calls to `sort`, at the console or in a script, and
 nothing further. `base::sort` is always there, and the message above says so at
 the moment you need it.
 
-Python has namespaces where R does not, so `import god` collides with nothing at
-all and only `from god import *` can.
+Python has no attach step. `import god` adds one name to your session, so it
+collides with nothing at all, and only `from god import *` can.
 
 ## The names other packages take back
 
@@ -189,6 +200,10 @@ order you wrote your `library()` calls in is not visible from here.
 `pick` is not a generic, so there is no method to give it. Write `god::pick` when
 both packages are attached.
 
+`keep` after purrr is the same case: purrr's `keep` is not a generic either, so
+attaching purrr last takes the word back. The repair is the same shape,
+`god::keep`.
+
 ## If you also use gog
 
 `col` is a good enough name that other people picked it too. polars uses it, and
@@ -209,8 +224,8 @@ sales_by_product = god.collect(
 ```
 
 Or bring in one of them and reach for the other by name. The failure is loud if
-you forget: god's verbs have no idea what a gog column is, so a mixed-up pipeline
-stops rather than guessing.
+you forget: god's verbs cannot read a gog column, so a mixed-up pipeline stops
+rather than guessing.
 
 ## Asking which god you have
 
