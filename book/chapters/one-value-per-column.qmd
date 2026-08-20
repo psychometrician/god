@@ -37,9 +37,9 @@ survey >> add(where(name.starts("q"), value * 10))
 
 *`survey then add where (name starts "q") as (value * 10)`*
 
-The matched columns keep their names. That is not a rule this had to invent:
-`add` already covers making a column and replacing one, so replacing `q1_score`
-with a new `q1_score` is the ordinary case.
+The matched columns keep their names. That is not a rule `add where` had to
+invent: `add` already covers making a column and replacing one, so replacing
+`q1_score` with a new `q1_score` is the ordinary case.
 
 `name` and `value` are a pair. One is what the column is called, the other is
 what it holds, and they are the same two words the reshaping verbs use.
@@ -73,9 +73,9 @@ survey |>
 
 :::
 
-dplyr calls this `across`. Here it needed no verb and one word, because the
-selector was already there for `pick` and `where` already introduces a
-condition.
+dplyr calls this `across`. Here it needed no verb and only one word,
+`where`, because the selector was already there for `pick` and `where`
+already introduces a condition.
 
 Every rule that applies to a value written out by hand applies to this one,
 because the grammar expands it before checking anything. Asking `summarize` for
@@ -103,8 +103,9 @@ except GodError as refusal:
 
 :::
 
-Look at what it expanded to the first few times. `format` shows the sentence
-you wrote; `show_as` shows the one the grammar settled on.
+The first few times, look at what the pattern expanded to. `format` in R
+and `written()` in Python show the sentence you wrote; `show_as` shows the
+one the grammar settled on.
 
 ::: {.panel-tabset}
 
@@ -129,7 +130,7 @@ whoever reads the pipeline after you.
 ## Asking one question of every column
 
 The same argument works for a question. If eight columns hold scores, "who
-answered above 3 anywhere?" is one question about eight columns, and writing
+answered above 4 anywhere?" is one question about eight columns, and writing
 it eight times joined by `or` is eight chances to miss one. `keep` takes the
 same selector, with `any` in front of it.
 
@@ -166,7 +167,7 @@ survey |>
 *`survey then keep where any name starts "q" as value > 4`*
 
 `every` is the other half, and it asks the harder question: which respondents
-scored above 3 on all eight?
+scored above 2 on all eight?
 
 ::: {.panel-tabset}
 
@@ -198,9 +199,9 @@ The two are `or` and `and` written once instead of seven times, and the
 expansion is on the page if you ask for it, exactly as it is for `add`.
 
 A selector that matches no column is refused rather than answered. Both
-answers would be defensible: nothing is true of no columns, and everything
-is. Neither is guessable, so a mistyped selector would otherwise empty your
-table or leave it whole without a word.
+answers would be defensible: an `any` over no columns is false, and an
+`every` over no columns is true. Neither is guessable, so a mistyped
+selector would otherwise empty your table or leave it whole without a word.
 
 ::: {.panel-tabset}
 
@@ -224,5 +225,9 @@ except GodError as refusal:
 :::
 
 The words are `any` and `every` in the sentence, and `where_any` and
-`where_every` in both languages. `any` is a function Python already has, and
-the grammar has never taken a name a host was using.
+`where_every` in both languages. `any` is a function R and Python both
+already have, and god leaves the name to them.
+
+This chapter closes the part on choosing columns. The
+[cookbook](../parts/cookbook.qmd) comes next, and it is organized by the
+question rather than by the verb.
