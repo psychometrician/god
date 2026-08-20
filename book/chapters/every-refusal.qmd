@@ -5,8 +5,8 @@ title: "Every refusal is the grammar's"
 {{< include ../_setup.qmd >}}
 
 The verbs build a sentence and check nothing. Whether a column exists, whether
-an aggregation belongs where you put it, whether the types line up: all of that
-is answered in one place, so both languages get the same answer, in the same
+an aggregation belongs where you put it, whether the types agree: all of that
+is answered in one place. So both languages get the same answer, in the same
 words.
 
 ::: {.panel-tabset}
@@ -34,7 +34,7 @@ The whole pipeline is read before any of it runs, so a mistake at step two is
 reported as a mistake at step two rather than partway through the work.
 
 Because the reading happens before anything runs, a sentence that will not run
-can still be drawn, as far as it got.
+can still be drawn, as far as the reading got.
 
 ::: {.panel-tabset}
 
@@ -62,8 +62,8 @@ where it went: the `summarize` above took it away, along with everything else
 that was not grouped by. That is the question a message on its own cannot
 answer, and it is why the refusal and the drawing belong together.
 
-There is one refusal that cannot work this way. When `widen` finds two rows
-wanting the same cell, that is a fact about the data rather than about the
-sentence, and the grammar reads column names rather than rows. So that one
-arrives while the query runs. The words are still the grammar's, and they
-still name what to write instead.
+Not every refusal can work this way. When `widen` finds two rows wanting
+the same cell, or a value that `giving` does not list, that is a fact about
+the data rather than about the sentence. The grammar reads column names
+rather than rows, so those refusals arrive while the query runs. The words
+are still the grammar's, and they still name what to write instead.
