@@ -18,7 +18,9 @@ notes = god_table("notes")
 
 What kind of thing does a column hold, and can you choose by that alone? It
 is the other question you can ask about a column without looking at a single
-row. `kind` is one of `"number"`, `"text"`, `"truth"` or `"date"`.
+row. `kind` is one of `"number"`, `"text"`, `"truth"` or `"date"`. A
+timestamp column answers as a date, because a timestamp is a date carrying a
+time.
 
 ::: {.panel-tabset}
 
@@ -102,13 +104,15 @@ survey >> summarize(where(kind == "number", average(value)))
 
 :::
 
-That one line does not name a column at all, so it keeps working when the table
-gains one.
+That one line does not name a column at all, so it keeps working when the
+table gains one. Inside the calculation, `value` stands for each column the
+condition matched, and [the next chapter](one-value-per-column.qmd) is built
+on that word.
 
 ## Case, and the two words that handle it
 
 The name tests match exactly, so `name starts "q"` does not find a column called
-`Q1_score`. Mixed-case names are ordinary enough that this comes up quickly.
+`Q1_score`. Mixed-case names are ordinary enough that you meet this early.
 
 There is no flag for it, because a name is text and text has a case. Fold the
 case and ask the question.
@@ -176,9 +180,9 @@ mixed >> keep(lower(col.Region) == "west")
 :::
 
 Folding the case of every name automatically would have been the other option,
-and it is wrong: two columns can differ only by case, and a grammar that pretends
-otherwise cannot treat them as the two columns they are. Asking for it is one
-word.
+and it is wrong. Two columns can differ only by case, and a grammar that
+pretends otherwise cannot treat them as the two columns they are. Asking for
+it is one word.
 
 ## Why you have to write `name`
 
@@ -219,15 +223,15 @@ at a value. You would learn it from the position, which is the kind of rule this
 grammar removes rather than adds.
 
 The tests are the same words in both languages. What differs is how a column's
-name is reached, which is the same difference as everywhere else: R writes a bare
-name and Python writes `col.name`, so R spells this with base R's `startsWith`
-and Python with a method.
+name is reached, which is the same difference as everywhere else. R writes a
+bare name and Python writes `col.name`, so R spells this with base R's
+`startsWith` and Python with a method.
 
 ## A percent sign is a percent sign
 
 The three tests read text literally, with no pattern language hiding inside.
 R borrows `grepl`'s shape to ask the question, and the reading is still the
-grammar's: the marks that regular expressions treat as instructions, `%` and
+grammar's: the marks that pattern languages treat as instructions, `%` and
 `.` among them, here only ever mean themselves.
 
 ```{r}
@@ -263,7 +267,8 @@ notes >> keep(col.note.contains("100%"))
 *`notes then keep where [note] contains "100%"`*
 
 When the question really is a pattern, it belongs to the host language, a
-boundary the coverage appendix states with the rest of them.
+boundary [the coverage appendix](../appendices/e-coverage.qmd) states with
+the rest of them.
 
 ## One word, one seat
 
@@ -292,5 +297,8 @@ except GodError as refusal:
 
 :::
 
-The message hands the word back to its seat, with the working spelling
-written out.
+The two messages differ, because a bare `kind` is not the same thing in the
+two languages. In Python it is the grammar's own word, so the message hands
+the word back to its seat, with the working spelling written out. In R a
+bare name inside `keep` is a column, so its message is the one a missing
+column gets: there is no column called `kind`.
