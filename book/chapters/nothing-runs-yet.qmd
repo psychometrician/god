@@ -24,8 +24,8 @@ type(answer).__name__
 
 :::
 
-Printing it runs it, which is why every example so far shows a table. When you
-want the table itself, ask for it with `collect`.
+Printing it runs it, which is why the examples so far have shown tables
+rather than plans. When you want the table itself, ask for it with `collect`.
 
 ::: {.panel-tabset}
 
@@ -43,17 +43,23 @@ len(collect(answer))
 
 :::
 
+The plan buys you speed. Steps cost nothing until you ask, and then the
+whole sentence reaches the engine as one query. Six steps are not six
+passes over the table, because the engine sees the whole question first.
+[The machine underneath](../appendices/h-the-machine-underneath.qmd)
+shows a pipeline arriving whole.
+
 In R this matters for more than speed. `sort` and `keep` are names other
-packages use too, so a pipeline can land in some other package's `sort` by
-mistake. A pipeline is not a table, so the stranger's `sort` has no meaning
-for it, and the call stops rather than returning a plausible answer from the
-wrong tool.
+packages use too, so a pipeline can reach some other package's `sort` by
+mistake. A pipeline is not a table, so that `sort` has no meaning for it,
+and the call stops rather than returning a plausible answer from the wrong
+tool.
 
 Forgetting `collect` is covered by the same protection. Ask a plan a table's
-question, `nrow(answer)`, `names(answer)`, `answer$revenue`, and R's own
-answer for each would be NULL, and NULL flows onward: `sum(answer$revenue)`
-would be 0, with no complaint anywhere. So a pipeline refuses the question
-and names the repair:
+question and R's own answers would be quietly wrong. `names(answer)` would
+list the plan's own parts, and `nrow(answer)` and `answer$revenue` would be
+NULL. NULL flows onward: `sum(answer$revenue)` would be 0, with no complaint
+anywhere. So a pipeline refuses the question and names the repair:
 
 ```{r}
 #| error: true
@@ -61,7 +67,7 @@ answer$revenue
 ```
 
 Python needs no guard built for this. A pipeline there has no length, no
-brackets and no iteration, so the same slip stops itself, with the
+brackets and no iteration, so the same mistake stops itself, with the
 language's own error.
 
 You can also see what the verbs wrote, which is the text form, and it is the same
@@ -83,11 +89,11 @@ print((sales >> keep(col.region == "West") >> take(10)).written())
 
 :::
 
-The two calls answer with the same bytes, and only their names differ:
-`format` is the word R already owns for turning a thing into text, and
-Python's `format` means something else, so its method says what it gives.
-What comes back is the text form: the sentence with no pipe glyph and no
-column syntax left, which is what
+The two calls answer with the same bytes, and only their names differ.
+`format` is the word R already owns for turning a thing into text. Python's
+`format` means something else, so its method says what it gives.
+What comes back is the text form: the sentence with no pipe glyph and
+neither language's column spelling left, which is what
 [the next chapter](what-it-wrote.qmd) stores, sends and runs.
 
 Printing is also how a notebook shows a pipeline. In Jupyter, and on every
