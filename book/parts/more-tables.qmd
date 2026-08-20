@@ -13,7 +13,8 @@ The three chapters answer three different questions. `join` brings columns in
 from another table. `matching` asks whether a row has a partner over there,
 without bringing anything in. `add_rows` stacks a second table underneath.
 The order is deliberate: first the verb everyone arrives wanting, then the
-verb that keeps the first one honest, then the one that is simpler than both.
+word that keeps the first one honest, then the verb that is simpler than
+both.
 
 One fact holds the part together, and it is yours to watch rather than the
 grammar's to enforce: **a join can multiply your rows**. If the other table

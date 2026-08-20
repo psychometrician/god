@@ -92,9 +92,9 @@ sales >> keep(~matching(stocked, by = col.product))
 
 :::
 
-`by` works here exactly as it does on `join`, and leaving it out means the same
-thing: god matches on the column names both tables share, and the note naming
-its choice arrives beside the answer, as it does for `join`.
+`by` works here exactly as it does on `join`, and leaving it out means the
+same thing: god matches on the column names both tables share. The note
+naming its choice arrives beside the answer, as it does for `join`.
 
 That sameness is the whole point, so it extends to keys the two tables name
 differently. Write `is` between them, this table's name first, exactly as
@@ -134,6 +134,8 @@ sales >> keep(matching(listed, by = col.product == col.item)) >> take(3)
 :::
 
 *`sales then keep where matching(listed, by [product] is [item]) then take 3`*
+
+With no `by` at all, god says which column it used:
 
 ::: {.panel-tabset}
 
@@ -197,8 +199,8 @@ print(len(collect(
 
 :::
 
-`matching` is the whole question `keep` asks rather than one part of one, so it
-does not combine with `and`. Ask it in its own step.
+`matching` is the whole question `keep` asks rather than one part of it, so
+it does not combine with `and` or `or`. Ask it in its own step.
 
 ::: {.panel-tabset}
 
@@ -251,8 +253,9 @@ sales |> keep(matching(products, by = product)) |> keep(revenue > 100)
 :::
 
 The two `keep` steps read as one sentence: first the rows with a partner,
-then the rows that clear the bar. However long the pipeline grows, `matching`
-can only remove rows, which is the property the word exists to keep.
+then the rows whose revenue is over 100. However long the pipeline grows,
+`matching` can only remove rows, which is the property the word exists to
+guarantee.
 
 That property is what separates it from a join, because the two sentences look
 alike and mean different things.
