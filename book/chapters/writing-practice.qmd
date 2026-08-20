@@ -126,9 +126,8 @@ sales |>
 
 ## Third question: who is the strongest respondent?
 
-From the survey, say each respondent's score on the first question and
-read the top three people. You have not seen this question, and you own
-every word it needs.
+From the survey, read the top three people by the first question's score.
+You have not seen this question, and you own every word it needs.
 
 ::: {.panel-tabset}
 
@@ -137,9 +136,8 @@ every word it needs.
 ```{r}
 run('
   survey
-    then add [best] as largest([q1_score]) by [respondent]
-    then pick [name, region, best]
-    then sort [best] descending, [name]
+    then pick [name, region, q1_score]
+    then sort [q1_score] descending, [name]
     then take 3
 ')
 ```
@@ -148,9 +146,8 @@ run('
 
 ```{r}
 survey |>
-  add(best = largest(q1_score), by = respondent) |>
-  pick(name, region, best) |>
-  sort(descending(best), name) |>
+  pick(name, region, q1_score) |>
+  sort(descending(q1_score), name) |>
   take(3)
 ```
 
@@ -158,23 +155,22 @@ survey |>
 
 ```{python}
 (survey
-  >> add(best = largest(col.q1_score), by = col.respondent)
-  >> pick(col.name, col.region, col.best)
-  >> sort(descending(col.best), col.name)
+  >> pick(col.name, col.region, col.q1_score)
+  >> sort(descending(col.q1_score), col.name)
   >> take(3))
 ```
 
 :::
 
-*`survey then add [best] as largest([q1_score]) by [respondent] then pick [name, region, best] then sort [best] descending, [name] then take 3`*
+*`survey then pick [name, region, q1_score] then sort [q1_score] descending, [name] then take 3`*
 
 The second sort key is doing quiet work: two respondents share a score at
 the cut, and without a tiebreak "top three" would be leaving the choice to
 chance. Naming the tiebreak is naming the choice.
 
-One limitation is in view: `best` here reads one score column, and the
-survey has eight. Asking for the largest across all eight, without naming
-them one by one, is a real question and this part cannot say it yet.
+One limitation is in view: this sentence reads one score column, and the
+survey has eight. The strongest respondent across all eight, without naming
+them one by one, is a question this part cannot say yet.
 [Columns into rows](columns-into-rows.qmd) can, in one sentence, by turning
 the eight into one column a `largest` can read. Knowing exactly where your
 current words stop is part of owning them.
