@@ -19,9 +19,9 @@ stamps = god_table("stamps")
 stamps["at"] = pd.to_datetime(stamps["at"])
 ```
 
-What year was that, what month, and did it land on a weekday? A date usually
-arrives as text. `to_date` reads one, and once a column holds a date there is
-a word for each part you might want out of it.
+What year was that, what month, and was it a weekday? A date usually arrives
+as text. `to_date` reads one, and once a column holds a date there is a word
+for each part you might want out of it.
 
 The table is `diary`, three days held as text:
 
@@ -153,7 +153,7 @@ stamps |>
 
 A column either carries a time or it does not, and the grammar knows which. Ask
 `hour` of one that does not and it refuses, rather than hand back a column of
-noughts that quietly assumed midnight:
+zeros that quietly assumed midnight:
 
 ::: {.panel-tabset}
 
@@ -176,14 +176,14 @@ except GodError as refusal:
 
 :::
 
-That refusal is the right shape. The sentence is legal English and reads as
-though it should work, the answer would have been a number, and nothing about
-a column of zeros would have looked wrong on the page. Handing one back is
-what the grammar will not do.
+That refusal is the right shape. The sentence reads as though it should
+work, the answer would have been a number, and nothing about a column of
+zeros would have looked wrong on the page. Handing one back is what the
+grammar will not do.
 
-`to_date` is no way around it, and it is the repair everybody reaches for. It
-makes a **date**, which is the thing that has no time in it, so it moves the
-sentence no closer:
+`to_date` does not help, and it is the repair everybody reaches for. It makes
+a **date**, which is the thing that has no time in it, so the same refusal
+comes back:
 
 ::: {.panel-tabset}
 
@@ -209,7 +209,7 @@ except GodError as refusal:
 Splitting it over two steps does not help either, and the grammar says so in the
 same words: what it reads is the column, not the spelling that made it.
 
-A time has to reach the table as a time, then. Where the values are text, the
+So a time has to reach the table as a time. Where the values are text, the
 conversion belongs to the language you are calling from, above the pipeline: R
 has `as.POSIXct` and Python has `pd.to_datetime`, and that is how `at` above
 became a timestamp before any of these examples ran.
