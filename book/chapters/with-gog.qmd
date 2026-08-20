@@ -39,7 +39,8 @@ graphics, by the same author, built on the same discipline and holding the same
 promise about day one and day two. Most real questions use both, because a
 question usually starts as a table that is the wrong shape and ends as a picture.
 
-This chapter is one question answered end to end. Nothing else is loaded.
+This chapter is one question answered end to end. Nothing else is loaded but
+pandas, and pandas is not a third grammar: it is how Python holds a table.
 
 ## The table
 
@@ -199,7 +200,7 @@ So the rule is short. If you want to *look* at it, print it. If you want to
 Now gog. The table goes in, a mark and some channels say what to draw, and the
 sentence reads the way a god pipeline does. The table going in is `top`, the
 first twelve rows of the ranking you have already read. On the Python side
-every gog name arrives through the module, as `gog.point` and `gog.col`; the
+every gog name arrives through the module, as `gog.point` and `gog.col`. The
 section near the end of this chapter says why, and why R needs no prefix at
 all.
 
@@ -279,7 +280,7 @@ The bar chart answers the question. This next one is why the pairing exists:
 the same panel, unsummarized, with one more channel.
 
 `play` turns a column into time. Every country is a point, GDP per person runs
-along the bottom on a log scale, life expectancy up the side, and the year
+along the bottom on a log scale, and life expectancy up the side. The year
 becomes the animation rather than another axis.
 
 ::: {.panel-tabset}
@@ -429,17 +430,17 @@ data(latest) + point + x(gdp, scale = "log") + y(life) +
 
 The countries above twenty thousand dollars sit almost entirely above
 seventy-five years, and everything else stays in view behind them. That is
-the working difference between the two grammars' questions: god's `keep`
-removes rows before the answer, gog's `brush` highlights them inside it, and
-the comparison above needs the context a `keep` would have thrown away.
+the working difference between the two grammars' questions. god's `keep`
+removes rows before the answer; gog's `brush` highlights them inside it. The
+comparison above needs the context a `keep` would have thrown away.
 
 ## What it replaced
 
 Written in the tools this book keeps comparing itself against, the page above
-needs a reshaping function from one package and a plotting system from
-another. Each brings its own vocabulary, its own idea of what a column
-reference is, and its own rules about which arguments are quoted. The
-animation usually needs a third package, and the cube and the brush a fourth.
+needs a table package for the summarizing and a plotting system on top of it.
+Each brings its own vocabulary, its own idea of what a column reference is,
+and its own rules about which arguments are quoted. The animation usually
+needs a third package, and the cube and the brush a fourth.
 
 The saving is not the line count. It is that `summarize` and `play` come from
 the same design, so the second half of the analysis does not ask you to change
@@ -466,7 +467,7 @@ each of them names a column, and `median`, a word both vocabularies wanted.
 Bringing in both whole would leave you holding gog's pair and no warning.
 
 The second reason would still apply if god did not exist. A grammar of graphics
-wants words the language has already spent: `sum`, `max` and several more are
+wants words the language has already spent. `sum`, `max` and several more are
 transforms in gog and builtins in Python, so taking gog whole takes those from
 you as well. god's vocabulary overlaps none of Python's, and that is what makes
 it the one that is safe to bring in whole.
@@ -511,17 +512,19 @@ except GodError as refusal:
 :::
 
 The two-step spelling it offers is the shape this chapter's own pipeline
-already has.
+already has: the group answer first, and everything that reads it afterwards.
 
 ## Where to go next
 
 The graphics grammar has its own manual, at
 [the gog book](https://psychometrician.github.io/gog-book/), written the way this
-one is: every plot on the page was drawn by the engine while the page was built.
+one is. Every plot on the page was drawn by the engine while the page was
+built.
 
 Read it in the order you would use them. You start in god, with a table that is
 the wrong shape. You end in gog, looking at the answer.
 
 The table on this page is the Gapminder panel, in the excerpt that Jennifer
-Bryan's `gapminder` R package made standard. The figures are the Gapminder
-Foundation's, CC BY 4.0, and the credit belongs in both places.
+Bryan's `gapminder` R package made standard [@bryan2025gapminder]. The figures
+are the Gapminder Foundation's, CC BY 4.0, and the credit belongs in both
+places.
