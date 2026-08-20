@@ -41,11 +41,14 @@ four places a table is named: at the head of a pipeline, and in `join`,
 The sentence does not change. What changes is which engine answers it, and each
 language says so in its own way, because the two reach a cluster differently.
 
-In R, hand `use_engine` a connection. Anything `DBI` speaks will do, which
-includes `sparklyr` and an `odbc` connection to a warehouse. Tables the
-connection already holds are found by name, and nothing is copied up to it. The
-connection below is a local database standing in for a remote one, so that this
-page runs what it describes:
+In R, hand `use_engine` a connection, and say which SQL to write for it:
+`"sql"` for DuckDB, or `"spark"` for Spark and Databricks. It assumes the
+first. Anything `DBI` speaks will do, which includes `sparklyr` and an `odbc`
+connection to a warehouse. None of them says which dialect it wants. Naming
+the wrong one is loud: Spark reads a double-quoted name as text, so the query
+stops on its first line. Tables the connection already holds are found by
+name, and nothing is copied up to it. The connection below is a local database
+standing in for a remote one, so that this page runs what it describes:
 
 ```{r}
 warehouse <- DBI::dbConnect(duckdb::duckdb())
@@ -68,17 +71,17 @@ use_engine()   # back to the engine on this machine
 
 In Python there is nothing to say, because a Spark frame carries its session
 with it. Give the verbs Spark tables and the pipeline runs on Spark; give them
-pandas tables and it runs here, so `orders >> summarize(total = total(col.revenue),
+pandas tables and it runs here. `orders >> summarize(total = total(col.revenue),
 by = col.region)` picks its engine from `orders`.
 
 The answer comes back in the same currency as the question. Ask with pandas
 frames and you get a pandas frame. Ask with Spark frames and you get a Spark
-frame, still on the cluster, because bringing the answer of a pipeline over a
-warehouse table down to one machine is rarely what you meant.
+frame, still on the cluster. Bringing the answer of a pipeline over a warehouse
+table down to one machine is rarely what you meant.
 
 A pipeline that mixes the two is refused. One query cannot read a table on a
-cluster and a table in your session at the same time, and saying so is better
-than quietly moving one of them.
+cluster and a table in your session at the same time. Saying so is better than
+quietly moving one of them.
 
 ## When the table is nowhere
 
