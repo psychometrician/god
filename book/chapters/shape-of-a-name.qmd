@@ -5,10 +5,10 @@ title: "The shape of a name"
 {{< include ../_setup.qmd >}}
 
 How do you pick eight score columns without writing eight names? Naming
-columns one by one is tedious in a wide table, and it goes stale the moment
-a ninth score arrives. `pick where` takes a question about a column's
-**name** instead. The `survey` table is the case: six respondents, eight
-score columns, and four columns of everything else.
+columns one by one is tedious in a wide table, and the written list goes
+stale the moment a ninth score arrives. `pick where` takes a question about
+a column's **name** instead. The `survey` table is the example: six
+respondents, eight score columns, and four columns of everything else.
 
 ::: {.panel-tabset}
 
@@ -42,8 +42,9 @@ survey >> pick(where(name.starts("q")))
 *`survey then pick where (name starts "q")`*
 
 `name` is the word for whichever column is being considered. There are three
-tests you can ask about it, `starts`, `ends` and `contains`, and they join with
-`and`, `or` and `not` like any other condition.
+tests of its shape, `starts`, `ends` and `contains`, and they join with
+`and`, `or` and `not` like any other condition. `is` still means an exact
+match, so one named column can sit in the same question:
 
 ::: {.panel-tabset}
 
@@ -70,7 +71,9 @@ survey >> pick(where(name.ends("_score") | (name == "respondent")))
 
 :::
 
-`contains` is the third test, for a mark that sits in the middle of a name:
+`contains` is the third test: it matches the quoted text anywhere in the
+name, not only at the start or the end. In `survey` it finds the same
+columns as `starts "q"`, because no other name has a `q` in it:
 
 ::: {.panel-tabset}
 
@@ -97,8 +100,7 @@ survey >> pick(where(name.contains("q")))
 
 :::
 
-If no column's name matches, that is refused rather than handing back a table
-with no columns at all.
+If no column's name matches, the `pick` is refused before anything runs:
 
 ::: {.panel-tabset}
 
@@ -122,5 +124,8 @@ except GodError as refusal:
 :::
 
 An empty choice is refused rather than returned, because a table with no
-columns answers nothing. The message lists what the table does have, which
-is usually the spelling you meant.
+columns answers nothing. The message lists what the table does have, and
+the spelling you meant is usually in that list.
+
+The shape of a name is only the first question this part asks.
+[What a column holds](what-a-column-holds.qmd) asks the next.
