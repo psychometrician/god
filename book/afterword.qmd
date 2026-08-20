@@ -38,8 +38,8 @@ exactly why the laws exist in writing.
 
 This book made falsifiable claims, on purpose, and you now know enough to
 falsify them. A thing you can say two ways. A refusal that names no repair.
-A sentence that reads differently in the two languages. A page whose two
-tabs disagree. Any of these is a defect, none of them is yours to route
+A sentence that reads differently in the two languages. A page whose tabs
+disagree. Any of these is a defect, none of them is yours to route
 around, and a report of one is worth more to this project than praise. The
 repository takes issues at <https://github.com/psychometrician/god>, and the
 margin of every page has a link.

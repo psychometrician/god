@@ -761,7 +761,7 @@ in 2016 by an unrelated package: you install `grammar-of-data` and write
 works too, with a prefix on every name.
 
 Every example shown in both languages ran in both when this book was built,
-exactly as printed, and a page whose two tabs disagree is a build the book
+exactly as printed, and a page whose tabs disagree is a build the book
 refuses to ship.
 
 ## Who this book is for
