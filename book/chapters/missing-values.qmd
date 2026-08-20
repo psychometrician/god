@@ -396,3 +396,92 @@ absent rows last; polars puts them first; Spark puts them first going up and
 last coming down. The same question, five tools, three answers. So every tool
 that would put them anywhere else is told where they go. The sentence means the
 same thing wherever it runs, which is the whole of what this grammar is for.
+
+## The same answer, wherever an order is read
+
+A sort settles more than the row order. Anything that reads the rows *in* that
+order reads them the way the sort left them, so `row_number` counts the row with
+no maker where the sort put it, which is last:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then summarize [total] as total([revenue]) by [maker]
+    then sort [maker]
+    then add [place] as row_number()
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(products, by = product) |>
+  summarize(total = total(revenue), by = maker) |>
+  sort(maker) |>
+  add(place = row_number())
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(products, by = col.product)
+  >> summarize(total = total(col.revenue), by = col.maker)
+  >> sort(col.maker)
+  >> add(place = row_number()))
+```
+
+:::
+
+*`sales then join products by [product] then summarize [total] as total([revenue]) by [maker] then sort [maker] then add [place] as row_number()`*
+
+Say `missing first` and the counting moves with it, because it is the same
+order being read:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then summarize [total] as total([revenue]) by [maker]
+    then sort [maker] missing first
+    then add [place] as row_number()
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(products, by = product) |>
+  summarize(total = total(revenue), by = maker) |>
+  sort(maker, missing = "first") |>
+  add(place = row_number())
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(products, by = col.product)
+  >> summarize(total = total(col.revenue), by = col.maker)
+  >> sort(col.maker, missing = "first")
+  >> add(place = row_number()))
+```
+
+:::
+
+*`sales then join products by [product] then summarize [total] as total([revenue]) by [maker] then sort [maker] missing first then add [place] as row_number()`*
+
+`previous`, `running_total`, `latest` and a grouped `take` all read that same
+line, and all of them move with it. The rule is worth stating once: a window
+frames the way the sort above it framed, holes and all.

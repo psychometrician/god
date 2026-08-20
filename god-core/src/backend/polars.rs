@@ -226,7 +226,7 @@ impl Backend for Polars {
                     calls.push("unique()".to_string());
                     let all: Vec<String> =
                         entering[i].columns.iter().map(|(c, _)| c.clone()).collect();
-                    calls.push(format!("sort({})", strings(&all)));
+                    calls.push(format!("sort({}, nulls_last=True)", strings(&all)));
                 }
 
                 Step::Rename { values, .. } => {
@@ -267,7 +267,7 @@ impl Backend for Polars {
                 Step::Lengthen { resolved, .. } => {
                     let Some(shape) = resolved else { continue };
                     calls.extend(lengthen(shape));
-                    calls.push(format!("sort({})", strings(&lengthen_order(shape))));
+                    calls.push(format!("sort({}, nulls_last=True)", strings(&lengthen_order(shape))));
                 }
 
                 Step::Widen { name: pattern, value, by, missing, .. } => {
@@ -410,9 +410,17 @@ fn lengthen_order(shape: &Lengthened) -> Vec<String> {
         .collect()
 }
 
-/// `sort` over a list of columns, all ascending.
+/// `sort` over a list of columns, all ascending, missing last.
+///
+/// **polars is the target whose default disagrees here.** `sort` with nothing
+/// said puts the absent rows first, so god's own determinism orderings — the
+/// ones added after a `group_by`, a `unique`, a `lengthen` or a `widen`,
+/// because those promise nothing about row order — came back the other way up
+/// from every other target. Measured through god: `summarize [n] as
+/// row_count() by [g]` over a `g` with one hole answered `east, west, missing`
+/// on DuckDB and `missing, east, west` in the printed polars.
 fn ordered(names: &[Name]) -> String {
-    format!("sort({})", list(names))
+    format!("sort({}, nulls_last=True)", list(names))
 }
 
 /// `sort` over keys that may carry a direction.

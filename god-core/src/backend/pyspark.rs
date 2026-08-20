@@ -43,6 +43,12 @@ pub struct PySpark;
 struct Over<'a> {
     partition: &'a [Name],
     order: Option<&'a [SortKey]>,
+    /// Where the `sort` those keys came from put its missing values, carried in
+    /// beside them. **PySpark writes a window's order explicitly**, unlike the
+    /// three targets whose windows read the frame's own row order, so this is
+    /// one of the two places that could disagree with the sort standing above
+    /// it — and did.
+    missing_first: bool,
     /// Whether this expression stands in an `add`, where an aggregate spans
     /// its group and every row keeps the answer. Spark spells that
     /// `.over(Window.partitionBy(...))`, and with no `by` the window is the
@@ -82,7 +88,13 @@ impl Backend for PySpark {
                 // One `withColumn` per value, which is what a Spark reader
                 // writes and what a chain of them already looks like.
                 Step::Add { values, by, .. } => {
-                    let over = Over { partition: by, order: last_sort(plan, i), windowed: true };
+                    let sorted = last_sort(plan, i);
+                    let over = Over {
+                        partition: by,
+                        order: sorted.map(|(keys, _)| keys),
+                        missing_first: sorted.is_some_and(|(_, m)| m),
+                        windowed: true,
+                    };
                     for v in values {
                         calls.push(format!(
                             "withColumn({}, {})",
@@ -91,8 +103,8 @@ impl Backend for PySpark {
                         ));
                     }
                     if values.iter().any(|v| v.value.windows()) {
-                        if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys, last_missing_first(plan, i)));
+                        if let Some((keys, absent)) = last_sort(plan, i) {
+                            calls.push(sort_by(keys, absent));
                         }
                     }
                 }
@@ -126,20 +138,28 @@ impl Backend for PySpark {
                     // `take`, so this is that machinery with `rank` in place of
                     // `row_number` — which is the one-word difference between
                     // breaking ties arbitrarily and keeping them.
-                    let sorted = last_sort(plan, i)
+                    let (sorted, absent) = last_sort(plan, i)
                         .expect("ties are only reached after a sort");
                     let counted = if *last { flipped(sorted) } else { sorted.to_vec() };
+                    // Counting from the far end moves the absent rows with
+                    // everything else, which is what `flipped` does to the keys.
+                    let counted_absent = if *last { !absent } else { absent };
                     calls.push(format!(
                         "withColumn({}, F.rank().over({}))",
                         text(RANK),
                         window(
-                            &Over { partition: by, order: Some(&counted), windowed: false },
+                            &Over {
+                                partition: by,
+                                order: Some(&counted),
+                                missing_first: counted_absent,
+                                windowed: false,
+                            },
                             &[]
                         )
                     ));
                     calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                     calls.push(format!("drop({})", text(RANK)));
-                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
+                    calls.push(sort_by(sorted, absent));
                 }
 
                 Step::Take { count, by, last, .. } => {
@@ -149,11 +169,11 @@ impl Backend for PySpark {
                             // than a frame**, so it cannot stand in a chain. The
                             // sort is walked backwards, the first rows are taken
                             // from that end, and the caller's order is restored.
-                            let keys = last_sort(plan, i)
+                            let (keys, absent) = last_sort(plan, i)
                                 .expect("take_last is only reached after a sort");
-                            calls.push(sort_by(&flipped(keys), !last_missing_first(plan, i)));
+                            calls.push(sort_by(&flipped(keys), !absent));
                             calls.push(format!("limit({count})"));
-                            calls.push(sort_by(keys, last_missing_first(plan, i)));
+                            calls.push(sort_by(keys, absent));
                         } else {
                         calls.push(format!("limit({count})"));
                         }
@@ -163,19 +183,28 @@ impl Backend for PySpark {
                         // sort before it says what "first" means, and the order
                         // has to be restated after the filter because a filter
                         // promises nothing about it.
-                        let keys = last_sort(plan, i).unwrap_or_default();
+                        let (keys, absent) = last_sort(plan, i).unwrap_or((&[], false));
                         // Numbering from the far end is the same window counting
-                        // the other way.
+                        // the other way, absent rows included.
                         let counted = if *last { flipped(keys) } else { keys.to_vec() };
+                        let counted_absent = if *last { !absent } else { absent };
                         calls.push(format!(
                             "withColumn({}, F.row_number().over({}))",
                             text(RANK),
-                            window(&Over { partition: by, order: Some(&counted), windowed: false }, &[])
+                            window(
+                                &Over {
+                                    partition: by,
+                                    order: Some(&counted),
+                                    missing_first: counted_absent,
+                                    windowed: false,
+                                },
+                                &[],
+                            )
                         ));
                         calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                         calls.push(format!("drop({})", text(RANK)));
                         if !keys.is_empty() {
-                            calls.push(sort_by(keys, last_missing_first(plan, i)));
+                            calls.push(sort_by(keys, absent));
                         }
                     }
                 }
@@ -453,20 +482,38 @@ fn window(over: &Over, key: &[SortKey]) -> String {
     // The expression's own key wins where it has one: `rank` says what it ranks
     // by. Where it does not, the order is the one the rows already have, which
     // the checker has guaranteed by refusing the sentence without a `sort`.
-    let ordering = if key.is_empty() { over.order.unwrap_or_default() } else { key };
+    // **The expression's own key takes the pinned default, not the sort's
+    // clause.** `rank` says what it ranks by, and that is a different column
+    // from the one the sort named, so the sort's placement has nothing to say
+    // about it. Where the window rides on the sort instead, it frames the way
+    // the sort framed.
+    let (ordering, missing_first) = if key.is_empty() {
+        (over.order.unwrap_or_default(), over.missing_first)
+    } else {
+        (key, false)
+    };
     if !ordering.is_empty() {
-        let written: Vec<String> = ordering.iter().map(sort_key).collect();
+        let written: Vec<String> =
+            ordering.iter().map(|k| sort_key(k, missing_first)).collect();
         out.push_str(&format!(".orderBy({})", written.join(", ")));
     }
     out
 }
 
-fn sort_key(k: &SortKey) -> String {
-    if k.descending {
-        format!("F.col({}).desc()", text(&k.column.text))
-    } else {
-        format!("F.col({})", text(&k.column.text))
-    }
+/// One key of a window's order, placement and all.
+///
+/// **Spark's default is the one that disagrees**, first ascending and last
+/// descending, so a bare `F.col(x)` inside a `Window.orderBy` framed the window
+/// one way while the `.orderBy` on the frame above it framed the rows another.
+/// The four `asc_nulls_*`/`desc_nulls_*` methods say it, and `sort_by` writes
+/// the same four for the frame's own sort.
+fn sort_key(k: &SortKey, missing_first: bool) -> String {
+    format!(
+        "F.col({}).{}_nulls_{}()",
+        text(&k.column.text),
+        if k.descending { "desc" } else { "asc" },
+        if missing_first { "first" } else { "last" }
+    )
 }
 
 fn ordered(names: &[Name]) -> String {
@@ -505,21 +552,10 @@ fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
     format!("orderBy({})", written.join(", "))
 }
 
-/// Where that same `sort` put its missing values, which a restatement carries.
-fn last_missing_first(plan: &Plan, before: usize) -> bool {
-    plan.steps[..before]
-        .iter()
-        .rev()
-        .find_map(|step| match step {
-            Step::Sort { missing_first, .. } => Some(*missing_first),
-            _ => None,
-        })
-        .unwrap_or(false)
-}
 
-fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
+fn last_sort(plan: &Plan, before: usize) -> Option<(&[SortKey], bool)> {
     plan.steps[..before].iter().rev().find_map(|step| match step {
-        Step::Sort { keys, .. } => Some(keys.as_slice()),
+        Step::Sort { keys, missing_first, .. } => Some((keys.as_slice(), *missing_first)),
         _ => None,
     })
 }

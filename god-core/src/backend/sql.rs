@@ -60,15 +60,59 @@ const GRID: &str = "__god_grid";
 /// which combinations are absent from them.
 const ROWS: &str = "__god_rows";
 
-/// The keys of the most recent `sort` before this step.
-fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {
+/// The keys of the most recent `sort` before this step, and where it put the
+/// missing values.
+///
+/// **Both halves travel together, and that is the whole of the fix.** The keys
+/// have ridden into every window since `take ... by` was built; the placement
+/// did not, so a window framed by a pinned sort was itself unpinned. Measured
+/// on both engines, `rank([x])` over `10, missing, 30, 20` answered `1, 4, 3,
+/// 2` on DuckDB and `2, 1, 4, 3` on Spark — every rank different — and
+/// `previous([x])` handed back different values in the same sentence.
+fn last_sort(plan: &Plan, before: usize) -> Option<(&[SortKey], bool)> {
     plan.steps[..before]
         .iter()
         .rev()
         .find_map(|step| match step {
-            Step::Sort { keys, .. } => Some(keys.as_slice()),
+            Step::Sort { keys, missing_first, .. } => Some((keys.as_slice(), *missing_first)),
             _ => None,
         })
+}
+
+/// God's own ordering, added wherever an engine promises nothing about row
+/// order, with the placement written out.
+///
+/// **These are the orderings nobody asked for**, put there so a `summarize`, a
+/// `drop_duplicates`, a `lengthen` or a `widen` hands its rows back the same
+/// way twice. They order by data columns, so a hole in one of them lands the
+/// row at a different end on the two dialects, and the ordering added for
+/// determinism was itself undetermined: `summarize [n] as row_count() by [g]`
+/// over a `g` with one missing value answered `east, west, missing` on DuckDB
+/// and `missing, east, west` on Spark. Measured on both, through god.
+///
+/// Ascending and missing last, which is the pinned default. The names arrive
+/// quoted, because only the dialect knows how to quote them.
+fn settled(names: &[String]) -> String {
+    names
+        .iter()
+        .map(|n| format!("{n} NULLS LAST"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+/// One key of a window's `ORDER BY`, placement and all.
+///
+/// **Written every time, for the reason the table sort writes it every time**:
+/// DuckDB defaults to missing last in both directions while Spark defaults to
+/// first ascending and last descending, so a bare `ORDER BY` inside an `OVER`
+/// frames the window two ways. The name arrives quoted, because only the
+/// dialect knows how to quote it.
+fn window_key(name: &str, descending: bool, missing_first: bool) -> String {
+    format!(
+        "{name}{} {}",
+        if descending { " DESC" } else { "" },
+        if missing_first { "NULLS FIRST" } else { "NULLS LAST" }
+    )
 }
 
 /// How one engine spells the few things engines spell differently.
@@ -258,9 +302,11 @@ impl Dialect {
                             // An aggregate written in `add` spans the group and
                             // hands the same answer back to every row in it,
                             // which is a window rather than a collapse.
+                            let sorted = last_sort(plan, i);
                             let over = Over {
                                 partition: by,
-                                order: last_sort(plan, i),
+                                order: sorted.map(|(keys, _)| keys),
+                                missing_first: sorted.is_some_and(|(_, m)| m),
                                 windowed: true,
                             };
                             // A window writes its own `OVER`, because it needs an
@@ -308,14 +354,14 @@ impl Dialect {
                     // for has to be restated afterwards.**
                     let ordered = if values.iter().any(|v| v.value.windows()) {
                         last_sort(plan, i)
-                            .map(|keys| {
+                            .map(|(keys, missing_first)| {
                                 let written: Vec<String> = keys
                                     .iter()
                                     .map(|k| {
-                                        format!(
-                                            "{}{}",
-                                            self.name(&k.column.text),
-                                            if k.descending { " DESC" } else { "" }
+                                        window_key(
+                                            &self.name(&k.column.text),
+                                            k.descending,
+                                            missing_first,
                                         )
                                     })
                                     .collect();
@@ -350,7 +396,7 @@ impl Dialect {
                         // to the engine: groups are ordered by the columns that
                         // define them. dplyr and pandas both do this, so it is
                         // also what anyone arriving from either already expects.
-                        out.push_str(&format!(" ORDER BY {}", groups.join(", ")));
+                        out.push_str(&format!(" ORDER BY {}", settled(&groups)));
                     }
                     out
                 }
@@ -517,7 +563,7 @@ impl Dialect {
                         .iter()
                         .map(|(c, _)| self.name(c))
                         .collect();
-                    format!("SELECT DISTINCT * FROM {from} ORDER BY {}", all.join(", "))
+                    format!("SELECT DISTINCT * FROM {from} ORDER BY {}", settled(&all))
                 }
 
                 Step::Rename { values, .. } => {
@@ -616,7 +662,7 @@ impl Dialect {
                     format!(
                         "{} ORDER BY {}",
                         branches.join(" UNION ALL "),
-                        ordered.join(", ")
+                        settled(&ordered)
                     )
                 }
 
@@ -748,7 +794,7 @@ impl Dialect {
                         format!(
                                 "SELECT * FROM (PIVOT {counted} ON {on} USING {aggregate} GROUP BY {}) ORDER BY {}",
                                 groups.join(", "),
-                                groups.join(", ")
+                                settled(&groups)
                             )
                     } else {
                         let cells: Vec<String> = giving
@@ -768,7 +814,7 @@ impl Dialect {
                             groups.join(", "),
                             cells.join(", "),
                             groups.join(", "),
-                            groups.join(", ")
+                            settled(&groups)
                         )
                     }
                 }
@@ -851,15 +897,18 @@ impl Dialect {
                     // backwards. `take_last` is `take` over the second one, with
                     // the first restored afterwards so the answer still reads
                     // the way the `sort` said it should.
-                    let written = |keys: &[SortKey], flip: bool| {
+                    let written = |keys: &[SortKey], missing_first: bool, flip: bool| {
                         keys.iter()
                             .map(|k| {
                                 let down = if flip { !k.descending } else { k.descending };
-                                format!(
-                                    "{}{}",
-                                    self.name(&k.column.text),
-                                    if down { " DESC" } else { "" }
-                                )
+                                // **Reading from the far end moves the absent
+                                // rows with everything else.** `take_last` is
+                                // `take` over a reversed order, and a reversal
+                                // that left the missing values where they were
+                                // would take a different set from the one the
+                                // sort put at that end.
+                                let absent = if flip { !missing_first } else { missing_first };
+                                window_key(&self.name(&k.column.text), down, absent)
                             })
                             .collect::<Vec<_>>()
                             .join(", ")
@@ -874,10 +923,10 @@ impl Dialect {
                         // `ROW_NUMBER` is what the untied case uses and is
                         // exactly the wrong function here, since it breaks ties
                         // arbitrarily and silently.
-                        let sorted = last_sort(plan, i)
+                        let (sorted, absent) = last_sort(plan, i)
                             .expect("ties are only reached after a sort");
-                        let keys = written(sorted, *last);
-                        let restore = written(sorted, false);
+                        let keys = written(sorted, absent, *last);
+                        let restore = written(sorted, absent, false);
                         let partition = if by.is_empty() {
                             String::new()
                         } else {
@@ -892,12 +941,12 @@ impl Dialect {
                         )
                     } else if by.is_empty() {
                         if *last {
-                            let keys = last_sort(plan, i)
+                            let (keys, absent) = last_sort(plan, i)
                                 .expect("take_last is only reached after a sort");
                             format!(
                                 "SELECT * FROM (SELECT * FROM {from} ORDER BY {} LIMIT {count}) ORDER BY {}",
-                                written(keys, true),
-                                written(keys, false)
+                                written(keys, absent, true),
+                                written(keys, absent, false)
                             )
                         } else {
                         format!("SELECT * FROM {from} LIMIT {count}")
@@ -910,14 +959,14 @@ impl Dialect {
                         // query that works and a query that works here. The
                         // checker has already refused this without a sort before
                         // it, so there is always something to find.
-                        let sorted = last_sort(plan, i)
+                        let (sorted, absent) = last_sort(plan, i)
                             .expect("a grouped take is only reached after a sort");
                         // Numbering from the far end is the same window counting
                         // the other way, which is why this needs no second query
                         // shape. The `ORDER BY` at the end is always the order
                         // the caller asked for.
-                        let keys = written(sorted, *last);
-                        let restore = written(sorted, false);
+                        let keys = written(sorted, absent, *last);
+                        let restore = written(sorted, absent, false);
                         let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
                         // **The order the sort established has to survive the
                         // window.** Filtering on the row number is a `WHERE`,
@@ -1141,10 +1190,10 @@ impl Dialect {
                     .unwrap_or_default()
                     .iter()
                     .map(|k| {
-                        format!(
-                            "{}{}",
-                            self.name(&k.column.text),
-                            if k.descending { " DESC" } else { "" }
+                        window_key(
+                            &self.name(&k.column.text),
+                            k.descending,
+                            over.missing_first,
                         )
                     })
                     .collect();
@@ -1226,10 +1275,10 @@ impl Dialect {
                     .unwrap_or_default()
                     .iter()
                     .map(|k| {
-                        format!(
-                            "{}{}",
-                            self.name(&k.column.text),
-                            if k.descending { " DESC" } else { "" }
+                        window_key(
+                            &self.name(&k.column.text),
+                            k.descending,
+                            over.missing_first,
                         )
                     })
                     .collect();
@@ -1295,23 +1344,29 @@ impl Dialect {
             Expr::Window { kind, key, .. } => {
                 let ordering: Vec<String> = match key {
                     // `rank` says what it ranks by, so its own key is the order.
-                    Some(k) => vec![format!(
-                        "{}{}",
-                        self.name(&k.column.text),
-                        if k.descending { " DESC" } else { "" }
+                    // **It takes the pinned default rather than a preceding
+                    // sort's clause**, because the clause belongs to that
+                    // sort's keys and this is a different key: `sort [a]
+                    // missing first then add [r] as rank([b])` says nothing
+                    // about where a missing `b` goes.
+                    Some(k) => vec![window_key(
+                        &self.name(&k.column.text),
+                        k.descending,
+                        false,
                     )],
                     // `row_number` does not, so the order is the one the rows are
                     // already in. The checker has refused this without a `sort`
-                    // before it, so there is always something to find.
+                    // before it, so there is always something to find — and
+                    // the placement of that sort comes with it.
                     None => over
                         .order
                         .unwrap_or_default()
                         .iter()
                         .map(|k| {
-                            format!(
-                                "{}{}",
-                                self.name(&k.column.text),
-                                if k.descending { " DESC" } else { "" }
+                            window_key(
+                                &self.name(&k.column.text),
+                                k.descending,
+                                over.missing_first,
                             )
                         })
                         .collect(),
@@ -1485,6 +1540,11 @@ struct Over<'a> {
     /// The keys of the last `sort` before this step. `row_number` is refused
     /// without one, so this is present whenever it is needed.
     order: Option<&'a [SortKey]>,
+    /// Where that same `sort` put its missing values. **It travels with the
+    /// keys**: a window riding on a sort frames the way that sort framed, and
+    /// the two halves of one clause going separate ways is what left every
+    /// window unpinned after the table sort was settled.
+    missing_first: bool,
     /// Whether this expression stands where a group's answer is handed back to
     /// every row (`add`), rather than where groups collapse (`summarize`). An
     /// aggregate there is a window even with no `by`: the group is the whole

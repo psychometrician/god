@@ -485,6 +485,109 @@ fn spark_refuses_the_one_sentence_it_cannot_write() {
     assert!(duck.contains("error(") && !duck.contains("raise_error("), "DuckDB spells this `error`: {duck}");
 }
 
+/// Every `ORDER BY` either dialect writes says where the missing values go.
+///
+/// **A bare `ORDER BY` means two different things.** DuckDB puts the absent
+/// rows last in both directions; Spark puts them first ascending and last
+/// descending. So the same sentence, run on the two engines god executes on,
+/// answered differently whenever a sort key or a grouping column had a hole in
+/// it — measured through god before this was fixed: `rank([x])` over
+/// `10, missing, 30, 20` came back `1, 4, 3, 2` on DuckDB and `2, 1, 4, 3` on
+/// Spark, and `summarize [n] as row_count() by [g]` returned its groups in
+/// opposite orders.
+///
+/// **This walks the vocabulary rather than a list of the places it went
+/// wrong**, because the places were the point: the window renderers were known,
+/// and `summarize`, `drop_duplicates`, `lengthen` and `widen` were not. A verb
+/// or a function added later gets this check for free, which is the only kind
+/// worth having.
+#[test]
+fn every_ordering_says_where_the_missing_values_go() {
+    let others = god_core::check::Tables::new([("products", Schema::new([("region", Type::Text)]))]);
+
+    // **Every shape that writes an ordering, and the grouped forms are the
+    // point.** The first version of this test walked `verb_sentences()` alone
+    // and passed with the defect deliberately put back, because that table's
+    // `summarize` has no `by` and so writes no ordering at all. A guard that
+    // cannot fail is worse than none, so each sentence here is required to
+    // produce one.
+    let ordering_shapes = [
+        ("sort", r#"sales then sort [revenue]"#),
+        ("sort missing first", r#"sales then sort [revenue] missing first"#),
+        ("summarize by", r#"sales then summarize [n] as row_count() by [region]"#),
+        ("drop_duplicates", r#"sales then drop_duplicates"#),
+        ("take_last", r#"sales then sort [revenue] then take_last 3"#),
+        ("take by", r#"sales then sort [revenue] then take 1 by [region]"#),
+        ("take with ties", r#"sales then sort [revenue] then take 1 with ties"#),
+        ("lengthen", r#"sales then lengthen [revenue, cost]"#),
+        (
+            "widen",
+            r#"sales then pick [product, region, revenue] then widen name [region], value [revenue] giving [West, East]"#,
+        ),
+        ("rank", r#"sales then add [r] as rank([revenue])"#),
+        ("row_number", r#"sales then sort [revenue] then add [n] as row_number()"#),
+        ("previous", r#"sales then sort [revenue] then add [p] as previous([cost])"#),
+        (
+            "running_total",
+            r#"sales then sort [revenue] then add [t] as running_total([cost])"#,
+        ),
+        (
+            "rolling",
+            r#"sales then sort [revenue] then add [m] as rolling(average([cost]), 3)"#,
+        ),
+        ("latest", r#"sales then sort [revenue] then add [l] as latest([cost])"#),
+    ];
+
+    // Each clause runs to the parenthesis that closes it, or to the end of the
+    // query. That is enough: nothing the grammar writes puts a `(` of its own
+    // inside an `ORDER BY`.
+    fn orderings(text: &str) -> Vec<&str> {
+        text.match_indices("ORDER BY ")
+            .map(|(at, _)| {
+                let rest = &text[at..];
+                &rest[..rest.find(')').unwrap_or(rest.len())]
+            })
+            .collect()
+    }
+
+    for dialect in ["sql", "spark"] {
+        for (what, sentence) in ordering_shapes {
+            let compiled = god_core::compile_tables(sentence, &schema(), &others, dialect)
+                .unwrap_or_else(|d| panic!("`{what}` will not render as {dialect}: {}", d.message));
+            let found = orderings(&compiled.text);
+            assert!(
+                !found.is_empty(),
+                "`{what}` wrote no `ORDER BY` at all as {dialect}, so this test is \
+                 no longer reaching the thing it checks:\n{}",
+                compiled.text
+            );
+            for clause in found {
+                assert!(
+                    clause.contains("NULLS"),
+                    "`{what}` wrote an `ORDER BY` with no placement as {dialect}, so the \
+                     two dialects order its missing values differently:\n  {clause}\n\
+                     in:\n{}",
+                    compiled.text
+                );
+            }
+        }
+
+        // And the whole vocabulary besides, so a function added later is covered
+        // wherever it happens to write an ordering.
+        for f in vocabulary::FUNCTIONS {
+            if let Ok(compiled) = compile(&pipeline_using(f), &schema(), dialect) {
+                for clause in orderings(&compiled.text) {
+                    assert!(
+                        clause.contains("NULLS"),
+                        "`{}` wrote an `ORDER BY` with no placement as {dialect}:\n  {clause}",
+                        f.name
+                    );
+                }
+            }
+        }
+    }
+}
+
 /// No verb may write a double-quoted identifier into Spark's dialect.
 ///
 /// **This is the cheap half of the guard against the defect that does not

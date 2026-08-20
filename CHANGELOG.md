@@ -5,6 +5,31 @@ a person using god can see.
 
 ## Unreleased
 
+### Windows say where the missing values go, so the two engines answer alike
+
+Sorting was pinned to *missing last* already. What read that order was not: a
+window carried the sort's keys and left its placement behind, so a column with
+holes in it framed one way on DuckDB and another on Spark. `rank` over
+`10, missing, 30, 20` answered `1, 4, 3, 2` in one place and `2, 1, 4, 3` in the
+other, every rank different, and `previous` handed back different values.
+
+It is settled now, in one rule: a window frames the way the sort above it
+framed. Say `missing first` and the counting moves with it.
+
+```r
+sales |> sort(revenue, missing = "first") |> add(place = row_number())
+```
+
+The same was true of the orderings god adds for you, the ones that keep a
+`summarize`, a `drop_duplicates`, a `lengthen` or a `widen` handing its rows
+back the same way twice. A grouping column with a hole in it put that group at
+opposite ends on the two engines, and in printed polars as well. All of them say
+it now.
+
+If you grouped by a column with holes, or ranked one, the answer you got from
+one engine has changed to agree with the others.
+
+
 ### Sorting says where the missing values go, and now it means the same thing everywhere
 
 `sort` used to leave the answer to whichever tool was underneath, and they do
