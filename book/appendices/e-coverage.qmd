@@ -3,10 +3,10 @@ title: "What this grammar does not do"
 ---
 
 A tool's marketing lists what it has. A manual you can trust also lists what
-it lacks, so here are both directions, measured against dplyr and pandas as
-of god 0.2.1, in August 2026. The first list will shrink as the vocabulary
-grows under its laws. The honest way to read it today is as the price of the
-small grammar the rest of this book sells.
+it lacks, so here are both directions, measured against dplyr and pandas in
+August 2026. The first list will shrink as the vocabulary grows under its
+laws. The honest way to read it today is as the price of the small grammar
+the rest of this book sells.
 
 ## The gaps, and their exits
 
