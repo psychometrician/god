@@ -36,19 +36,18 @@ sales >> sort(descending(col.revenue)) >> take(3)
 
 *`sales then sort [revenue] descending then take 3`*
 
-`take` on its own is honest but rarely what you meant: it keeps the first
-rows *in whatever order the table happens to be in*, which is fine for
-peeking at a table and wrong for answering a question. The sort in front is
+`take` on its own is honest but rarely what you meant. It keeps the first rows
+*in whatever order the table happens to be in*, which is fine for peeking at a
+table and wrong for answering a question. The sort in front is
 what turns "some three rows" into "the three largest", and that distinction
 returns with force at the end of this chapter.
 
 ## Why there is no ascending
 
 `descending` reverses one key, and there is no matching word `ascending`,
-because ascending is what happens when you do not ask for anything. A word
-that means "do the default" is a second way to say the same thing, and every
-second way costs every reader a small doubt: if both spellings exist, do they
-differ? In this grammar, if two spellings existed they *would* differ, so the
+because ascending is what happens when you do not ask for anything. A word that means "do the default" is a second way to say the same thing, and
+every second way costs every reader a small doubt. If both spellings exist, do
+they differ? In this grammar, if two spellings existed they *would* differ, so the
 redundant one is absent. This is the smallest example of the one-way rule you
 will meet, and the cheapest place to get used to it.
 
@@ -89,9 +88,9 @@ written.
 ## The latest one of each
 
 Here is the pair doing its best work. Which was the most recent order in
-each region? In most tools this question has a name you have to learn
-(`slice_max`, `nlargest`, a window function with a filter); here it is the
-two verbs you already have, plus `by`:
+each region? In most tools this question has a name you have to learn: `slice_max`,
+`nlargest`, a window function with a filter. Here it is the two verbs you
+already have, plus `by`:
 
 ::: {.panel-tabset}
 
@@ -169,9 +168,9 @@ sales >> sort(col.revenue) >> take_last(3) >> pick(col.product, col.revenue)
 *`sales then sort [revenue] then take_last 3 then pick [product, revenue]`*
 
 The answer comes back in the order the `sort` asked for, smallest first, and
-the three rows are the three largest. Sorting the other way and taking the
-first three gets the same rows in the opposite order, which is a different
-table and usually not the one that was wanted.
+the three rows are the three largest. Sorting the other way and taking the first three gets the same rows in the
+opposite order. That is a different table, and usually not the one that was
+wanted.
 
 `by` works here as it does on `take`:
 
@@ -252,9 +251,9 @@ scores >> sort(descending(col.points)) >> take(2, ties=True)
 
 *`scores then sort [points] descending then take 2 with ties`*
 
-Three rows came back from `take 2`, and that is the point. Once you ask for
-ties you have stopped asking for a number of rows and started asking for a
-cut, so the count is no longer something you can read off the sentence. That
+Three rows came back from `take 2`, and that is the point. Once you ask for ties you have stopped asking for a number of rows and started
+asking for a cut. The count is no longer something you can read off the
+sentence. That
 is why it has to be asked for and is never the default.
 
 It needs a `sort` in front of it, and more sharply than the others do: level
@@ -284,9 +283,9 @@ except GodError as refusal:
 
 `take_last` takes it too, and means the same thing at the other end.
 
-If you are arriving from dplyr, this is the one place its default and this
-one differ: `slice_max(points, n = 2)` keeps ties unless you tell it not to,
-and `take 2` drops them unless you tell it to keep them. Neither is wrong.
+If you are arriving from dplyr, this is the one place its default and this one
+differ. `slice_max(points, n = 2)` keeps ties unless you tell it not to, and
+`take 2` drops them unless you tell it to keep them. Neither is wrong.
 Writing it down is what stops the two from quietly disagreeing.
 
 ## What travels with it
@@ -331,9 +330,9 @@ a coin toss dressed as one. A tool that answered it would be choosing your
 answer for you.
 
 `take_last` asks for a sort even ungrouped, and the reason is the same one
-read from the other side. The rows a pipeline reaches first are at least the
-rows it reached first; the rows at the far end are a claim about an end, and a
-table does not have one until something says which way it runs.
+read from the other side. The rows a pipeline reaches first are at least the rows it reached first. The
+rows at the far end are a claim about an end, and a table does not have one
+until something says which way it runs.
 
 ::: {.panel-tabset}
 
@@ -356,6 +355,5 @@ except GodError as refusal:
 
 :::
 
-The message names `take` as the word that needs no sort, because wanting a few
-rows to look at is the common reason to arrive here, and that is the verb for
-it.
+The message names `take` as the word that needs no sort. Wanting a few rows to
+look at is the common reason to arrive here, and that is the verb for it.

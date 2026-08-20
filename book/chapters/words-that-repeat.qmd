@@ -6,20 +6,19 @@ title: "The words that repeat"
 
 Why did the eighth verb take minutes, when the first one took a chapter? You
 have met eight verbs now, and a handful of small words that traveled between
-them: `by`, `where`, `as`, `all_but`, `descending`. This chapter is about
-those small words, and it is the shortest useful thing in the book, because
-the answer to the question above is that the small words never changed.
+them: `by`, `where`, `as`, `all_but`, `descending`. This chapter is about those small words, and it is the shortest useful thing
+in the book. The answer to the question above is that the small words never
+changed.
 
-Each of them means one thing. Not one thing per verb, one thing. When you
-meet a verb you have never seen, the small words in it already make sense,
-and that is most of what makes this grammar quick to get back after a year
+Each of them means one thing. Not one thing per verb, one thing. When you meet a verb you have never seen, the small words in it already make
+sense. That is most of what makes this grammar quick to get back after a year
 away.
 
 ## `by` says which rows go together
 
-You saw `by` on `summarize`, where it made the groups. It is the same word on
-`add`, where it says which rows a value is worked out within, and on `take`,
-where it says which rows the first few are taken from.
+You saw `by` on `summarize`, where it made the groups. It is the same word on `add`, where it says which rows a value is worked out
+within. It is the same word again on `take`, where it says which rows the
+first few are taken from.
 
 ::: {.panel-tabset}
 
@@ -83,9 +82,9 @@ sales |>
 :::
 
 Read a product's rows and their shares sum to one: each row's revenue over
-its own group's total. In dplyr this idiom needs a grouped mutate and an
-ungroup; in SQL it needs a window function; here it is the `by` you already
-know, sitting on a different verb. And on `take`, the word means the same
+its own group's total. In dplyr this idiom needs a grouped mutate and an ungroup, and in SQL it needs
+a window function. Here it is the `by` you already know, sitting on a different
+verb. And on `take`, the word means the same
 thing a third time:
 
 ::: {.panel-tabset}
@@ -227,10 +226,9 @@ sales |>
 
 ## `where` asks a question
 
-On `keep` the question is about a row. Later you will see it on `pick`, where the
-question is about a column, and the difference is written down rather than
-guessed: inside `pick` you say `name` or `kind` to name what you are asking
-about.
+On `keep` the question is about a row. Later you will see it on `pick`, where the question is about a column, and the
+difference is written down rather than guessed. Inside `pick` you say `name` or
+`kind` to name what you are asking about.
 
 ::: {.panel-tabset}
 
@@ -289,23 +287,22 @@ The message says what `sort` does take, which is the whole of it.
 
 ## Why this matters more than it looks
 
-A vocabulary is easy to learn and easy to lose. What survives a year away is
-not the word list, it is the rules for putting words together, and those only
-survive if there are few of them and they have no exceptions.
+A vocabulary is easy to learn and easy to lose. What survives a year away is not the word list. It is the rules for putting
+words together, and those only survive if there are few of them and they have
+no exceptions.
 
 So the test this grammar sets itself is not whether it has a word for
 everything. It is whether a word you learned in one place still means the
 same thing in the next place you meet it. Every part after this one is that
-test being run. And you now hold the working form of the preface's motto: if
-you can say something two ways in this grammar, one of them is a bug, and
-the author wants to hear about it. That sentence is not rhetoric. It is the
-standard each of the last seven chapters answered to, from the missing
-`ascending` to the missing `drop`, and it is falsifiable by any reader with
+test being run. And you now hold the working form of the preface's motto. If you can say
+something two ways in this grammar, one of them is a bug, and the author wants
+to hear about it. That sentence is not rhetoric. It is the standard each of the last seven chapters answered to, from the
+missing `ascending` to the missing `drop`. It is falsifiable by any reader with
 an afternoon.
 
-The eight verbs and five small words you now have are the everyday core of
-the grammar, and the preface's promise has reached its first checkpoint:
-day one was reading, and you have been reading since the first pipeline.
+The eight verbs and five small words you now have are the everyday core of the
+grammar, and the preface's promise has reached its first checkpoint. Day one
+was reading, and you have been reading since the first pipeline.
 Day two is writing, and the practice pair ahead closes with it. Those two
 chapters are where this part's claims stop being the book's and start being
 yours.

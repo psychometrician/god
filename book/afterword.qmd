@@ -16,9 +16,9 @@ the cast's, and answer it in one sentence. Small questions count. A total
 you already know from a dashboard is a fine question, because checking a
 known answer is how you learn to trust a new tool with an unknown one.
 
-Two rules make it a fair trial. Write the sentence before opening this book,
-and only then look anything up; recall is the skill, and looking up after an
-attempt strengthens it where looking up before replaces it. And read each
+Two rules make it a fair trial. Write the sentence before opening this book, and only then look anything up.
+Recall is the skill, and looking up after an attempt strengthens it where
+looking up before replaces it. And read each
 finished sentence aloud once. By day ten you should be writing sentences
 this book never showed you, which is the only outcome that would prove you
 learned the grammar rather than the examples.
@@ -27,9 +27,9 @@ learned the grammar rather than the examples.
 
 Then the real test, which neither you nor this book can hurry: put it down.
 Work takes you where it takes you, and some month next year a table will
-land in front of you again. The measure of this grammar is what happens in
-that minute, before any manual is open: whether *keep the rows where, total
-by, sort, take ten* comes back as a sentence you can say. Everything in the
+land in front of you again. The measure of this grammar is what happens in that minute, before any manual
+is open. Does *keep the rows where, total by, sort, take ten* come back as a
+sentence you can say? Everything in the
 design, the closed vocabulary, the one-way spellings, the words that repeat,
 was aimed at that minute. The author cannot be there for it, and that is
 exactly why the laws exist in writing.
@@ -44,12 +44,11 @@ around, and a report of one is worth more to this project than praise. The
 repository takes issues at <https://github.com/psychometrician/god>, and the
 margin of every page has a link.
 
-The grammar is young, and the version number, 0.2.0 as
-[the coverage appendix](appendices/e-coverage.qmd) records, means what it
-says. What it
-will not do is grow casually: every word that enters answers to the laws,
-and the vocabulary you learned here is intended to be the vocabulary, not
-this year's draft of it. Stability is a feature you were promised, and it
+The grammar is young, and the version number [the coverage
+appendix](appendices/e-coverage.qmd) records means what it says. What it will
+not do is grow casually. Every word that enters answers to the laws, and the
+vocabulary you learned here is intended to be the vocabulary, not this year's
+draft of it. Stability is a feature you were promised, and it
 binds the road ahead.
 
 ## Thanks
