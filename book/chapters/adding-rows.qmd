@@ -16,7 +16,7 @@ more = god_table("more")
 
 A late order arrives in a table of its own, so where do its rows go?
 `add_rows` stacks another table underneath this one. Nothing is matched and
-no column is added; the rows just carry on where the first table stopped.
+no column is added; the answer holds every row of both tables.
 
 The late order is `more`, one row with the same columns as `sales`:
 
@@ -85,8 +85,12 @@ sales >> add_rows(sales) >> summarize(rows = row_count())
 
 :::
 
-Both tables need the same columns. A column on one side only is refused rather
-than filled in with missing values, because a half-empty column that says nothing
+Every row appears twice, and both copies stay: `add_rows` never removes
+anything. Dropping repeats has a verb of its own, `drop_duplicates`.
+
+Both tables need the same columns, and each column has to hold the same kind
+of thing on both sides. A column on one side only is refused rather than
+filled in with missing values, because a half-empty column that says nothing
 is how a mistake survives to the end of a pipeline.
 
 ::: {.panel-tabset}
@@ -95,15 +99,19 @@ is how a mistake survives to the end of a pipeline.
 
 ```{r}
 #| error: true
-collect(sales |> add_rows(data.frame(region = "North")))
+late <- data.frame(region = "North")
+
+collect(sales |> add_rows(late))
 ```
 
 ### Python
 
 ```{python}
 #| classes: refusal
+late = pd.DataFrame({"region": ["North"]})
+
 try:
-    collect(sales >> add_rows(pd.DataFrame({"region": ["North"]})))
+    collect(sales >> add_rows(late))
 except GodError as refusal:
     print(refusal)
 ```
