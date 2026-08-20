@@ -102,9 +102,10 @@ is narrow enough to name.
 
 - `all_but` inverts any list of columns, here and anywhere a list of columns
   appears; you will meet it again in `lengthen`.
-- `where` works inside this verb too: `pick where` takes the same conditions
-  `keep` takes, aimed at columns instead of rows, in [choosing columns
-  without naming them](../parts/choosing-columns.qmd).
+- `where` works inside this verb too. A `pick where` joins and negates its
+  conditions the way `keep` does, asking about a column's name and kind
+  rather than its values, in [choosing columns without naming
+  them](../parts/choosing-columns.qmd).
 - The order of names is meaningful, which is the general rule about lists in
   this grammar: nothing you write is decoration.
 

@@ -39,7 +39,7 @@ sales >> keep(col.region == "West")
 Six of the fifteen rows survive. The other nine were not deleted from
 anything; `sales` is untouched, and the pipeline handed back a new, smaller
 table. Every verb in this grammar works that way, so no step can damage the
-table a colleague is using behind you.
+table a colleague is also using.
 
 ## Combining conditions
 
@@ -78,15 +78,15 @@ list is the whole of the subject.
 
 ## The words where the hosts disagree
 
-Look at what the gloss did to the R sentence above. `==` became `is`, and `&`
-became `and`. That is not a stylistic flourish; it is a decision about which
-words can be in a grammar at all.
+Look at what the text form did to the R sentences above: `==` became `is`,
+and `&` became `and`. That is not a style choice; it is a decision about
+which words can be in a grammar at all.
 
 A symbol that means different things in different tools is a word this
 grammar refuses to own. `=` assigns in one language, compares in another, and
-half the world's beginners have been burned by the difference. So the text
-form spells every contested symbol as the English word that means only one
-thing, and each binding translates its host's habit into that word:
+half the world's beginners have confused the two. So the text form spells
+every contested symbol as the English word that means only one thing, and
+each binding translates its host's habit into that word:
 
 | you write in R | you write in Python | the grammar's word |
 |---|---|---|
@@ -133,7 +133,7 @@ sales >> keep(~(col.product == "Widget"))
 
 :::
 
-This is the first sighting of a rule you will meet on every page: if the
+This is the first appearance of a rule you will meet on every page: if the
 grammar can already say something, it does not grow a second way to say it. A
 `drop` verb would cost a word, and every reader who met `drop(x)` beside
 `keep(!x)` would have to learn, and then remember, that they are the same
@@ -143,9 +143,10 @@ thing. The grammar spends its words on meanings, not on synonyms.
 
 - `where` is how the text form marks the condition, as in the gloss above.
   You never type it in R or Python; the condition sits inside the verb.
-- The condition language itself travels whole. Everything you can write in a
-  `keep` you can later write inside `pick where` (choosing columns by a
-  question) and inside `when` (choosing a value by a question), unchanged.
+- The condition language travels. A `when` (choosing a value by a question)
+  takes the conditions `keep` takes, unchanged. A `pick where` (choosing
+  columns by a question) joins and negates its questions the same way, and
+  asks them about a column's name and kind rather than its values.
 - `and`, `or`, `not`, `is`, `in`, `missing` are the grammar's own words for
   the contested symbols, and the table above is their whole story.
 
