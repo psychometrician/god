@@ -50,9 +50,10 @@ North never sold one. That is the very thing the question was asking, and it
 is the only answer that did not survive to be read.
 
 This is the quiet failure of grouping. A group is made from the rows that are
-there, so a group with no rows is not empty: it is absent, and a total that
-should read zero is a line the eye slides past instead. Sort the answer and
-the gap moves. Chart it and the bar is not short, it is not drawn.
+there, so a group with no rows is not empty: it is absent. A total that
+should read zero is not shown at all, and nothing tells you that a line is
+missing. Sort the answer and the gap moves. Chart it and the bar is not
+short, it is not drawn.
 
 ## Making them appear
 
@@ -129,28 +130,28 @@ sales >> add_combinations(col.region, col.product) \
 :::
 
 Two steps rather than one argument, and deliberately. Whether an absent
-combination means zero is a question about the data and not about the verb: a
-region that sold no Sprockets sold zero of them, and a sensor that was
-switched off did not record a zero. The grammar cannot tell those apart, so it
+combination means zero is a question about the data and not about the verb.
+A region that sold no Sprockets sold zero of them. A sensor that was switched
+off did not record a zero. The grammar cannot tell those apart, so it
 declines to guess, and the second step is where you say which one you have.
 
 ## The values come from the table
 
 Only the values already in a column are crossed. That is the boundary of what
-this verb can do: a product nobody has ever sold anywhere is not in the
-`product` column, so no row is made for it, and a month with no orders at all
-cannot be conjured from a table that never mentions it.
+this verb can do. A product nobody has ever sold anywhere is not in the
+`product` column, so no row is made for it. A month with no orders at all
+appears nowhere in the table, so no crossing can produce it.
 
 The same rule settles what happens to a hole. A missing value is not a
 category, so it makes no combinations, and nothing is lost by that: the rows
 that were already there are handed on untouched. This verb never looks at
-them.
+the holes.
 
 ## Inside a group
 
 Crossing every value against every other is right for regions and products,
-and wrong as soon as a third column has an opinion. Every student sat their
-own school's paper:
+and wrong as soon as a third column says which combinations are real. Every
+student took their own school's paper:
 
 ```{r}
 #| echo: false
@@ -184,9 +185,9 @@ sittings >> add_combinations(col.student, col.question, by = col.school)
 
 *`sittings then add_combinations [student, question] by [school]`*
 
-`by` names the columns to hold fixed, and the crossing happens inside each of
-them. Bob is given q2, because a student at his school sat it; nobody is given
-q3, because that is the west's paper. Cal gains nothing at all.
+`by` names the columns to hold fixed, and the crossing happens inside each
+group. Bob is given q2, because a student at bob's school took it; nobody is
+given q3, because that is the west's paper. Cal gains nothing at all.
 
 Without `by`, the same sentence would cross all three students against all
 three questions and hand back nine rows with the school column empty in every
@@ -220,9 +221,9 @@ except GodError as refusal:
 
 :::
 
-A column cannot be crossed and held fixed at once either, and the message says
-which of the two lists to take it out of. Both repairs are legal and they make
-different tables, so the grammar has no business choosing between them.
+A column cannot be crossed and held fixed at once either, and the message
+names both repairs. Crossing a column and holding it fixed mean different
+tables, so the grammar leaves the choice to you.
 
 ::: {.panel-tabset}
 
@@ -245,9 +246,9 @@ except GodError as refusal:
 
 :::
 
-The verb next to this one in the vocabulary takes a table rather than columns,
-and the two words start alike. Writing a table's name here is answered by the
-verb that wanted one:
+Another verb in the vocabulary takes a table rather than columns, and the two
+words start alike. Writing a table's name here is answered by the verb that
+wanted one:
 
 ```{r}
 #| error: true
@@ -256,11 +257,11 @@ run('sales then add_combinations more')
 
 That message belongs to the sentence rather than to either language. Written
 in R or in Python, a bare name in this position is a *column*, so the two
-bindings hand the grammar `add_combinations [more]` and the reply is the one
-for a column that is not there. That is also the truth, and the shorter road to
-the same repair.
+bindings hand the grammar `add_combinations [more]`. The reply is the one for
+a column that is not there. That is also the truth, and it leads to the same
+repair.
 
 `add_rows` stacks another table underneath this one; `add_combinations` works
-on this table's own values and reaches for nothing outside it. Both make the
-table taller, which is why they share a first word, and only one of them needs
-a second table to do it.
+on this table's own values and uses nothing outside it. Both make the table
+taller, which is why they share a first word, and only one of them needs a
+second table to do it.
