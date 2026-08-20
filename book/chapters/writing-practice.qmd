@@ -305,7 +305,8 @@ that repairs it is never far back, and they are all short.
 From here the book forks, and both branches are honest. Read on in order,
 and [the next part](../parts/shape.qmd) changes the shape of a table. Or
 jump to [the cookbook](../parts/cookbook.qmd) near the end of the book,
-which answers questions in exactly the vocabulary you now hold, and come
+which answers questions in the book's small vocabulary, most of it already
+yours, and come
 back to the middle parts as your questions demand them. A grammar is not a
 syllabus; from this page on, you are allowed to need things in your own
 order.
