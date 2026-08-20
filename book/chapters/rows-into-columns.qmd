@@ -19,7 +19,8 @@ inverse, and it reads the same two words the other way. `name` points at the
 column holding column names in both verbs. Here it is being read rather than
 made, and the verb is what says which.
 
-The table is `marks`, the tall shape the last chapter made:
+The table is `marks`, two students and two questions in the tall shape the
+last chapter made:
 
 ```{r}
 #| echo: false
@@ -54,14 +55,14 @@ marks >> widen(name = col.question, value = col.mark, by = col.student)
 *`marks then widen name [question], value [mark] by [student]`*
 
 `by` says which columns identify a row. Leaving it out means every column not
-already named, which is usually right and is occasionally a surprise: one column
+already named, which is usually right and is occasionally a surprise. One column
 you had forgotten about makes every row distinct, and the table comes back as
 tall as it went in. The grammar tells you what it assumed rather than deciding
 quietly: a note arrives beside the answer, and [the laws](design-laws.qmd)
 show one arriving.
 
-Because the two verbs are inverses and share their defaults, the round trip is a
-sentence with no arguments in it at all:
+Because the two verbs are inverses and share their defaults, `widen` undoes
+the `lengthen` with no arguments at all:
 
 ::: {.panel-tabset}
 
@@ -94,9 +95,9 @@ answers >> lengthen(col.q1, col.q2, col.q3) >> widen()
 A cell holds one value. If two rows both claim it, there is no answer, and
 choosing one of them silently is how a wrong number reaches a report.
 
-This is the one refusal that arrives when the query runs rather than when the
-pipeline is checked. Whether two rows collide is a fact about the data, and the
-grammar reads column names rather than rows, so it cannot be known any earlier.
+This refusal arrives when the query runs rather than when the pipeline is
+checked. Whether two rows collide is a fact about the data, and the grammar
+reads column names rather than rows, so it cannot be known any earlier.
 
 ::: {.panel-tabset}
 
@@ -135,7 +136,7 @@ except GodError as refusal:
 
 :::
 
-Saying what should happen is a value rather than a new word. `value` takes an
+Saying what to do about that does not need a new word. `value` takes an
 expression, so an aggregation there is the answer:
 
 ::: {.panel-tabset}
@@ -267,7 +268,7 @@ stops the query instead of disappearing from the answer. And an empty cell can b
 filled, which needs `giving` for the same reason: saying what an empty cell holds
 means knowing which cells there are.
 
-`sparse` is short a mark: bob sat q1 and not q2.
+`sparse` is missing a mark: bob answered q1 and not q2.
 
 ```{r}
 #| echo: false
