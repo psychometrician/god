@@ -9,7 +9,7 @@ engine against that tool, because god's own work ends when the query is
 written. So this page refuses to blur the two. The half that belongs to god
 is measured live, while this page is built. The half that belongs to the
 engines is a dated record, run once on real data with the date printed
-beside it, because a speed table without its date is a rumor.
+beside it. A speed table without its date is a rumor.
 
 ## The grammar's toll, clocked on this render
 
@@ -42,10 +42,10 @@ Everything after that belongs to the engine.
 
 ## The engines' race, on record
 
-The record below was measured on 2026-08-10: six operations on twenty
-million real rows of New York taxi trips, from a simple filter-and-group to
-a seven-step capstone that filters, derives, joins, groups, ranks within
-each borough and takes the top two. Seven implementations were run, and
+The record below was measured on 2026-08-10: six operations on twenty million
+real rows of New York taxi trips. They run from a simple filter-and-group to a
+seven-step capstone that filters, derives, joins, groups, ranks within each
+borough and takes the top two. Seven implementations were run, and
 every answer was proven identical across all seven before any time was
 read. A benchmark whose answers are not first proven equal measures
 nothing. The numbers are read from the measurement files, not typed, so
@@ -90,14 +90,13 @@ knitr::kable(data.frame(
 
 ## What the table says, read honestly
 
-The engine is the story, not the language. The fastest columns above are
-god through DuckDB and polars run lazily, one reached from R and text, one
-from Python, and the slowest gap in the whole table is not between the two
-languages people argue about: pandas and dplyr finish within a half second
-of each other, and R's own data.table beats both. Whoever hands their rows
-to a columnar engine wins, from either language. The folk ranking of
-languages is a decade out of date; the ranking that holds is a ranking of
-engines.
+The engine is the story, not the language. The fastest columns above are god
+through DuckDB and polars run lazily, one reached from R and text, one from
+Python. The widest gap in the whole table is not between the two languages
+people argue about. pandas and dplyr finish within a second of each other,
+and R's own data.table beats both. Whoever hands their rows to a columnar
+engine wins, from either language. The folk ranking of languages is a decade
+out of date; the ranking that holds is a ranking of engines.
 
 Both spellings of polars are shown on purpose. The eager style people
 type interactively and the lazy style that lets the planner fuse steps

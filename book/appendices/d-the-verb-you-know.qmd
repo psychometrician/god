@@ -36,6 +36,7 @@ map to a word plus a place to put it rather than to a verb alone.
 | `row_number()`, `min_rank()` | `row_number`, `rank` | [Each row a place](../chapters/each-row-a-place.qmd) |
 | `cumsum()`, `lag()`, `lead()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
 | `sd()` | `standard_deviation` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `paste(collapse = )`, `stringr::str_flatten()` | `join_rows`, after a `sort` | [Tidying text](../chapters/tidying-text.qmd) |
 | `slider::slide_dbl()`, `zoo::rollmean()` | `rolling(average(...), n)` | [The total so far](../chapters/the-total-so-far.qmd) |
 | `show_query()` | `show_as`, with seven targets | [What it wrote](../chapters/what-it-wrote.qmd) |
 | `collect()` | `collect`, the same word | [Nothing runs until you ask](../chapters/nothing-runs-yet.qmd) |
@@ -70,6 +71,8 @@ back](a-two-languages.qmd#the-names-other-packages-take-back) is the whole of it
 | `fillna()`, `dropna()` | `fill_missing`, `drop_missing` | [Missing values](../chapters/missing-values.qmd) |
 | `cumsum()`, `shift()` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
 | `std()` | `standard_deviation` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `.agg(", ".join)`, `.str.cat()` | `join_rows`, after a `sort` | [Tidying text](../chapters/tidying-text.qmd) |
+| `sort_values(na_position=)` | `sort ... missing first`, or the default last | [Missing values](../chapters/missing-values.qmd) |
 | `rolling(7).mean()` | `rolling(average(...), 7)` | [The total so far](../chapters/the-total-so-far.qmd) |
 
 ## From SQL
@@ -91,6 +94,8 @@ back](a-two-languages.qmd#the-names-other-packages-take-back) is the whole of it
 | `RANK() OVER`, `ROW_NUMBER()` | `rank`, `row_number` | [Each row a place](../chapters/each-row-a-place.qmd) |
 | `SUM() OVER (ORDER BY)`, `LAG`, `LEAD` | `running_total`, `previous`, `following` | [The total so far](../chapters/the-total-so-far.qmd) |
 | `STDDEV` | `standard_deviation` | [Summarizing by group](../chapters/summarizing-by-group.qmd) |
+| `STRING_AGG`, `GROUP_CONCAT`, `LISTAGG` | `join_rows`, after a `sort` | [Tidying text](../chapters/tidying-text.qmd) |
+| `NULLS FIRST`, `NULLS LAST` | `sort ... missing first`, or the default last | [Missing values](../chapters/missing-values.qmd) |
 | `AVG() OVER (ROWS BETWEEN 6 PRECEDING AND CURRENT ROW)` | `rolling(average(...), 7)` | [The total so far](../chapters/the-total-so-far.qmd) |
 
 One absence from all three tables is deliberate. There is no row for your
