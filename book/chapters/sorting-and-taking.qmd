@@ -130,8 +130,8 @@ sales |>
 Sort newest first, take the first row of each region. The dates in this book
 are written `2026-10-02` style, and text in that shape sorts correctly as
 text, which is why no date machinery was needed. [The chapter on
-dates](dates.qmd) introduces the real date words for the shapes that do not
-sort on their own.
+dates](dates.qmd) introduces the real date words, for when text alone is
+not enough.
 
 ## The other end
 
@@ -293,9 +293,10 @@ Writing it down is what stops the two from quietly disagreeing.
 - `descending` belongs to the key it wraps, and only `sort` accepts it.
 - `by` after `take` means what `by` means everywhere: do this per group. The
   chapter on [the small words](words-that-repeat.qmd) returns to it.
-- `take` composes with everything that settles an order, and the windowed
-  words in [giving each row a place](each-row-a-place.qmd) (`rank`,
-  `row_number`) lean on `sort` in exactly the way `take ... by` does below.
+- `take` composes with everything that settles an order. Of the windowed
+  words in [giving each row a place](each-row-a-place.qmd), `row_number`
+  leans on `sort` the way `take ... by` does below, and `rank` says what it
+  goes by itself, needing no sort at all.
 
 ## What it refuses
 
