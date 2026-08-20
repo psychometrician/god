@@ -140,10 +140,9 @@ except GodError as refusal:
 :::
 
 `rolling` asks an aggregate of the last few rows and answers on every row, so
-a moving average is one word wrapping another. The aggregate goes inside, one
-of `total`, `average`, `median`, `smallest`, `largest` and
-`standard_deviation`, and the number says how many rows the window holds, the
-row itself included:
+a moving average is one word wrapping another. The aggregate goes inside, one of `total`,
+`average`, `median`, `smallest`, `largest` and `standard_deviation`. The number
+says how many rows the window holds, the row itself included:
 
 ::: {.panel-tabset}
 
@@ -181,10 +180,10 @@ diary |>
 The first row is missing, and that is the answer rather than a gap: one row is
 not the two-row average, it is a different question wearing its name. A window
 that is not yet full answers `missing`, and so does a full window with a
-missing value inside it, which is how every library with a rolling word
-answers too. `by` restarts the window inside each group, exactly as it does
-for the totals above, and the aggregate inside reads a plain column: a
-computed value is one `add` away, in a step of its own.
+missing value inside it. That is how every library with a rolling word answers
+too. `by` restarts the window inside each group, exactly as it does for the
+totals above. The aggregate inside reads a plain column, so a computed value is
+one `add` away, in a step of its own.
 
 Every word here needs a `sort` in front of it, and says so if it does not get
 one. A total *so far* means nothing until something has said so far in what

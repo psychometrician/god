@@ -44,9 +44,9 @@ sales |>
 
 *`sales then keep where [revenue] > 150 then summarize [sold] as total([quantity]) by [region] then sort [sold] descending`*
 
-One sentence, and it already drew on three of the five shelves below. The
-lists are asked from the engine while this page is built, so what you are
-reading is the vocabulary, not a summary of one.
+One sentence, and it already drew on three of the five shelves below. The lists
+are asked from the engine while this page is built. So what you are reading is
+the vocabulary, not a summary of one.
 
 ```{r}
 #| echo: false
@@ -59,9 +59,9 @@ shelf <- function(kind) {
 }
 ```
 
-**The verbs**, each a step that takes a table and gives a table back. The
-next chapters of this part carry the six that do most of the work; the rest
-arrive in the parts that own them.
+**The verbs**, each a step that takes a table and gives a table back. The next
+chapters of this part carry the six that do most of the work. The rest arrive
+in the parts that own them.
 
 ```{r}
 #| echo: false
@@ -102,12 +102,12 @@ their own at the end of this part.
 shelf("word") |> cat()
 ```
 
-That is all of it. There is no second list waiting after this one, no
-helper family, and no extra dialect on a cluster: a word that is not on this
-page is not in the grammar, and asking for one gets a refusal that names the
-nearest word that is. The count is the argument. A vocabulary this size can
-be met in a sitting and carried whole, and the rest of this book is those
-shelves taken down one or two words at a time, each with the design decision
-that put it there. When you want this page again as a reference,
+That is all of it. There is no second list waiting after this one, no helper
+family, and no extra dialect on a cluster. A word that is not on this page is
+not in the grammar, and asking for one gets a refusal that names the nearest
+word that is. The count is the argument. A vocabulary this size can be met in
+a sitting and carried whole, and the rest of this book is those shelves taken
+down one or two words at a time, each with the design decision that put it
+there. When you want this page again as a reference,
 [every word in the grammar](../appendices/b-every-word.qmd) is the same list
 with a map of where each word first runs.
