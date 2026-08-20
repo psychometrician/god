@@ -58,9 +58,8 @@ Read the places down the column: 1, 2, 2, 4. The lowest score is first, the two
 20s *share* second place, and the next value takes fourth. Third place is not
 awarded, because two rows already stand ahead of the 50.
 
-The `sort` at the end is doing real work. Adding a column says nothing about what
-order the rows come back in, so a sentence that wants a particular order asks for
-it.
+The `sort` at the end matters. Adding a column says nothing about what order
+the rows come back in, so a sentence that wants a particular order asks for it.
 
 That is how a race is scored, and it is what people mean when they say rank.
 The alternative is just as common in other tools: numbering the *distinct
@@ -129,8 +128,8 @@ races |>
 
 ## Numbering the rows instead
 
-`row_number()` numbers the rows 1, 2, 3, 4 and never ties. That is the whole
-difference from `rank`, and it shows on the same table.
+`row_number()` numbers the rows 1, 2, 3, 4 and never ties. The answer differs
+from `rank` only where rows tie, and it shows on the same table.
 
 ::: {.panel-tabset}
 
@@ -185,14 +184,13 @@ except GodError as refusal:
 
 :::
 
-That is the practical difference between the two. `rank` says what it goes by, so
-it never needs a `sort` and does not disturb the order of your table.
-`row_number()` says nothing, so it needs one.
+That is the practical difference between the two. `rank` says what it goes by,
+so it never needs a `sort`. `row_number()` says nothing, so it needs one.
 
 ## Where a place can stand
 
 A place is worked out by looking at every row in the group, which means it cannot
-be the thing that decides which rows are in the group. Asking for the top three
+be the thing that decides which rows are in the group. Asking for the top two
 inside `keep` is refused, and the message names both ways to say it.
 
 ::: {.panel-tabset}
@@ -201,7 +199,7 @@ inside `keep` is refused, and the message names both ways to say it.
 
 ```{r}
 #| error: true
-collect(races |> keep(rank(score) <= 2))
+collect(races |> keep(rank(descending(score)) <= 2))
 ```
 
 ### Python
@@ -209,7 +207,7 @@ collect(races |> keep(rank(score) <= 2))
 ```{python}
 #| classes: refusal
 try:
-    collect(races >> keep(rank(col.score) <= 2))
+    collect(races >> keep(rank(descending(col.score)) <= 2))
 except GodError as refusal:
     print(refusal)
 ```
@@ -273,6 +271,12 @@ races >> sort(descending(col.score)) >> take(1, by = col.heat)
 
 :::
 
+That answer hides a choice. The two rows of heat x are level at 20, and
+`take 1` kept one of them; nothing in the sentence says which. When the cut
+falls inside a tie the engine picks, and [sorting and
+taking](sorting-and-taking.qmd) has the word for keeping both:
+`take 1 by [heat] with ties`.
+
 `summarize` also refuses a place, for the opposite reason: it returns one row per
 group, and a place is worked out for every row, so there is nowhere to put the
 answer. Ask for the value you actually want instead, with `largest`, `first` or
@@ -289,10 +293,16 @@ this one `min_rank`, which names how it is computed rather than what it is, and
 leaves the plain word `rank` free to mean something else. Here the plain word
 means the plain thing.
 
-The other four are real but specialist. `dense_rank` is the 1, 2, 2, 3 numbering
+The other four are real but specialized. `dense_rank` is the 1, 2, 2, 3 numbering
 described above; `percent_rank` and `cume_dist` are positions expressed as a
 fraction; `ntile` cuts the rows into buckets. Carrying four more words so that
 every reader has to learn which is which, in order to serve the cases that
-occasionally need one, is a poor trade. If you need one of them, the pipeline
-that gets you most of the way is `rank` plus arithmetic, and `show_as` will hand
-you the query to take the rest of the way.
+occasionally need one, is a poor trade. If you need one of them, `rank` plus
+arithmetic covers most of it, and `show_as` will print the query for you to
+finish by hand.
+
+`rank` and `row_number` are two of the grammar's seven windows. The next
+chapter, [the total so far](the-total-so-far.qmd), teaches the ones that walk
+the rows in order: `running_total`, `previous`, `following` and `rolling`.
+The seventh, `latest`, copies the most recent value down into the holes, and
+[missing values](missing-values.qmd) shows it.
