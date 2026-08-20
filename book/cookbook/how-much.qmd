@@ -5,7 +5,7 @@ title: "How much is there?"
 {{< include ../_setup.qmd >}}
 
 How much of something does the table hold? Every recipe on this page is that
-question wearing different clothes, and every answer is `summarize` with a
+question in different words, and every answer is `summarize` with a
 word or two around it. Every verb here arrived in [the six
 verbs](../parts/six-verbs.qmd); the chapter that owns the arguments is
 [Summarizing by group](../chapters/summarizing-by-group.qmd).
@@ -46,7 +46,7 @@ column at all.
 
 ## How much of the whole is each group?
 
-Two steps: collapse to totals, then divide each total by their sum.
+Collapse to totals, then divide each total by their sum.
 
 ::: {.panel-tabset}
 
@@ -85,7 +85,7 @@ sales |>
 
 The `add` uses an aggregate with no `by`, so the divisor spans the whole
 table: each region's total over the grand total. The shares sum to one,
-which is the check to run with your eye before you trust any share column.
+which is the check to run by eye before you trust any share column.
 
 **One verb away.** Share within a group instead of the whole: leave the
 `summarize` out, so every row stays a row, and put the `by` on the `add`,
@@ -168,8 +168,8 @@ sales |>
 
 ## What this section refuses
 
-The recipe most often reached for and least often meant: a total of a column
-that is not a number.
+The recipe most often tried and least often meant: a total of a column that
+is not a number.
 
 ::: {.panel-tabset}
 
