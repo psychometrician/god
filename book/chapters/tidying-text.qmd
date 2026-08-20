@@ -57,10 +57,11 @@ the grammar is one value. A value with no separator is all one piece, so asking
 `bob` for piece 1 gives back `bob`. Asking it for piece 2 finds no such piece,
 and the answer is empty text rather than missing.
 
-`replace_text` looks for the text itself, not for a pattern, so nothing in it is
-special. `characters` counts characters; it is not called `length`, because R's
-`length` counts the elements of a vector and a word that reads as one thing and
-does another is the trap this vocabulary is built to avoid.
+`replace_text` looks for the text itself, not for a pattern, so no character
+in it has a special meaning. `characters` counts characters; it is not called
+`length`, because R's `length` counts the elements of a vector. A word that
+reads as one thing and does another is the trap this vocabulary is built to
+avoid.
 
 ## Putting text back together
 
@@ -103,7 +104,7 @@ messy |>
 
 *`messy then add [name] as trim([raw]) then add [greeting] as join_text("hello ", [name]) then pick [greeting, n]`*
 
-Numbers are refused rather than converted. `join_text([name], [n])` will not
+Numbers are refused rather than converted. `join_text([raw], [n])` will not
 run, and the message names `to_text`, because how a number should look is a
 decision you make rather than one the grammar makes for you.
 
@@ -128,9 +129,9 @@ except GodError as refusal:
 
 :::
 
-A missing value anywhere makes the whole answer missing. That is the rule
-addition already follows, and it is the one engines disagree about most quietly:
-several of them drop the absent part and hand back the rest, so a label built
+A missing value anywhere makes the whole answer missing. That is the rule that
+addition already follows. It is the one engines disagree about most quietly:
+several of them drop the absent part and hand back the rest. So a label built
 from a name nobody recorded comes back looking finished. If you would rather
 fill the hole than lose the row, say what to fill it with:
 `join_text([first], " ", first_present([last], ""))`.
@@ -138,8 +139,8 @@ fill the hole than lose the row, say what to fill it with:
 ## A whole group, run together
 
 `join_text` reaches across the columns of one row. `join_rows` reaches down the
-rows of a group, and hands back one piece of text for the lot. The names carry
-the direction, because that is the only thing that differs between them.
+rows of a group, and hands back one piece of text for all of them. The names
+carry the direction, because that is the real difference between them.
 
 It is an aggregate, so it belongs in `summarize` beside `total` and `row_count`:
 
@@ -175,20 +176,20 @@ sales |>
 
 *`sales then sort [product] then summarize [products] as join_rows([product], ", ") by [region]`*
 
-The `sort` is what makes the answer the same every time. Without one the rows
-arrive in whatever order the engine had them in, which is the promise `first`
-and `last` make too.
+The `sort` is what makes the answer the same every time. `join_rows` joins the
+rows in the order they stand, and without a sort that order is whatever the
+engine had them in. `first` and `last` make the same promise.
 
 A missing value is skipped here, where `join_text` would have made the whole
 answer missing. The two words answer differently on purpose. An aggregate
-reduces the rows it is handed, and every other one ignores the absent ones:
-`total` does not come back missing because a single row was empty. A scalar
+reduces the rows it is handed, and `total` already ignores the absent ones: it
+does not come back missing because a single row was empty. A scalar
 builds one value out of parts you named, and quietly dropping one would hand
 back a label that looks finished.
 
 The separator is written out rather than read from a column. The rows are being
 collapsed into one answer, so a separator that varied by row would have no row
-left to have come from.
+left to come from.
 
 ## Case, both ways
 
@@ -227,7 +228,7 @@ messy |>
 
 The same two words also work on a column's *name* rather than on its contents,
 which is how you match names whose capitalization you cannot rely on. That is
-[choosing by what a column holds](what-a-column-holds.qmd), and it needs no
+shown in [What a column holds](what-a-column-holds.qmd), and it needs no
 second spelling of either word.
 
 ## A number is not text
