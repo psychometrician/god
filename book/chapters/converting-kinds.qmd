@@ -4,7 +4,7 @@ title: "Saying what something is"
 
 {{< include ../_setup.qmd >}}
 
-The digits are right there in the column, so why refuse to count them?
+You can see the digits in the column, so why refuse to count them?
 Conversions are always written out. Nothing here converts a column on your
 behalf, because a column that quietly changes what it holds is the hardest
 kind of mistake to find later.
@@ -73,8 +73,9 @@ There were four of these, and the fourth was a mistake of the kind that hides.
 and is not: this grammar has one kind of number, so `to_whole` converted
 nothing. It was a rounding wearing a conversion's name, and because the name
 said nothing about direction, no reader could tell whether -5.5 came back as
--5 or as -6. It is two words now, and they are in the chapter on adding a
-column, where the arithmetic lives.
+-5 or as -6. It is two words now, `round_below` and `round_above`, and they
+are in [the chapter on adding a column](adding-a-column.qmd), where the
+arithmetic lives.
 
 ::: {.panel-tabset}
 
@@ -144,5 +145,8 @@ sales >> keep(between(col.revenue, 150, 400)) >> sort(col.revenue)
 
 :::
 
-Both ends count, the way SQL and dplyr both have it, so nothing here needs
-checking against a manual.
+Both ends are included, the way SQL and dplyr both have it, so nothing here
+needs checking against a manual.
+
+`to_date` is the conversion this chapter has not run. It reads a date out of
+text, and [the next chapter](dates.qmd) opens with it.
