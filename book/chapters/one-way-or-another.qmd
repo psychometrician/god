@@ -55,8 +55,8 @@ pupils >> add(band = when(col.score >= 90, "A", col.score >= 70, "B",
 
 The arguments come in pairs: a question, then what it gives. **The first question
 that is true wins**, so the order is part of what the sentence means. Ask the
-same two the other way round and the answers change, which is not a trap but the
-thing you are choosing when you write them in an order:
+same two the other way around and the answers change, which is not a danger
+but the thing you are choosing when you write them in an order:
 
 ::: {.panel-tabset}
 
@@ -115,7 +115,7 @@ pupils >> add(top = when(col.score >= 90, "yes"))
 
 :::
 
-Every answer has to be the same kind of thing, because they all end up in one
+Every answer has to be the same kind of thing, because they all go into one
 column:
 
 ::: {.panel-tabset}
@@ -141,17 +141,19 @@ except GodError as refusal:
 
 Python has a conditional of its own. Here is why god does not use it. Writing
 `"A" if col.score >= 90 else "B"` would decide the answer once, while the
-pipeline was being built, and throw the question away. Nothing would report a
-problem. R's `if` wants a single yes or no, so a column of answers is an error
-there. So the word is `when` in both, and it is the same word in the text
+pipeline was being built, and throw the question away. A column expression
+therefore refuses to become a plain yes or no: that line is an error before
+any row is read, and [Appendix A](../appendices/a-two-languages.qmd) shows
+the message. R's `if` wants a single yes or no, so a column of answers is an
+error there. So the word is `when` in both, and it is the same word in the text
 form.
 
 ## The lookup table
 
-Half the time the question is the same question over and over: is the value
-this, is it that. Recoding survey answers, expanding country codes, tidying a
-categorical. `look_up` is that special case with the pairs side by side, each
-written value next to what it becomes:
+Often the question is the same question repeated: is the value this, is it
+that. Recoding survey answers, expanding country codes, and tidying a
+categorical all have that shape. `look_up` is that special case with the
+pairs side by side, each written value next to what it becomes:
 
 ::: {.panel-tabset}
 
@@ -216,8 +218,8 @@ except GodError as refusal:
 
 :::
 
-Half of the neighbouring tools keep an unpaired value and half send it
-missing, so whichever way god leaned, the sentence would surprise someone
+Half of the neighboring tools keep an unpaired value and half send it
+missing, so whichever way god chose, the sentence would surprise someone
 arriving from the other half. Writing the ending is how you say you thought
 about it, exactly as `unmatched` says it for a join's rows.
 
@@ -227,3 +229,6 @@ into a proper hole and leaves everything else alone. The pairs are written
 values on both sides, and that is the boundary between the two words: the
 moment a question is a comparison, or an answer is computed, the sentence
 belongs to `when`.
+
+Either word can leave a hole in the column on purpose. What a hole means for
+your answer is [the next chapter](missing-values.qmd).
