@@ -5,6 +5,38 @@ a person using god can see.
 
 ## Unreleased
 
+### This changelog now records every change, and `NEWS.md` is where the release notes are
+
+It used to hold only what someone using god could see, which left the work that
+makes the grammar trustworthy — guards, harnesses, the reading of the manual —
+with no public trace at all. Between two releases a reader could not tell
+whether anything had happened.
+
+So it takes everything now. `NEWS.md` is written at each version bump by
+selecting the entries a user or a reader would actually notice, which is where
+the "would you care?" question is asked from now on.
+
+### The manual read against the engine, all fifty-seven pages
+
+Every page of the book was read against what the engine actually does, a page
+at a time, and the corrections applied. It is worth saying what that found,
+because none of it was visible to any check: every page rendered, every example
+ran, and every guard was green the whole time.
+
+What was wrong was what the prose *claimed*. Pages described their own tables
+and drawings incorrectly. Counts had frozen while the thing counted grew: six
+dialects that were nine, three tests over four, five libraries that were four.
+Sentences stated universals the engine does not honour, like "every aggregation
+ignores the absent ones" or "a refusal names the nearest word", both true of
+some cases and not others. One page sent readers to a cluster without the one
+argument that makes a cluster query correct. A recipe recommended a workaround
+that another chapter warns against. And `take_last` had gone missing from the
+page a reader arriving from dplyr opens.
+
+Where a claim was checkable it is now checked, and one new guard came out of
+it: every count in the prose that names something the engine can count is held
+to the engine's own answer.
+
 ### Windows say where the missing values go, so the two engines answer alike
 
 Sorting was pinned to *missing last* already. What read that order was not: a
