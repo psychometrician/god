@@ -1,3 +1,102 @@
+# god 0.2.2
+
+## One word is gone, and two took its place
+
+`to_whole` is refused by name. It was never one operation: rounding down and
+rounding up are two questions, and a word that did whichever the sign made it
+do answered one of them by accident.
+
+```r
+sales |> add(whole = round_below(revenue / 3))
+```
+
+`round_above` is the other way. A pipeline that used `to_whole` stops, and the
+refusal names both replacements, so it stops loudly rather than quietly
+changing its answer.
+
+## The same sentence, the same answer, wherever the holes are
+
+Sorting a column with missing values in it used to leave the answer to
+whichever tool was underneath, and they do not agree: some put the absent rows
+last, some first, and Spark put them first going up and last coming down.
+
+**Missing values sort last now, in both directions**, everywhere. Say
+`missing first` when you want the other way.
+
+```r
+sales |> sort(revenue, missing = "first")
+```
+
+The same answer reaches whatever reads that order. `rank`, `row_number`,
+`previous`, `following`, `running_total`, `latest`, `rolling` and a grouped
+`take` all frame the way the sort above them framed, and so do the orderings
+god adds for you after a `summarize`, a `drop_duplicates`, a `lengthen` or a
+`widen`. If you grouped by a column with holes in it, or ranked one, the answer
+from one engine has changed to agree with the others.
+
+## Six new words
+
+`look_up` is the lookup table, for when `when` would be a stack of questions
+about one column.
+
+```r
+sales |> add(region = look_up(code, "W", "West", "E", "East", otherwise = code))
+```
+
+`standard_deviation` is the tenth aggregation. `rolling` is an aggregate over
+the last few rows rather than all of them. `latest` is the last value that was
+actually there, which is how a column with gaps in it is carried forward.
+`remainder` is what is left after a division. And `join_rows` reaches down the
+rows of a group and hands back one piece of text, where `join_text` reaches
+across the columns of one row.
+
+```r
+sales |> sort(product) |> summarize(sold = join_rows(product, ", "), by = region)
+```
+
+## One question, asked of many columns
+
+`where` picks columns by the shape of their name or by what they hold, and one
+question is then asked of every column that matches.
+
+```r
+survey |> summarize(where(endsWith(name, "_score"), average(value)), by = region)
+```
+
+A column added next month is included without the line changing.
+
+## Smaller
+
+* `join` can match a key the two tables name differently:
+  `join(customers, by = customer_id == id)`, and `matching` takes the same.
+* `take` can keep the rows level with the cut, rather than breaking a tie
+  arbitrarily: `take(2, ties = TRUE)`.
+* `previous` and `following` take how far to look, so `previous(revenue, 2)`
+  reaches two rows back.
+* `hour` reads the time a column carries, and refuses a plain date rather than
+  answering zero for every row.
+* In R, attaching dplyr after god no longer takes god's verbs away. `collect`,
+  `rename` and `summarize` are generics and god gives each a method, so the
+  sentence runs whichever package you attached last. `pick` is the exception,
+  because dplyr's is not a generic: write `god::pick`.
+* In Python, every refusal now arrives as words. One kind of mistake used to
+  surface as the driver's own error under three frames of plumbing.
+* `show_as` writes pandas and polars that agree with the engine about
+  `to_date`.
+* `god_table` reads a local copy before it reaches the network.
+
+## The manual was read against the engine, all fifty-seven pages
+
+Every page was checked against what the engine actually does, and the
+corrections applied. None of it was visible to any check: the pages rendered,
+the examples ran, and the guards were green throughout. What was wrong was what
+the prose claimed. Counts had frozen while the thing counted grew. Sentences
+stated universals the engine does not honor. One page sent you to a cluster
+without the argument that makes a cluster query correct, and a recipe
+recommended a workaround another chapter warns against.
+
+<https://psychometrician.github.io/god-book/>
+
 # god 0.2.1
 
 ## A word for the rows at the far end

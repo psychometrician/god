@@ -5,6 +5,10 @@ a person using god can see.
 
 ## Unreleased
 
+Nothing yet.
+
+## 0.2.2 — 2026-08-21
+
 ### This changelog now records every change, and `NEWS.md` is where the release notes are
 
 It used to hold only what someone using god could see, which left the work that

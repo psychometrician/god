@@ -1,6 +1,6 @@
 Package: god
 Title: A Grammar of Data
-Version: 0.2.1
+Version: 0.2.2
 Authors@R:
     person("psychometrician", role = c("aut", "cre"), email = "psychometrician@gmail.com")
 Description: One small vocabulary for manipulating tables, spelled the same way
