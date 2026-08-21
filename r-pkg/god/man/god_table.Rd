@@ -19,9 +19,15 @@ A data frame.
 \description{
 Returns a table ready to pipe. A `data/<name>.csv` in the working directory
 or any directory above it is read first; failing that, the copy published
-beside the manual is fetched. The cast is declared in the book's preface:
-`sales`, `products`, `survey`, `answers`, `marks`, `messy`, `diary` and
-`gapminder`.
+beside the manual is fetched. So it needs no connection once you have a
+`data/` folder, and **your own tables work the same way**: put
+`orders.csv` in `data/` and `god_table("orders")` reads it.
+}
+\details{
+Every table the book uses is published beside it, the cast the preface
+declares and the smaller ones a single chapter needs. A name is letters,
+digits, `_` and `-`; it is not a path, and a `/` or a `..` is refused rather
+than followed.
 }
 \examples{
 \dontrun{

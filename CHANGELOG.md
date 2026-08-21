@@ -5,6 +5,19 @@ a person using god can see.
 
 ## Unreleased
 
+### `god_table` says what it can do, in the preface and on its help page
+
+Both said the cast was eight tables and stopped there. Every table the book
+uses is published beside it, the smaller ones a single chapter needs included,
+and a reader's own tables work the same way: put `orders.csv` in a `data/`
+folder and `god_table("orders")` reads it, offline.
+
+The preface now also says the two things a reader finds out the hard way
+otherwise. A name is a name rather than a path, so a `/` or a `..` is refused.
+And a CSV cannot record what kind of thing a column holds, so a column of `01`,
+`02`, `03` arrives as the numbers 1, 2, 3 unless you say
+`god_table("codes", text = "code")`.
+
 ### No chapter types a table any more
 
 Every example table in the book is now a CSV beside it, read with `god_table`

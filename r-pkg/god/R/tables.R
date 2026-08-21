@@ -40,9 +40,14 @@ god_walk_up_data <- function(start, name) {
 #'
 #' Returns a table ready to pipe. A `data/<name>.csv` in the working directory
 #' or any directory above it is read first; failing that, the copy published
-#' beside the manual is fetched. The cast is declared in the book's preface:
-#' `sales`, `products`, `survey`, `answers`, `marks`, `messy`, `diary` and
-#' `gapminder`.
+#' beside the manual is fetched. So it needs no connection once you have a
+#' `data/` folder, and **your own tables work the same way**: put
+#' `orders.csv` in `data/` and `god_table("orders")` reads it.
+#'
+#' Every table the book uses is published beside it, the cast the preface
+#' declares and the smaller ones a single chapter needs. A name is letters,
+#' digits, `_` and `-`; it is not a path, and a `/` or a `..` is refused rather
+#' than followed.
 #'
 #' @param name The table's name without the extension, such as `"sales"`.
 #' @param text Columns that must stay text. A CSV records what a value is and
