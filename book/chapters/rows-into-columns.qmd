@@ -105,12 +105,7 @@ reads column names rather than rows, so it cannot be known any earlier.
 
 ```{r}
 #| error: true
-twice <- data.frame(
-  student  = c("ann", "ann"),
-  question = c("q1", "q1"),
-  mark     = c(1, 9),
-  stringsAsFactors = FALSE
-)
+twice <- god_table("twice")
 
 twice |> widen(name = question, value = mark, by = student) |> collect()
 ```
@@ -120,11 +115,7 @@ twice |> widen(name = question, value = mark, by = student) |> collect()
 ```{python}
 #| classes: refusal
 try:
-    twice = pd.DataFrame({
-        "student":  ["ann", "ann"],
-        "question": ["q1", "q1"],
-        "mark":     [1, 9],
-    })
+    twice = god_table("twice")
     collect(twice
       >> widen(name = col.question, value = col.mark, by = col.student))
 except GodError as refusal:

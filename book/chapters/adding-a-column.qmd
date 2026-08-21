@@ -199,7 +199,7 @@ shows it, because this is the half of `remainder` people get wrong.
 ### run
 
 ```{r}
-steps <- data.frame(n = c(7, -7, 6, -6))
+steps <- god_table("steps")
 
 run('steps then add [left_over] as remainder([n], 3)', steps = steps)
 ```
@@ -213,7 +213,7 @@ steps |> add(left_over = remainder(n, 3))
 ### Python
 
 ```{python}
-steps = pd.DataFrame({"n": [7, -7, 6, -6]})
+steps = god_table("steps")
 
 steps >> add(left_over = remainder(col.n, 3))
 ```
@@ -284,7 +284,7 @@ difference like that until an invoice is wrong.
 ### run
 
 ```{r}
-edges <- data.frame(n = c(5.5, 5.1, -5.5, -5.7, 5.0))
+edges <- god_table("edges")
 
 run('
   edges
@@ -301,7 +301,7 @@ edges |> add(below = round_below(n), above = round_above(n))
 ### Python
 
 ```{python}
-edges = pd.DataFrame({"n": [5.5, 5.1, -5.5, -5.7, 5.0]})
+edges = god_table("edges")
 
 edges >> add(below = round_below(col.n), above = round_above(col.n))
 ```

@@ -84,11 +84,7 @@ with `is` between them, and this table's name comes first.
 ### run
 
 ```{r}
-managers <- data.frame(
-  area    = c("West", "East", "North"),
-  manager = c("Ada", "Grace", "Alan"),
-  stringsAsFactors = FALSE
-)
+managers <- god_table("managers")
 
 run('
   sales
@@ -110,10 +106,7 @@ sales |>
 ### Python
 
 ```{python}
-managers = pd.DataFrame({
-    "area":    ["West", "East", "North"],
-    "manager": ["Ada", "Grace", "Alan"],
-})
+managers = god_table("managers")
 
 (sales
   >> join(managers, by = col.region == col.area)
@@ -220,8 +213,7 @@ is refused rather than quietly renamed to something you did not choose.
 
 ```{r}
 #| error: true
-overlap <- data.frame(product = "Widget", revenue = 1,
-                      stringsAsFactors = FALSE)
+overlap <- god_table("overlap")
 sales |> join(overlap, by = product) |> collect()
 ```
 
@@ -229,7 +221,7 @@ sales |> join(overlap, by = product) |> collect()
 
 ```{python}
 #| classes: refusal
-overlap = pd.DataFrame({"product": ["Widget"], "revenue": [1]})
+overlap = god_table("overlap")
 
 try:
     collect(sales >> join(overlap, by = col.product))
@@ -249,7 +241,7 @@ must hold the same kind of thing in both tables:
 
 ```{r}
 #| error: true
-codes <- data.frame(product = c(1, 2), code = c("A", "B"))
+codes <- god_table("codes")
 sales |> join(codes, by = product) |> collect()
 ```
 
@@ -257,7 +249,7 @@ sales |> join(codes, by = product) |> collect()
 
 ```{python}
 #| classes: refusal
-codes = pd.DataFrame({"product": [1, 2], "code": ["A", "B"]})
+codes = god_table("codes")
 
 try:
     collect(sales >> join(codes, by = col.product))

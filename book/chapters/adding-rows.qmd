@@ -99,7 +99,7 @@ is how a mistake survives to the end of a pipeline.
 
 ```{r}
 #| error: true
-late <- data.frame(region = "North")
+late <- god_table("late")
 
 sales |> add_rows(late) |> collect()
 ```
@@ -108,7 +108,7 @@ sales |> add_rows(late) |> collect()
 
 ```{python}
 #| classes: refusal
-late = pd.DataFrame({"region": ["North"]})
+late = god_table("late")
 
 try:
     collect(sales >> add_rows(late))

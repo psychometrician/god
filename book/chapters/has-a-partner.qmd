@@ -174,11 +174,7 @@ many it has never reaches the answer.
 ### R
 
 ```{r}
-restocks <- data.frame(
-  product   = c("Widget", "Widget", "Widget"),
-  restocked = c(10, 20, 30),
-  stringsAsFactors = FALSE
-)
+restocks <- god_table("restocks")
 
 sales |> keep(matching(restocks, by = product)) |> collect() |> nrow()
 sales |> join(restocks, by = product, unmatched = "none") |> collect() |> nrow()
@@ -187,10 +183,7 @@ sales |> join(restocks, by = product, unmatched = "none") |> collect() |> nrow()
 ### Python
 
 ```{python}
-restocks = pd.DataFrame({
-    "product":   ["Widget", "Widget", "Widget"],
-    "restocked": [10, 20, 30],
-})
+restocks = god_table("restocks")
 
 print(len(collect(sales >> keep(matching(restocks, by = col.product)))))
 print(len(collect(

@@ -5,6 +5,22 @@ a person using god can see.
 
 ## Unreleased
 
+### No chapter types a table any more
+
+Every example table in the book is now a CSV beside it, read with `god_table`
+and shown. Eleven more were typed into the page that used them: `orders`,
+`managers`, `codes`, `overlap`, `restocks`, `scores`, `steps`, `edges`, `late`,
+and the two that both went by `readings`.
+
+Those two were the reason a reader could not trust the name. `readings` meant
+one table in the reshaping chapter and two others in the chapter on missing
+values, so `god_table("readings")` handed back one of the three with no
+warning. They are `hourly`, one sensor reporting over time, and `logged`, two
+sensors doing the same. The name now means one table.
+
+What is still written out on a page is the small table a chapter builds to show
+one shape, and the two tables a page computes about itself.
+
 ### `god_table` keeps a column's name in R, where it used to rewrite it
 
 R's CSV reader renames anything that is not a syntactic name unless it is told

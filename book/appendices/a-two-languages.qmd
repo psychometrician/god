@@ -39,8 +39,7 @@ brackets, `col["order date"]`, and it is the same expression the dot would
 have made:
 
 ```{python}
-orders = pd.DataFrame({"order date": ["2026-01-02", "2026-01-05"],
-                       "total": [40, 90]})
+orders = god_table("orders")
 orders >> keep(col["order date"] > "2026-01-03")
 ```
 
@@ -48,8 +47,7 @@ R's spelling for the same name is its own, backticks, and R removes them
 before god ever sees the name:
 
 ```{r}
-orders <- data.frame(`order date` = c("2026-01-02", "2026-01-05"),
-                     total = c(40, 90), check.names = FALSE)
+orders <- god_table("orders")
 orders |> keep(`order date` > "2026-01-03")
 ```
 
