@@ -243,7 +243,7 @@ one in a printout. Ask anyway and the refusal names the conversion, which is
 
 ```{r}
 #| error: true
-collect(messy |> add(t = trim(n)))
+messy |> add(t = trim(n)) |> collect()
 ```
 
 ### Python

@@ -180,8 +180,8 @@ restocks <- data.frame(
   stringsAsFactors = FALSE
 )
 
-nrow(collect(sales |> keep(matching(restocks, by = product))))
-nrow(collect(sales |> join(restocks, by = product, unmatched = "none")))
+sales |> keep(matching(restocks, by = product)) |> collect() |> nrow()
+sales |> join(restocks, by = product, unmatched = "none") |> collect() |> nrow()
 ```
 
 ### Python
@@ -208,7 +208,7 @@ it does not combine with `and` or `or`. Ask it in its own step.
 
 ```{r}
 #| error: true
-collect(sales |> keep(matching(products, by = product) & revenue > 100))
+sales |> keep(matching(products, by = product) & revenue > 100) |> collect()
 ```
 
 ### Python

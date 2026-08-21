@@ -170,7 +170,7 @@ column is refused, and the refusal names both:
 
 ```{r}
 #| error: true
-collect(answers |> lengthen(student, q1))
+answers |> lengthen(student, q1) |> collect()
 ```
 
 ### Python

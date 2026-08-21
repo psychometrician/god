@@ -206,7 +206,7 @@ that cannot do anything is better refused than obeyed in silence.
 
 ```{r}
 #| error: true
-collect(sales |> add_combinations(region))
+sales |> add_combinations(region) |> collect()
 ```
 
 ### Python
@@ -231,7 +231,7 @@ tables, so the grammar leaves the choice to you.
 
 ```{r}
 #| error: true
-collect(sales |> add_combinations(region, product, by = region))
+sales |> add_combinations(region, product, by = region) |> collect()
 ```
 
 ### Python

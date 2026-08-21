@@ -120,7 +120,7 @@ stop at no:
 
 ```{r}
 #| error: true
-collect(sales |> pick(product, reveune))
+sales |> pick(product, reveune) |> collect()
 ```
 
 ### Python
@@ -152,7 +152,7 @@ the table actually has.
 
 ```{r}
 #| error: true
-collect(sales |> pick(products))
+sales |> pick(products) |> collect()
 ```
 
 ### Python

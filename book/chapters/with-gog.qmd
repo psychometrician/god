@@ -496,7 +496,7 @@ which two steps to write instead:
 
 ```{r}
 #| error: true
-collect(gapminder |> keep(average(life) > 50))
+gapminder |> keep(average(life) > 50) |> collect()
 ```
 
 ### Python

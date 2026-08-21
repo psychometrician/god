@@ -161,7 +161,7 @@ grammar says so before anything runs. Text is never greater than a number:
 
 ```{r}
 #| error: true
-collect(sales |> keep(region > 100))
+sales |> keep(region > 100) |> collect()
 ```
 
 ### Python

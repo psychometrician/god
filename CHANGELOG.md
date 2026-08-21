@@ -5,12 +5,17 @@ a person using god can see.
 
 ## Unreleased
 
-### The manual pipes into `show_as` instead of wrapping the pipeline in it
+### The manual pipes into `collect` and `show_as` instead of wrapping the pipeline in them
 
-`show_as(pipeline, "sql")` takes the pipeline first, so `pipeline |>
-show_as("sql")` is the same call and reads as what it is: one sentence, ending
-in a request to see it written another way. Nine R examples across three
-chapters were wrapped and are now piped.
+Both take the pipeline as their first argument, so `pipeline |> collect()` and
+`pipeline |> show_as("sql")` are the same calls written the way the book teaches
+everything else: left to right. Thirty-four `collect` calls and nine `show_as`
+calls across twenty-four pages were wrapped and are now piped.
+
+Most of the `collect` calls are inside refusal examples, where the wrapping put
+a bracket before the table and its partner after the mistake the example is
+about. Every refusal message was compared before and after: byte for byte the
+same.
 
 Python keeps the wrapped form, because it has to. R's `|>` is syntax that
 rewrites the call; `>>` needs an object on its right, and `collect` and

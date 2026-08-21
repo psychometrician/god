@@ -158,7 +158,7 @@ You will mistype something within the hour, so see now what that costs. A
 
 ```{r}
 #| error: true
-collect(sales |> keep(revenue))
+sales |> keep(revenue) |> collect()
 ```
 
 ### Python

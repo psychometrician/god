@@ -88,7 +88,7 @@ column it refused rather than the pattern.
 
 ```{r}
 #| error: true
-collect(survey |> summarize(where(startsWith(name, "q"), value * 2)))
+survey |> summarize(where(startsWith(name, "q"), value * 2)) |> collect()
 ```
 
 ### Python
@@ -211,7 +211,7 @@ selector would otherwise empty your table or leave it whole without a word.
 
 ```{r}
 #| error: true
-collect(survey |> keep(where_any(startsWith(name, "z"), value > 2)))
+survey |> keep(where_any(startsWith(name, "z"), value > 2)) |> collect()
 ```
 
 ### Python

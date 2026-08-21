@@ -108,7 +108,7 @@ If no column's name matches, the `pick` is refused before anything runs:
 
 ```{r}
 #| error: true
-collect(survey |> pick(where(startsWith(name, "zzz"))))
+survey |> pick(where(startsWith(name, "zzz"))) |> collect()
 ```
 
 ### Python

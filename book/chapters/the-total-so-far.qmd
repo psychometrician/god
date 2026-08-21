@@ -124,7 +124,7 @@ that goes the other way.
 
 ```{r}
 #| error: true
-collect(diary |> sort(on_) |> add(back = previous(x, -2)))
+diary |> sort(on_) |> add(back = previous(x, -2)) |> collect()
 ```
 
 ### Python
@@ -195,7 +195,7 @@ order:
 
 ```{r}
 #| error: true
-collect(diary |> add(so_far = running_total(x)))
+diary |> add(so_far = running_total(x)) |> collect()
 ```
 
 ### Python

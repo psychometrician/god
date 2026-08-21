@@ -47,7 +47,7 @@ first and you are told which conversion you wanted:
 
 ```{r}
 #| error: true
-collect(messy |> add(size = characters(n)))
+messy |> add(size = characters(n)) |> collect()
 ```
 
 ### Python

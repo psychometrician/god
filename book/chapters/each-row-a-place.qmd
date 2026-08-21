@@ -169,7 +169,7 @@ right.
 
 ```{r}
 #| error: true
-collect(races |> add(n = row_number()))
+races |> add(n = row_number()) |> collect()
 ```
 
 ### Python
@@ -199,7 +199,7 @@ inside `keep` is refused, and the message names both ways to say it.
 
 ```{r}
 #| error: true
-collect(races |> keep(rank(descending(score)) <= 2))
+races |> keep(rank(descending(score)) <= 2) |> collect()
 ```
 
 ### Python

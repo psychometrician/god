@@ -92,7 +92,7 @@ quietly stop being what it was.
 
 ```{r}
 #| error: true
-collect(patchy |> fill_missing(revenue = "none"))
+patchy |> fill_missing(revenue = "none") |> collect()
 ```
 
 ### Python

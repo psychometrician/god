@@ -101,7 +101,7 @@ is how a mistake survives to the end of a pipeline.
 #| error: true
 late <- data.frame(region = "North")
 
-collect(sales |> add_rows(late))
+sales |> add_rows(late) |> collect()
 ```
 
 ### Python

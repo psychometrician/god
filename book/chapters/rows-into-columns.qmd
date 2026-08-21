@@ -112,7 +112,7 @@ twice <- data.frame(
   stringsAsFactors = FALSE
 )
 
-collect(twice |> widen(name = question, value = mark, by = student))
+twice |> widen(name = question, value = mark, by = student) |> collect()
 ```
 
 ### Python

@@ -15,7 +15,7 @@ words.
 
 ```{r}
 #| error: true
-collect(sales |> keep(reveune > 100))
+sales |> keep(reveune > 100) |> collect()
 ```
 
 ### Python

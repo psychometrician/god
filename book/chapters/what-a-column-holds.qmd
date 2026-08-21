@@ -282,7 +282,7 @@ than guessed at:
 
 ```{r}
 #| error: true
-collect(sales |> keep(kind == "number"))
+sales |> keep(kind == "number") |> collect()
 ```
 
 ### Python

@@ -161,7 +161,7 @@ zeros that quietly assumed midnight:
 
 ```{r}
 #| error: true
-collect(stamps |> add(h = hour(to_date(at))))
+stamps |> add(h = hour(to_date(at))) |> collect()
 ```
 
 ### Python
@@ -191,7 +191,7 @@ comes back:
 
 ```{r}
 #| error: true
-collect(diary |> add(h = hour(to_date(on_))))
+diary |> add(h = hour(to_date(on_))) |> collect()
 ```
 
 ### Python
@@ -229,7 +229,7 @@ Skip the conversion and the refusal points straight at it:
 
 ```{r}
 #| error: true
-collect(diary |> add(y = year(on_)))
+diary |> add(y = year(on_)) |> collect()
 ```
 
 ### Python

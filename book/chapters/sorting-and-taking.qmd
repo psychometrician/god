@@ -266,7 +266,7 @@ sentence is refused rather than guessed.
 
 ```{r}
 #| error: true
-collect(scores |> take(2, ties = TRUE))
+scores |> take(2, ties = TRUE) |> collect()
 ```
 
 ### Python

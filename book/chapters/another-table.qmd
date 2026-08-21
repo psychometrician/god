@@ -222,7 +222,7 @@ is refused rather than quietly renamed to something you did not choose.
 #| error: true
 overlap <- data.frame(product = "Widget", revenue = 1,
                       stringsAsFactors = FALSE)
-collect(sales |> join(overlap, by = product))
+sales |> join(overlap, by = product) |> collect()
 ```
 
 ### Python
@@ -250,7 +250,7 @@ must hold the same kind of thing in both tables:
 ```{r}
 #| error: true
 codes <- data.frame(product = c(1, 2), code = c("A", "B"))
-collect(sales |> join(codes, by = product))
+sales |> join(codes, by = product) |> collect()
 ```
 
 ### Python
@@ -277,7 +277,7 @@ so asking `sales` for it is refused, and the refusal names the columns
 
 ```{r}
 #| error: true
-collect(sales |> join(products, by = maker))
+sales |> join(products, by = maker) |> collect()
 ```
 
 ### Python

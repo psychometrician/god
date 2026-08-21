@@ -124,7 +124,7 @@ column:
 
 ```{r}
 #| error: true
-collect(pupils |> add(band = when(score >= 90, "A", otherwise = 0)))
+pupils |> add(band = when(score >= 90, "A", otherwise = 0)) |> collect()
 ```
 
 ### Python
@@ -203,7 +203,7 @@ The ending is required, and leaving it off is refused rather than guessed:
 
 ```{r}
 #| error: true
-collect(sales |> add(short = look_up(region, "West", "W")))
+sales |> add(short = look_up(region, "West", "W")) |> collect()
 ```
 
 ### Python
