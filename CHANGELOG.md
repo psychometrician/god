@@ -5,7 +5,21 @@ a person using god can see.
 
 ## Unreleased
 
-Nothing yet.
+### The manual reads its tables instead of typing them
+
+Every example table the book computes from is now read from `book/data/` with
+`god_table`, the same one call the preface shows a reader, rather than being
+typed out twice in the setup, once for R and once for Python.
+
+Typing them is how the two languages drifted apart. Written by hand, `revenue`
+was a double in R and an integer in Python, so `to_text([revenue])` answered
+`"100.0"` on one side and `"100"` on the other. The hazard was known and one
+table was written carefully against it; four were not. Reading the CSV settles
+it for every table at once, and for every table anybody adds later.
+
+No page changed. Fifty of the book's fifty-seven rendered pages are
+byte-identical, and the rest differ only by a build date, a version number, a
+plot's random element id and a timing the page measures about itself.
 
 ## 0.2.2 — 2026-08-21
 

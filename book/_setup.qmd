@@ -59,8 +59,22 @@ invisible(capture.output(
   suppressMessages(collect(data.frame(a = 1) |> take(1)))
 ))
 
+# **The cast is read rather than typed, and that is what keeps the two
+# languages agreeing.** Every table lives in `book/data/` as a CSV and
+# `god_table` reads one by name, walking up for a local `data/<name>.csv`
+# exactly as both packages walk up for `god-cli`. The preface shows a reader
+# the same call.
+#
+# **Typing them out is how the two languages drifted apart.** Written by hand,
+# `revenue` was `c(100, 120, ...)` in R and `[100, 120, ...]` in Python, so R
+# held doubles where Python held integers, and `to_text([revenue])` answered
+# "100.0" on one side and "100" on the other. The hazard was known, and `messy`'s
+# `n` was written `7L` against exactly this, but the `L` was remembered for
+# one table out of five. Reading the CSV settles it for every table at once,
+# and for every table anybody adds later.
+#
 # **The cast is declared in the preface, and its shapes are load-bearing for
-# chapters, so change a value here only with the blast radius in mind: every
+# chapters, so change a CSV here only with the blast radius in mind: every
 # rendered table in the book is computed from these rows.** sales is built so
 # grouped answers are checkable by eye: each product's unit price and unit
 # cost are constant (Widget 25/10, Gadget 60/40, Doohickey 40/25, Sprocket
@@ -70,93 +84,20 @@ invisible(capture.output(
 # in the North, for the chapters on what is missing. Dates stay ISO text in
 # both languages: a real R Date against a pandas datetime64 prints
 # differently, and ISO text sorts correctly as it is.
-sales <- data.frame(
-  date     = c("2025-11-03", "2025-11-17", "2025-12-05", "2025-12-22",
-               "2026-01-09", "2026-01-26", "2026-02-14", "2026-03-03",
-               "2026-04-11", "2026-05-06", "2026-06-19", "2026-07-08",
-               "2026-08-24", "2026-09-15", "2026-10-02"),
-  region   = c("West", "East", "West", "North", "East", "West", "North",
-               "East", "West", "North", "East", "West", "North", "East",
-               "West"),
-  product  = c("Widget", "Gadget", "Doohickey", "Widget", "Widget", "Gadget",
-               "Doohickey", "Doohickey", "Widget", "Gadget", "Sprocket",
-               "Sprocket", "Widget", "Gadget", "Widget"),
-  quantity = c(4L, 2L, 3L, 6L, 8L, 5L, 2L, 5L, 2L, 4L, 10L, 6L, 3L, 1L, 5L),
-  revenue  = c(100, 120, 120, 150, 200, 300, 80, 200, 50, 240, 150, 90, 75,
-               60, 125),
-  cost     = c(40, 80, 75, 60, 80, 200, 50, 125, 20, 160, 120, 72, 30, 40,
-               50),
-  stringsAsFactors = FALSE
-)
-
-# Mismatched with sales in both directions, on purpose: sales has Sprocket
-# rows and products has no Sprocket, products has Gizmo and sales sold none.
-# An inner join loses quietly in one direction and an unmatched row waits in
-# the other, which is what the joining chapters exist to show.
-products <- data.frame(
-  product = c("Widget", "Gadget", "Doohickey", "Gizmo"),
-  maker   = c("Acme", "Globex", "Initech", "Initrode"),
-  stringsAsFactors = FALSE
-)
-
-# The three tables that more than one chapter needs. Each is also defined
-# visibly in the chapter that introduces it, because a reader meeting a table
-# should see what is in it. This copy is what keeps a *later* chapter working.
-# Wide on purpose: eight score columns are what selecting by the shape of a
-# name is for, and a chapter arguing against naming columns by hand needs a
-# table where doing so would actually hurt.
-survey <- data.frame(
-  respondent = 1:6,
-  name       = c("ana", "ben", "cal", "dee", "eli", "fay"),
-  region     = c("West", "East", "North", "West", "East", "North"),
-  joined     = c("2026-01-12", "2026-02-03", "2026-02-27", "2026-03-15",
-                 "2026-04-01", "2026-04-22"),
-  q1_score   = c(4L, 5L, 3L, 4L, 2L, 5L),
-  q2_score   = c(2L, 5L, 5L, 3L, 4L, 4L),
-  q3_score   = c(5L, 4L, 2L, 5L, 3L, 4L),
-  q4_score   = c(3L, 3L, 4L, 2L, 5L, 5L),
-  q5_score   = c(4L, 2L, 5L, 4L, 4L, 3L),
-  q6_score   = c(5L, 5L, 3L, 3L, 2L, 4L),
-  q7_score   = c(2L, 4L, 4L, 5L, 3L, 5L),
-  q8_score   = c(3L, 5L, 2L, 4L, 5L, 4L),
-  stringsAsFactors = FALSE
-)
-
-answers <- data.frame(
-  student = c("ann", "bob"),
-  q1 = c(1, 4), q2 = c(2, 5), q3 = c(3, 6),
-  stringsAsFactors = FALSE
-)
-
-marks <- data.frame(
-  student  = c("ann", "ann", "bob", "bob"),
-  question = c("q1", "q2", "q1", "q2"),
-  mark     = c(1, 2, 4, 5),
-  stringsAsFactors = FALSE
-)
-
-# These two are introduced in one chapter and used again in the next, because
-# the chapters they belong to were one long section before the book was split.
-# `n` is written `7L` rather than `7` so R holds a whole number where Python
-# does: a double there makes `to_text` say "7.0" in one language and "7" in the
-# other, which is a fixture difference wearing a grammar difference's clothes.
-messy <- data.frame(
-  raw = c("  ann marie  ", "  bob  "),
-  n = c(7L, 99L),
-  stringsAsFactors = FALSE
-)
-
-diary <- data.frame(
-  g = c("a", "a", "b"),
-  on_ = c("2026-01-02", "2026-01-05", "2026-01-06"),
-  x = c(10, 20, 30),
-  stringsAsFactors = FALSE
-)
-
-# The one table too large to check by eye, for the moments a verb has to
-# prove it survives scale. 1,704 rows: Gapminder's country panel, CC BY 4.0,
-# vendored beside the book so a render needs no network.
-gapminder <- read.csv(find_up("book/data/gapminder.csv"), stringsAsFactors = FALSE)
+#
+# `products` is mismatched with `sales` in both directions on purpose: sales
+# has Sprocket rows and products has no Sprocket, products has Gizmo and sales
+# sold none. `survey` is wide, because eight score columns are what selecting
+# by the shape of a name is for. `answers` and `marks` are the same facts once
+# wide and once long. `messy` and `diary` are text that needs repair and dates
+# that need reading. `gapminder` is the one table too large to check by eye:
+# 1,704 rows of Gapminder's country panel, CC BY 4.0, vendored beside the book
+# so a render needs no network.
+for (.name in c("sales", "products", "survey", "answers", "marks", "messy",
+                "diary", "gapminder")) {
+  assign(.name, god_table(.name))
+}
+rm(.name)
 ```
 
 ```{python}
@@ -186,74 +127,12 @@ def god_float(v):
 pd.set_option("display.float_format", god_float)
 from god import *
 
-# The same fifteen rows as the R block above, in the same order, and they must
-# stay identical or the two tabs of every example disagree for a reason that
-# has nothing to do with the grammar. No missing cells in any integer column:
-# pandas would promote the column to float and "4" would print as "4.0" in one
-# language only.
-sales = pd.DataFrame({
-    "date":     ["2025-11-03", "2025-11-17", "2025-12-05", "2025-12-22",
-                 "2026-01-09", "2026-01-26", "2026-02-14", "2026-03-03",
-                 "2026-04-11", "2026-05-06", "2026-06-19", "2026-07-08",
-                 "2026-08-24", "2026-09-15", "2026-10-02"],
-    "region":   ["West", "East", "West", "North", "East", "West", "North",
-                 "East", "West", "North", "East", "West", "North", "East",
-                 "West"],
-    "product":  ["Widget", "Gadget", "Doohickey", "Widget", "Widget",
-                 "Gadget", "Doohickey", "Doohickey", "Widget", "Gadget",
-                 "Sprocket", "Sprocket", "Widget", "Gadget", "Widget"],
-    "quantity": [4, 2, 3, 6, 8, 5, 2, 5, 2, 4, 10, 6, 3, 1, 5],
-    "revenue":  [100, 120, 120, 150, 200, 300, 80, 200, 50, 240, 150, 90,
-                 75, 60, 125],
-    "cost":     [40, 80, 75, 60, 80, 200, 50, 125, 20, 160, 120, 72, 30,
-                 40, 50],
-})
-
-products = pd.DataFrame({
-    "product": ["Widget", "Gadget", "Doohickey", "Gizmo"],
-    "maker":   ["Acme", "Globex", "Initech", "Initrode"],
-})
-
-survey = pd.DataFrame({
-    "respondent": [1, 2, 3, 4, 5, 6],
-    "name":       ["ana", "ben", "cal", "dee", "eli", "fay"],
-    "region":     ["West", "East", "North", "West", "East", "North"],
-    "joined":     ["2026-01-12", "2026-02-03", "2026-02-27", "2026-03-15",
-                   "2026-04-01", "2026-04-22"],
-    "q1_score":   [4, 5, 3, 4, 2, 5],
-    "q2_score":   [2, 5, 5, 3, 4, 4],
-    "q3_score":   [5, 4, 2, 5, 3, 4],
-    "q4_score":   [3, 3, 4, 2, 5, 5],
-    "q5_score":   [4, 2, 5, 4, 4, 3],
-    "q6_score":   [5, 5, 3, 3, 2, 4],
-    "q7_score":   [2, 4, 4, 5, 3, 5],
-    "q8_score":   [3, 5, 2, 4, 5, 4],
-})
-
-answers = pd.DataFrame({
-    "student": ["ann", "bob"],
-    "q1": [1, 4], "q2": [2, 5], "q3": [3, 6],
-})
-
-marks = pd.DataFrame({
-    "student":  ["ann", "ann", "bob", "bob"],
-    "question": ["q1", "q2", "q1", "q2"],
-    "mark":     [1, 2, 4, 5],
-})
-
-messy = pd.DataFrame({
-    "raw": ["  ann marie  ", "  bob  "],
-    "n": [7, 99],
-})
-
-diary = pd.DataFrame({
-    "g": ["a", "a", "b"],
-    "on_": ["2026-01-02", "2026-01-05", "2026-01-06"],
-    "x": [10, 20, 30],
-})
-
-# The R block's walk, respelled: the same file, found the same way.
-_data_dir = next(p for p in (_here, *_here.parents)
-                 if (p / "book" / "data" / "gapminder.csv").exists())
-gapminder = pd.read_csv(_data_dir / "book" / "data" / "gapminder.csv")
+# The same tables as the R block above, read the same way. Nothing is typed
+# here either, so the two languages cannot disagree about a column's type: the
+# CSV says what each column is and both sides get the same answer.
+(sales, products, survey, answers, marks, messy, diary, gapminder) = (
+    god_table(name) for name in
+    ("sales", "products", "survey", "answers", "marks", "messy", "diary",
+     "gapminder")
+)
 ```
