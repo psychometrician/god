@@ -112,7 +112,9 @@ one the grammar settled on.
 ### R
 
 ```{r}
-show_as(survey |> add(where(startsWith(name, "q"), value * 10)), "god")
+survey |>
+  add(where(startsWith(name, "q"), value * 10)) |>
+  show_as("god")
 ```
 
 ### Python

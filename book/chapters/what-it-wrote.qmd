@@ -15,7 +15,10 @@ itself.
 ### R
 
 ```{r}
-show_as(sales |> keep(region == "West") |> take(10), "dplyr")
+sales |>
+  keep(region == "West") |>
+  take(10) |>
+  show_as("dplyr")
 ```
 
 ### Python
@@ -39,7 +42,9 @@ returning both made a notebook say everything twice.
 ### R
 
 ```{r}
-show_as(sales |> summarize(revenue = total(revenue), by = product), "sql")
+sales |>
+  summarize(revenue = total(revenue), by = product) |>
+  show_as("sql")
 ```
 
 ### Python
@@ -70,7 +75,9 @@ wrote.
 ### R
 
 ```{r}
-show_as(sales |> summarize(revenue = total(revenue), by = product), "spark")
+sales |>
+  summarize(revenue = total(revenue), by = product) |>
+  show_as("spark")
 ```
 
 ### Python
@@ -110,10 +117,11 @@ anything to. The same pipeline, three ways:
 ### R
 
 ```{r}
-show_as(sales |>
-          add(margin = revenue - cost) |>
-          keep(margin > 50) |>
-          sort(descending(margin)), "polars")
+sales |>
+  add(margin = revenue - cost) |>
+  keep(margin > 50) |>
+  sort(descending(margin)) |>
+  show_as("polars")
 ```
 
 ### Python
@@ -132,10 +140,11 @@ show_as(sales
 ### R
 
 ```{r}
-show_as(sales |>
-          add(margin = revenue - cost) |>
-          keep(margin > 50) |>
-          sort(descending(margin)), "pandas")
+sales |>
+  add(margin = revenue - cost) |>
+  keep(margin > 50) |>
+  sort(descending(margin)) |>
+  show_as("pandas")
 ```
 
 ### Python
@@ -154,10 +163,11 @@ show_as(sales
 ### R
 
 ```{r}
-show_as(sales |>
-          add(margin = revenue - cost) |>
-          keep(margin > 50) |>
-          sort(descending(margin)), "pyspark")
+sales |>
+  add(margin = revenue - cost) |>
+  keep(margin > 50) |>
+  sort(descending(margin)) |>
+  show_as("pyspark")
 ```
 
 ### Python
@@ -199,8 +209,9 @@ makes, because its pivot cannot find them in the data:
 
 ```{r}
 #| error: true
-show_as(marks |> widen(name = question, value = mark, by = student),
-        "spark")
+marks |>
+  widen(name = question, value = mark, by = student) |>
+  show_as("spark")
 ```
 
 ### Python

@@ -5,6 +5,19 @@ a person using god can see.
 
 ## Unreleased
 
+### The manual pipes into `show_as` instead of wrapping the pipeline in it
+
+`show_as(pipeline, "sql")` takes the pipeline first, so `pipeline |>
+show_as("sql")` is the same call and reads as what it is: one sentence, ending
+in a request to see it written another way. Nine R examples across three
+chapters were wrapped and are now piped.
+
+Python keeps the wrapped form, because it has to. R's `|>` is syntax that
+rewrites the call; `>>` needs an object on its right, and `collect` and
+`show_as` are ordinary functions there. It is the same class of difference as
+`format(p)` against `p.written()`, which the two-languages appendix already
+sets out.
+
 ### The manual reads its tables instead of typing them
 
 Every example table the book computes from is now read from `book/data/` with

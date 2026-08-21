@@ -28,12 +28,13 @@ The whole pipeline reaches the engine as one query, never a step at a time:
 ### R
 
 ```{r}
-show_as(sales |>
+sales |>
   keep(region == "West") |>
   add(margin = revenue - cost) |>
   summarize(margin = total(margin), by = product) |>
   sort(descending(margin)) |>
-  take(10), "sql")
+  take(10) |>
+  show_as("sql")
 ```
 
 ### Python
