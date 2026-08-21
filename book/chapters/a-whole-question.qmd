@@ -12,27 +12,21 @@ The table is a set of survey returns. Each respondent answered three questions,
 some answers are missing, a backup file fills one of the gaps, and the
 regions have long names that a lookup table holds.
 
+```{r}
+#| include: false
+returns <- god_table("returns")
+places <- god_table("places")
+```
+
+```{python}
+#| include: false
+returns = god_table("returns")
+places = god_table("places")
+```
+
 ::: {.panel-tabset}
 
 ### R
-
-```{r}
-returns <- data.frame(
-  id     = c(1, 2, 3, 4, 5),
-  code   = c("W", "W", "E", "E", "N"),
-  q1     = c(5, 3, NA, 5, 2),
-  q2     = c(4, NA, 5, 4, 3),
-  q3     = c(NA, 2, 5, 5, 1),
-  q1_alt = c(NA, NA, 4, NA, NA),
-  stringsAsFactors = FALSE
-)
-
-places <- data.frame(
-  code = c("W", "E"),
-  area = c("West", "East"),
-  stringsAsFactors = FALSE
-)
-```
 
 ```{r}
 #| echo: false
@@ -40,22 +34,6 @@ returns
 ```
 
 ### Python
-
-```{python}
-returns = pd.DataFrame({
-    "id":     [1, 2, 3, 4, 5],
-    "code":   ["W", "W", "E", "E", "N"],
-    "q1":     [5.0, 3.0, None, 5.0, 2.0],
-    "q2":     [4.0, None, 5.0, 4.0, 3.0],
-    "q3":     [None, 2.0, 5.0, 5.0, 1.0],
-    "q1_alt": [None, None, 4.0, None, None],
-})
-
-places = pd.DataFrame({
-    "code": ["W", "E"],
-    "area": ["West", "East"],
-})
-```
 
 ```{python}
 #| echo: false
@@ -135,14 +113,15 @@ line changing.
 Here is the whole thing as SQL, which is what actually ran.
 
 ```{r}
-show_as(returns |>
+returns |>
   keep(matching(places, by = code)) |>
   add(q1 = first_present(q1, q1_alt)) |>
   pick(all_but(q1_alt)) |>
   join(places, by = code) |>
   summarize(where(startsWith(name, "q"), average(value)), by = area) |>
   add(place = rank(descending(q1))) |>
-  sort(place), "sql")
+  sort(place) |>
+  show_as("sql")
 ```
 
 A misspelling anywhere in those seven steps would have stopped the whole
