@@ -73,5 +73,14 @@ god_table <- function(name, text = character()) {
   names(classes) <- text
   local <- god_walk_up_data(getwd(), name)
   from <- if (is.na(local)) paste0(god_book_data_url, name, ".csv") else local
-  utils::read.csv(from, colClasses = classes, stringsAsFactors = FALSE)
+  # **`check.names = FALSE`, because a column name is whatever the file says
+  # it is.** R's default rewrites anything that is not a syntactic name, so a
+  # header of `order date` arrived as `order.date` while Python's copy of this
+  # function read `order date` and kept it. The same file, two column names,
+  # in the one place a reader is told the two languages agree. The grammar goes
+  # out of its way to allow the name -- `[order date]` in the text form,
+  # backticks in R, `col["order date"]` in Python -- so the reader that fetches
+  # it has no business renaming it.
+  utils::read.csv(from, colClasses = classes, stringsAsFactors = FALSE,
+                  check.names = FALSE)
 }

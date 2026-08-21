@@ -5,6 +5,19 @@ a person using god can see.
 
 ## Unreleased
 
+### `god_table` keeps a column's name in R, where it used to rewrite it
+
+R's CSV reader renames anything that is not a syntactic name unless it is told
+not to, so a header of `order date` arrived as `order.date` in R while the
+Python half of the same helper read the same file and kept `order date`. One
+file, two column names, in the one place a reader is told the two languages
+agree.
+
+The grammar allows the name everywhere else, `[order date]` in the text form,
+backticks in R and `col["order date"]` in Python, so the reader that fetches it
+has no business renaming it. No table published with the book is affected;
+every one of them already had names R was happy with.
+
 ### The manual pipes into `collect` and `show_as` instead of wrapping the pipeline in them
 
 Both take the pipeline as their first argument, so `pipeline |> collect()` and

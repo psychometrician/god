@@ -1047,6 +1047,11 @@ with _tempfile.TemporaryDirectory() as _root:
     _top = pathlib.Path(_root)
     (_top / "data").mkdir()
     (_top / "data" / "local_only.csv").write_text("region,revenue\nWest,10\nEast,20\n")
+    # The R half of this helper used to rename a header that is not a syntactic
+    # name, so the same file gave `order date` here and `order.date` there.
+    # Checked from both sides now, because one side passing proved nothing.
+    (_top / "data" / "spaced.csv").write_text(
+        "order date,total\n2026-01-02,40\n2026-01-05,90\n")
     _nest = _top / "one" / "two"
     _nest.mkdir(parents=True)
 
@@ -1064,6 +1069,12 @@ with _tempfile.TemporaryDirectory() as _root:
                     "not a table name")
         check_error("and it says what a name is",
                     lambda: god.god_table("../secrets"), "letters, digits")
+
+        _spaced = god.god_table("spaced")
+        check("a column name with a space survives the read",
+              list(_spaced.columns)[0], "order date")
+        check("and the pipeline can name it",
+              len(god.collect(_spaced >> god.keep(god.col["order date"] > "2026-01-03"))), 1)
 
         # The other direction: no `data/` anywhere above, so the published copy
         # is what it would reach for. Checked through the resolver rather than

@@ -1186,6 +1186,19 @@ local({
   check("god_table refuses a path",            grepl("not a table name", escape, fixed = TRUE), TRUE)
   check("and says what a name is",             grepl("letters, digits", escape, fixed = TRUE), TRUE)
 
+  # **A column name is whatever the file says it is.** `read.csv` rewrites
+  # anything that is not a syntactic name unless it is told not to, so this
+  # header arrived as `order.date` in R while Python's copy of `god_table` read
+  # the same file and kept `order date`. One file, two column names, in the one
+  # helper whose whole job is handing both languages the same table. The
+  # grammar allows the name everywhere else, so the reader may not rename it.
+  writeLines(c("order date,total", "2026-01-02,40", "2026-01-05,90"),
+             file.path(dirname(dirname(nest)), "data", "spaced.csv"))
+  spaced <- god_table("spaced")
+  check("a column name with a space survives the read", names(spaced)[1], "order date")
+  check("and the pipeline can name it",
+        nrow(collect(spaced |> keep(`order date` > "2026-01-03"))), 1L)
+
   # The other direction: no `data/` anywhere above, so the published copy is
   # what it would reach for. Checked through the resolver rather than by
   # fetching, because the suite stays offline.
