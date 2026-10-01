@@ -23,6 +23,13 @@ sentences and nobody would know. That is what this catches.
 
 The fixture is one CSV read by both, so the two are not comparing different data
 and calling it agreement.
+
+**Twice since 2026-10-01: the plain fixture and `parity/holes/`**, the same
+tables with a hole in every column, because a missing value is where the hosts
+differ most: R's `NA` and pandas' `NaN` reach the engine by different roads, and
+a column that is all holes is a different type in each. On the second fixture
+the query and the table are compared, and a sentence both refuse on that data
+agrees; the native witnesses are about spelling rather than data and run once.
 """
 
 import os
@@ -58,19 +65,31 @@ import god  # noqa: E402
 CORPUS = ROOT / "parity" / "corpus.god"
 R_CORPUS = ROOT / "parity" / "corpus.R"
 PY_CORPUS = ROOT / "parity" / "corpus.py"
-FIXTURE = ROOT / "parity" / "sales.csv"
-OTHER = ROOT / "parity" / "products.csv"
-# A third table, whose key is *not* called what `sales` calls it: `regions.area`
-# against `sales.region`. That mismatch is the ordinary shape of a schema, and
-# it is the only thing that exercises `by [a] is [b]` end to end.
-REGIONS = ROOT / "parity" / "regions.csv"
+# The fixture being read, set for each pass. A third table, `regions`, has a
+# key *not* called what `sales` calls it: `regions.area` against
+# `sales.region`. That mismatch is the ordinary shape of a schema, and it is the
+# only thing that exercises `by [a] is [b]` end to end.
+FIXTURES = [ROOT / "parity", ROOT / "parity" / "holes"]
+FIXTURE = FIXTURES[0] / "sales.csv"
+OTHER = FIXTURES[0] / "products.csv"
+REGIONS = FIXTURES[0] / "regions.csv"
+
+
+def use(fixture: Path) -> None:
+    """Read the three tables from this fixture from now on."""
+    global FIXTURE, OTHER, REGIONS
+    FIXTURE = fixture / "sales.csv"
+    OTHER = fixture / "products.csv"
+    REGIONS = fixture / "regions.csv"
 
 R_DRIVER = r"""
 suppressMessages(pkgload::load_all("r-pkg/god", export_all = FALSE, quiet = TRUE))
 args <- commandArgs(trailingOnly = TRUE)
-sales <- read.csv(args[[1]], stringsAsFactors = FALSE)
-products <- read.csv(sub("sales.csv", "products.csv", args[[1]]), stringsAsFactors = FALSE)
-regions <- read.csv(sub("sales.csv", "regions.csv", args[[1]]), stringsAsFactors = FALSE)
+# An empty cell is missing, the way pandas reads it.
+holes <- c("", "NA")
+sales <- read.csv(args[[1]], stringsAsFactors = FALSE, na.strings = holes)
+products <- read.csv(sub("sales.csv", "products.csv", args[[1]]), stringsAsFactors = FALSE, na.strings = holes)
+regions <- read.csv(sub("sales.csv", "regions.csv", args[[1]]), stringsAsFactors = FALSE, na.strings = holes)
 pipeline <- readLines(args[[2]], warn = FALSE)
 pipeline <- paste(pipeline, collapse = "\n")
 mode <- args[[3]]
@@ -248,56 +267,90 @@ def _main() -> int:
 
     agreed = 0
     disagreed = 0
+    refused = 0
 
-    for i, (pipeline, native, native_py) in enumerate(
-        zip(pipelines, r_native, py_corpus), 1
-    ):
-        one_line = " ".join(pipeline.split())
-        label = one_line if len(one_line) <= 62 else one_line[:59] + "..."
+    for fixture in FIXTURES:
+        use(fixture)
+        holed = fixture != FIXTURES[0]
+        if holed:
+            print(f"\nthe same sentences on {fixture.relative_to(ROOT)}, query and table\n")
+        for i, (pipeline, native, native_py) in enumerate(
+            zip(pipelines, r_native, py_corpus), 1
+        ):
+            a, d, r_ = witness(i, pipeline, native, native_py, holed)
+            agreed, disagreed, refused = agreed + a, disagreed + d, refused + r_
+
+    print(f"\n{agreed} agreed, {refused} refused alike on the data with holes, {disagreed} disagreed")
+    return 1 if disagreed else 0
+
+
+def witness(i: int, pipeline: str, native: str, native_py: str, holed: bool) -> tuple[int, int, int]:
+    """One sentence, every witness: (agreed, disagreed, refused alike)."""
+    one_line = " ".join(pipeline.split())
+    label = one_line if len(one_line) <= 62 else one_line[:59] + "..."
+    try:
+        r_sql, py_sql = r(pipeline, "sql"), py(pipeline, "sql")
+    except Exception as e:
+        print(f"  ERROR  {i:2}. {label}\n         {e}")
+        return 0, 1, 0
+    # **A query both refuse on this data agrees**, a `widen` with a
+    # missing name, as long as the two refusals are the same words.
+    try:
+        r_table = r(pipeline, "table")
+    except Exception as e:
+        r_table = e
+    try:
+        py_table = py(pipeline, "table")
+    except Exception as e:
+        py_table = e
+    if isinstance(r_table, Exception) or isinstance(py_table, Exception):
+        said = [str(t).splitlines()[-1] if isinstance(t, Exception) else None for t in (r_table, py_table)]
+        # R ends its report with "Execution halted", so the engine's words are
+        # looked for anywhere in it rather than on its last line.
+        words = said[1].split("Error: ", 1)[-1][:60] if said[1] else ""
+        if holed and all(said) and words and words in str(r_table):
+            print(f"  refused alike {i:2}. {label}")
+            return 0, 0, 1
+        print(f"  ERROR  {i:2}. {label}\n         R: {said[0]}\n         Py: {said[1]}")
+        return 0, 1, 0
+    if not holed:
         try:
-            r_sql, py_sql = r(pipeline, "sql"), py(pipeline, "sql")
-            r_table, py_table = r(pipeline, "table"), py(pipeline, "table")
             written = r(native, "native")
             written_py = py_native(native_py)
         except Exception as e:
-            disagreed += 1
             print(f"  ERROR  {i:2}. {label}\n         {e}")
-            continue
+            return 0, 1, 0
 
-        if r_sql != py_sql:
-            disagreed += 1
-            print(f"  QUERY  {i:2}. {label}\n      R: {r_sql}\n     Py: {py_sql}")
-            continue
+    if r_sql != py_sql:
+        print(f"  QUERY  {i:2}. {label}\n      R: {r_sql}\n     Py: {py_sql}")
+        return 0, 1, 0
 
-        if normalize_table(r_table) != normalize_table(py_table):
-            disagreed += 1
-            print(f"  TABLE  {i:2}. {label}")
-            print("         R  |", " / ".join(",".join(row) for row in normalize_table(r_table)))
-            print("         Py |", " / ".join(",".join(row) for row in normalize_table(py_table)))
-            continue
+    if normalize_table(r_table) != normalize_table(py_table):
+        print(f"  TABLE  {i:2}. {label}")
+        print("         R  |", " / ".join(",".join(row) for row in normalize_table(r_table)))
+        print("         Py |", " / ".join(",".join(row) for row in normalize_table(py_table)))
+        return 0, 1, 0
 
-        # The third and fourth witnesses. The text arrives at the plan by being
-        # parsed; each native form arrives by being built, in a different
-        # language, by a translator written separately. None can borrow another's
-        # answer, so agreement is evidence rather than tautology.
+    if not holed:
+        # The third and fourth witnesses. The text arrives at the plan by
+        # being parsed; each native form arrives by being built, in a
+        # different language, by a translator written separately. None can
+        # borrow another's answer, so agreement is evidence rather than
+        # tautology.
         want = canonical(pipeline)
         got_r = canonical(written)
         got_py = canonical(written_py)
         if want != got_r or want != got_py:
-            disagreed += 1
             print(f"  NATIVE {i:2}. {label}")
             print("         text |", " ".join(want.split()))
             if got_r != want:
                 print("         R    |", " ".join(got_r.split()))
             if got_py != want:
                 print("         Py   |", " ".join(got_py.split()))
-            continue
+            return 0, 1, 0
 
-        agreed += 1
-        print(f"  ok     {i:2}. {label}")
-
-    print(f"\n{agreed} agreed, {disagreed} disagreed")
-    return 1 if disagreed else 0
+    print(f"  ok     {i:2}. {label}")
+    return 1, 0, 0
 
 
 if __name__ == "__main__":

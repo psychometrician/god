@@ -6,6 +6,19 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### The parity harnesses run a second fixture with a hole in every column
+
+The parity fixture had no missing value anywhere, so every sentence agreed on
+every engine and in every printed library for the reason that does not count.
+`parity/holes/` holds the same tables with a hole in each column and a missing
+key in both partner tables, and `check.py`, `spark.py` and `printed.py` now run
+the whole corpus on both. Seventeen sentences join the corpus, one for each
+kind of disagreement it found. The printed-code check also compares text as
+text, tells R's missing value from its empty text, and compares row order
+wherever the query settles it, found by running the query again on the rows
+shuffled. Its first run found sixty disagreements, every one fixed in the
+entries above.
+
 ### A grouped, tied or far-end `take` comes back in one order everywhere
 
 After a grouped `take`, a `take ... with ties` and a `take_last`, the query

@@ -205,7 +205,8 @@ python3 parity/check.py                   # the two languages against each other
 python3 parity/vocabulary.py              # both bindings against the engine's own word list
 python3 parity/spark.py                   # the corpus on DuckDB and Spark, tables compared
 python3 parity/warehouse.py               # the corpus on DuckDB and a SQL warehouse, tables compared
-python3 parity/printed.py                 # the printed code executed, tables compared
+python3 parity/printed.py                 # the printed code executed, tables compared,
+                                          # in order wherever the query settles it
 
 Rscript book/check_grammar.R              # every pipeline and transcript the book shows, run
 Rscript book/check_prose.R                # the book's voice, the half a machine can hold
@@ -247,6 +248,13 @@ ways — as text, as R, as Python — and checks four things for each sentence:
 the two languages produce the same query, they produce the same table, and
 each native spelling builds the very sentence the text form parses. A binding
 that has drifted shows up as a disagreement rather than as a small debt.
+
+**The corpus runs on two fixtures**: the plain tables in `parity/`, and the same
+tables in `parity/holes/` with a hole in every column and a missing key in
+both partner tables. A missing value is where the hosts, the engines and the
+printing libraries part ways most, and the plain tables have none, so every
+harness above that reads a fixture reads both. A sentence the query refuses on
+the holed tables, a `widen` with a missing name, is reported and not compared.
 
 `cargo test` passing does not mean `target/release/god-cli` was rebuilt. They are
 separate artifacts. Run `cargo build --release` explicitly, and re-render the

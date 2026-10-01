@@ -187,3 +187,40 @@ sales then sort [product] then summarize [sold] as join_rows([product], ", ") by
 sales then keep where [revenue] > 99.9999999 then pick [product, revenue]
 ---
 sales then keep where [revenue] * 0.000000000001 > 0.0000000001234 then pick [product, revenue]
+---
+# **The sentences for the fixture with holes**, added 2026-10-01 with
+# `parity/holes/`. Each is a place a printing backend, or Spark, answered
+# differently from the query; on the plain fixture they still have to agree.
+sales then keep where [product] not in {"Widget"} then pick [product, revenue]
+---
+sales then keep where not ([revenue] > 100 and [cost] > 50) then pick [product, revenue, cost]
+---
+sales then keep where not ([product] contains "W") then pick [product, revenue]
+---
+sales then add [big] as [revenue] > 200 then pick [product, revenue, big]
+---
+sales then add [flag] as when(not ([region] is "West"), "away", otherwise "home") then pick [region, flag]
+---
+sales then join products by [product] unmatched "both" then sort [product], [revenue], [maker] then pick [product, maker, revenue]
+---
+sales then keep where not matching(regions, by [region] is [area]) then pick [region, revenue]
+---
+sales then keep where [revenue] > 1000 then summarize [t] as total([revenue]), [n] as row_count(), [j] as join_rows([product], ", "), [u] as unique_count([product])
+---
+sales then summarize [low] as smallest([revenue]), [high] as largest([revenue]), [kinds] as unique_count([region]) by [product]
+---
+sales then sort [ordered_on] then add [f] as first([product]), [l] as last([cost]) by [region] then pick [region, f, l]
+---
+sales then drop_missing [product] then widen name [product], value unique_count([ordered_on]) by [region] giving [Widget, Gadget, Gizmo]
+---
+sales then sort [revenue] missing first then take 3 with ties then pick [product, revenue]
+---
+sales then sort [revenue] then take_last 3 with ties then pick [product, revenue]
+---
+sales then add [label] as first_present([product], [region], "none") then pick [label]
+---
+sales then summarize [n] as row_count() by [region] then take 1
+---
+sales then sort [ordered_on] then add [sold] as join_rows([product], ", "), [kinds] as unique_count([product]) by [region] then pick [region, ordered_on, sold, kinds]
+---
+sales then sort [ordered_on] then add [share] as [revenue] / total([revenue]) by [region] then pick [region, ordered_on, share]

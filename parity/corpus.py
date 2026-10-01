@@ -237,3 +237,38 @@ sales >> add(coded = look_up(col.product, "Widget", 1, "Gadget", 2, otherwise = 
 sales >> keep(col.revenue > 99.9999999) >> pick(col.product, col.revenue)
 ---
 sales >> keep(col.revenue * 0.000000000001 > 0.0000000001234) >> pick(col.product, col.revenue)
+---
+# The sentences for the fixture with holes, in Python.
+sales >> keep(~col.product.is_in(["Widget"])) >> pick(col.product, col.revenue)
+---
+sales >> keep(~((col.revenue > 100) & (col.cost > 50))) >> pick(col.product, col.revenue, col.cost)
+---
+sales >> keep(~col.product.contains("W")) >> pick(col.product, col.revenue)
+---
+sales >> add(big = col.revenue > 200) >> pick(col.product, col.revenue, col.big)
+---
+sales >> add(flag = when(~(col.region == "West"), "away", otherwise = "home")) >> pick(col.region, col.flag)
+---
+sales >> join(products, by = col.product, unmatched = "both") >> sort(col.product, col.revenue, col.maker) >> pick(col.product, col.maker, col.revenue)
+---
+sales >> keep(~matching(regions, by = col.region == col.area)) >> pick(col.region, col.revenue)
+---
+sales >> keep(col.revenue > 1000) >> summarize(t = total(col.revenue), n = row_count(), j = join_rows(col.product, ", "), u = unique_count(col.product))
+---
+sales >> summarize(low = smallest(col.revenue), high = largest(col.revenue), kinds = unique_count(col.region), by = col.product)
+---
+sales >> sort(col.ordered_on) >> add(f = first(col.product), l = last(col.cost), by = col.region) >> pick(col.region, col.f, col.l)
+---
+sales >> drop_missing(col.product) >> widen(name = col.product, value = unique_count(col.ordered_on), by = col.region, giving = [col.Widget, col.Gadget, col.Gizmo])
+---
+sales >> sort(col.revenue, missing = "first") >> take(3, ties = True) >> pick(col.product, col.revenue)
+---
+sales >> sort(col.revenue) >> take_last(3, ties = True) >> pick(col.product, col.revenue)
+---
+sales >> add(label = first_present(col.product, col.region, "none")) >> pick(col.label)
+---
+sales >> summarize(n = row_count(), by = col.region) >> take(1)
+---
+sales >> sort(col.ordered_on) >> add(sold = join_rows(col.product, ", "), kinds = unique_count(col.product), by = col.region) >> pick(col.region, col.ordered_on, col.sold, col.kinds)
+---
+sales >> sort(col.ordered_on) >> add(share = col.revenue / total(col.revenue), by = col.region) >> pick(col.region, col.ordered_on, col.share)

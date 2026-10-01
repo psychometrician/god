@@ -230,3 +230,38 @@ sales |>
 sales |> keep(revenue > 99.9999999) |> pick(product, revenue)
 ---
 sales |> keep(revenue * 0.000000000001 > 0.0000000001234) |> pick(product, revenue)
+---
+# The sentences for the fixture with holes, in R.
+sales |> keep(!(product %in% c("Widget"))) |> pick(product, revenue)
+---
+sales |> keep(!(revenue > 100 & cost > 50)) |> pick(product, revenue, cost)
+---
+sales |> keep(!grepl("W", product, fixed = TRUE)) |> pick(product, revenue)
+---
+sales |> add(big = revenue > 200) |> pick(product, revenue, big)
+---
+sales |> add(flag = when(!(region == "West"), "away", otherwise = "home")) |> pick(region, flag)
+---
+sales |> join(products, by = product, unmatched = "both") |> sort(product, revenue, maker) |> pick(product, maker, revenue)
+---
+sales |> keep(!matching(regions, by = region == area)) |> pick(region, revenue)
+---
+sales |> keep(revenue > 1000) |> summarize(t = total(revenue), n = row_count(), j = join_rows(product, ", "), u = unique_count(product))
+---
+sales |> summarize(low = smallest(revenue), high = largest(revenue), kinds = unique_count(region), by = product)
+---
+sales |> sort(ordered_on) |> add(f = first(product), l = last(cost), by = region) |> pick(region, f, l)
+---
+sales |> drop_missing(product) |> widen(name = product, value = unique_count(ordered_on), by = region, giving = c(Widget, Gadget, Gizmo))
+---
+sales |> sort(revenue, missing = "first") |> take(3, ties = TRUE) |> pick(product, revenue)
+---
+sales |> sort(revenue) |> take_last(3, ties = TRUE) |> pick(product, revenue)
+---
+sales |> add(label = first_present(product, region, "none")) |> pick(label)
+---
+sales |> summarize(n = row_count(), by = region) |> take(1)
+---
+sales |> sort(ordered_on) |> add(sold = join_rows(product, ", "), kinds = unique_count(product), by = region) |> pick(region, ordered_on, sold, kinds)
+---
+sales |> sort(ordered_on) |> add(share = revenue / total(revenue), by = region) |> pick(region, ordered_on, share)

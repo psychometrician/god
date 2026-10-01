@@ -1,0 +1,8 @@
+region,product,revenue,cost,ordered_on
+West,Widget,100,40,2026-01-02
+West,Widget,,50,2026-01-03
+West,Gadget,300,,2026-01-04
+,Gadget,150,50,2026-01-05
+East,Widget,500,100,
+East,,250,75,2026-01-07
+East,Gizmo,,120,2026-01-08

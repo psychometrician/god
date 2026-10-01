@@ -783,3 +783,142 @@ sales                                   region:text  product:text  revenue:numbe
 └ pick [product, revenue]               product  revenue
                                         -region  -cost  -ordered_on
 ---
+# **The sentences for the fixture with holes**, added 2026-10-01 with
+# `parity/holes/`. Each is a place a printing backend, or Spark, answered
+# differently from the query; on the plain fixture they still have to agree.
+sales then keep where [product] not in {"Widget"} then pick [product, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where ([product] not in {"Widget"})
+│                                       region  product  revenue  cost  ordered_on
+└ pick [product, revenue]               product  revenue
+                                        -region  -cost  -ordered_on
+---
+sales then keep where not ([revenue] > 100 and [cost] > 50) then pick [product, revenue, cost]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (not (([revenue] > 100) and ([cost] > 50)))
+│                                       region  product  revenue  cost  ordered_on
+└ pick [product, revenue, cost]         product  revenue  cost
+                                        -region  -ordered_on
+---
+sales then keep where not ([product] contains "W") then pick [product, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (not ([product] contains "W"))
+│                                       region  product  revenue  cost  ordered_on
+└ pick [product, revenue]               product  revenue
+                                        -region  -cost  -ordered_on
+---
+sales then add [big] as [revenue] > 200 then pick [product, revenue, big]
+sales                             region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [big] as ([revenue] > 200)  region  product  revenue  cost  ordered_on  +big:truth
+└ pick [product, revenue, big]    product  revenue  big
+                                  -region  -cost  -ordered_on
+---
+sales then add [flag] as when(not ([region] is "West"), "away", otherwise "home") then pick [region, flag]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [flag] as when((not ([region] is "West")), "away", otherwise "home")
+│                                       region  product  revenue  cost  ordered_on  +flag:text
+└ pick [region, flag]                   region  flag
+                                        -product  -revenue  -cost  -ordered_on
+---
+sales then join products by [product] unmatched "both" then sort [product], [revenue], [maker] then pick [product, maker, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ join products by [product] unmatched "both"
+│                                       region  =product  revenue  cost  ordered_on  +maker:text
+│   └ products                          =product  maker:text
+│     matched on product · maker crosses over
+│   every row of both tables is kept
+│   rows may multiply — one for each time products repeats a key
+├ sort [product], [revenue], [maker]    region  product  revenue  cost  ordered_on  maker
+└ pick [product, maker, revenue]        product  maker  revenue
+                                        -region  -cost  -ordered_on
+---
+sales then keep where not matching(regions, by [region] is [area]) then pick [region, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (not matching(regions, by [region] is [area]))
+│                                       region  product  revenue  cost  ordered_on
+│   └ regions                           area:text  manager:text
+│     matched on region is area · no columns cross, only rows go
+│   only the rows that do not match regions — never more than it started with
+└ pick [region, revenue]                region  revenue
+                                        -product  -cost  -ordered_on
+---
+sales then keep where [revenue] > 1000 then summarize [t] as total([revenue]), [n] as row_count(), [j] as join_rows([product], ", "), [u] as unique_count([product])
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where ([revenue] > 1000)         region  product  revenue  cost  ordered_on
+└ summarize [t] as total([revenue]), [n] as row_count(), [j] as join_rows([product], ", "), [u] as unique_count([product])
+                                        +t:number  +n:number  +j:text  +u:number
+                                        -region  -product  -revenue  -cost  -ordered_on
+    one row, for the whole table
+---
+sales then summarize [low] as smallest([revenue]), [high] as largest([revenue]), [kinds] as unique_count([region]) by [product]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+└ summarize [low] as smallest([revenue]), [high] as largest([revenue]), [kinds] as unique_count([region]) by [product]
+                                        product  +low:number  +high:number  +kinds:number
+                                        -region  -revenue  -cost  -ordered_on
+    one row per group
+---
+sales then sort [ordered_on] then add [f] as first([product]), [l] as last([cost]) by [region] then pick [region, f, l]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [f] as first([product]), [l] as last([cost]) by [region]
+│                                       region  product  revenue  cost  ordered_on  +f:text  +l:number
+└ pick [region, f, l]                   region  f  l
+                                        -product  -revenue  -cost  -ordered_on
+---
+sales then drop_missing [product] then widen name [product], value unique_count([ordered_on]) by [region] giving [Widget, Gadget, Gizmo]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ drop_missing [product]                region  product  revenue  cost  ordered_on
+└ widen name [product], value unique_count([ordered_on]) by [region] giving [Widget, Gadget, Gizmo]
+                                        region  +Widget:number  +Gadget:number  +Gizmo:number
+                                        -product  -revenue  -cost  -ordered_on
+    fewer rows — one per group
+---
+sales then sort [revenue] missing first then take 3 with ties then pick [product, revenue]
+sales                           region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [revenue] missing first  region  product  revenue  cost  ordered_on
+├ take 3 with ties              region  product  revenue  cost  ordered_on
+│   at most 3 rows
+└ pick [product, revenue]       product  revenue
+                                -region  -cost  -ordered_on
+---
+sales then sort [revenue] then take_last 3 with ties then pick [product, revenue]
+sales                      region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [revenue]           region  product  revenue  cost  ordered_on
+├ take_last 3 with ties    region  product  revenue  cost  ordered_on
+│   at most 3 rows, from the far end
+└ pick [product, revenue]  product  revenue
+                           -region  -cost  -ordered_on
+---
+sales then add [label] as first_present([product], [region], "none") then pick [label]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ add [label] as first_present([product], [region], "none")
+│                                       region  product  revenue  cost  ordered_on  +label:text
+└ pick [label]                          label
+                                        -region  -product  -revenue  -cost  -ordered_on
+---
+sales then summarize [n] as row_count() by [region] then take 1
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ summarize [n] as row_count() by [region]
+│                                       region  +n:number
+│                                       -product  -revenue  -cost  -ordered_on
+│   one row per group
+└ take 1                                region  n
+    at most 1 rows
+---
+sales then sort [ordered_on] then add [sold] as join_rows([product], ", "), [kinds] as unique_count([product]) by [region] then pick [region, ordered_on, sold, kinds]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [sold] as join_rows([product], ", "), [kinds] as unique_count([product]) by [region]
+│                                       region  product  revenue  cost  ordered_on  +sold:text  +kinds:number
+└ pick [region, ordered_on, sold, kinds]
+                                        region  ordered_on  sold  kinds
+                                        -product  -revenue  -cost
+---
+sales then sort [ordered_on] then add [share] as [revenue] / total([revenue]) by [region] then pick [region, ordered_on, share]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ sort [ordered_on]                     region  product  revenue  cost  ordered_on
+├ add [share] as ([revenue] / total([revenue])) by [region]
+│                                       region  product  revenue  cost  ordered_on  +share:number
+└ pick [region, ordered_on, share]      region  ordered_on  share
+                                        -product  -revenue  -cost
+---
