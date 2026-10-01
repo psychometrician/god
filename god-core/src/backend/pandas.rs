@@ -198,20 +198,27 @@ impl Backend for Pandas {
                     calls.push(format!(
                         "loc[lambda d: {grouped}.rank(method=\"min\", ascending={ascend}, na_option=\"{at}\") <= {count}]"
                     ));
-                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
+                    calls.push(restored(sorted, last_missing_first(plan, i), by, &entering[i]));
                 }
 
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
                         calls.push(format!("{end}({count})"));
+                        // The far end is restated with the query's tiebreak,
+                        // so rows tied at it come back the same way round.
+                        if *last {
+                            if let Some(keys) = last_sort(plan, i) {
+                                calls.push(restored(keys, last_missing_first(plan, i), by, &entering[i]));
+                            }
+                        }
                     } else {
                         calls.push(format!(
                             "groupby({}, as_index=False, dropna=False).{end}({count})",
                             list(by)
                         ));
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys, last_missing_first(plan, i)));
+                            calls.push(restored(keys, last_missing_first(plan, i), by, &entering[i]));
                         }
                     }
                 }
@@ -716,6 +723,39 @@ fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
         args.push("na_position=\"first\"".to_string());
     }
     format!("sort_values({})", args.join(", "))
+}
+
+/// **The order the query hands a grouped or tied `take` back in**: the
+/// sort's keys, then the groups, then every other column, ascending with a
+/// missing value last. The query has broken ties that way since finding 11 was
+/// fixed, so two rows tied on the sort's keys come back the same way round
+/// everywhere; restating the keys alone left them in this library's order, and
+/// on a table with holes, where a missing key ties with a missing key, that
+/// differed. Found 2026-10-01, when the parity harness began comparing order.
+///
+/// pandas takes one `na_position` for the whole call, so where the sort put
+/// its holes first the other columns' holes go first too, the one place this
+/// can differ, and only between rows that already tie on every key.
+fn restored(keys: &[SortKey], missing_first: bool, by: &[Name], entering: &Schema) -> String {
+    sort_by(&tiebroken(keys, by, entering), missing_first)
+}
+
+/// The sort's keys, then the groups, then every other column, ascending.
+fn tiebroken(keys: &[SortKey], by: &[Name], entering: &Schema) -> Vec<SortKey> {
+    let mut all = keys.to_vec();
+    let named = |c: &str| Name { text: c.to_string(), span: crate::plan::Span::new(0, 0) };
+    let mut rest: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+    for (c, _) in &entering.columns {
+        if !rest.contains(c) {
+            rest.push(c.clone());
+        }
+    }
+    for c in rest {
+        if !all.iter().any(|k| k.column.text == c) {
+            all.push(SortKey { column: named(&c), descending: false });
+        }
+    }
+    all
 }
 
 /// Where that same `sort` put its missing values, which a restatement carries.

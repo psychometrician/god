@@ -144,19 +144,26 @@ impl Backend for Polars {
                         format!("{ranked}.over({})", list(by))
                     };
                     calls.push(format!("filter({scoped} <= {count})"));
-                    calls.push(sort_by(sorted, last_missing_first(plan, i)));
+                    calls.push(restored(sorted, last_missing_first(plan, i), by, &entering[i]));
                 }
 
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
                         calls.push(format!("{end}({count})"));
+                        // The far end is restated with the query's tiebreak,
+                        // so rows tied at it come back the same way round.
+                        if *last {
+                            if let Some(keys) = last_sort(plan, i) {
+                                calls.push(restored(keys, last_missing_first(plan, i), by, &entering[i]));
+                            }
+                        }
                     } else {
                         calls.push(format!("group_by({}).{end}({count})", list(by)));
                         // Taking the first rows of each group regroups them, so
                         // the order the sort established has to survive it.
                         if let Some(keys) = last_sort(plan, i) {
-                            calls.push(sort_by(keys, last_missing_first(plan, i)));
+                            calls.push(restored(keys, last_missing_first(plan, i), by, &entering[i]));
                         }
                     }
                 }
@@ -469,6 +476,38 @@ fn sort_by(keys: &[SortKey], missing_first: bool) -> String {
     // argument was added to fix.
     args.push(format!("nulls_last={}", if missing_first { "False" } else { "True" }));
     format!("sort({})", args.join(", "))
+}
+
+/// **The order the query hands a grouped or tied `take` back in**: the
+/// sort's keys, then the groups, then every other column, ascending with a
+/// missing value last. The query has broken ties that way since finding 11 was
+/// fixed, so two rows tied on the sort's keys come back the same way round
+/// everywhere; restating the keys alone left them in this library's order, and
+/// on a table with holes, where a missing key ties with a missing key, that
+/// differed. Found 2026-10-01, when the parity harness began comparing order.
+fn restored(keys: &[SortKey], missing_first: bool, by: &[Name], entering: &Schema) -> String {
+    let mut columns: Vec<String> = keys.iter().map(|k| text(&k.column.text)).collect();
+    let mut down: Vec<&str> = keys.iter().map(|k| if k.descending { "True" } else { "False" }).collect();
+    let mut last: Vec<&str> = keys.iter().map(|_| if missing_first { "False" } else { "True" }).collect();
+    let mut rest: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+    for (c, _) in &entering.columns {
+        if !rest.contains(c) {
+            rest.push(c.clone());
+        }
+    }
+    for c in rest {
+        if !keys.iter().any(|k| k.column.text == c) {
+            columns.push(text(&c));
+            down.push("False");
+            last.push("True");
+        }
+    }
+    format!(
+        "sort([{}], descending=[{}], nulls_last=[{}])",
+        columns.join(", "),
+        down.join(", "),
+        last.join(", ")
+    )
 }
 
 /// Where that same `sort` put its missing values, which a restatement has to

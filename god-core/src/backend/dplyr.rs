@@ -363,17 +363,38 @@ impl Backend for Dplyr {
                     if !by.is_empty() {
                         args.push(format!("by = {}", columns(by)));
                     }
-                    format!("{verb}({})", args.join(", "))
+                    // `slice_max` hands its rows back largest first, whatever
+                    // the sort said, so the order is said again.
+                    format!(
+                        "{verb}({}) |>\n  {}",
+                        args.join(", "),
+                        restored(sorted, holes_sorted_first(plan, i), by, &entering[i])
+                    )
                 }
 
                 Step::Take { count, by, last, .. } => {
                     let end = if *last { "tail" } else { "head" };
                     if by.is_empty() {
-                        format!("{end}({count})")
+                        // The far end is restated with the query's tiebreak,
+                        // so rows tied at it come back the same way round.
+                        match last_sort(plan, i).filter(|_| *last) {
+                            Some(keys) => format!(
+                                "{end}({count}) |>\n  {}",
+                                restored(keys, holes_sorted_first(plan, i), by, &entering[i])
+                            ),
+                            None => format!("{end}({count})"),
+                        }
                     } else {
                         let groups: Vec<String> =
                             by.iter().map(|n| n.text.clone()).collect();
-                        format!("slice_{end}(n = {count}, by = c({}))", groups.join(", "))
+                        let slice = format!("slice_{end}(n = {count}, by = c({}))", groups.join(", "));
+                        match last_sort(plan, i) {
+                            Some(keys) => format!(
+                                "{slice} |>\n  {}",
+                                restored(keys, holes_sorted_first(plan, i), by, &entering[i])
+                            ),
+                            None => slice,
+                        }
                     }
                 }
             };
@@ -673,6 +694,48 @@ fn expr(e: &Expr) -> String {
 /// where both tables agree, `customer_id == id` where they do not — and it
 /// writes the sides in the order god writes them, so the pair goes across
 /// unchanged.
+/// **The order the query hands a grouped or tied `take` back in**: the
+/// sort's keys, then the groups, then every other column, ascending with a
+/// missing value last. The query has broken ties that way since finding 11 was
+/// fixed, so two rows tied on the sort's keys come back the same way round
+/// everywhere; restating the keys alone left them in this library's order, and
+/// on a table with holes, where a missing key ties with a missing key, that
+/// differed. Found 2026-10-01, when the parity harness began comparing order.
+fn restored(keys: &[SortKey], missing_first: bool, by: &[Name], entering: &Schema) -> String {
+    let mut written: Vec<String> = Vec::new();
+    for k in keys {
+        let column = name(&k.column.text);
+        if missing_first {
+            written.push(format!("!is.na({column})"));
+        }
+        written.push(if k.descending { format!("desc({column})") } else { column });
+    }
+    let mut rest: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+    for (c, _) in &entering.columns {
+        if !rest.contains(c) {
+            rest.push(c.clone());
+        }
+    }
+    for c in rest {
+        if !keys.iter().any(|k| k.column.text == c) {
+            written.push(name(&c));
+        }
+    }
+    format!("arrange({})", written.join(", "))
+}
+
+/// Where the most recent `sort` before this step put its missing values.
+fn holes_sorted_first(plan: &Plan, before: usize) -> bool {
+    plan.steps[..before]
+        .iter()
+        .rev()
+        .find_map(|step| match step {
+            Step::Sort { missing_first, .. } => Some(*missing_first),
+            _ => None,
+        })
+        .unwrap_or(false)
+}
+
 /// The keys of the most recent `sort` before this step, which is what "first"
 /// and "tied" both mean here.
 fn last_sort(plan: &Plan, before: usize) -> Option<&[SortKey]> {

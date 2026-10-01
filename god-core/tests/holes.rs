@@ -381,3 +381,37 @@ fn spark_runs_every_aggregate_in_an_add() {
     assert!(pyspark.contains("F.array_join(F.collect_list(F.col(\"product\")).over("), "{pyspark}");
     assert!(pyspark.contains("F.size(F.collect_set(F.col(\"product\")).over(Window.partitionBy(\"region\")))"), "{pyspark}");
 }
+
+/// **A grouped or tied `take` comes back in the query's order, ties broken the
+/// query's way.** The query restores the sort's keys, then the groups, then
+/// every other column, since finding 11; the printers restated the keys alone,
+/// so rows tied on them, two missing keys among them, came back in each
+/// library's own order. And PySpark ordered a group by a bare column, which on
+/// Spark puts a missing value first. All four, measured by comparing order on
+/// the fixture with holes.
+#[test]
+fn a_take_comes_back_in_the_query_order() {
+    let grouped = "sales then sort [revenue] then take_last 1 by [region]";
+    let tied = "sales then sort [revenue] missing first then take 3 with ties";
+    let far = "sales then sort [revenue] then take_last 3";
+
+    assert!(printed(grouped, "pandas").contains("sort_values([\"revenue\", \"region\", \"product\", \"cost\", \"ordered_on\"])"));
+    assert!(printed(far, "pandas").contains("tail(3)\n    .sort_values([\"revenue\", \"region\", \"product\", \"cost\", \"ordered_on\"])"));
+    assert!(printed(tied, "polars").contains(
+        "sort([\"revenue\", \"region\", \"product\", \"cost\", \"ordered_on\"], descending=[False, False, False, False, False], nulls_last=[False, True, True, True, True])"
+    ));
+    assert!(printed(grouped, "pyspark").contains(
+        "orderBy(F.col(\"revenue\").asc_nulls_last(), F.col(\"region\").asc_nulls_last(), F.col(\"product\").asc_nulls_last(), F.col(\"cost\").asc_nulls_last(), F.col(\"ordered_on\").asc_nulls_last())"
+    ));
+    let dplyr = printed(tied, "dplyr");
+    assert!(dplyr.contains("|>\n  arrange(!is.na(revenue), revenue, region, product, cost, ordered_on)"), "{dplyr}");
+    assert!(printed(far, "dplyr").contains("tail(3) |>\n  arrange(revenue, region, product, cost, ordered_on)"));
+
+    let sql = printed(far, "sql");
+    assert!(sql.contains("LIMIT 3) ORDER BY \"revenue\" NULLS LAST, \"region\" NULLS LAST, \"product\" NULLS LAST"), "{sql}");
+
+    let summary = printed("sales then summarize [n] as row_count() by [region]", "pyspark");
+    assert!(summary.contains("orderBy(F.col(\"region\").asc_nulls_last())"), "{summary}");
+    let longer = printed("sales then lengthen [revenue, cost]", "pyspark");
+    assert!(!longer.contains("orderBy(\""), "every restated order says where the holes go: {longer}");
+}

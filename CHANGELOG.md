@@ -6,6 +6,19 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A grouped, tied or far-end `take` comes back in one order everywhere
+
+After a grouped `take`, a `take ... with ties` and a `take_last`, the query
+orders the rows it kept by the sort's keys, then the groups, then every other
+column, so two rows tied on the sort's keys come back the same way round on
+every engine. The ungrouped `take_last` had been left out, and two missing
+values tied at the far end came back one way on DuckDB and the other on Spark.
+The printed pandas, polars, PySpark and dplyr restated the sort's keys alone,
+and printed dplyr's `slice_max` handed rows back largest first, so they now say
+the whole order. Printed PySpark also ordered a summary, a `drop_duplicates`
+and a `lengthen` with Spark's default, which puts a missing value first; it
+says last, as the query does.
+
 ### An aggregate in `add` reads the sort above it, keeps its order, and runs on Spark
 
 An aggregate in `add ... by` is worked out over each group and handed to every

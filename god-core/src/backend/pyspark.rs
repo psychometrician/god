@@ -162,7 +162,7 @@ impl Backend for PySpark {
                     ));
                     calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                     calls.push(format!("drop({})", text(RANK)));
-                    calls.push(sort_by(sorted, absent));
+                    calls.push(restored(sorted, absent, by, &entering[i]));
                 }
 
                 Step::Take { count, by, last, .. } => {
@@ -176,7 +176,9 @@ impl Backend for PySpark {
                                 .expect("take_last is only reached after a sort");
                             calls.push(sort_by(&flipped(keys), !absent));
                             calls.push(format!("limit({count})"));
-                            calls.push(sort_by(keys, absent));
+                            // Restored with the query's tiebreak, so rows tied
+                            // at the far end come back the same way round.
+                            calls.push(restored(keys, absent, by, &entering[i]));
                         } else {
                         calls.push(format!("limit({count})"));
                         }
@@ -207,7 +209,7 @@ impl Backend for PySpark {
                         calls.push(format!("filter(F.col({}) <= {count})", text(RANK)));
                         calls.push(format!("drop({})", text(RANK)));
                         if !keys.is_empty() {
-                            calls.push(sort_by(keys, absent));
+                            calls.push(restored(keys, absent, by, &entering[i]));
                         }
                     }
                 }
@@ -279,9 +281,14 @@ impl Backend for PySpark {
 
                 Step::DropDuplicates { .. } => {
                     calls.push("dropDuplicates()".to_string());
-                    let all: Vec<String> =
-                        entering[i].columns.iter().map(|(c, _)| c.clone()).collect();
-                    calls.push(format!("orderBy({})", strings(&all)));
+                    // Missing last, as `ordered` says it, for Spark's default puts
+                    // it first.
+                    let all: Vec<String> = entering[i]
+                        .columns
+                        .iter()
+                        .map(|(c, _)| format!("F.col({}).asc_nulls_last()", text(c)))
+                        .collect();
+                    calls.push(format!("orderBy({})", all.join(", ")));
                 }
 
                 Step::Rename { values, .. } => {
@@ -323,7 +330,13 @@ impl Backend for PySpark {
                 Step::Lengthen { resolved, .. } => {
                     let Some(shape) = resolved else { continue };
                     calls.extend(lengthen(shape));
-                    calls.push(format!("orderBy({})", strings(&lengthen_order(shape))));
+                    // Missing last, as `ordered` says it, for Spark's default puts
+                    // it first.
+                    let keys: Vec<String> = lengthen_order(shape)
+                        .iter()
+                        .map(|c| format!("F.col({}).asc_nulls_last()", text(c)))
+                        .collect();
+                    calls.push(format!("orderBy({})", keys.join(", ")));
                 }
 
                 Step::Widen { name: pattern, value, by, missing, giving, .. } => {
@@ -529,8 +542,40 @@ fn sort_key(k: &SortKey, missing_first: bool) -> String {
     )
 }
 
+/// The order the query gives what it groups, by the columns that define it.
+///
+/// **Missing last, said out loud**, because Spark's ascending default puts it
+/// first, and the query and every other printer put it last. A bare
+/// `orderBy("region")` handed back the missing group first. Found 2026-10-01,
+/// when the parity harness began comparing order on a fixture with holes.
 fn ordered(names: &[Name]) -> String {
-    let written: Vec<String> = names.iter().map(|n| text(&n.text)).collect();
+    let written: Vec<String> = names
+        .iter()
+        .map(|n| format!("F.col({}).asc_nulls_last()", text(&n.text)))
+        .collect();
+    format!("orderBy({})", written.join(", "))
+}
+
+/// **The order the query hands a grouped or tied `take` back in**: the
+/// sort's keys, then the groups, then every other column, ascending with a
+/// missing value last. The query has broken ties that way since finding 11 was
+/// fixed, so two rows tied on the sort's keys come back the same way round
+/// everywhere; restating the keys alone left them in this library's order, and
+/// on a table with holes, where a missing key ties with a missing key, that
+/// differed. Found 2026-10-01, when the parity harness began comparing order.
+fn restored(keys: &[SortKey], missing_first: bool, by: &[Name], entering: &Schema) -> String {
+    let mut written: Vec<String> = keys.iter().map(|k| sort_key(k, missing_first)).collect();
+    let mut rest: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+    for (c, _) in &entering.columns {
+        if !rest.contains(c) {
+            rest.push(c.clone());
+        }
+    }
+    for c in rest {
+        if !keys.iter().any(|k| k.column.text == c) {
+            written.push(format!("F.col({}).asc_nulls_last()", text(&c)));
+        }
+    }
     format!("orderBy({})", written.join(", "))
 }
 

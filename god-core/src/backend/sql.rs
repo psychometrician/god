@@ -1080,10 +1080,16 @@ impl Dialect {
                         if *last {
                             let (keys, absent) = last_sort(plan, i)
                                 .expect("take_last is only reached after a sort");
+                            // Restored with the same tiebreak the grouped and
+                            // tied shapes use. The sort's keys alone left two
+                            // rows tied at the far end in each engine's order:
+                            // two missing revenues came back one way round on
+                            // DuckDB and the other on Spark. Found 2026-10-01
+                            // on the parity fixture with holes.
                             format!(
                                 "SELECT * FROM (SELECT * FROM {from} ORDER BY {} LIMIT {count}) ORDER BY {}",
                                 written(keys, absent, true),
-                                written(keys, absent, false)
+                                restored(keys, absent)
                             )
                         } else {
                         format!("SELECT * FROM {from} LIMIT {count}")
