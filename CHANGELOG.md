@@ -1,9 +1,21 @@
 # Changelog
 
-What changed, for someone deciding whether to upgrade. Every entry is something
-a person using god can see.
+Every change to god, whether or not someone using it would notice: the engine,
+both packages, the book, and the checks that hold them to each other. The
+release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
+
+### The preface says only what is true about where its tables come from
+
+It said nothing in the book is typed rather than read, while one chapter types
+a stand-in warehouse, and it said reading one file settles whether the two
+languages agree. Reading one file means the values are written once; the two
+languages still read a CSV with their own readers. Both sentences now say what
+is true. The preface's examples of a reader's own table used `orders` and
+`codes`, names the book already publishes in another shape, so following them
+returned the wrong table; they use `invoices` and `zips` now, and so does
+`god_table`'s help page in both languages.
 
 ### Every table a chapter reasons from is shown on its page
 
@@ -67,21 +79,22 @@ from the website fails the check instead of passing it.
 
 Both said the cast was eight tables and stopped there. Every table the book
 uses is published beside it, the smaller ones a single chapter needs included,
-and a reader's own tables work the same way: put `orders.csv` in a `data/`
-folder and `god_table("orders")` reads it, offline.
+and a reader's own tables work the same way: put `invoices.csv` in a `data/`
+folder and `god_table("invoices")` reads it, offline.
 
 The preface now also says the two things a reader finds out the hard way
 otherwise. A name is a name rather than a path, so a `/` or a `..` is refused.
 And a CSV cannot record what kind of thing a column holds, so a column of `01`,
 `02`, `03` arrives as the numbers 1, 2, 3 unless you say
-`god_table("codes", text = "code")`.
+`god_table("zips", text = "zip")`.
 
 ### No chapter types a table any more
 
 Every example table in the book is now a CSV beside it, read with `god_table`
 and shown. Eleven more were typed into the page that used them: `orders`,
 `managers`, `codes`, `overlap`, `restocks`, `scores`, `steps`, `edges`, `late`,
-and the two that both went by `readings`.
+and the two that both went by `readings`. The closing worked example reads its
+two, `returns` and `places`, the same way.
 
 Those two were the reason a reader could not trust the name. `readings` meant
 one table in the reshaping chapter and two others in the chapter on missing
@@ -89,8 +102,9 @@ values, so `god_table("readings")` handed back one of the three with no
 warning. They are `hourly`, one sensor reporting over time, and `logged`, two
 sensors doing the same. The name now means one table.
 
-What is still written out on a page is the small table a chapter builds to show
-one shape, and the two tables a page computes about itself.
+What is still written out on a page is the stand-in warehouse one chapter
+builds to show god running somewhere else, the table of translations in the
+two-languages appendix, and the two tables a page computes about itself.
 
 ### `god_table` keeps a column's name in R, where it used to rewrite it
 
@@ -102,15 +116,16 @@ agree.
 
 The grammar allows the name everywhere else, `[order date]` in the text form,
 backticks in R and `col["order date"]` in Python, so the reader that fetches it
-has no business renaming it. No table published with the book is affected;
-every one of them already had names R was happy with.
+has no business renaming it. Of the tables published with the book, only
+`orders` is affected: its `order date` is the name the two-languages appendix
+uses to show one.
 
 ### The manual pipes into `collect` and `show_as` instead of wrapping the pipeline in them
 
 Both take the pipeline as their first argument, so `pipeline |> collect()` and
 `pipeline |> show_as("sql")` are the same calls written the way the book teaches
-everything else: left to right. Thirty-four `collect` calls and nine `show_as`
-calls across twenty-four pages were wrapped and are now piped.
+everything else: left to right. Thirty-four `collect` calls and ten `show_as`
+calls across twenty-five pages were wrapped and are now piped.
 
 Most of the `collect` calls are inside refusal examples, where the wrapping put
 a bracket before the table and its partner after the mistake the example is
@@ -132,8 +147,9 @@ typed out twice in the setup, once for R and once for Python.
 Typing them is how the two languages drifted apart. Written by hand, `revenue`
 was a double in R and an integer in Python, so `to_text([revenue])` answered
 `"100.0"` on one side and `"100"` on the other. The hazard was known and one
-table was written carefully against it; four were not. Reading the CSV settles
-it for every table at once, and for every table anybody adds later.
+table was written carefully against it; four were not. Reading the CSV removes
+the second copy, for every table at once and for every table anybody adds
+later.
 
 No page changed. Fifty of the book's fifty-seven rendered pages are
 byte-identical, and the rest differ only by a build date, a version number, a

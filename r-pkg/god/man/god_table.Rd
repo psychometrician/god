@@ -21,7 +21,7 @@ Returns a table ready to pipe. A `data/<name>.csv` in the working directory
 or any directory above it is read first; failing that, the copy published
 beside the manual is fetched. So it needs no connection once you have a
 `data/` folder, and **your own tables work the same way**: put
-`orders.csv` in `data/` and `god_table("orders")` reads it.
+`invoices.csv` in `data/` and `god_table("invoices")` reads it.
 }
 \details{
 Every table the book uses is published beside it, the cast the preface

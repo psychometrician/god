@@ -49,8 +49,8 @@ Gapminder's country panel: 142 countries, twelve observations each from 1952 to
 is the point of using it here. The numbers are Gapminder's, CC BY 4.0, and the
 file ships beside the book, so rendering this page needs no network.
 
-It is also the one table this book reads from a file on the page, because a
-file is how your own table will arrive. One line in either language, and the
+Like every table in this book, it is read from a file, because a file is how
+your own table will arrive. One line in either language, and the
 panel the preface's cast declared is an ordinary data frame:
 
 ::: {.panel-tabset}

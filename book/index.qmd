@@ -237,8 +237,8 @@ Every example in this book runs on the same few tables, declared here once.
 
 The cast is closed, because a new table costs you attention. When a chapter
 needs a special shape, such as two rows that collide or a table with one
-column, it builds the smallest table that shows it. The next example returns to
-the cast.
+column, it uses the smallest table that shows it, published with the rest. The
+next example returns to the cast.
 
 Every table in the cast is published beside this book, and `god_table` reads
 one by name in either language, so the rows in your session are the rows every
@@ -278,24 +278,25 @@ sales >> take(5)
 
 Fifteen rows in `sales`, four in `products`, six in `survey`, and the rest of
 the cast reads the same way: `god_table("answers")`, `god_table("diary")`, one
-name at a time. Every table this book uses is published beside it, including
-the smaller ones a single chapter needs, so any name you meet on a page you can
-read for yourself.
+name at a time. Every table a page reads is published beside the book,
+including the smaller ones a single chapter needs, so you can read any of them
+yourself.
 
 **Your own tables work the same way.** `god_table` looks for a `data/` folder
-before it looks at the network, so put `orders.csv` in one and
-`god_table("orders")` reads it, offline, with no argument about where it came
+before it looks at the network, so put `invoices.csv` in one and
+`god_table("invoices")` reads it, offline, with no argument about where it came
 from. A name is a name rather than a path: letters, digits, `_` and `-`, and a
 `/` or a `..` is refused instead of followed. One thing a CSV cannot tell it is
 what kind of thing a column holds, so a column of `01`, `02`, `03` arrives as
-the numbers 1, 2 and 3 unless you say `god_table("codes", text = "code")`.
+the numbers 1, 2 and 3 unless you say `god_table("zips", text = "zip")`.
 
-Nothing in this book is typed out rather than read, on this page or in the
-pages that follow, and that is deliberate rather than tidy. A table written
-twice is a table written differently twice, and these two had drifted:
-`revenue` was a whole number on one side and a decimal on the other, so a
-sentence that turned it into text answered `"100"` in one language and
-`"100.0"` in the other. Reading the same file settles it.
+Every example table is read rather than typed, on this page and in the pages
+that follow, and that is deliberate rather than tidy. The one exception is a
+stand-in warehouse, which a later chapter builds to show god running somewhere
+else. A table written twice is a table written differently twice, and these two
+had drifted: `revenue` was a whole number on one side and a decimal on the
+other, so a sentence that turned it into text answered `"100"` in one language
+and `"100.0"` in the other. Read from one file, the values are written once.
 
 
 ## Why there is another one of these

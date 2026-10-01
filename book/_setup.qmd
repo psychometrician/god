@@ -59,8 +59,8 @@ invisible(capture.output(
   suppressMessages(collect(data.frame(a = 1) |> take(1)))
 ))
 
-# **The cast is read rather than typed, and that is what keeps the two
-# languages agreeing.** Every table lives in `book/data/` as a CSV and
+# **The cast is read rather than typed, so its values are written once.**
+# Every table lives in `book/data/` as a CSV and
 # `god_table` reads one by name, walking up for a local `data/<name>.csv`
 # exactly as both packages walk up for `god-cli`. The preface shows a reader
 # the same call.
@@ -70,8 +70,13 @@ invisible(capture.output(
 # held doubles where Python held integers, and `to_text([revenue])` answered
 # "100.0" on one side and "100" on the other. The hazard was known, and `messy`'s
 # `n` was written `7L` against exactly this, but the `L` was remembered for
-# one table out of five. Reading the CSV settles it for every table at once,
-# and for every table anybody adds later.
+# one table out of five. Reading one CSV in both languages removes the second
+# copy, for every table at once and for every table anybody adds later.
+#
+# **It does not make the two readers agree about every column.** Each language
+# reads the file with its own reader, so a whole-number column with holes
+# arrives as integers in R and as decimals in Python, and a sentence that turns
+# one into text can still answer differently.
 #
 # **The cast is declared in the preface, and its shapes are load-bearing for
 # chapters, so change a CSV here only with the blast radius in mind: every
@@ -127,9 +132,8 @@ def god_float(v):
 pd.set_option("display.float_format", god_float)
 from god import *
 
-# The same tables as the R block above, read the same way. Nothing is typed
-# here either, so the two languages cannot disagree about a column's type: the
-# CSV says what each column is and both sides get the same answer.
+# The same tables as the R block above, read from the same files, so nobody
+# types the values twice.
 (sales, products, survey, answers, marks, messy, diary, gapminder) = (
     god_table(name) for name in
     ("sales", "products", "survey", "answers", "marks", "messy", "diary",

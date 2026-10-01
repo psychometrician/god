@@ -42,7 +42,7 @@ god_walk_up_data <- function(start, name) {
 #' or any directory above it is read first; failing that, the copy published
 #' beside the manual is fetched. So it needs no connection once you have a
 #' `data/` folder, and **your own tables work the same way**: put
-#' `orders.csv` in `data/` and `god_table("orders")` reads it.
+#' `invoices.csv` in `data/` and `god_table("invoices")` reads it.
 #'
 #' Every table the book uses is published beside it, the cast the preface
 #' declares and the smaller ones a single chapter needs. A name is letters,
