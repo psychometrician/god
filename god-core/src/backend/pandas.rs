@@ -190,8 +190,13 @@ impl Backend for Pandas {
                             text(&first.column.text)
                         )
                     };
+                    // **A missing key is ranked where the sort put it**, last
+                    // unless it said otherwise, and at the other end when the
+                    // take reads from the far end. pandas' default leaves it
+                    // unranked, which no cut keeps.
+                    let at = if last_missing_first(plan, i) != *last { "top" } else { "bottom" };
                     calls.push(format!(
-                        "loc[lambda d: {grouped}.rank(method=\"min\", ascending={ascend}) <= {count}]"
+                        "loc[lambda d: {grouped}.rank(method=\"min\", ascending={ascend}, na_option=\"{at}\") <= {count}]"
                     ));
                     calls.push(sort_by(sorted, last_missing_first(plan, i)));
                 }

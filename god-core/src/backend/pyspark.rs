@@ -752,7 +752,16 @@ fn expr_over(e: &Expr, over: Over) -> String {
                 Window::RowNumber => "F.row_number()",
             };
             let own: Vec<SortKey> = key.iter().cloned().collect();
-            format!("{word}.over({})", window(&over, &own))
+            let windowed = format!("{word}.over({})", window(&over, &own));
+            // A row with no value has no place, as in the query: `F.when`
+            // with no `otherwise` is null for the holes.
+            match (kind, key) {
+                (Window::Rank, Some(k)) => format!(
+                    "F.when(F.col({}).isNotNull(), {windowed})",
+                    text(&k.column.text)
+                ),
+                _ => windowed,
+            }
         }
         Expr::TextTest { op, left, value, .. } => match op {
             TextOp::Starts => format!("{}.startswith({})", go(left), go(value)),
@@ -889,8 +898,10 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // **The frame is written out.** A running sum with an ordering and no
         // frame ties rows sharing a sort key together and gives them all the
         // same total, which looks right on any fixture with distinct keys.
+        //
+        // A row whose value is missing has no running total, as in the query.
         "running_total" => format!(
-            "F.sum({}).over({}.rowsBetween(Window.unboundedPreceding, Window.currentRow))",
+            "F.when({0}.isNotNull(), F.sum({0}).over({1}.rowsBetween(Window.unboundedPreceding, Window.currentRow)))",
             arg(0),
             window(&over, &[])
         ),

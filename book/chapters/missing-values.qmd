@@ -480,3 +480,49 @@ sales |>
 `previous`, `running_total`, `latest` and a grouped `take` all read that same
 line, and all of them move with it. The rule is worth stating once: a window
 frames the way the sort above it framed, holes and all.
+
+## When a window reads the hole
+
+A window can also read the value in the hole, and then the question is what it
+answers there. `running_total` and `rank` both answer missing on that row:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  patchy
+    then sort [product]
+    then add [so_far] as running_total([revenue]), [place] as rank([revenue] descending)
+')
+```
+
+### R
+
+```{r}
+patchy |>
+  sort(product) |>
+  add(so_far = running_total(revenue), place = rank(descending(revenue)))
+```
+
+### Python
+
+```{python}
+(patchy
+  >> sort(col.product)
+  >> add(so_far = running_total(col.revenue),
+         place = rank(descending(col.revenue))))
+```
+
+:::
+
+*`patchy then sort [product] then add [so_far] as running_total([revenue]), [place] as rank([revenue] descending)`*
+
+Gadget's revenue never arrived, so it has no place among the others, and no
+total so far either. Repeating Doohickey's 300 on its row would say that
+Gadget added nothing, which nobody knows. The hole changes no other row:
+Widget's total counts the two revenues that are there, and the two of them are
+ranked first and second. pandas and polars answer this way already. SQL would
+rank the hole last and repeat the total, and R's `cumsum` would carry the hole
+to every row below it, so the grammar says which it means.

@@ -334,8 +334,29 @@ impl Backend for Dplyr {
                     let first = &sorted[0];
                     let descending = first.descending != *last;
                     let verb = if descending { "slice_max" } else { "slice_min" };
+                    // **Where the sort put the holes at the end being taken**,
+                    // `missing first`, or `take_last` reading back to them, they
+                    // are ordered by a flag first: `slice_min` and `slice_max`
+                    // both leave a missing value for last, which no cut reaches.
+                    let column = name(&first.column.text);
+                    let holes_first = plan.steps[..i]
+                        .iter()
+                        .rev()
+                        .find_map(|step| match step {
+                            Step::Sort { missing_first, .. } => Some(*missing_first),
+                            _ => None,
+                        })
+                        .unwrap_or(false)
+                        != *last;
+                    let order = if !holes_first {
+                        column
+                    } else if descending {
+                        format!("tibble(is.na({column}), {column})")
+                    } else {
+                        format!("tibble(!is.na({column}), {column})")
+                    };
                     let mut args = vec![
-                        format!("order_by = {}", name(&first.column.text)),
+                        format!("order_by = {order}"),
                         format!("n = {count}"),
                         "with_ties = TRUE".to_string(),
                     ];
@@ -723,7 +744,13 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // `cumsum` down a sorted column is the running total; `lag` and `lead`
         // keep dplyr's own names, which is what a reader over there recognizes
         // even though the grammar refuses those two words for being jargon.
-        "running_total" => format!("cumsum({})", arg(0)),
+        // **`cumsum` carries a missing value to every row after it**, and the
+        // grammar's hole answers missing on its own row and adds nothing to
+        // the rest, which is what pandas' and polars' own running sums do.
+        "running_total" => format!(
+            "if_else(is.na({0}), NA, cumsum(coalesce({0}, 0)))",
+            arg(0)
+        ),
         // R's `%%` is already floored, which is the convention the grammar
         // names, so this passes straight through.
         "remainder" => format!("({} %% {})", arg(0), arg(1)),

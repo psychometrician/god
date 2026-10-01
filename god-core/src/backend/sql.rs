@@ -1327,8 +1327,13 @@ impl Dialect {
                     // That is a running total that stalls on a tie, and it is
                     // the sort of thing that looks right on a fixture where the
                     // keys happen to be distinct.
+                    //
+                    // **A row whose value is missing has no running total**,
+                    // ruled 2026-10-01 in spec §4.7: the hole adds nothing to
+                    // the rows after it, and its own row answers missing rather
+                    // than repeating the row above as if it had added 0.
                     "running_total" => format!(
-                        "sum({inner}) OVER ({} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+                        "CASE WHEN {inner} IS NULL THEN NULL ELSE sum({inner}) OVER ({} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) END",
                         clauses.join(" ")
                     ),
                     // **How far is written out only when it was asked for.**
@@ -1503,7 +1508,18 @@ impl Dialect {
                     Window::Rank => "RANK",
                     Window::RowNumber => "ROW_NUMBER",
                 };
-                format!("{word}() OVER ({})", clauses.join(" "))
+                let windowed = format!("{word}() OVER ({})", clauses.join(" "));
+                // **A row with no value has no place**, ruled 2026-10-01 in
+                // spec §4.7. The key sorts its missing values last, so the
+                // present ones are ranked among themselves and only the holes
+                // change, from a place after every value to missing.
+                match (kind, key) {
+                    (Window::Rank, Some(k)) => format!(
+                        "CASE WHEN {} IS NULL THEN NULL ELSE {windowed} END",
+                        self.name(&k.column.text)
+                    ),
+                    _ => windowed,
+                }
             }
 
             // Unreachable in a checked plan: the checker refuses `matching` anywhere

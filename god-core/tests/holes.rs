@@ -302,3 +302,51 @@ fn a_whole_number_is_written_whole_in_every_printer() {
         assert!(!printed_text.contains("1e15"), "text is cast as it was: {backend}\n{printed_text}");
     }
 }
+
+/// **A row whose own value is missing gets missing from `rank` and
+/// `running_total`, and no other row changes** (spec §4.7). pandas and polars
+/// answer so by default and print what they always did; the query and PySpark
+/// wrap the window, and dplyr's `cumsum`, which carries the hole to every row
+/// after it, is given the hole as 0 and then has it put back.
+#[test]
+fn a_hole_has_no_place_and_no_total_in_any_writer() {
+    let ranked = "sales then add [r] as rank([revenue] descending)";
+    let summed = "sales then sort [ordered_on] then add [s] as running_total([revenue]) by [region]";
+
+    let sql = printed(ranked, "sql");
+    assert!(sql.contains("CASE WHEN \"revenue\" IS NULL THEN NULL ELSE RANK() OVER"), "{sql}");
+    let sql = printed(summed, "sql");
+    assert!(sql.contains("CASE WHEN \"revenue\" IS NULL THEN NULL ELSE sum(\"revenue\") OVER"), "{sql}");
+
+    assert!(printed(ranked, "pyspark").contains("F.when(F.col(\"revenue\").isNotNull(), F.rank().over("));
+    assert!(printed(summed, "pyspark").contains("F.when(F.col(\"revenue\").isNotNull(), F.sum(F.col(\"revenue\")).over("));
+
+    let dplyr = printed(summed, "dplyr");
+    assert!(dplyr.contains("if_else(is.na(revenue), NA, cumsum(coalesce(revenue, 0)))"), "{dplyr}");
+    assert!(printed(ranked, "dplyr").contains("min_rank(desc(revenue))"));
+    assert!(printed(summed, "pandas").contains("[\"revenue\"].cumsum()"));
+    assert!(printed(summed, "polars").contains("pl.col(\"revenue\").cum_sum()"));
+}
+
+/// **`take ... with ties` reads the rows where the sort left them, holes
+/// included**, so a missing key ranks at the end the sort put it, which the
+/// query's own `RANK` over the sort's order already does. pandas and polars
+/// left it unranked, and dplyr's slices leave a hole for last, which no cut
+/// reached when the holes sat at the end being taken.
+#[test]
+fn a_tie_counts_the_holes_where_the_sort_put_them() {
+    let first = "sales then sort [revenue] then take 3 with ties";
+    let holes_first = "sales then sort [revenue] missing first then take 3 with ties";
+    let far_end = "sales then sort [revenue] then take_last 3 with ties";
+
+    assert!(printed(first, "pandas").contains("na_option=\"bottom\""));
+    assert!(printed(holes_first, "pandas").contains("na_option=\"top\""));
+    assert!(printed(far_end, "pandas").contains("na_option=\"top\""));
+
+    assert!(printed(first, "polars").contains(".fill_null(pl.col(\"revenue\").count() + 1)"));
+    assert!(printed(holes_first, "polars").contains(" + pl.col(\"revenue\").null_count()).fill_null(1)"));
+
+    assert!(printed(first, "dplyr").contains("slice_min(order_by = revenue,"));
+    assert!(printed(holes_first, "dplyr").contains("slice_min(order_by = tibble(!is.na(revenue), revenue),"));
+    assert!(printed(far_end, "dplyr").contains("slice_max(order_by = tibble(is.na(revenue), revenue),"));
+}

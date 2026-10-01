@@ -124,11 +124,20 @@ impl Backend for Polars {
                         .expect("ties are only reached after a sort");
                     let first = &sorted[0];
                     let descending = first.descending != *last;
-                    let ranked = format!(
-                        "pl.col({}).rank(method=\"min\", descending={})",
-                        text(&first.column.text),
+                    // **A missing key is ranked where the sort put it.** polars
+                    // leaves it unranked, which no cut keeps, so the holes are
+                    // given the place after every value, or the first places
+                    // when they come first.
+                    let column = format!("pl.col({})", text(&first.column.text));
+                    let plain = format!(
+                        "{column}.rank(method=\"min\", descending={})",
                         if descending { "True" } else { "False" }
                     );
+                    let ranked = if last_missing_first(plan, i) != *last {
+                        format!("({plain} + {column}.null_count()).fill_null(1)")
+                    } else {
+                        format!("{plain}.fill_null({column}.count() + 1)")
+                    };
                     let scoped = if by.is_empty() {
                         ranked
                     } else {

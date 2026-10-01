@@ -448,6 +448,35 @@ fn the_running_total_adds_up_as_it_goes() {
     );
 }
 
+/// **A row whose own value is missing has no running total and no place, and
+/// the hole changes no other row.** Ruled 2026-10-01 in spec §4.7. Before it,
+/// the query repeated the total above on the hole's row, as if the hole had
+/// added 0, and ranked the hole after every value.
+#[test]
+fn a_hole_has_no_running_total_and_no_place() {
+    let conn = Connection::open_in_memory().expect("a database");
+    conn.execute_batch(
+        "CREATE TABLE holed (on_ VARCHAR, x BIGINT);
+         INSERT INTO holed VALUES ('2026-01-01', 10), ('2026-01-02', NULL),
+                                  ('2026-01-03', 30), ('2026-01-04', 20);",
+    )
+    .expect("a table with a hole");
+    let (_, rows) = run(
+        &conn,
+        "holed",
+        "holed then sort [on_] then add [so_far] as running_total([x]), [place] as rank([x] descending) then pick [on_, so_far, place]",
+    );
+    assert_eq!(
+        rows,
+        vec![
+            vec!["2026-01-01", "10", "3"],
+            vec!["2026-01-02", "missing", "missing"],
+            vec!["2026-01-03", "40", "1"],
+            vec!["2026-01-04", "60", "2"],
+        ]
+    );
+}
+
 /// `by` restarts it, and the rows come back in the order the `sort` asked for.
 ///
 /// **That second half is the part worth asserting.** Computing a window groups

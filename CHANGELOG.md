@@ -6,6 +6,19 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### `rank` and `running_total` answer missing on a row whose value is missing
+
+A row with no value has no place among the others, and no total so far. The
+query used to rank a hole after every value and repeat the total above it on
+the hole's row, as if the hole had added 0; R's `cumsum` carried the hole to
+every row below it; pandas and polars answered missing on that row and
+carried on. The grammar now says what pandas and polars do: missing on the
+hole's own row, and no other row changes. The printed PySpark and dplyr say
+the same, and `Missing values` shows it. Separately, a printed `take ... with
+ties` now counts a row whose key is missing where the sort put it: pandas and
+polars left it out of every cut, and dplyr's slices did when the holes were at
+the end being taken.
+
 ### Printed `to_text` writes a whole number whole
 
 The query writes a whole number without a decimal point, however a language
