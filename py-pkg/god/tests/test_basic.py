@@ -159,6 +159,19 @@ check_error(
     "works on numbers",
 )
 
+# **A frame goes to the engine as Arrow only where that is faster**: when it
+# holds pandas' own text type, which the engine's pandas hook walks value by
+# value. Text held as Python objects and plain numbers are read directly, and
+# converting them cost several times over. Either road answers the same.
+from god.run import _scannable as _road
+_objects = typed.astype({"label": object})
+check("pandas' own text type goes as Arrow", type(_road(typed)).__name__, "Table")
+check("text held as Python objects goes as itself", _road(_objects) is _objects, True)
+check("numbers alone go as themselves", _road(typed[["n"]]) is not None and type(_road(typed[["n"]])).__name__, "DataFrame")
+check("and both roads give one answer",
+      god.run('typed then keep where [label] is "a"').to_dict("list"),
+      god.run('objects then keep where [label] is "a"', objects=_objects).to_dict("list"))
+
 print("\na refusal is the Python error, with its caret")
 
 check_error(

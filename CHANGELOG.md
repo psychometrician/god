@@ -6,6 +6,14 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Python hands a frame to the engine in whichever form it reads faster
+
+Every pandas frame was converted to Arrow before a query, which is sixty times
+faster for pandas' own text type and several times slower for text held as
+Python objects, pandas 2's default, and for plain numbers. A frame is now
+converted only when it holds pandas' text type. Measured on five million rows;
+the answers are the same either way.
+
 ### The preface says once where the book's tables come from
 
 It said that every table a page reads is published beside the book twice,

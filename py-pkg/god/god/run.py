@@ -77,22 +77,37 @@ def run(pipeline: str, **tables):
 def _scannable(frame):
     """The frame, in the form the engine scans fastest.
 
-    The engine reads a registered pandas frame through a hook that re-analyzes
-    it on every query, which prices at seconds once a frame holds tens of
-    millions of rows. The same rows as an Arrow table register in milliseconds
-    and scan a third faster, so a pandas frame is converted on its way in.
-    Measured on twenty million taxi rows rather than assumed: 1.7 seconds of
-    registration became 0.05, and the whole pipeline went from 2.6 seconds to
-    under one. `preserve_index=False` because the engine's pandas hook never
-    saw the index either, and a column appearing from nowhere would change
-    what a sentence means. A frame Arrow cannot convert — a column of mixed
-    junk — keeps the old road, because slower is not wrong.
+    The engine reads a registered pandas frame through a hook, and how fast
+    depends on what the columns hold. **A column of pandas' own text type is
+    the slow one**: the hook walks it value by value, and converting the frame
+    to Arrow first, which for that type is nearly a copy of pointers, is sixty
+    times faster. Every other column the hook reads directly, and converting
+    costs more than it saves, by most for text held as Python objects, which
+    Arrow has to walk itself. Measured on five million rows, the query and the
+    registration together, 2026-10-01:
+
+    | the frame holds              | as Arrow  | as itself |
+    |------------------------------|-----------|-----------|
+    | pandas' text type (`str`)    |   15 ms   |   898 ms  |
+    | text as Python objects       |  150 ms   |   4.5 ms  |
+    | numbers only                 |   16 ms   |   2.7 ms  |
+
+    So a frame is converted only when it holds a column of pandas' text type
+    or of Arrow's own. This converted every frame until then, which was the
+    right call for the first measurement (twenty million taxi rows, whose text
+    was pandas' own type, 1.7 seconds of registration became 0.05) and made
+    pandas 2's object text columns several times slower. `preserve_index=False`
+    because the hook never saw the index either, and a column appearing from
+    nowhere would change what a sentence means. A frame Arrow cannot convert,
+    a column of mixed junk, keeps the old road, because slower is not wrong.
     """
     try:
         import pandas
         import pyarrow
 
-        if isinstance(frame, pandas.DataFrame):
+        if isinstance(frame, pandas.DataFrame) and any(
+            isinstance(kind, (pandas.StringDtype, pandas.ArrowDtype)) for kind in frame.dtypes
+        ):
             return pyarrow.Table.from_pandas(frame, preserve_index=False)
     except Exception:
         pass
