@@ -6,6 +6,15 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### The book's cast is listed once
+
+The tables every chapter has without loading them were listed in three places,
+and the Python half bound names to tables by position, so swapping two names
+in one list would have bound the wrong tables in Python alone, with nothing
+said. They are listed once, in `book/cast.txt`, which the book's setup reads in
+R and in Python and the preface's guard reads to measure how many pipelines
+the cast carries. Python binds each table to its own name.
+
 ### `What it wrote` counts ten differences between the two SQL dialects
 
 The chapter said the DuckDB and Spark queries differ in nine ways and named

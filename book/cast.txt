@@ -1,0 +1,12 @@
+# The cast: the tables every chapter has without loading them, one per line.
+# `_setup.qmd` reads this in R and in Python, and `check_promises.R` reads it
+# to measure how many pipelines the cast carries, so the list exists once.
+# A name here is a table in `data/`, read with `god_table`.
+sales
+products
+survey
+answers
+marks
+messy
+diary
+gapminder

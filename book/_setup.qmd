@@ -99,8 +99,12 @@ invisible(capture.output(
 # that need reading. `gapminder` is the one table too large to check by eye:
 # 1,704 rows of Gapminder's country panel, CC BY 4.0, vendored beside the book
 # so a render needs no network.
-for (.name in c("sales", "products", "survey", "answers", "marks", "messy",
-                "diary", "gapminder")) {
+# **The cast is listed once, in `cast.txt`**, and read here and in the Python
+# block below. It was written out in both, and the Python half bound names to
+# tables by position, so swapping two names in one list bound the wrong
+# tables, in Python only, with nothing said.
+god_cast <- grep("^\\s*(#|$)", readLines(find_up("book/cast.txt")), value = TRUE, invert = TRUE)
+for (.name in god_cast) {
   assign(.name, god_table(.name))
 }
 rm(.name)
@@ -138,11 +142,14 @@ def god_float(v):
 pd.set_option("display.float_format", god_float)
 from god import *
 
-# The same tables as the R block above, read from the same files, so nobody
-# types the values twice.
-(sales, products, survey, answers, marks, messy, diary, gapminder) = (
-    god_table(name) for name in
-    ("sales", "products", "survey", "answers", "marks", "messy", "diary",
-     "gapminder")
-)
+# The same tables as the R block above, read from the same files and named
+# from the same list, so nobody types the values or the names twice. Each is
+# bound to its own name rather than by position. The list is read from the
+# file rather than from R, because the refusal guard runs this block alone.
+for _up in (_here, *_here.parents):
+    if (_up / "book" / "cast.txt").exists():
+        _cast = (_up / "book" / "cast.txt").read_text().splitlines()
+        break
+for _name in (n.strip() for n in _cast if n.strip() and not n.lstrip().startswith("#")):
+    globals()[_name] = god_table(_name)
 ```

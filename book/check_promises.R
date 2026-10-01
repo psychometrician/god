@@ -127,8 +127,7 @@ check_promises <- function(book = "book") {
   # The share of pipelines that start from a cast table, over every pipeline
   # head in every executable chunk of the whole book. Chapter-local tables are
   # deliberately in the denominator; they are what the share is a share of.
-  cast <- c("sales", "products", "survey", "answers", "marks", "messy",
-            "diary", "gapminder")
+  cast <- grep("^\\s*(#|$)", readLines("book/cast.txt"), value = TRUE, invert = TRUE)
   heads <- character()
   for (f in listed) {
     ln <- read_chapter(f)
