@@ -43,6 +43,7 @@ impl Backend for Polars {
         let mut calls: Vec<String> = Vec::new();
 
         for (i, step) in plan.steps.iter().enumerate() {
+            super::entering(entering.get(i));
             match step {
                 // A filtering join is a `how=` on the join here rather than a
                 // condition inside the filter, which is the reason the grammar
@@ -320,6 +321,7 @@ impl Backend for Polars {
             }
         }
 
+        super::entering(None);
         if calls.is_empty() {
             return plan.source.clone();
         }
@@ -836,6 +838,15 @@ fn call(fname: &str, args: &[Expr]) -> String {
         "to_number" => format!("{}.cast(pl.Float64)", arg(0)),
         "round_below" => format!("{}.floor().cast(pl.Int64)", arg(0)),
         "round_above" => format!("{}.ceil().cast(pl.Int64)", arg(0)),
+        // **A whole number is written whole, however it is stored**, which is
+        // the query's rule: a float column's 100 casts to `100.0`. `% 1`
+        // rather than `floor`, which polars refuses on an integer column, and
+        // the cast is not strict, because both arms are worked out for every
+        // row and a float past the bound is written as it is.
+        "to_text" if args.first().is_some_and(super::holds_number) => format!(
+            "pl.when(({0} % 1 == 0) & ({0}.abs() < 1e15)).then({0}.cast(pl.Int64, strict=False).cast(pl.String)).otherwise({0}.cast(pl.String))",
+            arg(0)
+        ),
         "to_text" => format!("{}.cast(pl.String)", arg(0)),
         // **Parsed as a timestamp and then taken down to a date, and it needs
         // both halves.** `str.to_date` alone cannot parse `2026-01-02 14:30:00`

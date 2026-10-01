@@ -67,6 +67,7 @@ impl Backend for PySpark {
         let mut calls: Vec<String> = Vec::new();
 
         for (i, step) in plan.steps.iter().enumerate() {
+            super::entering(entering.get(i));
             match step {
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => calls.push(format!(
@@ -366,6 +367,7 @@ impl Backend for PySpark {
             }
         }
 
+        super::entering(None);
         let head = frame_of(&plan.source);
         if calls.is_empty() {
             return head;
@@ -916,6 +918,12 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         "to_number" => format!("{}.cast(\"double\")", arg(0)),
         "round_below" => format!("F.floor({})", arg(0)),
         "round_above" => format!("F.ceil({})", arg(0)),
+        // **A whole number is written whole, however it is stored**, which is
+        // the query's rule, written the way the query writes it.
+        "to_text" if args.first().is_some_and(super::holds_number) => format!(
+            "F.when(({0} == F.floor({0})) & (F.abs({0}) < 1e15), {0}.cast(\"bigint\").cast(\"string\")).otherwise({0}.cast(\"string\"))",
+            arg(0)
+        ),
         "to_text" => format!("{}.cast(\"string\")", arg(0)),
         "to_date" => format!("{}.cast(\"date\")", arg(0)),
         "trim" => format!("F.trim({})", arg(0)),

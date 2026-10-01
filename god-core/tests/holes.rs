@@ -280,3 +280,25 @@ fn a_hole_makes_no_combinations() {
     assert!(printed("sales then add_combinations [region, product]", "pandas").contains(".dropna()"));
     assert!(printed("sales then add_combinations [region, product]", "polars").contains(".drop_nulls()"));
 }
+
+/// **A whole number is written whole, however it is stored**, which the query
+/// has done since `to_text` was ruled in spec §4.7. A hole is how a number
+/// column becomes a float column in pandas, so this is where the printers
+/// were caught writing `100.0`; R's `as.character` writes 100000 as `1e+05`
+/// with no hole at all. Text that is not a number is cast as it always was.
+#[test]
+fn a_whole_number_is_written_whole_in_every_printer() {
+    let number = "sales then add [t] as to_text([revenue])";
+    let text = "sales then add [t] as to_text([ordered_on])";
+    for (backend, whole) in [
+        ("pandas", "d[\"revenue\"].map(lambda v: str(int(v)) if float(v).is_integer() and abs(v) < 1e15 else str(v), na_action=\"ignore\")"),
+        ("polars", "pl.when((pl.col(\"revenue\") % 1 == 0) & (pl.col(\"revenue\").abs() < 1e15)).then(pl.col(\"revenue\").cast(pl.Int64, strict=False).cast(pl.String)).otherwise(pl.col(\"revenue\").cast(pl.String))"),
+        ("pyspark", "F.when((F.col(\"revenue\") == F.floor(F.col(\"revenue\"))) & (F.abs(F.col(\"revenue\")) < 1e15), F.col(\"revenue\").cast(\"bigint\").cast(\"string\")).otherwise(F.col(\"revenue\").cast(\"string\"))"),
+        ("dplyr", "if_else(revenue == floor(revenue) & abs(revenue) < 1e15, sprintf(\"%.0f\", revenue), as.character(revenue))"),
+    ] {
+        let printed_number = printed(number, backend);
+        assert!(printed_number.contains(whole), "{backend}\nwanted {whole}\n{printed_number}");
+        let printed_text = printed(text, backend);
+        assert!(!printed_text.contains("1e15"), "text is cast as it was: {backend}\n{printed_text}");
+    }
+}

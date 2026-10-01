@@ -88,6 +88,7 @@ impl Backend for Pandas {
         let mut calls: Vec<String> = Vec::new();
 
         for (i, step) in plan.steps.iter().enumerate() {
+            super::entering(entering.get(i));
             match step {
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => {
@@ -430,6 +431,7 @@ impl Backend for Pandas {
             }
         }
 
+        super::entering(None);
         if calls.is_empty() {
             return plan.source.clone();
         }
@@ -1208,6 +1210,14 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         // first whatever else is true.
         "round_below" => format!("np.floor({}).astype(\"Int64\")", arg(0)),
         "round_above" => format!("np.ceil({}).astype(\"Int64\")", arg(0)),
+        // **A whole number is written whole, however it is stored**, which is
+        // the query's rule: a column with a hole in it is a float column in
+        // pandas, and `astype` writes its 100 as `100.0`. Past 1e15 a float
+        // stops holding whole numbers exactly, so it is written as it is.
+        "to_text" if args.first().is_some_and(super::holds_number) => format!(
+            "{}.map(lambda v: str(int(v)) if float(v).is_integer() and abs(v) < 1e15 else str(v), na_action=\"ignore\")",
+            arg(0)
+        ),
         "to_text" => format!("{}.astype(\"string\")", arg(0)),
         // **`format="mixed"` and `.dt.normalize()` are both corrections, and both
         // were found by running this against the engine rather than reading it.**

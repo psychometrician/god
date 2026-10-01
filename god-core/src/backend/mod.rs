@@ -15,9 +15,40 @@
 //! They cost almost nothing, too, which is the argument for having several: once
 //! the plan exists, a backend is a walk over it.
 
-use crate::check::Schema;
+use std::cell::RefCell;
+
+use crate::check::{type_of, Schema, Type};
 use crate::diagnostic::Diagnostic;
 use crate::plan::{Expr, Plan};
+
+thread_local! {
+    /// The columns the step being written receives, kept for the one function
+    /// whose spelling depends on what its argument holds: `to_text` of a
+    /// number. Each backend sets it at the top of each step and clears it when
+    /// it is done, so nothing outside one `render` call can see it.
+    ///
+    /// **A slot rather than a parameter, and that is a measured trade.** The
+    /// only other way to reach a call's argument with its type is to thread a
+    /// schema through every expression writer, which is some forty call sites
+    /// per backend for one function, and every one of them a place to pass the
+    /// wrong schema. It is shared because all five writers ask the same
+    /// question, and two copies of it would be two answers.
+    static ENTERING: RefCell<Option<Schema>> = const { RefCell::new(None) };
+}
+
+/// Say which columns the step being written receives, or `None` when done.
+pub(crate) fn entering(schema: Option<&Schema>) {
+    ENTERING.with(|slot| *slot.borrow_mut() = schema.cloned());
+}
+
+/// Whether a value holds a number, read against the step being written.
+pub(crate) fn holds_number(e: &Expr) -> bool {
+    ENTERING.with(|slot| {
+        slot.borrow()
+            .as_ref()
+            .is_some_and(|schema| matches!(type_of(e, schema), Ok(Type::Number)))
+    })
+}
 
 pub mod dplyr;
 pub mod god;

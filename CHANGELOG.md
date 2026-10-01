@@ -6,6 +6,16 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed `to_text` writes a whole number whole
+
+The query writes a whole number without a decimal point, however a language
+stored it, and the printed code did not. pandas, polars and PySpark cast a
+float column's 100 to `100.0`, and a number column becomes a float column in
+pandas as soon as it has a hole. R's `as.character` writes 100000 as `1e+05`.
+All four now write whole numbers as their digits. A number with a fractional
+part is still written by each library's own rule, and polars and R can give a
+digit or two fewer than the query.
+
 ### `widen` refuses a row with no name, rather than dropping it
 
 A column is named by a value, and a missing value names none, so a row whose

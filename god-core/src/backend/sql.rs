@@ -36,27 +36,11 @@
 //! the whole argument for `parity/spark.py` running the corpus on two engines and
 //! comparing tables, rather than a test asserting on the SQL.
 
-use std::cell::RefCell;
-
 use super::Backend;
-use crate::check::{type_of, Schema, Type};
+use crate::check::Schema;
 use crate::diagnostic::Diagnostic;
 use crate::plan::*;
 use crate::vocabulary;
-
-thread_local! {
-    /// The columns the step being written receives, kept for the one function
-    /// whose spelling depends on what its argument holds: `to_text` of a
-    /// number. Set at the top of each step and cleared when the query is done,
-    /// so nothing outside one `render` call can see it.
-    ///
-    /// **A slot rather than a parameter, and that is a measured trade.** The
-    /// only other way to reach a call's argument with its type is to thread a
-    /// schema through every expression writer, which is some forty call sites
-    /// for one function, and every one of them a place to pass the wrong
-    /// schema.
-    static ENTERING: RefCell<Option<Schema>> = const { RefCell::new(None) };
-}
 
 /// The name the row number is parked under while a grouped `take` uses it.
 ///
@@ -343,7 +327,7 @@ impl Dialect {
 
         for (i, step) in plan.steps.iter().enumerate() {
             let from = format!("step{i}");
-            ENTERING.with(|slot| *slot.borrow_mut() = entering.get(i).cloned());
+            super::entering(entering.get(i));
             let body = match step {
                 Step::Keep { condition, .. } => {
                     format!(
@@ -1121,7 +1105,7 @@ impl Dialect {
             };
             parts.push(format!("step{} AS ({body})", i + 1));
         }
-        ENTERING.with(|slot| *slot.borrow_mut() = None);
+        super::entering(None);
 
         format!(
             "WITH {}\nSELECT * FROM step{}",
@@ -1650,13 +1634,7 @@ impl Dialect {
             // bound keeps the cast to a whole number exact. Anything that is
             // not a number is cast as it always was.
             "to_text" => {
-                let number = ENTERING.with(|slot| {
-                    slot.borrow().as_ref().is_some_and(|schema| {
-                        args.first()
-                            .is_some_and(|a| matches!(type_of(a, schema), Ok(Type::Number)))
-                    })
-                });
-                if number {
+                if args.first().is_some_and(super::holds_number) {
                     format!(
                         "CASE WHEN {x} = floor({x}) AND abs({x}) < 1e15 THEN CAST(CAST({x} AS BIGINT) AS STRING) ELSE CAST({x} AS STRING) END",
                         x = arg(0)

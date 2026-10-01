@@ -40,10 +40,11 @@ impl Backend for Dplyr {
 
     // dplyr needs no help telling a new column from a rewritten one: `mutate`
     // covers both, exactly as `add` does.
-    fn render(&self, plan: &Plan, _entering: &[Schema]) -> String {
+    fn render(&self, plan: &Plan, entering: &[Schema]) -> String {
         let mut lines = vec![plan.source.clone()];
 
         for (i, step) in plan.steps.iter().enumerate() {
+            super::entering(entering.get(i));
             let call = match step {
                 // A filtering join is a whole verb in dplyr rather than a
                 // condition inside `filter`, which is the reason the grammar
@@ -358,6 +359,7 @@ impl Backend for Dplyr {
             lines.push(format!("  {call}"));
         }
 
+        super::entering(None);
         lines.join(" |>\n")
     }
 }
@@ -740,6 +742,15 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // decided the value; the cast only settles how it is stored.
         "round_below" => format!("as.integer(floor({}))", arg(0)),
         "round_above" => format!("as.integer(ceiling({}))", arg(0)),
+        // **A whole number is written whole**, which is the query's rule, and
+        // R's own `as.character` writes 100000 as `1e+05`. `sprintf` writes
+        // the digits; anything else is left to `as.character`, which gives a
+        // decimal fifteen significant digits where the query gives the
+        // shortest that reads back exactly.
+        "to_text" if args.first().is_some_and(super::holds_number) => format!(
+            "if_else({0} == floor({0}) & abs({0}) < 1e15, sprintf(\"%.0f\", {0}), as.character({0}))",
+            arg(0)
+        ),
         "to_text" => format!("as.character({})", arg(0)),
         "to_date" => format!("as.Date({})", arg(0)),
         "trim" => format!("trimws({})", arg(0)),
