@@ -6,6 +6,19 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A printed condition keeps no row whose answer is unknown
+
+A comparison with a missing value is neither true nor false, and `keep` keeps
+only the rows where its condition is true, so a hole is dropped by `[region] is
+"West"` and by `not ([region] is "West")` alike. Printed pandas kept it in the
+second: numpy answers True for `!=` over a hole, and `~` turns the False it
+gives every other comparison into True. It now pushes `not` in to the
+comparisons and says `.notna()` where a hole would otherwise be kept, which is
+the filter a careful pandas user writes. A comparison kept as a value, `add
+[big] as [revenue] > 200`, is printed as a nullable boolean that is missing
+where the query's is. Printed dplyr's `in` and `contains` answered FALSE for a
+missing value, so their negations kept it; they now answer NA.
+
 ### Printed joins never match a missing key, and a polars full join keeps its key
 
 A missing value equals nothing, itself included, on every engine a sentence

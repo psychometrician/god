@@ -113,7 +113,10 @@ impl Backend for Pandas {
                             text(&theirs)
                         ));
                     }
-                    None => calls.push(format!("loc[lambda d: {}]", expr(condition))),
+                    None => calls.push(format!(
+                        "loc[lambda d: {}]",
+                        test(condition, Over::default())
+                    )),
                 },
 
                 Step::Pick { names, all_but, .. } => {
@@ -754,16 +757,15 @@ fn inner(e: &Expr, over: Over) -> String {
         Expr::Arithmetic { op, left, right, .. } => {
             format!("({} {} {})", go(left), op, go(right))
         }
+        // **A comparison kept as a value answers missing where a part of it is
+        // missing**, which is what the query does and what numpy's booleans
+        // cannot hold: `>` answers False over a hole and `!=` answers True. So
+        // each one is made a nullable boolean and masked where it does not
+        // know. pandas' nullable `&`, `|` and `~` then reason about the unknown
+        // the way SQL does, so a compound needs nothing more. A condition that
+        // only keeps rows is written by `test` below and needs none of this.
         Expr::Compare { op, left, right, .. } => {
-            let symbol = match op {
-                Compare::Is => "==",
-                Compare::IsNot => "!=",
-                Compare::Less => "<",
-                Compare::LessOrEqual => "<=",
-                Compare::Greater => ">",
-                Compare::GreaterOrEqual => ">=",
-            };
-            format!("({} {symbol} {})", go(left), go(right))
+            unknowable(compared(*op, &go(left), &go(right)), &[left, right], over)
         }
         // pandas overloads the bitwise operators, so the parentheses are not
         // style: `&` binds tighter than `==` in Python and the expression means
@@ -778,7 +780,11 @@ fn inner(e: &Expr, over: Over) -> String {
         Expr::Not { inner: i, .. } => format!("~{}", go(i)),
         Expr::In { left, set, negated, .. } => {
             let values: Vec<String> = set.iter().map(|v| flat(v)).collect();
-            let test = format!("{}.isin([{}])", go(left), values.join(", "));
+            let test = unknowable(
+                format!("{}.isin([{}])", go(left), values.join(", ")),
+                &[left],
+                over,
+            );
             if *negated {
                 format!("~{test}")
             } else {
@@ -818,20 +824,18 @@ fn inner(e: &Expr, over: Over) -> String {
             // Counting from 1, the way every other place in this grammar does.
             (Window::RowNumber, _) => "np.arange(1, len(d) + 1)".to_string(),
         },
-        Expr::TextTest { op, left, value: v, .. } => match op {
-            TextOp::Starts => format!("{}.str.startswith({})", go(left), flat(v)),
-            TextOp::Ends => format!("{}.str.endswith({})", go(left), flat(v)),
-            TextOp::Contains => {
-                format!("{}.str.contains({}, regex=False)", go(left), flat(v))
-            }
-        },
+        Expr::TextTest { op, left, value: v, .. } => {
+            unknowable(text_test(*op, &go(left), &flat(v)), &[left, v], over)
+        }
         Expr::ColumnValue { .. } => "value".to_string(),
         Expr::ColumnKind { .. } => "kind".to_string(),
         // **pandas has nothing of its own that reads better than this.** Nested
         // `where` calls invert the order the arms were written in, so `np.select`
         // is what pandas users reach for, and it keeps first-match-wins.
         Expr::When { arms, otherwise, .. } => {
-            let tests: Vec<String> = arms.iter().map(|(t, _)| go(t)).collect();
+            // An arm takes the rows its question is true for, and an unknown
+            // answer falls through to the next one, as `CASE WHEN` does.
+            let tests: Vec<String> = arms.iter().map(|(t, _)| test(t, over)).collect();
             let values: Vec<String> = arms.iter().map(|(_, v)| flat(v)).collect();
             let default = otherwise
                 .as_ref()
@@ -844,6 +848,21 @@ fn inner(e: &Expr, over: Over) -> String {
             )
         }
         Expr::ColumnName { .. } => "name".to_string(),
+        Expr::Call { name: fname, args, .. } if fname == "between" => {
+            let parts: Vec<&Expr> = args.iter().collect();
+            if parts[1..].iter().all(|b| !can_be_missing(b)) {
+                unknowable(call(fname, args, over), &parts[..1], over)
+            } else {
+                // A bound that can be missing leaves the answer known whenever
+                // the other comparison is false, so this one is written as the
+                // two comparisons it is, and the nullable `&` decides.
+                format!(
+                    "({} & {})",
+                    unknowable(compared(Compare::GreaterOrEqual, &go(&args[0]), &go(&args[1])), &[&args[0], &args[1]], over),
+                    unknowable(compared(Compare::LessOrEqual, &go(&args[0]), &go(&args[2])), &[&args[0], &args[2]], over)
+                )
+            }
+        }
         Expr::Call { name: fname, args, .. } => call(fname, args, over),
 
         // `np.select`, the same spelling the conditional gets. pandas' own
@@ -896,6 +915,156 @@ fn inner(e: &Expr, over: Over) -> String {
                 _ => unreachable!("the checker admits only a plain column"),
             }
         }
+    }
+}
+
+/// A comparison as numpy answers it: False over a hole, except `!=`.
+fn compared(op: Compare, left: &str, right: &str) -> String {
+    let symbol = match op {
+        Compare::Is => "==",
+        Compare::IsNot => "!=",
+        Compare::Less => "<",
+        Compare::LessOrEqual => "<=",
+        Compare::Greater => ">",
+        Compare::GreaterOrEqual => ">=",
+    };
+    format!("({left} {symbol} {right})")
+}
+
+/// A text test, False over a hole. `na=False` says so rather than leaving it
+/// to the column's type: an object column answers NaN there, which `loc`
+/// refuses.
+fn text_test(op: TextOp, left: &str, value: &str) -> String {
+    match op {
+        TextOp::Starts => format!("{left}.str.startswith({value}, na=False)"),
+        TextOp::Ends => format!("{left}.str.endswith({value}, na=False)"),
+        TextOp::Contains => format!("{left}.str.contains({value}, regex=False, na=False)"),
+    }
+}
+
+/// Whether a value can be missing, which a written one cannot.
+fn can_be_missing(e: &Expr) -> bool {
+    !matches!(
+        e,
+        Expr::Text { .. } | Expr::Whole { .. } | Expr::Decimal { .. } | Expr::Truth { .. }
+    )
+}
+
+/// A test kept as a value: a nullable boolean, missing wherever one of its
+/// parts is. Nothing changes where every part is written out.
+fn unknowable(test: String, parts: &[&Expr], over: Over) -> String {
+    let holes: Vec<String> = parts
+        .iter()
+        .filter(|p| can_be_missing(p))
+        .map(|p| format!("{}.isna()", inner(p, over)))
+        .collect();
+    if holes.is_empty() {
+        test
+    } else {
+        format!("{test}.astype(\"boolean\").mask({})", holes.join(" | "))
+    }
+}
+
+/// `!=`, made to answer False over a hole the way every other comparison does.
+fn differs(left: &Expr, right: &Expr, over: Over) -> String {
+    let mut parts = vec![compared(Compare::IsNot, &inner(left, over), &inner(right, over))];
+    for side in [left, right] {
+        if can_be_missing(side) {
+            parts.push(format!("{}.notna()", inner(side, over)));
+        }
+    }
+    format!("({})", parts.join(" & "))
+}
+
+/// A condition, as the rows it keeps.
+///
+/// **A row is kept where the condition is true, and an unknown answer is not
+/// true.** numpy's booleans have no unknown, so pandas answers False for a
+/// comparison over a hole, which keeps nothing, and that much agrees with the
+/// query. It goes wrong in exactly two places: `!=` answers True over a hole,
+/// and `~` turns every False, the unknown ones included, into True. So `not`
+/// is pushed inward to the comparisons, where it becomes their opposite
+/// (`<` for `>=`, `|` for `&`), and the two that would keep a hole say they
+/// do not, with `.notna()`. What is printed is the filter a careful pandas user
+/// writes by hand.
+fn test(e: &Expr, over: Over) -> String {
+    match e {
+        Expr::Compare { op: Compare::IsNot, left, right, .. } => differs(left, right, over),
+        Expr::Compare { op, left, right, .. } => {
+            compared(*op, &inner(left, over), &inner(right, over))
+        }
+        Expr::Logic { op, left, right, .. } => {
+            let symbol = match op {
+                Logic::And => "&",
+                Logic::Or => "|",
+            };
+            format!("({} {symbol} {})", test(left, over), test(right, over))
+        }
+        Expr::Not { inner: i, .. } => refuted(i, over),
+        Expr::In { left, set, negated, .. } => {
+            let values: Vec<String> = set.iter().map(|v| inner(v, Over::default())).collect();
+            let found = format!("{}.isin([{}])", inner(left, over), values.join(", "));
+            if *negated {
+                format!("(~{found} & {}.notna())", inner(left, over))
+            } else {
+                found
+            }
+        }
+        Expr::TextTest { op, left, value, .. } => {
+            text_test(*op, &inner(left, over), &inner(value, Over::default()))
+        }
+        Expr::Call { name, args, .. } if name == "between" => call(name, args, over),
+        other => inner(other, over),
+    }
+}
+
+/// A condition, as the rows where it is false: `test` of its opposite.
+fn refuted(e: &Expr, over: Over) -> String {
+    match e {
+        Expr::Compare { op, left, right, .. } => {
+            let opposite = match op {
+                Compare::Is => return differs(left, right, over),
+                Compare::IsNot => Compare::Is,
+                Compare::Less => Compare::GreaterOrEqual,
+                Compare::LessOrEqual => Compare::Greater,
+                Compare::Greater => Compare::LessOrEqual,
+                Compare::GreaterOrEqual => Compare::Less,
+            };
+            compared(opposite, &inner(left, over), &inner(right, over))
+        }
+        Expr::Logic { op, left, right, .. } => {
+            let symbol = match op {
+                Logic::And => "|",
+                Logic::Or => "&",
+            };
+            format!("({} {symbol} {})", refuted(left, over), refuted(right, over))
+        }
+        Expr::Not { inner: i, .. } => test(i, over),
+        Expr::In { left, set, negated, .. } => {
+            let values: Vec<String> = set.iter().map(|v| inner(v, Over::default())).collect();
+            let found = format!("{}.isin([{}])", inner(left, over), values.join(", "));
+            if *negated {
+                found
+            } else {
+                format!("(~{found} & {}.notna())", inner(left, over))
+            }
+        }
+        Expr::IsMissing { inner: i, negated, .. } => {
+            let method = if *negated { "isna" } else { "notna" };
+            format!("{}.{method}()", inner(i, over))
+        }
+        Expr::TextTest { op, left, value, .. } => format!(
+            "(~{} & {}.notna())",
+            text_test(*op, &inner(left, over), &inner(value, Over::default())),
+            inner(left, over)
+        ),
+        Expr::Call { name, args, .. } if name == "between" => format!(
+            "({} | {})",
+            compared(Compare::Less, &inner(&args[0], over), &inner(&args[1], over)),
+            compared(Compare::Greater, &inner(&args[0], over), &inner(&args[2], over))
+        ),
+        Expr::Truth { value, .. } => if *value { "False" } else { "True" }.to_string(),
+        other => format!("~{}", test(other, over)),
     }
 }
 

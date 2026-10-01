@@ -458,9 +458,17 @@ fn expr(e: &Expr) -> String {
             format!("({} {symbol} {})", expr(left), expr(right))
         }
         Expr::Not { inner, .. } => format!("!{}", expr(inner)),
+        // **`%in%` answers FALSE for a missing value**, where every engine the
+        // sentence runs on answers that it does not know: `NOT IN` keeps no
+        // hole, and a membership kept as a value is missing there. So the hole
+        // is said out loud, and `!` then reasons about it the way SQL does.
         Expr::In { left, set, negated, .. } => {
             let values: Vec<String> = set.iter().map(expr).collect();
-            let test = format!("({} %in% c({}))", expr(left), values.join(", "));
+            let test = format!(
+                "if_else(is.na({0}), NA, {0} %in% c({1}))",
+                expr(left),
+                values.join(", ")
+            );
             if *negated {
                 format!("!{test}")
             } else {
@@ -505,9 +513,14 @@ fn expr(e: &Expr) -> String {
         Expr::TextTest { op, left, value, .. } => match op {
             TextOp::Starts => format!("startsWith({}, {})", expr(left), expr(value)),
             TextOp::Ends => format!("endsWith({}, {})", expr(left), expr(value)),
-            TextOp::Contains => {
-                format!("grepl({}, {}, fixed = TRUE)", expr(value), expr(left))
-            }
+            // `str_detect` rather than `grepl`, which answers FALSE for a
+            // missing value, so `!grepl(...)` kept every hole. `startsWith` and
+            // `endsWith` already answer NA, like the query.
+            TextOp::Contains => format!(
+                "stringr::str_detect({}, stringr::fixed({}))",
+                expr(left),
+                expr(value)
+            ),
         },
         Expr::ColumnValue { .. } => "value".to_string(),
         Expr::ColumnKind { .. } => "kind".to_string(),

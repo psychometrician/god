@@ -117,3 +117,74 @@ fn a_polars_full_join_keeps_one_key() {
     let left = printed("sales then join products by [product]", "polars");
     assert!(!left.contains("coalesce"), "a left join keeps its own key and needs no word: {left}");
 }
+
+/// **A row is kept where its condition is true, and an unknown answer is not
+/// true.** pandas answers False for a comparison over a hole, which keeps
+/// nothing and agrees, except that `!=` answers True and `~` turns an unknown
+/// False into True. So `not` is pushed in to the comparisons and the two that
+/// would keep a hole say they do not. dplyr's logic already reasons about the
+/// unknown; its `%in%` and `grepl` answer FALSE for a hole, so they are the two
+/// it says out loud.
+#[test]
+fn an_unknown_condition_keeps_no_row() {
+    let cases = [
+        (
+            "sales then keep where [region] is not \"West\"",
+            "(d[\"region\"] != \"West\") & d[\"region\"].notna()",
+        ),
+        (
+            "sales then keep where not ([region] is \"West\")",
+            "(d[\"region\"] != \"West\") & d[\"region\"].notna()",
+        ),
+        (
+            "sales then keep where not ([revenue] > 100 and [cost] > 50)",
+            "((d[\"revenue\"] <= 100) | (d[\"cost\"] <= 50))",
+        ),
+        (
+            "sales then keep where [product] not in {\"Widget\"}",
+            "(~d[\"product\"].isin([\"Widget\"]) & d[\"product\"].notna())",
+        ),
+        (
+            "sales then keep where not ([product] contains \"W\")",
+            "(~d[\"product\"].str.contains(\"W\", regex=False, na=False) & d[\"product\"].notna())",
+        ),
+        (
+            "sales then keep where not between([revenue], 100, 300)",
+            "((d[\"revenue\"] < 100) | (d[\"revenue\"] > 300))",
+        ),
+        (
+            "sales then add [flag] as when(not ([region] is \"West\"), \"away\", otherwise \"home\")",
+            "np.select([((d[\"region\"] != \"West\") & d[\"region\"].notna())]",
+        ),
+    ];
+    for (sentence, wanted) in cases {
+        let text = printed(sentence, "pandas");
+        assert!(text.contains(wanted), "{sentence}\nwanted {wanted}\n{text}");
+        assert!(!text.contains("~("), "no negation of a whole condition is left: {sentence}\n{text}");
+    }
+
+    let not_in = printed("sales then keep where [product] not in {\"Widget\"}", "dplyr");
+    assert!(not_in.contains("!if_else(is.na(product), NA, product %in% c(\"Widget\"))"), "{not_in}");
+    let contains = printed("sales then keep where not ([product] contains \"W\")", "dplyr");
+    assert!(contains.contains("!stringr::str_detect(product, stringr::fixed(\"W\"))"), "{contains}");
+}
+
+/// **A comparison kept as a value is missing where the query's is.** numpy's
+/// booleans cannot hold an unknown, so pandas writes a nullable boolean and
+/// masks the holes; its `&`, `|` and `~` then reason about the unknown the way
+/// SQL does, and a compound needs nothing more.
+#[test]
+fn a_comparison_kept_as_a_value_can_be_missing() {
+    let one = printed("sales then add [big] as [revenue] > 200", "pandas");
+    assert!(
+        one.contains("(d[\"revenue\"] > 200).astype(\"boolean\").mask(d[\"revenue\"].isna())"),
+        "{one}"
+    );
+    let two = printed("sales then add [both] as [revenue] > 100 and [cost] > 50", "pandas");
+    assert!(
+        two.contains("((d[\"revenue\"] > 100).astype(\"boolean\").mask(d[\"revenue\"].isna()) & (d[\"cost\"] > 50).astype(\"boolean\").mask(d[\"cost\"].isna()))"),
+        "{two}"
+    );
+    let literal = printed("sales then keep where [revenue] > 200", "pandas");
+    assert!(!literal.contains("astype"), "a condition that only keeps rows needs none of it: {literal}");
+}
