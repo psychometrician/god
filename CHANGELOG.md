@@ -6,6 +6,17 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed pandas keeps a group whose key is missing
+
+pandas' `groupby` drops the rows whose key is missing unless told otherwise,
+and the query, dplyr and polars all keep them as a group of their own. So the
+pandas that `show_as` printed for a grouped `summarize` answered one group
+short, and a grouped `take`, a window or a share in `add ... by` answered
+missing for those rows. Every grouping it prints now says `dropna=False`.
+`widen`, and `lengthen` into several values, are printed as a `groupby` and an
+`unstack` rather than `pivot_table`, which drops the same rows and, told not
+to, builds every combination of two keys, including ones the table never had.
+
 ### A column's name reaches the engine whole, and two it cannot use are refused
 
 The bindings describe a table to the engine as a list built from `,`, `=` and

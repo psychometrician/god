@@ -149,7 +149,7 @@ impl Backend for Pandas {
                         calls.push(format!("pipe(lambda d: pd.DataFrame({{{}}}))", pairs(values)));
                     } else {
                         calls.push(format!(
-                            "groupby({}, as_index=False).agg({})",
+                            "groupby({}, as_index=False, dropna=False).agg({})",
                             list(by),
                             named.join(", ")
                         ));
@@ -176,8 +176,8 @@ impl Backend for Pandas {
                         format!("d[{}]", text(&first.column.text))
                     } else {
                         format!(
-                            "d.groupby({})[{}]",
-                            list(by),
+                            "d.{}[{}]",
+                            grouped(by),
                             text(&first.column.text)
                         )
                     };
@@ -192,7 +192,10 @@ impl Backend for Pandas {
                     if by.is_empty() {
                         calls.push(format!("{end}({count})"));
                     } else {
-                        calls.push(format!("groupby({}, as_index=False).{end}({count})", list(by)));
+                        calls.push(format!(
+                            "groupby({}, as_index=False, dropna=False).{end}({count})",
+                            list(by)
+                        ));
                         if let Some(keys) = last_sort(plan, i) {
                             calls.push(sort_by(keys, last_missing_first(plan, i)));
                         }
@@ -366,17 +369,27 @@ impl Backend for Pandas {
                         Some((word, inner)) => (column_text(&inner), word),
                         None => (column_text(value), "first"),
                     };
-                    let mut args = vec![format!("index={}", list(by))];
-                    args.push(format!("columns={columns}"));
-                    args.push(format!("values={held}"));
-                    args.push(format!("aggfunc={}", text(how)));
+                    // **Grouped and unstacked rather than `pivot_table`, because
+                    // a missing key is a group.** `pivot_table` drops a row whose
+                    // `by` is missing, and its `dropna=False` does worse with two
+                    // keys: it builds every combination of them, rows the table
+                    // never had. A `groupby` that keeps the missing key, then the
+                    // names turned into columns, is the same table the query
+                    // makes.
+                    let mut keys: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
+                    keys.extend(pieces.iter().map(|p| p.to_string()));
+                    calls.push(format!(
+                        "groupby({}, dropna=False)[{held}].agg({})",
+                        strings(&keys),
+                        text(how)
+                    ));
+                    calls.push(format!("unstack({columns})"));
                     if let Some(filler) = missing {
-                        args.push(format!("fill_value={}", value_of(filler)));
+                        calls.push(format!("fillna({})", value_of(filler)));
                     }
-                    calls.push(format!("pivot_table({})", args.join(", ")));
-                    // `pivot_table` puts the grouping in the index and names the
-                    // column axis, and neither is a column a later step could
-                    // name. Both are put back.
+                    // The grouping is in the index and the column axis has a
+                    // name, and neither is a column a later step could name.
+                    // Both are put back.
                     calls.push("reset_index()".to_string());
                     calls.push("rename_axis(columns=None)".to_string());
                 }
@@ -446,11 +459,15 @@ fn lengthen(shape: &Lengthened) -> Vec<String> {
     if shape.value_columns.len() > 1 {
         let mut index = shape.keep.clone();
         index.extend(shape.name_columns.iter().cloned());
+        // `groupby` and `unstack` for the reason `widen` gives: `pivot_table`
+        // drops a row whose kept column is missing.
+        index.push("__value".to_string());
         calls.push(format!(
-            "pivot_table(index={}, columns=\"__value\", values={}, aggfunc=\"first\")",
+            "groupby({}, dropna=False)[{}].first()",
             strings(&index),
             text(&held)
         ));
+        calls.push("unstack(\"__value\")".to_string());
         calls.push("reset_index()".to_string());
         calls.push("rename_axis(columns=None)".to_string());
     }
@@ -607,6 +624,15 @@ fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
     }
 }
 
+/// A grouping that keeps the rows whose key is missing.
+///
+/// **pandas drops them by default and nobody else does.** DuckDB, Spark, dplyr
+/// and polars all answer a missing key as a group of its own, so `groupby`
+/// alone printed an answer one group short, with nothing said.
+fn grouped(by: &[Name]) -> String {
+    format!("groupby({}, dropna=False)", list(by))
+}
+
 fn sorted(names: &[Name]) -> String {
     format!("sort_values({})", list(names))
 }
@@ -687,11 +713,7 @@ fn column(name: &str, over: Over) -> String {
     if over.partition.is_empty() {
         format!("d[{}]", text(name))
     } else {
-        format!(
-            "d.groupby({})[{}]",
-            list(over.partition),
-            text(name)
-        )
+        format!("d.{}[{}]", grouped(over.partition), text(name))
     }
 }
 
@@ -844,8 +866,8 @@ fn inner(e: &Expr, over: Over) -> String {
             };
             match args.first() {
                 Some(Expr::Column(c)) if !over.partition.is_empty() => format!(
-                    "d.groupby({})[{}].transform(lambda s: s.rolling({n}).{method}())",
-                    list(over.partition),
+                    "d.{}[{}].transform(lambda s: s.rolling({n}).{method}())",
+                    grouped(over.partition),
                     text(&c.text)
                 ),
                 Some(Expr::Column(c)) => {
@@ -880,13 +902,13 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             "row_count" => "size",
             _ => unreachable!("every aggregate has a transform word"),
         };
-        let groups = list(over.partition);
+        let groups = grouped(over.partition);
         let column = match (fname, args.first()) {
             ("row_count", _) => text(&over.partition[0].text),
             (_, Some(Expr::Column(n))) => text(&n.text),
             _ => unreachable!("refused before rendering"),
         };
-        return format!("d.groupby({groups})[{column}].transform({})", text(word));
+        return format!("d.{groups}[{column}].transform({})", text(word));
     }
     let plain = Over::default();
     let arg = |i: usize| args.get(i).map(|a| inner(a, plain)).unwrap_or_default();
