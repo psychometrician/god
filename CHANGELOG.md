@@ -6,6 +6,12 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### `What it wrote` counts ten differences between the two SQL dialects
+
+The chapter said the DuckDB and Spark queries differ in nine ways and named
+them. A distinct count inside an `add` is now a tenth, written
+`size(collect_set(...))` on Spark, and the chapter names it.
+
 ### Python writes pandas' missing values as `missing`, as R writes its own
 
 R writes `NA` and `NaN` in a sentence as `missing`, and Python wrote `None`

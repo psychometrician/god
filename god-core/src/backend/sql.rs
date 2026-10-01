@@ -20,12 +20,12 @@
 //! here would get a refusal on `sort` instead of a wrong answer nobody notices.
 //!
 //! **One renderer, two dialects, and the differences are a struct rather than a
-//! second file.** `Dialect` holds them, and there are five. That is still a table
-//! of spellings rather than a rewrite, which is the claim, but it is five and not
-//! the one this comment used to say: that number was measured before six features
-//! were added on top of it, and it went stale without anything noticing.
+//! second file.** `Dialect` holds them, one field each. That is still a table of
+//! spellings rather than a rewrite, which is the claim. This comment used to
+//! count them, and the count went stale twice without anything noticing, so the
+//! struct is the count now; the manual's `what-it-wrote` names each one.
 //!
-//! **Two of the five decide whether the answer is right rather than whether the
+//! **Two of them decide whether the answer is right rather than whether the
 //! query runs**, and both were found by running the corpus on both engines and
 //! comparing rows. `SELECT "region"` is a column on DuckDB and the text
 //! `'region'` on Spark, so the wrong quote returns the column's own name in every

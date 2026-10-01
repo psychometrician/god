@@ -89,7 +89,7 @@ show_as(sales >> summarize(revenue = total(col.revenue), by = col.product),
 
 :::
 
-The two dialects differ in nine ways, and the queries above show the first.
+The two dialects differ in ten ways, and the queries above show the first.
 A column is `` `revenue` `` on Spark and `"revenue"` here, and that one
 matters. A double-quoted name on Spark is not a column at all: it is the
 text `'revenue'`. A query written for the wrong engine would therefore run
@@ -98,10 +98,10 @@ spelling: dropping a column is `EXCEPT` rather than `EXCLUDE`, and stopping
 a query is `raise_error` rather than `error`. A backslash inside a text
 value has to be written twice on Spark. The word `weekday` is asked for
 through a different function on each engine, so that Monday can stay 1 on
-both. `latest`, a rolling `median`, and `join_rows` are three more, each
-written differently on the two engines. And a `widen` that names no columns
-is a sentence Spark cannot be given at all, which is the refusal staged
-later on this page.
+both. `latest`, a rolling `median`, `join_rows`, and a distinct count inside
+an `add` are four more, each written differently on the two engines. And a
+`widen` that names no columns is a sentence Spark cannot be given at all,
+which is the refusal staged later on this page.
 
 None of that is yours to remember. It is the difference between writing a
 pipeline and writing a query.
