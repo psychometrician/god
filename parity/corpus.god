@@ -183,3 +183,7 @@ sales then join products by [product] then sort [maker], [revenue] then pick [pr
 sales then join products by [product] then sort [maker], [revenue] missing first then pick [product, maker, revenue]
 ---
 sales then sort [product] then summarize [sold] as join_rows([product], ", ") by [region]
+---
+sales then keep where [revenue] > 99.9999999 then pick [product, revenue]
+---
+sales then keep where [revenue] * 0.000000000001 > 0.0000000001234 then pick [product, revenue]

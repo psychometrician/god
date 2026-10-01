@@ -303,6 +303,23 @@ check("NA becomes missing",       written(sales |> keep(region == NA)), "([regio
 
 check("a large number is never written in scientific notation",
       written(sales |> keep(revenue > 100000)), "([revenue] > 100000)")
+# **And never with fewer digits than it holds.** `format()` kept seven
+# significant digits and followed `options(OutDec)`, so the first of these went
+# out as `> 123456.8` and returned other rows than the same sentence in Python.
+check("a decimal keeps every digit it was written with",
+      written(sales |> keep(revenue > 123456.78)), "([revenue] > 123456.78)")
+check("a small one is written in digits",
+      written(sales |> keep(revenue > 0.000000000001)), "([revenue] > 0.000000000001)")
+check("a whole number of sixteen digits is not rounded",
+      written(sales |> keep(revenue > 1234567890123456)), "([revenue] > 1234567890123456)")
+check("a value that needs seventeen digits gets them",
+      god:::god_number(0.1 + 0.2), "0.30000000000000004")
+local({
+  was <- options(digits = 3, OutDec = ",")
+  on.exit(options(was))
+  check("and neither options(digits) nor options(OutDec) can reach it",
+        written(sales |> keep(revenue > 99.99)), "([revenue] > 99.99)")
+})
 
 cat("\nnothing runs until the answer is wanted\n")
 

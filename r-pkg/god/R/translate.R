@@ -402,14 +402,54 @@ god_number <- function(value) {
   if (is.na(value)) {
     return("missing")
   }
-  # `format` rather than `as.character`, because R writes large and small numbers
-  # in scientific notation and the grammar reads digits and at most one point.
-  # `1e+05` would not be a number to it.
-  written <- format(value, scientific = FALSE, trim = TRUE)
+  if (!is.finite(value)) {
+    stop(sprintf("god cannot write `%s` as a number", value), call. = FALSE)
+  }
+  # **Plain digits, and never fewer than the number holds.** The grammar reads
+  # digits and at most one point, so `1e+05` is not a number to it. This used
+  # `format()`, which keeps seven significant digits unless told otherwise and
+  # follows `options(OutDec)`: `amount >= 123456.78` went out as
+  # `>= 123456.8` and returned other rows than the same sentence in Python.
+  #
+  # A whole number is written whole, so a sixteen-digit identifier is not
+  # rounded. Anything else gets fifteen significant digits when R reads them
+  # back as the same number, which every decimal a person types does, and
+  # otherwise the seventeen that reproduce any double: `0.1 + 0.2` goes out as
+  # `0.30000000000000004`. Python's twin applies the same rule, so the two
+  # languages write one sentence.
+  written <- if (value == 0) {
+    "0"
+  } else if (value == trunc(value)) {
+    sprintf("%.0f", value)
+  } else {
+    short <- god_decimal(value, 15L)
+    if (as.numeric(short) == value) short else god_decimal(value, 17L)
+  }
   if (!grepl("^-?[0-9]+(\\.[0-9]+)?$", written)) {
     stop(sprintf("god cannot write `%s` as a number", written), call. = FALSE)
   }
   written
+}
+
+# A double in plain digits with `digits` significant figures. Built from C's
+# correctly rounded `%e` rather than from `format()`, so neither
+# `options(digits)` nor `options(OutDec)` can reach it, and with the same steps
+# as Python's twin, so the two write the same digits.
+god_decimal <- function(value, digits) {
+  scientific <- sprintf("%.*e", digits - 1L, value)
+  parts <- regmatches(scientific,
+                      regexec("^(-?)([0-9])[.]([0-9]*)e([-+][0-9]+)$", scientific))[[1L]]
+  figures <- paste0(parts[3L], parts[4L])
+  point <- as.integer(parts[5L]) + 1L
+  if (point < 1L) {
+    figures <- paste0(strrep("0", 1L - point), figures)
+    point <- 1L
+  } else if (point > nchar(figures)) {
+    figures <- paste0(figures, strrep("0", point - nchar(figures)))
+  }
+  fraction <- sub("0+$", "", substr(figures, point + 1L, nchar(figures)))
+  paste0(parts[2L], substr(figures, 1L, point),
+         if (nzchar(fraction)) paste0(".", fraction))
 }
 
 god_refuse_node <- function(e) {

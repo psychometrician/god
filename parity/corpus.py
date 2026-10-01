@@ -233,3 +233,7 @@ sales >> add(coded = look_up(col.product, "Widget", 1, "Gadget", 2, otherwise = 
 (sales
   >> sort(col.product)
   >> summarize(sold = join_rows(col.product, ", "), by = col.region))
+---
+sales >> keep(col.revenue > 99.9999999) >> pick(col.product, col.revenue)
+---
+sales >> keep(col.revenue * 0.000000000001 > 0.0000000001234) >> pick(col.product, col.revenue)

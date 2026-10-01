@@ -333,6 +333,24 @@ check("False becomes no", written(sales >> keep(col.region == False)), "([region
 check("None becomes missing", written(sales >> keep(col.region == None)), "([region] is missing)")
 check("a large number is never written in scientific notation",
       written(sales >> keep(col.revenue > 100000)), "([revenue] > 100000)")
+# **And never with fewer digits than it holds.** Ten decimal places turned
+# `1e-12` into `0.0`, and a numpy number, which is what a pandas reduction
+# returns, was refused as a value god could not write.
+check("a decimal keeps every digit it was written with",
+      written(sales >> keep(col.revenue > 123456.78)), "([revenue] > 123456.78)")
+check("a small one is written in digits",
+      written(sales >> keep(col.revenue > 0.000000000001)), "([revenue] > 0.000000000001)")
+check("a whole number of sixteen digits is not rounded",
+      written(sales >> keep(col.revenue > 1234567890123456)), "([revenue] > 1234567890123456)")
+check("a value that needs seventeen digits gets them",
+      written(sales >> keep(col.revenue > 0.1 + 0.2)), "([revenue] > 0.30000000000000004)")
+# Caught rather than left to raise, so a regression reads as one failed check
+# instead of stopping the suite at this line.
+try:
+    _reduced = written(sales >> keep(col.revenue == pd.Series([300]).max()))
+except GodError as _refusal:
+    _reduced = f"refused: {_refusal}"
+check("a pandas reduction is a number", _reduced, "([revenue] is 300)")
 
 # Python's hashing is randomized per process, so a set written out as it came
 # would emit a different sentence on every run.

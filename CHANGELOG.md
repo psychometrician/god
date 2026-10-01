@@ -5,6 +5,20 @@ a person using god can see.
 
 ## Unreleased
 
+### A number in a pipeline keeps every digit it was written with
+
+R wrote a number with seven significant digits, so
+`keep(amount >= 123456.78)` filtered on `123456.8` and returned other rows than
+the same sentence in Python. `options(digits = 3)` rounded further, and
+`options(OutDec = ",")` refused every decimal. Python cut a number at ten
+decimal places, so `1e-12` became `0.0`, and it refused a numpy number such as
+the result of `sales.revenue.max()`.
+
+Both languages now write a whole number whole, and anything else with the
+fifteen significant digits that reproduce it, or the seventeen a computed value
+like `0.1 + 0.2` needs. So the two write one sentence, and the parity corpus
+carries a sentence for each mistake.
+
 ### A refusal example whose table could not be read no longer passes as one
 
 The guards that prove every refusal in the book still refuses counted any error

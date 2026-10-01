@@ -226,3 +226,7 @@ sales |>
 sales |>
   sort(product) |>
   summarize(sold = join_rows(product, ", "), by = region)
+---
+sales |> keep(revenue > 99.9999999) |> pick(product, revenue)
+---
+sales |> keep(revenue * 0.000000000001 > 0.0000000001234) |> pick(product, revenue)

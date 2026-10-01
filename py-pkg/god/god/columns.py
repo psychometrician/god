@@ -20,6 +20,9 @@ comparison, it is the sentence `[region] is "West"` being written down.
 
 from __future__ import annotations
 
+import numbers
+from decimal import Decimal
+
 __all__ = ["col", "Expr"]
 
 
@@ -372,7 +375,10 @@ def _value(value) -> str:
             )
         return f'"{value}"'
 
-    if isinstance(value, (int, float)):
+    # `numbers.Real` rather than `int` and `float`, so a numpy scalar is a
+    # number too: `sales.revenue.max()` is an `np.int64`, which is not an `int`,
+    # and handing one to a pipeline was refused as a value god could not write.
+    if isinstance(value, numbers.Real):
         return _number(value)
 
     raise GodExpressionError(
@@ -381,18 +387,37 @@ def _value(value) -> str:
 
 
 def _number(value) -> str:
-    """A number, never in scientific notation.
+    """A number, in plain digits and never fewer than it holds.
 
     Python writes large and small numbers as `1e+05`, and the grammar reads
-    digits and at most one point. Formatting is fixed here so the two hosts write
-    the same number the same way.
+    digits and at most one point. This wrote ten decimal places, which turned
+    `1e-12` into `0.0`.
+
+    A whole number is written whole. Anything else gets fifteen significant
+    digits when they read back as the same number, which every decimal a person
+    types does, and otherwise the seventeen that reproduce any double: `0.1 +
+    0.2` goes out as `0.30000000000000004`. R's twin applies the same rule, so
+    the two languages write one sentence.
     """
-    if isinstance(value, int):
-        return str(value)
+    if isinstance(value, numbers.Integral):
+        return str(int(value))
+    value = float(value)
     if value != value or value in (float("inf"), float("-inf")):
         raise GodExpressionError(f"god cannot write `{value}` as a number")
-    written = f"{value:.10f}".rstrip("0")
-    return written + "0" if written.endswith(".") else written
+    if value == int(value):
+        return f"{int(value)}.0"
+    short = _decimal(value, 15)
+    return short if float(short) == value else _decimal(value, 17)
+
+
+def _decimal(value: float, digits: int) -> str:
+    """`value` in plain digits with `digits` significant figures.
+
+    Built from the correctly rounded `e` format and written out positionally,
+    with the same steps as R's twin, so the two write the same digits.
+    """
+    written = format(Decimal(format(value, f".{digits - 1}e")), "f")
+    return written.rstrip("0").rstrip(".") if "." in written else written
 
 
 def _each(values):
