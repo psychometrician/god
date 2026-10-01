@@ -240,12 +240,12 @@ needs a special shape, such as two rows that collide or a table with one
 column, it uses the smallest table that shows it, published with the rest. The
 next example returns to the cast.
 
-Every table in the cast is published beside this book, and `god_table` reads
-one by name in either language, so the rows in your session are the rows every
-page here computed from. It looks for a `data/<name>.csv` in your working
-directory or any directory above it before it reaches for the published copy,
-so a folder of your own takes precedence and nothing needs a connection once
-you have one.
+Every table in the cast is published beside this book, with the smaller ones a
+single chapter needs, and `god_table` reads one by name in either language, so
+the rows in your session are the rows every page here computed from. It looks
+for a `data/<name>.csv` in your working directory or any directory above it
+before it reaches for the published copy, so a folder of your own takes
+precedence and nothing needs a connection once you have one.
 
 Here are the three that carry most pages, and the first five rows of the first
 one:
@@ -278,9 +278,7 @@ sales >> take(5)
 
 Fifteen rows in `sales`, four in `products`, six in `survey`, and the rest of
 the cast reads the same way: `god_table("answers")`, `god_table("diary")`, one
-name at a time. Every table a page reads is published beside the book,
-including the smaller ones a single chapter needs, so you can read any of them
-yourself.
+name at a time, and so does any smaller table a chapter reads.
 
 **Your own tables work the same way.** `god_table` looks for a `data/` folder
 before it looks at the network, so put `invoices.csv` in one and

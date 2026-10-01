@@ -6,6 +6,12 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### The preface says once where the book's tables come from
+
+It said that every table a page reads is published beside the book twice,
+twenty lines apart, and a claim kept in two places is two places to correct.
+The second now points back at the first.
+
 ### The book's cast is listed once
 
 The tables every chapter has without loading them were listed in three places,
