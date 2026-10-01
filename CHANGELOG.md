@@ -6,6 +6,15 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### An R package tarball never carries an engine left over from an install
+
+A local `R CMD build` shipped whatever `god-cli` the last `R CMD INSTALL` had
+left in `inst/bin/`, and installing that tarball trusted it, so a check could
+run against an engine weeks older than the sources. The tarball now never
+carries one. It builds its engine at install from the staged crates, as the
+package farm's build always has, or takes the one `GOD_CLI` names, and says so
+loudly when it has neither.
+
 ### Python hands a frame to the engine in whichever form it reads faster
 
 Every pandas frame was converted to Arrow before a query, which is sixty times

@@ -12,3 +12,15 @@
 # inside one. `R CMD check` flags it as a hidden file "most likely included in
 # error", and that is right.
 ^\.prepare$
+
+# No engine travels in a tarball. `inst/bin/` is what `configure` fills at
+# install time, and in a development checkout it is whatever the last
+# `R CMD INSTALL` left, so a local `R CMD build` shipped that leftover and
+# `R CMD check`, installing the tarball with no workspace beside it, trusted it:
+# an engine from 2026-08-14 failed the suite on 2026-09-30. `.prepare` deletes
+# it for the farm's build; this keeps it out of every build. A tarball's engine
+# comes from `tools/rust/`, staged by `.prepare`, or from `GOD_CLI`.
+#
+# R reads every line here as a pattern, these too, so a line holding a
+# character a pattern cannot (two asterisks, say) stops the build.
+^inst/bin$

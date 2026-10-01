@@ -7,13 +7,18 @@
 # through to a development checkout, which is fine on the machine that built it
 # and useless anywhere else.
 #
-# R runs `configure` on install, not on `R CMD build`. That ordering is not
-# cosmetic and it is the one trap here that ships a broken artifact silently:
-# **install first, then build the tarball**, or the tarball carries no engine
-# and works only for whoever built it.
+# R runs `configure` on install, not on `R CMD build`, and no engine travels in a
+# tarball: `.Rbuildignore` keeps `inst/bin/` out, because in a development
+# checkout it holds whatever the last install left there, and a tarball that
+# carried it installed an engine from weeks before its own sources. A tarball
+# gets its engine at install, from the crates `.prepare` stages in
+# `tools/rust/`, or from `$GOD_CLI`:
 #
-#   R CMD INSTALL r-pkg/god          # runs this, fills inst/bin/
-#   R CMD build   r-pkg/god          # tars what is now on disk
+#   r-pkg/god/.prepare                                  # stage the crates
+#   R CMD build r-pkg/god                               # tars the package
+#   R CMD check god_*.tar.gz                            # builds the engine
+#
+#   GOD_CLI="$PWD/target/release/god-cli" R CMD check god_*.tar.gz
 #
 # Five ways the engine arrives, in the order they are tried:
 #
