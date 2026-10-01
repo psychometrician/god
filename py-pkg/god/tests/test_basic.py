@@ -522,6 +522,15 @@ check("a zero is present, and only missing is skipped",
 check("a value can be the last place to look, written as a value",
       (patchy_three >> add(best = first_present(col.a, 0))).written().splitlines()[-1].strip(),
       "then add [best] as first_present([a], 0)")
+# A host's missing value is `missing`, in both languages: R writes its `NA`
+# and `NaN` that way, and Python refused pandas' `NaN` and `pd.NA`.
+for _hole in (float("nan"), pd.NA, None):
+    check(f"`{_hole!r}` is written as missing",
+          (patchy_three >> keep(col.a != _hole)).written().splitlines()[-1].strip(),
+          "then keep where ([a] is not missing)")
+check_error("infinity is a number with no digits, and is still refused",
+            lambda: (patchy_three >> keep(col.a > float("inf"))).written(),
+            "cannot write `inf`")
 check("and text is text rather than a column's name",
       list(collect(pd.DataFrame({"who": ["ann", None]})
                    >> add(said = first_present(col.who, "nobody")))["said"]),

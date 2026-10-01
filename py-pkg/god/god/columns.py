@@ -360,7 +360,14 @@ def _value(value) -> str:
     if isinstance(value, bool):
         return "yes" if value else "no"
 
-    if value is None:
+    # **Every way a host holds a missing value is `missing`**: `None`, and
+    # pandas' own two, `NaN` and `pd.NA`. R's half writes its `NA` and `NaN`
+    # the same way, and this refused both of pandas', so one sentence was
+    # writable in one language and not the other. Infinity is still refused in
+    # both: it is a number the grammar has no digits for, not an absent one.
+    if value is None or type(value).__name__ == "NAType":
+        return "missing"
+    if isinstance(value, numbers.Real) and value != value:
         return "missing"
 
     if isinstance(value, str):

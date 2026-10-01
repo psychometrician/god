@@ -537,6 +537,16 @@ check("a zero is present, and only missing is skipped",
 check("a value can be the last place to look, written as a value",
       trimws(tail(strsplit(format(patchy_three |> add(best = first_present(a, 0))), "\n")[[1]], 1)),
       "then add [best] as first_present([a], 0)")
+# A host's missing value is `missing`, in both languages: Python refused
+# pandas' `NaN` and `pd.NA` where R wrote its own as `missing`.
+last_line <- function(p) trimws(tail(strsplit(format(p), "\n")[[1]], 1))
+check("`NA` is written as missing",
+      last_line(patchy_three |> keep(a != NA)), "then keep where ([a] is not missing)")
+check("`NaN` is written as missing",
+      last_line(patchy_three |> keep(a != NaN)), "then keep where ([a] is not missing)")
+check_error("infinity is a number with no digits, and is still refused",
+            format(patchy_three |> keep(a > Inf)),
+            "cannot write `Inf`")
 check("and text is text rather than a column's name",
       collect(data.frame(who = c("ann", NA)) |> add(said = first_present(who, "nobody")))$said,
       c("ann", "nobody"))

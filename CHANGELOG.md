@@ -6,6 +6,15 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Python writes pandas' missing values as `missing`, as R writes its own
+
+R writes `NA` and `NaN` in a sentence as `missing`, and Python wrote `None`
+that way but refused `NaN` and `pd.NA`, which are pandas' own ways of holding
+a missing value. So `keep(col.a != np.nan)` could be written in one language
+and not the other. All three are `missing` now. Infinity is still refused in
+both languages: it is a number the grammar has no digits for, not an absent
+one.
+
 ### The parity harnesses run a second fixture with a hole in every column
 
 The parity fixture had no missing value anywhere, so every sentence agreed on
