@@ -188,3 +188,80 @@ fn a_comparison_kept_as_a_value_can_be_missing() {
     let literal = printed("sales then keep where [revenue] > 200", "pandas");
     assert!(!literal.contains("astype"), "a condition that only keeps rows needs none of it: {literal}");
 }
+
+/// **An aggregate of nothing answers the way the query does.** A total of no
+/// values is missing, which `rows-that-are-not-there` shows and teaches;
+/// pandas, polars and R all total nothing to 0, and R's `min` and `max` of
+/// nothing are infinities. A join of nothing is missing rather than an empty
+/// text, in every printer. A distinct count skips a missing value, which
+/// polars and dplyr count as one more. And `first` and `last` read the row,
+/// whatever it holds, where pandas' own words skip a hole.
+#[test]
+fn an_aggregate_of_nothing_answers_as_the_query_does() {
+    let summary = "sales then summarize [t] as total([revenue]), [lo] as smallest([revenue]), [j] as join_rows([product], \", \"), [u] as unique_count([product]), [f] as first([product]) by [region]";
+
+    let pandas = printed(summary, "pandas");
+    for wanted in [
+        "t=(\"revenue\", lambda s: s.sum(min_count=1))",
+        "j=(\"product\", lambda s: \", \".join(s.dropna()) if s.notna().any() else None)",
+        "f=(\"product\", lambda s: s.iloc[0])",
+    ] {
+        assert!(pandas.contains(wanted), "wanted {wanted}\n{pandas}");
+    }
+    let windowed = printed(
+        "sales then sort [ordered_on] then add [t] as total([revenue]), [l] as last([cost]) by [region]",
+        "pandas",
+    );
+    assert!(windowed.contains(".transform(\"sum\", min_count=1)"), "{windowed}");
+    assert!(windowed.contains(".transform(lambda s: s.iloc[-1])"), "{windowed}");
+
+    let polars = printed(summary, "polars");
+    for wanted in [
+        "pl.when(pl.col(\"revenue\").count() > 0).then(pl.col(\"revenue\").sum())",
+        "pl.when(pl.col(\"product\").count() > 0).then(pl.col(\"product\").drop_nulls().str.join(\", \"))",
+        "pl.col(\"product\").drop_nulls().n_unique()",
+    ] {
+        assert!(polars.contains(wanted), "wanted {wanted}\n{polars}");
+    }
+
+    let pyspark = printed(summary, "pyspark");
+    assert!(
+        pyspark.contains("F.when(F.count(F.col(\"product\")) > 0, F.array_join(F.collect_list(F.col(\"product\")), \", \"))"),
+        "{pyspark}"
+    );
+
+    let dplyr = printed(summary, "dplyr");
+    for wanted in [
+        "t = if (all(is.na(revenue))) NA else sum(revenue, na.rm = TRUE)",
+        "lo = if (all(is.na(revenue))) NA else min(revenue, na.rm = TRUE)",
+        "j = if (all(is.na(product))) NA else paste(product[!is.na(product)], collapse = \", \")",
+        "u = n_distinct(product, na.rm = TRUE)",
+    ] {
+        assert!(dplyr.contains(wanted), "wanted {wanted}\n{dplyr}");
+    }
+}
+
+/// **A cell of a `widen` is an aggregate too**, and gets the same answers: a
+/// cell holding only holes totals to missing, a hole is skipped by every
+/// aggregate, and a combination the table never had counts 0 distinct values,
+/// because a count of nothing is 0. polars' `"len"` counted a cell's rows,
+/// so a value seen twice counted twice.
+#[test]
+fn a_widened_cell_is_an_aggregate_like_any_other() {
+    let total = "sales then widen name [product], value total([revenue]) by [region] giving [Widget, Gadget]";
+    let count = "sales then widen name [product], value unique_count([ordered_on]) by [region] giving [Widget, Gadget]";
+    let average = "sales then widen name [product], value average([revenue]) by [region] giving [Widget, Gadget]";
+
+    assert!(printed(total, "pandas").contains("[\"revenue\"].sum(min_count=1)"));
+    assert!(printed(count, "pandas").contains("unstack(\"product\", fill_value=0)"));
+    assert!(printed(total, "polars")
+        .contains("aggregate_function=pl.when(pl.element().count() > 0).then(pl.element().sum())"));
+    let polars_count = printed(count, "polars");
+    assert!(polars_count.contains("aggregate_function=pl.element().drop_nulls().n_unique()"), "{polars_count}");
+    assert!(!polars_count.contains("\"len\""), "{polars_count}");
+    assert!(printed(count, "pyspark").contains("na.fill(0, subset=[\"Widget\", \"Gadget\"])"));
+    let dplyr_average = printed(average, "dplyr");
+    assert!(dplyr_average.contains("values_fn = \\(x) mean(x, na.rm = TRUE)"), "{dplyr_average}");
+    let dplyr_count = printed(count, "dplyr");
+    assert!(dplyr_count.contains("values_fn = \\(x) n_distinct(x, na.rm = TRUE), values_fill = 0"), "{dplyr_count}");
+}

@@ -291,6 +291,18 @@ impl Backend for Polars {
                     // cell", and over here that is a separate argument naming the
                     // function rather than an expression wrapping the column.
                     match aggregate_of(value) {
+                        // A cell of nothing but holes totals to missing, and a
+                        // distinct count skips them, as in `summarize`. Both
+                        // need an expression over the cell's values, which
+                        // `pivot` takes as `pl.element()`.
+                        Some(("sum", inner)) => {
+                            args.push(format!("values={}", column_text(&inner)));
+                            args.push("aggregate_function=pl.when(pl.element().count() > 0).then(pl.element().sum())".to_string());
+                        }
+                        Some(("n_unique", inner)) => {
+                            args.push(format!("values={}", column_text(&inner)));
+                            args.push("aggregate_function=pl.element().drop_nulls().n_unique()".to_string());
+                        }
                         Some((word, inner)) => {
                             args.push(format!("values={}", column_text(&inner)));
                             args.push(format!("aggregate_function=\"{word}\""));
@@ -508,7 +520,8 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         "standard_deviation" => "std",
         "first" => "first",
         "last" => "last",
-        "unique_count" => "len",
+        // Not `"len"`, which counts the cell's rows, a value seen twice twice.
+        "unique_count" => "n_unique",
         _ => return None,
     };
     Some((word, args[0].clone()))
@@ -751,8 +764,10 @@ fn call(fname: &str, args: &[Expr]) -> String {
     let arg = |i: usize| args.get(i).map(expr).unwrap_or_default();
     match fname {
         // polars skips the absent value in an aggregate, which is what the
-        // grammar's `total` means, so none of these needs an argument saying so.
-        "total" => format!("{}.sum()", arg(0)),
+        // grammar's `total` means. Its total of no values is 0, though, and the
+        // grammar's is missing, so the sum is asked for only where there is
+        // something to count.
+        "total" => format!("pl.when({0}.count() > 0).then({0}.sum())", arg(0)),
         "average" => format!("{}.mean()", arg(0)),
         "median" => format!("{}.median()", arg(0)),
         "smallest" => format!("{}.min()", arg(0)),
@@ -772,10 +787,20 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // an expression outright — `'Expr' object is not an instance of 'str'`.
         // Two functions in one library, opposite requirements, and neither
         // fails until it runs.
-        "join_rows" => format!("{}.drop_nulls().str.join({})", arg(0), expr(&args[1])),
+        //
+        // **Asked only where there is something to join**, for the reason
+        // `total` is: `str.join` of nothing is an empty text, and the query
+        // answers missing.
+        "join_rows" => format!(
+            "pl.when({0}.count() > 0).then({0}.drop_nulls().str.join({1}))",
+            arg(0),
+            expr(&args[1])
+        ),
         "first" => format!("{}.first()", arg(0)),
         "last" => format!("{}.last()", arg(0)),
-        "unique_count" => format!("{}.n_unique()", arg(0)),
+        // `n_unique` counts a missing value as one more, and a count of
+        // distinct values skips it on every engine the sentence runs on.
+        "unique_count" => format!("{}.drop_nulls().n_unique()", arg(0)),
         "row_count" => "pl.len()".to_string(),
         "first_present" => format!(
             "pl.coalesce([{}])",

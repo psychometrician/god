@@ -260,14 +260,32 @@ impl Backend for Dplyr {
                     // An aggregate in `value` is what answers "two rows want one
                     // cell", and over here that is a separate argument holding a
                     // separate function.
+                    //
+                    // **`values_fn` is the word's own spelling, as a function of
+                    // the cell's values.** A bare `mean` or `sum` there answers
+                    // NA for a cell holding one hole, where every aggregate the
+                    // grammar has skips it.
                     match aggregate_of(value) {
                         Some((fname, inner)) => {
+                            let cell = Expr::Column(Name {
+                                text: "x".to_string(),
+                                span: crate::plan::Span::new(0, 0),
+                            });
                             args.push(format!("values_from = {}", expr(&inner)));
-                            args.push(format!("values_fn = {fname}"));
+                            args.push(format!(
+                                "values_fn = \\(x) {}",
+                                call(fname, std::slice::from_ref(&cell))
+                            ));
                         }
                         None => args.push(format!("values_from = {}", expr(value))),
                     }
-                    if let Some(filler) = missing {
+                    // A count of nothing is 0, which is what the query answers
+                    // for a combination the table never had, so a distinct
+                    // count fills its empty cells with that rather than with
+                    // `missing`, which the query never needs it for.
+                    if matches!(aggregate_of(value), Some(("unique_count", _))) {
+                        args.push("values_fill = 0".to_string());
+                    } else if let Some(filler) = missing {
                         args.push(format!("values_fill = {}", expr(filler)));
                     }
                     format!("pivot_wider({})", args.join(", "))
@@ -371,7 +389,7 @@ fn glue_for(pattern: &Pattern) -> String {
 ///
 /// `value average([answer])` is one clause here and two arguments there, so the
 /// two halves have to come apart again to be written out.
-fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
+fn aggregate_of(value: &Expr) -> Option<(&str, Expr)> {
     let Expr::Call { name: fname, args, .. } = value else {
         return None;
     };
@@ -379,15 +397,8 @@ fn aggregate_of(value: &Expr) -> Option<(&'static str, Expr)> {
         return None;
     }
     let r = match fname.as_str() {
-        "total" => "sum",
-        "average" => "mean",
-        "median" => "median",
-        "smallest" => "min",
-        "largest" => "max",
-        "standard_deviation" => "sd",
-        "first" => "dplyr::first",
-        "last" => "dplyr::last",
-        "unique_count" => "dplyr::n_distinct",
+        "total" | "average" | "median" | "smallest" | "largest"
+        | "standard_deviation" | "first" | "last" | "unique_count" => fname.as_str(),
         _ => return None,
     };
     Some((r, args[0].clone()))
@@ -641,17 +652,23 @@ fn filtering_join(condition: &Expr) -> Option<(&Name, &[JoinKey], bool)> {
 fn call(fname: &str, args: &[Expr]) -> String {
     let arg = |i: usize| args.get(i).map(expr).unwrap_or_default();
     match fname {
-        "total" => format!("sum({}, na.rm = TRUE)", arg(0)),
+        // **Three answer something for nothing, and the grammar answers
+        // missing.** R's `sum` of no values is 0, and its `min` and `max` are
+        // `Inf` and `-Inf` with a warning, so each is asked only where there
+        // is a value. `mean` of nothing is `NaN`, which R already treats as
+        // missing; `median` and `sd` answer `NA` on their own.
+        "total" => format!("if (all(is.na({0}))) NA else sum({0}, na.rm = TRUE)", arg(0)),
         "average" => format!("mean({}, na.rm = TRUE)", arg(0)),
         "median" => format!("median({}, na.rm = TRUE)", arg(0)),
-        "smallest" => format!("min({}, na.rm = TRUE)", arg(0)),
-        "largest" => format!("max({}, na.rm = TRUE)", arg(0)),
+        "smallest" => format!("if (all(is.na({0}))) NA else min({0}, na.rm = TRUE)", arg(0)),
+        "largest" => format!("if (all(is.na({0}))) NA else max({0}, na.rm = TRUE)", arg(0)),
         // R's own `sd` is the sample deviation, which is what the grammar's
         // word means — measured against all five engines rather than assumed.
         "standard_deviation" => format!("sd({}, na.rm = TRUE)", arg(0)),
         "first" => format!("first({})", arg(0)),
         "last" => format!("last({})", arg(0)),
-        "unique_count" => format!("n_distinct({})", arg(0)),
+        // `n_distinct` counts `NA` as one more value unless told otherwise.
+        "unique_count" => format!("n_distinct({}, na.rm = TRUE)", arg(0)),
         "row_count" => "n()".to_string(),
         // dplyr borrowed SQL's word for this one, so the translation is the
         // term of art in both directions.
@@ -675,8 +692,10 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // values the way every other aggregate does, and `x[!is.na(x)]` is how
         // R says that. `str_c(collapse = )` would propagate instead, which is
         // the other word's rule and not this one's.
+        // Nothing to join answers missing, as `total` does: `paste` of no
+        // values is an empty text, which is a value.
         "join_rows" => format!(
-            "paste({0}[!is.na({0})], collapse = {1})",
+            "if (all(is.na({0}))) NA else paste({0}[!is.na({0})], collapse = {1})",
             arg(0),
             arg(1)
         ),

@@ -401,12 +401,23 @@ impl Backend for Pandas {
                     // makes.
                     let mut keys: Vec<String> = by.iter().map(|n| n.text.clone()).collect();
                     keys.extend(pieces.iter().map(|p| p.to_string()));
+                    // A total of no values is missing, as in `summarize`.
+                    let reduce = if how == "sum" {
+                        "sum(min_count=1)".to_string()
+                    } else {
+                        format!("agg({})", text(how))
+                    };
                     calls.push(format!(
-                        "groupby({}, dropna=False)[{held}].agg({})",
-                        strings(&keys),
-                        text(how)
+                        "groupby({}, dropna=False)[{held}].{reduce}",
+                        strings(&keys)
                     ));
-                    calls.push(format!("unstack({columns})"));
+                    // A count of nothing is 0, which is what the query answers
+                    // for a combination the table never had.
+                    if how == "nunique" {
+                        calls.push(format!("unstack({columns}, fill_value=0)"));
+                    } else {
+                        calls.push(format!("unstack({columns})"));
+                    }
                     if let Some(filler) = missing {
                         calls.push(format!("fillna({})", value_of(filler)));
                     }
@@ -539,9 +550,29 @@ fn aggregation(value: &Expr, by: &[Name]) -> (String, String) {
     // pandas has no `str.join` among the named aggregations, so this is the
     // lambda a pandas user would write, and `dropna` is what makes it skip the
     // absent values the way the grammar's word says.
+    //
+    // **And it answers missing when there is nothing to join**, as the query
+    // does: `str.join` of nothing is an empty text, which is a value.
     if fname == "join_rows" {
         let separator = args.get(1).map(value_of).unwrap_or_else(|| text(""));
-        return (column, format!("lambda s: {separator}.join(s.dropna())"));
+        return (
+            column,
+            format!("lambda s: {separator}.join(s.dropna()) if s.notna().any() else None"),
+        );
+    }
+    // **Three named aggregations are callables, and each says what a word
+    // says that pandas' own name does not.** `"sum"` totals nothing to 0, and
+    // a total of no values is missing, so `min_count=1` asks for one.
+    // `"first"` and `"last"` skip a missing value, and the grammar's words
+    // read the row, whatever it holds, the way every other target does.
+    let call = match fname.as_str() {
+        "total" => Some("lambda s: s.sum(min_count=1)"),
+        "first" => Some("lambda s: s.iloc[0]"),
+        "last" => Some("lambda s: s.iloc[-1]"),
+        _ => None,
+    };
+    if let Some(call) = call {
+        return (column, call.to_string());
     }
     let how = match fname.as_str() {
         "total" => "sum",
@@ -1097,7 +1128,14 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             (_, Some(Expr::Column(n))) => text(&n.text),
             _ => unreachable!("refused before rendering"),
         };
-        return format!("d.{groups}[{column}].transform({})", text(word));
+        // The same three corrections the named aggregations make.
+        let how = match fname {
+            "total" => format!("{}, min_count=1", text(word)),
+            "first" => "lambda s: s.iloc[0]".to_string(),
+            "last" => "lambda s: s.iloc[-1]".to_string(),
+            _ => text(word),
+        };
+        return format!("d.{groups}[{column}].transform({how})");
     }
     let plain = Over::default();
     let arg = |i: usize| args.get(i).map(|a| inner(a, plain)).unwrap_or_default();
@@ -1110,8 +1148,9 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
     };
     match fname {
         // pandas skips the absent value in an aggregate, which is what the
-        // grammar's `total` means, so none of these needs an argument saying so.
-        "total" => format!("{}.sum()", arg(0)),
+        // grammar's `total` means. `min_count=1` is the other half: a total of
+        // no values is missing, and pandas' own answer is 0.
+        "total" => format!("{}.sum(min_count=1)", arg(0)),
         "average" => format!("{}.mean()", arg(0)),
         "median" => format!("{}.median()", arg(0)),
         "smallest" => format!("{}.min()", arg(0)),
@@ -1137,7 +1176,11 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
         ),
         // The same idea off a group: the column's absent values dropped, the
         // rest run together.
-        "join_rows" => format!("{}.join({}.dropna())", inner(&args[1], plain), arg(0)),
+        "join_rows" => format!(
+            "({}.join({1}.dropna()) if {1}.notna().any() else None)",
+            inner(&args[1], plain),
+            arg(0)
+        ),
         "year" => format!("{}.dt.year", arg(0)),
         "month" => format!("{}.dt.month", arg(0)),
         "day" => format!("{}.dt.day", arg(0)),

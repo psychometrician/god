@@ -369,7 +369,7 @@ fn the_pipeline_reads_as_dplyr() {
         "sales |>\n\
          \x20 filter((region == \"West\")) |>\n\
          \x20 mutate(margin = (revenue - cost)) |>\n\
-         \x20 summarise(margin = sum(margin, na.rm = TRUE), orders = n(), .by = product) |>\n\
+         \x20 summarise(margin = if (all(is.na(margin))) NA else sum(margin, na.rm = TRUE), orders = n(), .by = product) |>\n\
          \x20 arrange(desc(margin)) |>\n\
          \x20 head(10)"
     );

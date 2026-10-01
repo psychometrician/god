@@ -6,6 +6,20 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A printed aggregate of nothing answers what the query answers
+
+A total of no values is missing, not zero, and the book shows it: a
+combination that was never sold reads as missing until `fill_missing` says it
+was zero. The printed pandas, polars and dplyr all totalled nothing to 0, and
+dplyr's `smallest` and `largest` of nothing were infinities. They now answer
+missing, and so does a `join_rows` of nothing in all four printers, where it
+was an empty text. polars and dplyr counted a missing value as one more
+distinct value in `unique_count`, and pandas' `first` and `last` skipped a hole
+where the grammar's words read the row whatever it holds. A `widen` cell gets
+the same answers, and a combination the table never had counts 0 distinct
+values there, as the query says. polars' `widen` with `unique_count` had been
+counting rows rather than distinct values.
+
 ### A printed condition keeps no row whose answer is unknown
 
 A comparison with a missing value is neither true nor false, and `keep` keeps

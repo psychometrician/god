@@ -350,6 +350,12 @@ impl Backend for PySpark {
                         "groupBy({}).{pivot}.agg({aggregate})",
                         groups.join(", ")
                     ));
+                    // **A count of nothing is 0**, which is what the query's
+                    // `count(DISTINCT ...)` answers for a combination the table
+                    // never had, and Spark's pivot leaves that cell null.
+                    if aggregate.starts_with("F.countDistinct(") && !made.is_empty() {
+                        calls.push(format!("na.fill(0, subset=[{}])", made.join(", ")));
+                    }
                     if let Some(filler) = missing {
                         calls.push(format!("na.fill({})", expr(filler)));
                     }
@@ -837,8 +843,14 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
     match fname {
         // Spark has no `string_agg`: the group is collected into an array and
         // the array is joined. `collect_list` already drops the absent values,
-        // which is this word's rule.
-        "join_rows" => format!("F.array_join(F.collect_list({}), {})", arg(0), arg(1)),
+        // which is this word's rule. An empty array joins to an empty text,
+        // and the query answers missing when there is nothing to join, so the
+        // join is asked for only where `count` finds a value.
+        "join_rows" => format!(
+            "F.when(F.count({0}) > 0, F.array_join(F.collect_list({0}), {1}))",
+            arg(0),
+            arg(1)
+        ),
         // Spark skips the absent value in an aggregate, which is what the
         // grammar's `total` means, so none of these needs an argument saying so.
         "total" => format!("F.sum({})", arg(0)),
