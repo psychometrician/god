@@ -9,6 +9,8 @@ title: "Missing values"
 patchy <- god_table("patchy")
 contacts <- god_table("contacts")
 sensors <- god_table("sensors")
+hourly <- god_table("hourly")
+logged <- god_table("logged")
 ```
 
 ```{python}
@@ -16,6 +18,8 @@ sensors <- god_table("sensors")
 patchy = god_table("patchy")
 contacts = god_table("contacts")
 sensors = god_table("sensors")
+hourly = god_table("hourly")
+logged = god_table("logged")
 ```
 
 What should a hole in the table mean for your answer? `drop_missing` drops
@@ -211,13 +215,18 @@ A reading taken hourly, where the sensor only reports when the value changes,
 leaves holes that are not really missing: the value is the last one you saw.
 `latest` fills a hole with the most recent value above it.
 
+The table is `hourly`, one sensor with holes where it did not report:
+
+```{r}
+#| echo: false
+hourly
+```
+
 ::: {.panel-tabset}
 
 ### run
 
 ```{r}
-hourly <- god_table("hourly")
-
 run('
   hourly
     then sort [taken_at]
@@ -234,8 +243,6 @@ hourly |> sort(taken_at) |> add(reading = latest(reading))
 ### Python
 
 ```{python}
-hourly = god_table("hourly")
-
 hourly >> sort(col.taken_at) >> add(reading = latest(col.reading))
 ```
 
@@ -250,14 +257,18 @@ second hole of a pair still open.
 Like every value that walks the rows, it needs a `sort` first, because "the
 last value" means nothing until something has said last in what order. And
 `by` restarts it for each group, so one group never borrows another's value.
+`logged` holds two sensors, each with holes of its own:
+
+```{r}
+#| echo: false
+logged
+```
 
 ::: {.panel-tabset}
 
 ### run
 
 ```{r}
-logged <- god_table("logged")
-
 run('
   logged
     then sort [sensor], [taken_at]
@@ -276,8 +287,6 @@ logged |>
 ### Python
 
 ```{python}
-logged = god_table("logged")
-
 (logged
   >> sort(col.sensor, col.taken_at)
   >> add(reading = latest(col.reading), by = col.sensor))

@@ -4,6 +4,20 @@ title: "Another table"
 
 {{< include ../_setup.qmd >}}
 
+```{r}
+#| include: false
+managers <- god_table("managers")
+overlap <- god_table("overlap")
+codes <- god_table("codes")
+```
+
+```{python}
+#| include: false
+managers = god_table("managers")
+overlap = god_table("overlap")
+codes = god_table("codes")
+```
+
 The sale knows its product, so who knows the maker? Another table does.
 `join` adds that table's columns to this one, matching rows by the columns
 that say which rows correspond. `products` holds a maker for each product
@@ -76,16 +90,20 @@ sales >> join(products) >> take(2)
 :::
 
 Often the two tables call the key different things. A table of sales names its
-region `region`, and a table of managers names the same thing `area`. Say both,
-with `is` between them, and this table's name comes first.
+region `region`, and `managers` names the same thing `area`:
+
+```{r}
+#| echo: false
+managers
+```
+
+Say both, with `is` between them, and this table's name comes first.
 
 ::: {.panel-tabset}
 
 ### run
 
 ```{r}
-managers <- god_table("managers")
-
 run('
   sales
     then join managers by [region] is [area]
@@ -106,8 +124,6 @@ sales |>
 ### Python
 
 ```{python}
-managers = god_table("managers")
-
 (sales
   >> join(managers, by = col.region == col.area)
   >> pick(col.region, col.manager, col.revenue)
@@ -206,6 +222,12 @@ sales |>
 
 A column on both tables that is not being matched on would arrive twice, so it
 is refused rather than quietly renamed to something you did not choose.
+`overlap` has a `revenue` column, and so does `sales`:
+
+```{r}
+#| echo: false
+overlap
+```
 
 ::: {.panel-tabset}
 
@@ -213,7 +235,6 @@ is refused rather than quietly renamed to something you did not choose.
 
 ```{r}
 #| error: true
-overlap <- god_table("overlap")
 sales |> join(overlap, by = product) |> collect()
 ```
 
@@ -221,8 +242,6 @@ sales |> join(overlap, by = product) |> collect()
 
 ```{python}
 #| classes: refusal
-overlap = god_table("overlap")
-
 try:
     collect(sales >> join(overlap, by = col.product))
 except GodError as refusal:
@@ -233,7 +252,13 @@ except GodError as refusal:
 
 Two more refusals guard the key itself. A join that could never match finds
 no partner for any row, and that looks like a fact about your data. The key
-must hold the same kind of thing in both tables:
+must hold the same kind of thing in both tables. In `codes`, `product` holds
+numbers:
+
+```{r}
+#| echo: false
+codes
+```
 
 ::: {.panel-tabset}
 
@@ -241,7 +266,6 @@ must hold the same kind of thing in both tables:
 
 ```{r}
 #| error: true
-codes <- god_table("codes")
 sales |> join(codes, by = product) |> collect()
 ```
 
@@ -249,8 +273,6 @@ sales |> join(codes, by = product) |> collect()
 
 ```{python}
 #| classes: refusal
-codes = god_table("codes")
-
 try:
     collect(sales >> join(codes, by = col.product))
 except GodError as refusal:

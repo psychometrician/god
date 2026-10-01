@@ -43,6 +43,13 @@ returns.style.hide(axis="index").format(
 
 :::
 
+The lookup table is `places`, which names the area for each code it knows:
+
+```{r}
+#| echo: false
+places
+```
+
 The question is this. For each area the lookup names, what did the average
 answer to each question look like, and which area scored highest on question
 one?

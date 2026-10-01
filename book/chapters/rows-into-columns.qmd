@@ -7,11 +7,13 @@ title: "Rows into columns"
 ```{r}
 #| include: false
 sparse <- god_table("sparse")
+twice <- god_table("twice")
 ```
 
 ```{python}
 #| include: false
 sparse = god_table("sparse")
+twice = god_table("twice")
 ```
 
 How do you get the wide table back, one row per student again? `widen` is the
@@ -99,14 +101,19 @@ This refusal arrives when the query runs rather than when the pipeline is
 checked. Whether two rows collide is a fact about the data, and the grammar
 reads column names rather than rows, so it cannot be known any earlier.
 
+In `twice`, `ann` has two marks for `q1`:
+
+```{r}
+#| echo: false
+twice
+```
+
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
 #| error: true
-twice <- god_table("twice")
-
 twice |> widen(name = question, value = mark, by = student) |> collect()
 ```
 
@@ -115,7 +122,6 @@ twice |> widen(name = question, value = mark, by = student) |> collect()
 ```{python}
 #| classes: refusal
 try:
-    twice = god_table("twice")
     collect(twice
       >> widen(name = col.question, value = col.mark, by = col.student))
 except GodError as refusal:

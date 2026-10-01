@@ -5,6 +5,18 @@ a person using god can see.
 
 ## Unreleased
 
+### Every table a chapter reasons from is shown on its page
+
+Moving the example tables into files left nine of them read and never
+printed. The chapter on missing values said `latest` fills a run of holes, in
+a table whose holes appeared nowhere on the page, and four refusal examples
+refused tables the reader could not see. `hourly`, `logged`, `restocks`,
+`twice`, `late`, `managers`, `overlap`, `codes` and `places` are each shown now,
+where the prose first needs them.
+
+The refusal examples no longer load their table inside the refusal, either. A
+table that could not be read used to stand where the refusal belonged.
+
 ### `god_table(..., text = "code")` keeps the column as text in Python too
 
 Python read a single name given to `text` one letter at a time, so

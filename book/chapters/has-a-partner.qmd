@@ -17,11 +17,13 @@ listed = god_table("listed")
 ```{r}
 #| include: false
 stocked <- god_table("stocked")
+restocks <- god_table("restocks")
 ```
 
 ```{python}
 #| include: false
 stocked = god_table("stocked")
+restocks = god_table("restocks")
 ```
 
 Which of your rows have a partner in the other table? Sometimes that is the
@@ -167,15 +169,18 @@ sales >> keep(matching(stocked))
 There is one thing `matching` guarantees that `join` cannot. If the other table
 has three rows for a product, a join gives you three rows back for each of
 yours. A question does not: a row either has a partner or it does not, and how
-many it has never reaches the answer.
+many it has never reaches the answer. In `restocks`, Widget has three rows:
+
+```{r}
+#| echo: false
+restocks
+```
 
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
-restocks <- god_table("restocks")
-
 sales |> keep(matching(restocks, by = product)) |> collect() |> nrow()
 sales |> join(restocks, by = product, unmatched = "none") |> collect() |> nrow()
 ```
@@ -183,8 +188,6 @@ sales |> join(restocks, by = product, unmatched = "none") |> collect() |> nrow()
 ### Python
 
 ```{python}
-restocks = god_table("restocks")
-
 print(len(collect(sales >> keep(matching(restocks, by = col.product)))))
 print(len(collect(
     sales >> join(restocks, by = col.product, unmatched = "none"))))

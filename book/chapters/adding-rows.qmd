@@ -7,11 +7,13 @@ title: "Adding rows"
 ```{r}
 #| include: false
 more <- god_table("more")
+late <- god_table("late")
 ```
 
 ```{python}
 #| include: false
 more = god_table("more")
+late = god_table("late")
 ```
 
 A late order arrives in a table of its own, so where do its rows go?
@@ -93,14 +95,19 @@ of thing on both sides. A column on one side only is refused rather than
 filled in with missing values, because a half-empty column that says nothing
 is how a mistake survives to the end of a pipeline.
 
+`late` has a `region` column and nothing else:
+
+```{r}
+#| echo: false
+late
+```
+
 ::: {.panel-tabset}
 
 ### R
 
 ```{r}
 #| error: true
-late <- god_table("late")
-
 sales |> add_rows(late) |> collect()
 ```
 
@@ -108,8 +115,6 @@ sales |> add_rows(late) |> collect()
 
 ```{python}
 #| classes: refusal
-late = god_table("late")
-
 try:
     collect(sales >> add_rows(late))
 except GodError as refusal:
