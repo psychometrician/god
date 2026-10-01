@@ -6,6 +6,14 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed dplyr makes no combination out of a missing value
+
+`add_combinations` crosses the values a column holds, and a missing value is
+not one of them, so it makes no combinations, and the rows that hold one are
+kept as they are. tidyr's `complete` crosses `NA` like any other value, so the
+dplyr that `show_as` printed made rows for a missing region or product. It now
+names each column's present values.
+
 ### A printed aggregate of nothing answers what the query answers
 
 A total of no values is missing, not zero, and the book shows it: a

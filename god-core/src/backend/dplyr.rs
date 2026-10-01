@@ -128,9 +128,19 @@ impl Backend for Dplyr {
                 // decoration: a frame left grouped changes what every later
                 // verb does, which is the class of bug the grammar's `by =`
                 // exists to make impossible.
+                // **Each column's present values, named rather than left to
+                // `complete`**, because `complete(region)` crosses `NA` as if it
+                // were a region. A missing value is not a category, so it makes
+                // no combinations; the rows that hold one are kept as they are,
+                // which `complete` does with its own values too.
                 Step::AddCombinations { names, by, .. } => {
-                    let crossed: Vec<String> =
-                        names.iter().map(|n| name(&n.text)).collect();
+                    let crossed: Vec<String> = names
+                        .iter()
+                        .map(|n| {
+                            let column = name(&n.text);
+                            format!("{column} = unique({column}[!is.na({column})])")
+                        })
+                        .collect();
                     let complete = format!("complete({})", crossed.join(", "));
                     if by.is_empty() {
                         complete

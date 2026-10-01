@@ -265,3 +265,18 @@ fn a_widened_cell_is_an_aggregate_like_any_other() {
     let dplyr_count = printed(count, "dplyr");
     assert!(dplyr_count.contains("values_fn = \\(x) n_distinct(x, na.rm = TRUE), values_fill = 0"), "{dplyr_count}");
 }
+
+/// **A missing value is not a category, so it makes no combinations.** The
+/// book says so of `add_combinations`, and tidyr's `complete` crosses `NA` as
+/// a value like any other, so printed dplyr names each column's present
+/// values. pandas and polars drop the holes from their grid already.
+#[test]
+fn a_hole_makes_no_combinations() {
+    let dplyr = printed("sales then add_combinations [region, product] by [ordered_on]", "dplyr");
+    assert!(
+        dplyr.contains("complete(region = unique(region[!is.na(region)]), product = unique(product[!is.na(product)]))"),
+        "{dplyr}"
+    );
+    assert!(printed("sales then add_combinations [region, product]", "pandas").contains(".dropna()"));
+    assert!(printed("sales then add_combinations [region, product]", "polars").contains(".drop_nulls()"));
+}
