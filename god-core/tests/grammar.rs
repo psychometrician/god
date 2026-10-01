@@ -375,6 +375,38 @@ fn the_pipeline_reads_as_dplyr() {
     );
 }
 
+/// **The order the query settles is said again in dplyr.** The query sorts by
+/// the columns that identify a row after a grouped `summarize`,
+/// `drop_duplicates`, `lengthen` and `widen ... by`, and dplyr keeps the order
+/// rows arrived in, so `summarise(.by = )` handed groups back in first-seen
+/// order and a `take` after it took a different group: `West` where the query
+/// took `East`. Found by the 2026-09-30 code review; the parity harness
+/// compared rows as a set until 2026-10-01 and could not see it.
+#[test]
+fn printed_dplyr_restates_the_order_the_query_settles() {
+    for (sentence, restated) in [
+        ("sales then summarize [n] as row_count() by [region] then take 1", "arrange(region)"),
+        ("sales then drop_duplicates", "arrange(region, product, revenue, cost, anything)"),
+        ("sales then lengthen [revenue, cost] as name [measure], value [amount]", "arrange(region, product, anything, measure, amount)"),
+        ("sales then widen name [product], value [revenue] by [region] giving [a, b] then take 1", "arrange(region)"),
+    ] {
+        let text = compile(sentence, &schema(), "dplyr").unwrap().text;
+        assert!(text.contains(restated), "{sentence}\nwanted {restated}\n{text}");
+    }
+    let then_sorted = compile(
+        "sales then summarize [n] as row_count() by [region] then sort [n]",
+        &schema(),
+        "dplyr",
+    )
+    .unwrap()
+    .text;
+    assert_eq!(
+        then_sorted.matches("arrange(").count(),
+        1,
+        "a sort straight after is the order, and one arrange says it:\n{then_sorted}"
+    );
+}
+
 #[test]
 fn a_column_name_r_cannot_write_bare_gets_backticks() {
     let schema = Schema::new([("order id", Type::Number)]);

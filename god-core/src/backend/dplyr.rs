@@ -377,6 +377,38 @@ impl Backend for Dplyr {
                     }
                 }
             };
+            // **The order the query settles, said again.** After a grouped
+            // `summarize`, `drop_duplicates`, `lengthen` and a `widen` with a
+            // `by`, the query sorts by the columns that identify a row, so the
+            // same sentence comes back in the same order everywhere. dplyr
+            // keeps the order the rows arrived in instead, so `.by` hands the
+            // groups back in the order each was first seen: a `take` after it
+            // took a different group from the query's. pandas and polars
+            // already restate it. Left out where a `sort` follows at once,
+            // because that `sort` is the order then.
+            let settled: Vec<String> = match step {
+                Step::Summarize { by, .. } | Step::Widen { by, .. } => {
+                    by.iter().map(|n| name(&n.text)).collect()
+                }
+                Step::DropDuplicates { .. } => entering
+                    .get(i)
+                    .map(|s| s.columns.iter().map(|(c, _)| name(c)).collect())
+                    .unwrap_or_default(),
+                Step::Lengthen { resolved: Some(shape), .. } => shape
+                    .keep
+                    .iter()
+                    .chain(shape.name_columns.iter())
+                    .chain(shape.value_columns.iter())
+                    .map(|c| name(c))
+                    .collect(),
+                _ => Vec::new(),
+            };
+            let sorted_next = matches!(plan.steps.get(i + 1), Some(Step::Sort { .. }));
+            let call = if settled.is_empty() || sorted_next {
+                call
+            } else {
+                format!("{call} |>\n  arrange({})", settled.join(", "))
+            };
             lines.push(format!("  {call}"));
         }
 

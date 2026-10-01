@@ -6,6 +6,16 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed dplyr restates the order the query settles
+
+After a grouped `summarize`, `drop_duplicates`, `lengthen` and a `widen` with a
+`by`, the query sorts by the columns that identify a row, so the same sentence
+answers in the same order everywhere. The dplyr that `show_as` printed kept
+the order rows arrived in instead, so `summarise(.by = region)` handed the
+groups back in the order each was first seen, and a `take` after it took
+`West` where the query took `East`. It now ends those steps with the
+`arrange` the query means, unless a `sort` follows at once.
+
 ### `rank` and `running_total` answer missing on a row whose value is missing
 
 A row with no value has no place among the others, and no total so far. The
