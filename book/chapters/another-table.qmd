@@ -71,6 +71,7 @@ make.
 run('
   sales
     then join products
+    then sort [revenue] descending
     then take 2
 ')
 ```
@@ -78,13 +79,13 @@ run('
 ### R
 
 ```{r}
-sales |> join(products) |> take(2)
+sales |> join(products) |> sort(descending(revenue)) |> take(2)
 ```
 
 ### Python
 
 ```{python}
-sales >> join(products) >> take(2)
+sales >> join(products) >> sort(descending(col.revenue)) >> take(2)
 ```
 
 :::
@@ -108,6 +109,7 @@ run('
   sales
     then join managers by [region] is [area]
     then pick [region, manager, revenue]
+    then sort [revenue] descending
     then take 3
 ')
 ```
@@ -118,6 +120,7 @@ run('
 sales |>
   join(managers, by = region == area) |>
   pick(region, manager, revenue) |>
+  sort(descending(revenue)) |>
   take(3)
 ```
 
@@ -127,6 +130,7 @@ sales |>
 (sales
   >> join(managers, by = col.region == col.area)
   >> pick(col.region, col.manager, col.revenue)
+  >> sort(descending(col.revenue))
   >> take(3))
 ```
 
@@ -219,6 +223,37 @@ sales |>
 ```
 
 :::
+
+The examples above sort before they take, and the sort is not decoration. A
+join hands its rows back in the order the engine matched them, and that order
+is not the same on every engine, or even in R and in Python on the same one.
+So `take` straight after a join is refused, because "the first three rows"
+would be a different three in each place:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |> join(managers, by = region == area) |> take(3) |> collect()
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales >> join(managers, by = col.region == col.area) >> take(3))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+A `sort` after the join settles it, and so does any step that sets an order
+of its own, such as `summarize`. `first`, `last` and `join_rows` read the rows
+in the order they are in, so they wait for the same `sort`.
 
 A column on both tables that is not being matched on would arrive twice, so it
 is refused rather than quietly renamed to something you did not choose.

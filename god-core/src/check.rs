@@ -214,6 +214,10 @@ pub fn check_tables(
     // "the first row of each group" means nothing until something has said first
     // by what, and neither does "which row is this".
     let mut ordered = false;
+    // Whether the rows are in the order a `join` matched them, which is the
+    // engine's and nobody else's. Only a step that sets an order of its own
+    // undoes it; a `keep` or a `pick` after a join carries the join's order on.
+    let mut matched = false;
 
     let last = plan.steps.len().saturating_sub(1);
     for (at, step) in resolved.steps.iter_mut().enumerate() {
@@ -274,7 +278,42 @@ pub fn check_tables(
                 ));
             }
         }
+        if matched {
+            if let Some((word, span)) = reads_rows_in_order(step) {
+                let (reads, instead) = match word {
+                    "take" => (
+                        "`take` gives the rows the pipeline reached first",
+                        "`then sort [revenue] descending then take 3`",
+                    ),
+                    "first(...)" => (
+                        "`first` reads the rows in the order they are in",
+                        "`then sort [when] then summarize [opening] as first([price]) by [stock]`",
+                    ),
+                    "last(...)" => (
+                        "`last` reads the rows in the order they are in",
+                        "`then sort [when] then summarize [closing] as last([price]) by [stock]`",
+                    ),
+                    _ => (
+                        "`join_rows` joins the values in the order the rows are in",
+                        "`then sort [name] then summarize [names] as join_rows([name], \", \") by [team]`",
+                    ),
+                };
+                return Err(Diagnostic::illegal(
+                    format!("{reads}, and a `join` hands its rows back in the order the engine matched them, which is not the same on every engine, or in R and in Python. Sort after the join, so the order is one you chose: {instead}"),
+                    span,
+                ));
+            }
+        }
         schema = check_step(step, &schema, others, &mut assumptions)?;
+        matched = match step {
+            Step::Join { .. } => true,
+            Step::Sort { .. }
+            | Step::Summarize { .. }
+            | Step::DropDuplicates { .. }
+            | Step::Lengthen { .. }
+            | Step::Widen { .. } => false,
+            _ => matched,
+        };
         ordered = match step {
             Step::Sort { .. } => true,
             // These impose an order of their own, or destroy the one there was.
@@ -612,6 +651,56 @@ fn window_needing_order(step: &Step) -> Option<(&'static str, Span)> {
                 found = needs;
             }
         });
+    }
+    found
+}
+
+/// The words that read the rows in the order they are already in, without
+/// asking for a sort: an ungrouped `take`, and `first`, `last` and
+/// `join_rows`.
+///
+/// That order is the table's own as it arrived, or one a step settled, and
+/// both are the same on every engine. **A `join` breaks that**: it hands its
+/// rows back in the order the engine matched them, which differs between
+/// engines and between R and Python on one engine. `take 3` after a join gave
+/// three different rows in the two languages, and `first` and `last` by a
+/// group traded values, from one sentence over one table.
+fn reads_rows_in_order(step: &Step) -> Option<(&'static str, Span)> {
+    let mut found: Option<(&'static str, Span)> = None;
+    let mut look = |e: &Expr| {
+        if found.is_some() {
+            return;
+        }
+        if let Expr::Call { name, span, .. } = e {
+            found = match name.as_str() {
+                "first" => Some(("first(...)", *span)),
+                "last" => Some(("last(...)", *span)),
+                "join_rows" => Some(("join_rows(...)", *span)),
+                _ => None,
+            };
+        }
+    };
+    match step {
+        // A grouped `take`, `take_last` and `with ties` already demand a sort
+        // of their own, so the plain `take` is the one left to ask about.
+        Step::Take { by, last: false, ties: false, span, .. } if by.is_empty() => {
+            return Some(("take", *span));
+        }
+        Step::Add { values, across, .. } | Step::Summarize { values, across, .. } => {
+            for Named { value, .. } in values {
+                value.walk(&mut look);
+            }
+            if let Some(across) = across {
+                across.value.walk(&mut look);
+            }
+        }
+        Step::Widen { value, missing, .. } => {
+            value.walk(&mut look);
+            if let Some(missing) = missing {
+                missing.walk(&mut look);
+            }
+        }
+        _ => {}
     }
     found
 }

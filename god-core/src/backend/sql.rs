@@ -926,6 +926,35 @@ impl Dialect {
                             .collect::<Vec<_>>()
                             .join(", ")
                     };
+                    // **Ties in the restored order are broken by the groups,
+                    // then by every other column**, which is the rule
+                    // `summarize` and `drop_duplicates` already follow. The
+                    // sort's keys alone left two rows that tie on them in
+                    // whatever order the window handed back, and that changed
+                    // between runs: `take 1 by [product]`, where Widget and
+                    // Doohickey both kept a 200, listed them either way round,
+                    // and one page's tabs disagreed. This orders what was kept;
+                    // which of two rows tied at a group's cut is kept is still
+                    // the engine's, as it is for `take` without `by`, and
+                    // `with ties` is the word that keeps both.
+                    let restored = |sorted: &[SortKey], absent: bool| {
+                        let mut names: Vec<String> =
+                            by.iter().map(|n| self.name(&n.text)).collect();
+                        for (column, _) in &entering[i].columns {
+                            let quoted = self.name(column);
+                            if !names.contains(&quoted)
+                                && !sorted.iter().any(|k| &k.column.text == column)
+                            {
+                                names.push(quoted);
+                            }
+                        }
+                        let keys = written(sorted, absent, false);
+                        if names.is_empty() {
+                            keys
+                        } else {
+                            format!("{keys}, {}", settled(&names))
+                        }
+                    };
                     if *ties {
                         // **`with ties` is one query shape for both the grouped
                         // and ungrouped cases**, because `LIMIT` cannot express
@@ -939,7 +968,7 @@ impl Dialect {
                         let (sorted, absent) = last_sort(plan, i)
                             .expect("ties are only reached after a sort");
                         let keys = written(sorted, absent, *last);
-                        let restore = written(sorted, absent, false);
+                        let restore = restored(sorted, absent);
                         let partition = if by.is_empty() {
                             String::new()
                         } else {
@@ -979,7 +1008,7 @@ impl Dialect {
                         // shape. The `ORDER BY` at the end is always the order
                         // the caller asked for.
                         let keys = written(sorted, absent, *last);
-                        let restore = written(sorted, absent, false);
+                        let restore = restored(sorted, absent);
                         let groups: Vec<String> = by.iter().map(|n| self.name(&n.text)).collect();
                         // **The order the sort established has to survive the
                         // window.** Filtering on the row number is a `WHERE`,

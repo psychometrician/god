@@ -201,7 +201,8 @@ pub const FUNCTIONS: &[Function] = &[
     // answer, the same trap `join_text` found there.
     //
     // **The order is the order the rows are in**, which is a `sort` away and
-    // the same promise `first` and `last` make.
+    // the same promise `first` and `last` make. After a `join` that order is
+    // the engine's, so the checker asks for the `sort` there (§4.4).
     Function { name: "join_rows", kind: Kind::Aggregate, arity: Arity::Exactly(2) },
 
     // The rank family, which dplyr spells six ways: `row_number`, `min_rank`,

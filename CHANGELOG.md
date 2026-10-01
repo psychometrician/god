@@ -6,6 +6,25 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Breaking: `take`, `first`, `last` and `join_rows` after a `join` ask for a `sort`
+
+A join hands its rows back in the order the engine matched them, and that
+order was different in R and in Python on the same engine. `take 3` after a
+join returned three different rows in the two languages, and `first` and
+`last` by a group traded values; the manual's own page on joins showed it.
+These four words read the rows in the order they are in, so after a join they
+are now refused until a `sort` says which rows come first, or until a step that
+sets an order of its own, such as `summarize`. The message gives the sort to
+write. A grouped `take` and `take_last` were already refused there.
+
+### A grouped `take` lists what it kept in the same order every time
+
+Groups whose kept rows tied on the sort's keys came back in an order that
+changed between runs, so `sort [revenue] descending then take 1 by [product]`
+listed two products that each kept a 200 either way round. Ties in that order
+are now broken by the groups, then by every other column, the rule `summarize`
+and `drop_duplicates` already follow. `with ties` does the same.
+
 ### A table named in parts can be the other table in a join
 
 `shop.orders then join shop.products by [product]` is a join the book says a

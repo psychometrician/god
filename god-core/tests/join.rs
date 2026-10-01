@@ -490,6 +490,78 @@ fn a_summarize_between_the_sort_and_the_take_unsettles_the_order() {
     assert!(message.contains("there is no first"), "{message}");
 }
 
+/// After a join, the words that read the rows in the order they are in wait
+/// for a sort.
+///
+/// **`take 3` after a join gave three different rows in R and in Python**, from
+/// one sentence over one table, and `first` and `last` by a group traded
+/// values. DuckDB matched an R data frame and a Python Arrow table in different
+/// orders, and Spark matches in an order of its own. A grouped `take` and
+/// `take_last` were already refused here; these four were not.
+#[test]
+fn reading_the_row_order_after_a_join_waits_for_a_sort() {
+    for (pipeline, said) in [
+        ("sales then join products by [id] then take 2", "`take` gives the rows the pipeline reached first"),
+        ("sales then join products by [id] then summarize [f] as first([revenue]) by [name]", "`first` reads the rows"),
+        ("sales then join products by [id] then summarize [l] as last([revenue]) by [name]", "`last` reads the rows"),
+        ("sales then join products by [id] then summarize [n] as join_rows([name], \", \")", "`join_rows` joins the values"),
+        // A step that keeps the order it was given keeps the join's.
+        ("sales then join products by [id] then keep where [revenue] > 0 then pick [id, name] then take 2", "`take` gives"),
+    ] {
+        let message = refusal(pipeline);
+        assert!(message.contains(said), "{pipeline}\n{message}");
+        assert!(message.contains("Sort after the join"), "the message says what to do: {message}");
+    }
+
+    // A sort settles it, and so does a step that sets an order of its own.
+    let conn = tables();
+    let (_, rows) = run(&conn, "sales then join products by [id] then sort [revenue] descending then take 2");
+    assert_eq!(rows.len(), 2);
+    let (_, rows) = run(&conn, "sales then join products by [id] then summarize [n] as row_count() by [name] then take 2");
+    assert_eq!(rows.len(), 2);
+}
+
+/// A grouped `take` lists what it kept in the same order every time.
+///
+/// **The sort's keys alone left a tie between groups in the window's order**,
+/// and that changed from run to run: two products that each kept a 200 came
+/// back either way round. Ties are broken by the groups, then by every other
+/// column, the rule `summarize` and `drop_duplicates` already follow.
+#[test]
+fn a_grouped_take_lists_tied_groups_in_a_settled_order() {
+    let conn = Connection::open_in_memory().unwrap();
+    conn.execute_batch(
+        "CREATE TABLE sales (id BIGINT, revenue DOUBLE);
+         INSERT INTO sales VALUES (3, 200), (1, 50), (2, 200), (1, 200), (3, 10), (2, 5);
+         CREATE TABLE products (id BIGINT, name VARCHAR);
+         CREATE TABLE more_sales (id BIGINT, revenue DOUBLE);
+         CREATE TABLE catalog (product_id BIGINT, label VARCHAR);",
+    )
+    .unwrap();
+    let pipeline = "sales then sort [revenue] descending then take 1 by [id]";
+    let first = run(&conn, pipeline).1;
+    let ids: Vec<&str> = first.iter().map(|r| r[0].as_str()).collect();
+    assert_eq!(ids, ["1", "2", "3"], "three groups tied at 200 come back in the groups' order");
+    for _ in 0..50 {
+        assert_eq!(run(&conn, pipeline).1, first, "the order changed between runs");
+    }
+
+    // And the query says so, in both dialects, for the plain and the tied take.
+    let left = schema_of(&conn, "sales");
+    for dialect in ["sql", "spark"] {
+        for (sentence, needle) in [
+            (pipeline, "ORDER BY \"revenue\" DESC NULLS LAST, \"id\" NULLS LAST"),
+            ("sales then sort [revenue] descending then take 1 with ties", "ORDER BY \"revenue\" DESC NULLS LAST, \"id\" NULLS LAST"),
+        ] {
+            let text = compile_tables(sentence, &left, &Tables::empty(), dialect)
+                .unwrap_or_else(|d| panic!("\n{}\n", d.render(sentence)))
+                .text;
+            let needle = if dialect == "spark" { needle.replace('"', "`") } else { needle.to_string() };
+            assert!(text.contains(&needle), "{dialect}: the restored order has no tiebreak:\n{text}");
+        }
+    }
+}
+
 #[test]
 fn naming_columns_on_drop_duplicates_teaches_both_alternatives() {
     let message = refusal("sales then drop_duplicates [id]");

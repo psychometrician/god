@@ -202,8 +202,8 @@ check("show_as prints nothing of its own", _out.getvalue(), "")
 products = pd.DataFrame({"product": ["Widget", "Gadget"], "maker": ["Acme", "Bolt"]})
 check(
     "show_as describes every table a join names",
-    god.show_as("sales then join products by [product] then take 3").strip(),
-    "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)",
+    god.show_as("sales then join products by [product] then sort [revenue] then take 3").strip(),
+    "sales |>\n  left_join(products, by = join_by(product)) |>\n  arrange(revenue) |>\n  head(3)",
 )
 
 print("\nwhat a pipeline does to the table, drawn")
@@ -578,6 +578,22 @@ check_error("a plan has no length", lambda: len(sales >> take(1)), "Pipeline")
 check_error("a plan cannot be subscripted",
             lambda: (sales >> take(1))["revenue"], "Pipeline")
 check_error("a plan does not iterate", lambda: list(sales >> take(1)), "Pipeline")
+
+print("\nafter a join, the rows are in the order the engine matched them")
+
+# The R suite's checks, on the same sentences: `take` after a join waits for a
+# sort, and a grouped `take` lists groups that tie on the sort in their order.
+_managers = pd.DataFrame({"area": ["West", "East"], "manager": ["Ada", "Grace"]})
+check_error("take after a join waits for a sort",
+            lambda: collect(sales >> god.join(_managers, by=col.region == col.area) >> take(2)),
+            "Sort after the join")
+check("and a sort after the join is enough",
+      len(collect(sales >> god.join(_managers, by=col.region == col.area)
+                  >> sort(descending(col.revenue)) >> take(2))), 2)
+_tied = pd.DataFrame({"id": [3, 1, 2, 1, 3, 2], "revenue": [200, 50, 200, 200, 10, 5]})
+check("tied groups come back in the groups' order",
+      list(collect(_tied >> sort(descending(col.revenue)) >> take(1, by=col.id))["id"]),
+      [1, 2, 3])
 
 print("\ndates, and looking along the rows")
 

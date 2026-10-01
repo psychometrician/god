@@ -187,8 +187,8 @@ products <- data.frame(
   stringsAsFactors = FALSE
 )
 check("show_as describes every table a join names",
-      show_as("sales then join products by [product] then take 3"),
-      "sales |>\n  left_join(products, by = join_by(product)) |>\n  head(3)")
+      show_as("sales then join products by [product] then sort [revenue] then take 3"),
+      "sales |>\n  left_join(products, by = join_by(product)) |>\n  arrange(revenue) |>\n  head(3)")
 
 cat("\nwhat a pipeline does to the table, drawn\n")
 
@@ -582,6 +582,28 @@ check_error("matching cannot be half of a bigger question",
 check_error("matching needs a table rather than a value",
             sales |> keep(matching("catalog")),
             "matching(products, by = id)")
+
+cat("\nafter a join, the rows are in the order the engine matched them\n")
+
+# **`take 3` after a join gave three different rows in R and in Python**, and
+# `first` and `last` traded values, because DuckDB matched an R data frame and
+# a Python frame in different orders. The words that read the order the rows
+# are in wait for a sort after a join. The Python suite asks the same sentences.
+managers_here <- data.frame(area = c("West", "East"), manager = c("Ada", "Grace"))
+refused <- tryCatch(
+  collect(sales |> join(managers_here, by = region == area) |> take(2)),
+  error = function(e) conditionMessage(e))
+check("take after a join waits for a sort",
+      grepl("Sort after the join", refused, fixed = TRUE), TRUE)
+check("and a sort after the join is enough",
+      nrow(collect(sales |> join(managers_here, by = region == area) |>
+                     sort(descending(revenue)) |> take(2))), 2L)
+
+# A grouped `take` lists what it kept in one order, ties broken by the groups,
+# where it used to list groups that tied on the sort in either order.
+tied <- data.frame(id = c(3, 1, 2, 1, 3, 2), revenue = c(200, 50, 200, 200, 10, 5))
+check("tied groups come back in the groups' order",
+      collect(tied |> sort(descending(revenue)) |> take(1, by = id))$id, c(1, 2, 3))
 
 cat("\ndates, and looking along the rows\n")
 

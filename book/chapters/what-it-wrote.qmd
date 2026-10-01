@@ -285,7 +285,7 @@ pipeline reads and stops, which is how a launcher knows what to describe
 before describing anything:
 
 ```
-$ god --needs 'sales then join products by [product] then take 3'
+$ god --needs 'sales then join products by [product] then sort [revenue] then take 3'
 sales
 products
 ```
