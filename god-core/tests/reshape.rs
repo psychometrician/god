@@ -309,6 +309,42 @@ fn a_value_that_giving_does_not_list_stops_the_query() {
     );
 }
 
+/// A missing name is refused for the reason an unlisted one is: a column is
+/// named by a value, a missing value names none, and the row would vanish
+/// without a word. Before 2026-10-01 it did, in both shapes: `PIVOT` ignores a
+/// null name and the declared shape's `FILTER`s never match one.
+#[test]
+fn a_row_with_no_name_stops_the_query() {
+    let conn = stacked();
+    conn.execute_batch("INSERT INTO marks VALUES ('bob', NULL, 7);")
+        .expect("a mark with no question");
+
+    for sentence in [
+        "marks then widen name [question], value [mark] by [student]",
+        "marks then widen name [question], value [mark] by [student] giving [q1, q2]",
+        "marks then widen name [question], value average([mark]) by [student] giving [q1, q2]",
+    ] {
+        let message = refusal(&conn, "marks", sentence);
+        assert!(
+            message.contains("a row has no `question`") && message.contains("drop_missing [question]"),
+            "the message does not say what happened or what to write: {message}"
+        );
+        assert!(!message.contains('—'), "a refusal the book prints has an em dash in it");
+    }
+
+    // Saying what to do about it is a step, and the row comes back named.
+    let (names, rows) = run(
+        &conn,
+        "marks",
+        "marks then fill_missing [question] as \"none\" then widen name [question], value [mark] by [student] giving [q1, q2, none]",
+    );
+    assert_eq!(names, ["student", "q1", "q2", "none"]);
+    assert_eq!(
+        rows,
+        vec![vec!["ann", "1", "2", "missing"], vec!["bob", "4", "missing", "7"]]
+    );
+}
+
 #[test]
 fn empty_cells_are_missing_unless_something_says_otherwise() {
     let conn = stacked();

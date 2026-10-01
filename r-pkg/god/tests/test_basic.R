@@ -232,7 +232,7 @@ products <- data.frame(
 )
 check("show_as describes every table a join names",
       show_as("sales then join products by [product] then sort [revenue] then take 3"),
-      "sales |>\n  left_join(products, by = join_by(product)) |>\n  arrange(revenue) |>\n  head(3)")
+      "sales |>\n  left_join(products, by = join_by(product), na_matches = \"never\") |>\n  arrange(revenue) |>\n  head(3)")
 
 cat("\nwhat a pipeline does to the table, drawn\n")
 
@@ -808,6 +808,20 @@ check_error("a step after a widen that declares nothing is refused",
 check_error("lengthen needs the columns that become rows",
             answers |> lengthen(),
             "lengthen(q1, q2, q3)")
+
+# A missing name names no column, so widening would lose the row without a
+# word; the engine refuses it as it refuses a name `giving` does not list.
+unnamed <- data.frame(student = c("ann", "ann", "bob"), question = c("q1", NA, "q1"),
+                      mark = c(1, 2, 3), stringsAsFactors = FALSE)
+check_error("a row with no name to widen under is refused, not dropped",
+            collect(unnamed |> widen(name = question, value = mark, by = student,
+                                     giving = c(q1))),
+            "a row has no `question`")
+check("and filling the hole first names the row",
+      collect(unnamed |> fill_missing(question = "none") |>
+                widen(name = question, value = mark, by = student,
+                      giving = c(q1, none)))$none,
+      c(2, NA))
 
 cat("\nthe rows at the far end\n")
 

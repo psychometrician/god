@@ -764,7 +764,7 @@ impl Dialect {
                             .join(" AND ")
                     };
 
-                    // **Both refusals are worked out once, before anything is
+                    // **The refusals are worked out once, before anything is
                     // pivoted, and they have to be.** A dialect's `PIVOT` takes
                     // exactly one aggregate, so a `CASE` that counts cannot sit
                     // inside it; and writing them per column would repeat a
@@ -774,6 +774,28 @@ impl Dialect {
                     // not refuse in one spelling and shrug in the other.
                     let cell: Vec<String> = groups.iter().chain(labelled.iter()).cloned().collect();
                     let mut guards = Vec::new();
+                    // **A missing name is refused the way an unlisted one is,
+                    // and for the same reason**: a column is named by a value,
+                    // a missing value names none, and the row would be dropped
+                    // without a word. `PIVOT` ignores it and the `FILTER`s below
+                    // never match it, so without this the row simply vanished.
+                    // Ruled 2026-10-01, spec §4.5.5.
+                    let unnamed: Vec<String> =
+                        labelled.iter().map(|c| format!("{c} IS NULL")).collect();
+                    let first = pattern.named_parts()[0].to_string();
+                    // No double quote in it, because Spark reads one as text
+                    // rather than a name and a guard holds the dialect to that.
+                    let fill = if giving.is_empty() {
+                        format!("fill it with `then fill_missing [{first}] as ...`")
+                    } else {
+                        format!("fill it with `then fill_missing [{first}] as ...` and add what fills it to `giving`")
+                    };
+                    guards.push(format!(
+                        "WHEN {} THEN {}({})",
+                        unnamed.join(" OR "),
+                        self.raise,
+                        self.text(&format!("a row has no `{first}`, and a missing value cannot name a column, so widening would drop that row without saying so. Drop it first with `then drop_missing [{first}]`, or {fill}"))
+                    ));
                     if !giving.is_empty() {
                         let known: Vec<String> = giving
                             .iter()

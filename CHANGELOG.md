@@ -6,6 +6,18 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### `widen` refuses a row with no name, rather than dropping it
+
+A column is named by a value, and a missing value names none, so a row whose
+name is missing has nowhere to go. `widen` dropped it in silence, with or
+without `giving`, which is the harm it already refused for a value `giving`
+does not list. It now refuses the same way, as the query runs, and says the
+two ways out: `drop_missing` the rows, or `fill_missing` the hole and list the
+filler in `giving`. `Rows into columns` shows it with the Sprocket sales,
+which have no maker after the join. The package suites' expected `show_as`
+text now carries the `na_matches = "never"` that printed dplyr joins gained
+above.
+
 ### Printed dplyr makes no combination out of a missing value
 
 `add_combinations` crosses the values a column holds, and a missing value is

@@ -303,3 +303,85 @@ sparse >> widen(name = col.question, value = col.mark, by = col.student,
 
 Say what it makes with `giving`, say what fills the holes with `missing`,
 and a sparse table widens with no surprise in it.
+
+## When a row has no name
+
+A column is named by a value, and a missing value names nothing. A row whose
+name is missing has nowhere to go. Dropping it would change the answer
+without a word, so the grammar refuses it, the way it refuses a value that
+`giving` does not list. This refusal also arrives when the query runs.
+
+`products` lists no maker for Sprocket, so after the join the Sprocket sales
+have no maker to go under:
+
+::: {.panel-tabset}
+
+### R
+
+```{r}
+#| error: true
+sales |>
+  join(products, by = product) |>
+  widen(name = maker, value = total(revenue), by = region,
+        giving = c(Acme, Globex, Initech)) |>
+  collect()
+```
+
+### Python
+
+```{python}
+#| classes: refusal
+try:
+    collect(sales
+      >> join(products, by = col.product)
+      >> widen(name = col.maker, value = total(col.revenue), by = col.region,
+               giving = [col.Acme, col.Globex, col.Initech]))
+except GodError as refusal:
+    print(refusal)
+```
+
+:::
+
+Nothing in the table says whether those sales belong to no maker or to one
+the table forgot. So the answer is a step you write. Fill the hole, and list
+what fills it in `giving`:
+
+::: {.panel-tabset}
+
+### run
+
+```{r}
+run('
+  sales
+    then join products by [product]
+    then fill_missing [maker] as "unlisted"
+    then widen name [maker], value total([revenue]) by [region] giving [Acme, Globex, Initech, unlisted]
+')
+```
+
+### R
+
+```{r}
+sales |>
+  join(products, by = product) |>
+  fill_missing(maker = "unlisted") |>
+  widen(name = maker, value = total(revenue), by = region,
+        giving = c(Acme, Globex, Initech, unlisted))
+```
+
+### Python
+
+```{python}
+(sales
+  >> join(products, by = col.product)
+  >> fill_missing(maker = "unlisted")
+  >> widen(name = col.maker, value = total(col.revenue), by = col.region,
+           giving = [col.Acme, col.Globex, col.Initech, col.unlisted]))
+```
+
+:::
+
+*`sales then join products by [product] then fill_missing [maker] as "unlisted" then widen name [maker], value total([revenue]) by [region] giving [Acme, Globex, Initech, unlisted]`*
+
+If the answer should leave those sales out, drop them first with
+`drop_missing [maker]`. Either way the sentence says what happens to them.

@@ -222,7 +222,7 @@ products = pd.DataFrame({"product": ["Widget", "Gadget"], "maker": ["Acme", "Bol
 check(
     "show_as describes every table a join names",
     god.show_as("sales then join products by [product] then sort [revenue] then take 3").strip(),
-    "sales |>\n  left_join(products, by = join_by(product)) |>\n  arrange(revenue) |>\n  head(3)",
+    "sales |>\n  left_join(products, by = join_by(product), na_matches = \"never\") |>\n  arrange(revenue) |>\n  head(3)",
 )
 
 print("\nwhat a pipeline does to the table, drawn")
@@ -769,6 +769,20 @@ check_error("a step after a widen that declares nothing is refused",
             "giving [q1, q2, q3]")
 check_error("lengthen needs the columns that become rows",
             lambda: lengthen(), "lengthen(col.q1")
+
+# A missing name names no column, so widening would lose the row without a
+# word; the engine refuses it as it refuses a name `giving` does not list.
+unnamed = pd.DataFrame({"student": ["ann", "ann", "bob"], "question": ["q1", None, "q1"],
+                        "mark": [1.0, 2.0, 3.0]})
+check_error("a row with no name to widen under is refused, not dropped",
+            lambda: collect(unnamed >> widen(name = col.question, value = col.mark,
+                                             by = col.student, giving = [col.q1])),
+            "a row has no `question`")
+filled = collect(unnamed >> fill_missing(question = "none")
+                 >> widen(name = col.question, value = col.mark, by = col.student,
+                          giving = [col.q1, col.none]))
+check("and filling the hole first names the row",
+      [None if pd.isna(v) else v for v in filled["none"]], [2.0, None])
 
 print("\nthe rows at the far end")
 
