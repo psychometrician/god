@@ -477,6 +477,34 @@ fn a_hole_has_no_running_total_and_no_place() {
     );
 }
 
+/// **An aggregate in `add` reads the sort above it and keeps its order.**
+/// `first`, `last` and `join_rows` read rows in order, and a window over a group
+/// read them in whatever order the engine partitioned them; and every aggregate
+/// in an `add` is a window, which reorders the rows, so the sort is said again
+/// after it the way it is after `running_total`. Found 2026-10-01 by a corpus
+/// sentence that came back in a different order in R and in Python.
+#[test]
+fn an_aggregate_in_add_reads_the_sort_and_keeps_it() {
+    let conn = diary();
+    conn.execute_batch("INSERT INTO diary VALUES ('b', '2026-01-03', 7), ('a', '2026-01-01', 5);")
+        .expect("two more rows, out of order, so the groups interleave once sorted");
+    let (_, rows) = run(
+        &conn,
+        "diary",
+        "diary then add [t] as to_text([x]) then sort [on_] then add [opening] as first([x]), [closing] as last([x]), [all] as join_rows([t], \"-\"), [share] as [x] / total([x]) by [g] then pick [on_, g, opening, closing, all]",
+    );
+    assert_eq!(
+        rows,
+        vec![
+            vec!["2026-01-01", "a", "5", "20", "5-10-20"],
+            vec!["2026-01-02", "a", "5", "20", "5-10-20"],
+            vec!["2026-01-03", "b", "7", "30", "7-30"],
+            vec!["2026-01-05", "a", "5", "20", "5-10-20"],
+            vec!["2026-01-06", "b", "7", "30", "7-30"],
+        ]
+    );
+}
+
 /// `by` restarts it, and the rows come back in the order the `sort` asked for.
 ///
 /// **That second half is the part worth asserting.** Computing a window groups

@@ -103,7 +103,9 @@ impl Backend for PySpark {
                             expr_over(&v.value, over.clone())
                         ));
                     }
-                    if values.iter().any(|v| v.value.windows()) {
+                    // An aggregate here is a window too, and reorders the rows
+                    // the same way, so the sort is said again after either.
+                    if values.iter().any(|v| v.value.windows() || v.value.aggregates()) {
                         if let Some((keys, absent)) = last_sort(plan, i) {
                             calls.push(sort_by(keys, absent));
                         }
@@ -841,13 +843,46 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
     // `orderBy` goes in it, because an ordered window would turn `sum` into a
     // running total, which is a different word in this grammar.
     if over.windowed && crate::vocabulary::is_aggregate(fname) {
-        let plain = call(fname, args, Over { windowed: false, ..over.clone() });
-        let spec = if over.partition.is_empty() {
+        let mut spec = if over.partition.is_empty() {
             "Window.partitionBy()".to_string()
         } else {
             let groups: Vec<String> = over.partition.iter().map(|n| text(&n.text)).collect();
             format!("Window.partitionBy({})", groups.join(", "))
         };
+        // **Except the three that read the rows in order**: `first`, `last`
+        // and `join_rows` are asked over the sort above them, across the whole
+        // group, as the query does. Without the frame an ordered window would
+        // make `last` the current row.
+        if matches!(fname, "first" | "last" | "join_rows") {
+            if let Some(keys) = over.order.filter(|k| !k.is_empty()) {
+                let written: Vec<String> =
+                    keys.iter().map(|k| sort_key(k, over.missing_first)).collect();
+                spec.push_str(&format!(
+                    ".orderBy({}).rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)",
+                    written.join(", ")
+                ));
+            }
+        }
+        // `join_rows` is two aggregates inside a function, and each takes the
+        // window itself: `F.array_join(...).over(...)` is refused, because
+        // `array_join` is not one.
+        if fname == "join_rows" {
+            let plain = Over { windowed: false, ..over.clone() };
+            let arg = |i: usize| args.get(i).map(|a| expr_over(a, plain.clone())).unwrap_or_default();
+            return format!(
+                "F.when(F.count({0}).over({spec}) > 0, F.array_join(F.collect_list({0}).over({spec}), {1}))",
+                arg(0),
+                arg(1)
+            );
+        }
+        // Spark refuses a distinct count over a window, and the set it can
+        // collect over one has the same size, which is what the query asks.
+        if fname == "unique_count" {
+            let plain = Over { windowed: false, ..over.clone() };
+            let arg = args.first().map(|a| expr_over(a, plain)).unwrap_or_default();
+            return format!("F.size(F.collect_set({arg}).over({spec}))");
+        }
+        let plain = call(fname, args, Over { windowed: false, ..over.clone() });
         return format!("{plain}.over({spec})");
     }
     let arg = |i: usize| args.get(i).map(|a| expr_over(a, over.clone())).unwrap_or_default();

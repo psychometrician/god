@@ -6,6 +6,19 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### An aggregate in `add` reads the sort above it, keeps its order, and runs on Spark
+
+An aggregate in `add ... by` is worked out over each group and handed to every
+row in it, which reorders the rows the way a window does, and the order a
+`sort` asked for was not said again afterwards, as it is after
+`running_total`. So `sort [when] then add [share] as [x] / total([x]) by [g]`
+came back grouped in whatever order the engine chose. `first`, `last` and
+`join_rows` there also ignored the sort and read the rows in the engine's
+order. Both are fixed in the query and in the printed PySpark. On Spark,
+`join_rows` in an `add` could not run at all, a distinct count there was
+refused, and a `join_rows` of nothing was an empty text where DuckDB answers
+missing; all three now run and agree.
+
 ### Python's `first_present` takes a value, as R's always has
 
 The last place `first_present` looks is often a value, which is how a hole is

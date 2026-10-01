@@ -190,8 +190,19 @@ pub struct Dialect {
     /// workaround. Both skip a missing value, which is the rule the grammar
     /// settled on — measured on live sessions rather than read.
     ///
-    /// `{value}` is the column and `{separator}` is the text between.
+    /// `{value}` is the column and `{separator}` is the text between. `{over}`
+    /// is where a window goes when `join_rows` stands in an `add`, after every
+    /// aggregate in the spelling, which on Spark is not the outside of it:
+    /// `array_join(...) OVER (...)` is refused there, because `array_join` is
+    /// not an aggregate. And Spark joins an empty list into an empty text, where
+    /// a join of nothing is missing on DuckDB and in the grammar, so its entry
+    /// asks `count` first. Both found 2026-10-01 on a live Spark 4.2 session.
     group_concat: &'static str,
+    /// A count of distinct values over a window, for `unique_count` in an
+    /// `add`. Spark refuses a distinct window function outright
+    /// (`DISTINCT_WINDOW_FUNCTION_UNSUPPORTED`), and the set of values it can
+    /// collect over one has the same size. `{value}` and `{over}` as above.
+    distinct_over: &'static str,
 }
 
 /// DuckDB, which is what `--as sql` has always meant.
@@ -204,7 +215,8 @@ const DUCKDB: Dialect = Dialect {
     dynamic_pivot: true,
     last_present: "last_value({} IGNORE NULLS)",
     rolling_median: "median({})",
-    group_concat: "string_agg({value}, {separator})",
+    group_concat: "string_agg({value}, {separator}){over}",
+    distinct_over: "count(DISTINCT {value}){over}",
 };
 
 /// The query that reads a CSV file into a table, for `god_table` in both
@@ -272,7 +284,8 @@ const SPARK: Dialect = Dialect {
     dynamic_pivot: false,
     last_present: "last_value({}, true)",
     rolling_median: "percentile({}, 0.5)",
-    group_concat: "array_join(collect_list({value}), {separator})",
+    group_concat: "CASE WHEN count({value}){over} > 0 THEN array_join(collect_list({value}){over}, {separator}) END",
+    distinct_over: "size(collect_set({value}){over})",
 };
 
 pub struct Sql;
@@ -406,7 +419,13 @@ impl Dialect {
                     // underneath is worth stating plainly: **wherever a step
                     // reorders rows to do its work, the order somebody asked
                     // for has to be restated afterwards.**
-                    let ordered = if values.iter().any(|v| v.value.windows()) {
+                    //
+                    // **An aggregate in `add` is a window too**, a total over the
+                    // group handed to every row of it, and it reorders the rows
+                    // the same way. It was left out of this rule until
+                    // 2026-10-01, so `sort [when] then add [share] as [x] /
+                    // total([x]) by [g]` came back grouped in the engine's order.
+                    let ordered = if values.iter().any(|v| v.value.windows() || v.value.aggregates()) {
                         last_sort(plan, i)
                             .map(|(keys, missing_first)| {
                                 let written: Vec<String> = keys
@@ -1456,13 +1475,49 @@ impl Dialect {
                 // to be said: `add [share] as [x] / total([x])` rendered a bare
                 // aggregate and the engine demanded a `GROUP BY` nobody wrote.
                 // Found by a cookbook recipe, which is what the book is for.
-                if over.partition.is_empty() {
-                    format!("{written} OVER ()")
-                } else {
+                let mut clauses = Vec::new();
+                if !over.partition.is_empty() {
                     let groups: Vec<String> =
                         over.partition.iter().map(|n| self.name(&n.text)).collect();
-                    format!("{written} OVER (PARTITION BY {})", groups.join(", "))
+                    clauses.push(format!("PARTITION BY {}", groups.join(", ")));
                 }
+                // **`first`, `last` and `join_rows` read the rows in order**, and
+                // a window over a group reads them in whatever order the engine
+                // partitioned them, so the sort above is said inside it, over the
+                // whole group. Without the frame, an `ORDER BY` would turn
+                // `last` into the current row and `join_rows` into a running
+                // join. Found 2026-10-01: the corpus's first `first(...) by`
+                // in an `add` came back in a different order in R and Python.
+                if matches!(fname.as_str(), "first" | "last" | "join_rows") {
+                    if let Some(keys) = over.order.filter(|k| !k.is_empty()) {
+                        let ordering: Vec<String> = keys
+                            .iter()
+                            .map(|k| {
+                                window_key(&self.name(&k.column.text), k.descending, over.missing_first)
+                            })
+                            .collect();
+                        clauses.push(format!(
+                            "ORDER BY {} ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING",
+                            ordering.join(", ")
+                        ));
+                    }
+                }
+                let over_clause = format!(" OVER ({})", clauses.join(" "));
+                let arg = |i: usize| args.get(i).map(|a| self.expr(a)).unwrap_or_default();
+                if fname == "join_rows" {
+                    return self
+                        .group_concat
+                        .replace("{value}", &arg(0))
+                        .replace("{separator}", &arg(1))
+                        .replace("{over}", &over_clause);
+                }
+                if fname == "unique_count" {
+                    return self
+                        .distinct_over
+                        .replace("{value}", &arg(0))
+                        .replace("{over}", &over_clause);
+                }
+                format!("{written}{over_clause}")
             }
 
             Expr::Window { kind, key, .. } => {
@@ -1672,7 +1727,8 @@ impl Dialect {
             "join_rows" => self
                 .group_concat
                 .replace("{value}", &arg(0))
-                .replace("{separator}", &arg(1)),
+                .replace("{separator}", &arg(1))
+                .replace("{over}", ""),
             other => unreachable!("`{other}` reached the SQL backend without a spelling"),
         }
     }

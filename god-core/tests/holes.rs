@@ -360,3 +360,24 @@ fn a_text_fallback_is_a_value_in_polars() {
     let text = printed("sales then add [label] as first_present([product], [region], \"none\")", "polars");
     assert!(text.contains("pl.coalesce([pl.col(\"product\"), pl.col(\"region\"), pl.lit(\"none\")])"), "{text}");
 }
+
+/// **Three aggregates in an `add` that Spark would not run.** `join_rows` was
+/// written `array_join(collect_list(...)) OVER (...)`, and `array_join` is not
+/// an aggregate, so Spark refused it; a distinct count over a window is refused
+/// outright; and a join of nothing was an empty text where DuckDB answers
+/// missing. Measured on a live Spark 4.2 session, 2026-10-01.
+#[test]
+fn spark_runs_every_aggregate_in_an_add() {
+    let sentence = "sales then sort [ordered_on] then add [sold] as join_rows([product], \", \"), [kinds] as unique_count([product]) by [region]";
+    let spark = printed(sentence, "spark");
+    assert!(spark.contains("array_join(collect_list(`product`) OVER (PARTITION BY `region` ORDER BY"), "{spark}");
+    assert!(spark.contains("size(collect_set(`product`) OVER (PARTITION BY `region`))"), "{spark}");
+    let nothing = printed("sales then summarize [j] as join_rows([product], \", \")", "spark");
+    assert!(nothing.contains("CASE WHEN count(`product`) > 0 THEN array_join(collect_list(`product`), ', ') END"), "{nothing}");
+    let duckdb = printed(sentence, "sql");
+    assert!(duckdb.contains("count(DISTINCT \"product\") OVER (PARTITION BY \"region\")"), "{duckdb}");
+
+    let pyspark = printed(sentence, "pyspark");
+    assert!(pyspark.contains("F.array_join(F.collect_list(F.col(\"product\")).over("), "{pyspark}");
+    assert!(pyspark.contains("F.size(F.collect_set(F.col(\"product\")).over(Window.partitionBy(\"region\")))"), "{pyspark}");
+}
