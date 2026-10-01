@@ -350,3 +350,13 @@ fn a_tie_counts_the_holes_where_the_sort_put_them() {
     assert!(printed(holes_first, "dplyr").contains("slice_min(order_by = tibble(!is.na(revenue), revenue),"));
     assert!(printed(far_end, "dplyr").contains("slice_max(order_by = tibble(is.na(revenue), revenue),"));
 }
+
+/// **The text a hole is filled with is a value, not a column**, and polars'
+/// `coalesce` reads a bare piece of text in its list as a column name, so
+/// `first_present([product], "none")` failed looking for a column called
+/// `none`. `fill_null` reads it as a value already. Found by the same probes.
+#[test]
+fn a_text_fallback_is_a_value_in_polars() {
+    let text = printed("sales then add [label] as first_present([product], [region], \"none\")", "polars");
+    assert!(text.contains("pl.coalesce([pl.col(\"product\"), pl.col(\"region\"), pl.lit(\"none\")])"), "{text}");
+}

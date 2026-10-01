@@ -6,6 +6,13 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed polars reads `first_present`'s text fallback as text
+
+`first_present([product], "none")` printed as `pl.coalesce([..., "none"])`, and
+polars reads a bare piece of text in that list as a column name, so the
+printed code failed looking for a column called `none`. It is `pl.lit("none")`
+now.
+
 ### Printed dplyr restates the order the query settles
 
 After a grouped `summarize`, `drop_duplicates`, `lengthen` and a `widen` with a

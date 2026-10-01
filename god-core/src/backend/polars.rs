@@ -813,9 +813,14 @@ fn call(fname: &str, args: &[Expr]) -> String {
         // distinct values skips it on every engine the sentence runs on.
         "unique_count" => format!("{}.drop_nulls().n_unique()", arg(0)),
         "row_count" => "pl.len()".to_string(),
+        // **`literal`, for the reason `join_text` below gives**: `pl.coalesce`
+        // reads a bare piece of text in its list as a column name, so
+        // `first_present([product], "none")` looked for a column called
+        // `none`. Found 2026-10-01 by a probe sentence; nothing in the corpus
+        // ended on a text fallback.
         "first_present" => format!(
             "pl.coalesce([{}])",
-            args.iter().map(expr).collect::<Vec<_>>().join(", ")
+            args.iter().map(literal).collect::<Vec<_>>().join(", ")
         ),
         // `concat_str` leaves nulls alone by default, which is the rule the
         // grammar settled on, so nothing has to be said to get it.
