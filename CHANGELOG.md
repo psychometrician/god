@@ -6,6 +6,14 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Python's `first_present` takes a value, as R's always has
+
+The last place `first_present` looks is often a value, which is how a hole is
+filled inside a sentence: `first_present(col.last, "")`, as `join_text`'s own
+help suggests. Python read every argument as a column's name, so `"none"`
+became a column called `none`, a `0` was refused, and the same sentence meant
+different things in R and in Python. It takes values now, as R does.
+
 ### Printed polars reads `first_present`'s text fallback as text
 
 `first_present([product], "none")` printed as `pl.coalesce([..., "none"])`, and

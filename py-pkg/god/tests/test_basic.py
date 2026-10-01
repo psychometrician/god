@@ -516,6 +516,16 @@ check("a zero is present, and only missing is skipped",
       list(collect(pd.DataFrame({"a": [0.0, None], "b": [5.0, 5.0]})
                    >> add(best = first_present(col.a, col.b)))["best"]),
       [0.0, 5.0])
+# The last place to look is often a value, which is how a hole is filled
+# inside a sentence. Python read every argument as a column name, so `"none"`
+# became the column `[none]` and `0` was refused, where R built the value.
+check("a value can be the last place to look, written as a value",
+      (patchy_three >> add(best = first_present(col.a, 0))).written().splitlines()[-1].strip(),
+      "then add [best] as first_present([a], 0)")
+check("and text is text rather than a column's name",
+      list(collect(pd.DataFrame({"who": ["ann", None]})
+                   >> add(said = first_present(col.who, "nobody")))["said"]),
+      ["ann", "nobody"])
 
 check_error("one column is not a choice",
             lambda: collect(patchy_three >> add(best = first_present(col.a))),

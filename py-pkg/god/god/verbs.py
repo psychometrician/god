@@ -1273,10 +1273,12 @@ def _column_or_word(column, verb: str) -> str:
 
 
 def first_present(*columns):
-    """The first of these columns that has a value, reading left to right.
+    """The first of these that has a value, reading left to right.
 
     `add(contact = first_present(col.mobile, col.landline, col.email))` takes the
-    mobile where there is one, otherwise the landline, otherwise the email.
+    mobile where there is one, otherwise the landline, otherwise the email. The
+    last may be a value rather than a column, which is how a hole is filled
+    inside a sentence: `first_present(col.mobile, "none")`.
 
     The order matters: these are places to look, in priority order, not a set.
     And the only thing it skips is a missing value, so a `0`, an empty text and a
@@ -1302,7 +1304,11 @@ def first_present(*columns):
             "`first_present` looks in at least two columns: "
             "first_present(col.mobile, col.landline)"
         )
-    written = ", ".join(f"[{name_of(c, 'first_present')}]" for c in columns)
+    # **Each is a value, not only a column**, which is what the grammar's word
+    # takes and what R's half has always built: the last place to look is often
+    # what a hole is filled with, `first_present(col.last, "")`. Reading every
+    # argument as a column name made that `[]`, and `"none"` the column `[none]`.
+    written = ", ".join(_written(c, "first_present") for c in columns)
     return Expr(f"first_present({written})")
 
 

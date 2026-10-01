@@ -534,6 +534,12 @@ check("order is priority, so swapping the arguments changes the answer",
 check("a zero is present, and only missing is skipped",
       collect(data.frame(a = c(0, NA), b = c(5, 5)) |> add(best = first_present(a, b)))$best,
       c(0, 5))
+check("a value can be the last place to look, written as a value",
+      trimws(tail(strsplit(format(patchy_three |> add(best = first_present(a, 0))), "\n")[[1]], 1)),
+      "then add [best] as first_present([a], 0)")
+check("and text is text rather than a column's name",
+      collect(data.frame(who = c("ann", NA)) |> add(said = first_present(who, "nobody")))$said,
+      c("ann", "nobody"))
 check("all missing leaves it missing",
       is.na(collect(data.frame(a = NA_real_, b = NA_real_) |> add(best = first_present(a, b)))$best),
       TRUE)
