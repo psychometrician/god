@@ -643,10 +643,10 @@ check_error("a window that is not told an order needs a sort",
 
 cat("\nconverting, text, and between\n")
 
-# `n` is written as whole numbers on purpose. R's `c(7, 99)` is a double, so
-# `to_text` would give "7.0" rather than "7", which is correct and would make the
-# character counts below say something about the fixture rather than about the
-# functions. The Python suite's fixture is integer for the same reason.
+# `n` is written as `7L`, a habit from when R's `c(7, 99)`, a double, gave "7.0"
+# where Python gave "7". A whole number is written whole now, however it is
+# stored; the check after "a conversion says what it gives" holds to that with
+# doubles.
 messy <- data.frame(raw = c("  ann marie  ", "  bob  "), n = c(7L, 99L),
                     stringsAsFactors = FALSE)
 
@@ -669,6 +669,15 @@ check("and nothing is between the ends when they exclude everything",
 check("a conversion says what it gives",
       collect(messy |> add(word = to_text(n)) |> add(len = characters(word)))$len,
       c(1, 2))
+# **The same with doubles, which is what R holds a number as.** The grammar has
+# one `number` kind, and this answered "7.0" and a count of 3 in R while Python
+# answered "7" and 1, because the storage decided.
+local({
+  as_text <- collect(data.frame(n = c(7, 99)) |> add(word = to_text(n)) |>
+                       add(len = characters(word)))
+  check("and a whole number is written whole when R holds it as a double",
+        paste(as_text$word, as_text$len), c("7 1", "99 2"))
+})
 
 check_error("a text function refuses a number and names the conversion",
             collect(messy |> add(x = trim(n))), "to_text(...)")

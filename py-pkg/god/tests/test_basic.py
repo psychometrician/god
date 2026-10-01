@@ -655,6 +655,13 @@ check("a conversion says what it gives",
       [int(n) for n in collect(messy >> add(word = to_text(col.n))
                                      >> add(size = characters(col.word)))["size"]],
       [1, 2])
+# The same with floats, which is how R holds every number: the storage used to
+# decide, and a float 7.0 answered "7.0" where an integer answered "7".
+_as_text = collect(pd.DataFrame({"n": [7.0, 99.0]}) >> add(word = to_text(col.n))
+                   >> add(size = characters(col.word)))
+check("and a whole number is written whole when it is held as a float",
+      (list(_as_text["word"]), [int(n) for n in _as_text["size"]]),
+      (["7", "99"], [1, 2]))
 
 check_error("a text function refuses a number and names the conversion",
             lambda: collect(messy >> add(x = trim(col.n))), "to_text(...)")

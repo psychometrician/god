@@ -1884,6 +1884,14 @@ fn duplicate_names(values: &[Named]) -> Result<(), Diagnostic> {
     Ok(())
 }
 
+/// What an expression holds, read over the columns a step receives. The SQL
+/// writer asks this of `to_text`'s argument, because a number is written as
+/// text differently from anything else; the checker remains the one place that
+/// knows.
+pub(crate) fn type_of(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
+    check_expr(expr, schema)
+}
+
 fn check_expr(expr: &Expr, schema: &Schema) -> Result<Type, Diagnostic> {
     match expr {
         Expr::Column(name) => known(name, schema),

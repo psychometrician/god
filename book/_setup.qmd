@@ -75,8 +75,9 @@ invisible(capture.output(
 #
 # **It does not make the two readers agree about every column.** Each language
 # reads the file with its own reader, so a whole-number column with holes
-# arrives as integers in R and as decimals in Python, and a sentence that turns
-# one into text can still answer differently.
+# arrives as integers in R and as decimals in Python. The grammar has one
+# `number` kind, so the answers agree all the same: `to_text` writes a whole
+# number whole however it is stored.
 #
 # **The cast is declared in the preface, and its shapes are load-bearing for
 # chapters, so change a CSV here only with the blast radius in mind: every

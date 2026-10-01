@@ -6,6 +6,14 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### `to_text` writes a whole number whole, whatever a language stored it as
+
+The grammar has one kind of number, but `to_text` let the storage decide. R
+holds 7 as a double and Python as an integer, so `to_text([n])` answered
+`"7.0"` in R and `"7"` in Python, and `characters` of it counted 3 against 1.
+A whole number is now written whole however it is stored. A fraction keeps its
+point, and text that only looks like a number is left exactly as it was.
+
 ### Breaking: `take`, `first`, `last` and `join_rows` after a `join` ask for a `sort`
 
 A join hands its rows back in the order the engine matched them, and that

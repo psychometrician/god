@@ -943,3 +943,37 @@ fn look_up_reads_numbers_too() {
     );
     assert_eq!(rows, vec![vec!["one"], vec!["two"], vec!["many"]]);
 }
+
+/// **A whole number is written as text whole, however the host stored it.**
+/// The grammar has one `number` kind, and a bare cast let the storage decide:
+/// R's double 7 answered "7.0" where Python's integer answered "7", and
+/// `characters` then counted 3 against 1, from one sentence. Run over the
+/// three storages a host hands DuckDB for a number.
+#[test]
+fn to_text_writes_a_whole_number_whole_whatever_it_is_stored_as() {
+    for kind in ["DOUBLE", "BIGINT", "INTEGER"] {
+        let conn = Connection::open_in_memory().expect("an in-memory database");
+        conn.execute_batch(&format!(
+            "CREATE TABLE t (n {kind}); INSERT INTO t VALUES (7), (99), (NULL);"
+        ))
+        .expect("the fixture table");
+        let (_, rows) = run(
+            &conn,
+            "t",
+            "t then add [word] as to_text([n]), [digits] as characters(to_text([n])) then pick [word, digits]",
+        );
+        assert_eq!(
+            rows,
+            vec![vec!["7", "1"], vec!["99", "2"], vec!["missing", "missing"]],
+            "stored as {kind}"
+        );
+    }
+
+    // A fraction keeps its point, and text that only looks like a number is
+    // left exactly as it was: the rule is for numbers, and only numbers.
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch("CREATE TABLE t (n DOUBLE, s VARCHAR); INSERT INTO t VALUES (3.5, '1.0');")
+        .expect("the fixture table");
+    let (_, rows) = run(&conn, "t", "t then add [a] as to_text([n]), [b] as to_text([s]) then pick [a, b]");
+    assert_eq!(rows, vec![vec!["3.5", "1.0"]]);
+}

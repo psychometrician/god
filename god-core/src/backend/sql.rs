@@ -36,11 +36,27 @@
 //! the whole argument for `parity/spark.py` running the corpus on two engines and
 //! comparing tables, rather than a test asserting on the SQL.
 
+use std::cell::RefCell;
+
 use super::Backend;
-use crate::check::Schema;
+use crate::check::{type_of, Schema, Type};
 use crate::diagnostic::Diagnostic;
 use crate::plan::*;
 use crate::vocabulary;
+
+thread_local! {
+    /// The columns the step being written receives, kept for the one function
+    /// whose spelling depends on what its argument holds: `to_text` of a
+    /// number. Set at the top of each step and cleared when the query is done,
+    /// so nothing outside one `render` call can see it.
+    ///
+    /// **A slot rather than a parameter, and that is a measured trade.** The
+    /// only other way to reach a call's argument with its type is to thread a
+    /// schema through every expression writer, which is some forty call sites
+    /// for one function, and every one of them a place to pass the wrong
+    /// schema.
+    static ENTERING: RefCell<Option<Schema>> = const { RefCell::new(None) };
+}
 
 /// The name the row number is parked under while a grouped `take` uses it.
 ///
@@ -274,6 +290,7 @@ impl Dialect {
 
         for (i, step) in plan.steps.iter().enumerate() {
             let from = format!("step{i}");
+            ENTERING.with(|slot| *slot.borrow_mut() = entering.get(i).cloned());
             let body = match step {
                 Step::Keep { condition, .. } => {
                     format!(
@@ -1029,6 +1046,7 @@ impl Dialect {
             };
             parts.push(format!("step{} AS ({body})", i + 1));
         }
+        ENTERING.with(|slot| *slot.borrow_mut() = None);
 
         format!(
             "WITH {}\nSELECT * FROM step{}",
@@ -1548,7 +1566,30 @@ impl Dialect {
             // answer 1. Spark has `pmod` and DuckDB does not, so the wrap is
             // used for both rather than keeping a dialect entry for one word.
             "remainder" => format!("((({a}) % ({b})) + ({b})) % ({b})", a = arg(0), b = arg(1)),
-            "to_text" => format!("CAST({} AS STRING)", arg(0)),
+            // **A whole number is written whole, however the host stored it.**
+            // The grammar has one `number` kind, and a bare cast let storage
+            // decide: R holds 7 as a double and Python as an integer, so the
+            // same sentence answered "7.0" in one language and "7" in the
+            // other, and `characters` then counted 3 against 1. `floor` rather
+            // than `trunc`, because Spark's `trunc` is a date function; the
+            // bound keeps the cast to a whole number exact. Anything that is
+            // not a number is cast as it always was.
+            "to_text" => {
+                let number = ENTERING.with(|slot| {
+                    slot.borrow().as_ref().is_some_and(|schema| {
+                        args.first()
+                            .is_some_and(|a| matches!(type_of(a, schema), Ok(Type::Number)))
+                    })
+                });
+                if number {
+                    format!(
+                        "CASE WHEN {x} = floor({x}) AND abs({x}) < 1e15 THEN CAST(CAST({x} AS BIGINT) AS STRING) ELSE CAST({x} AS STRING) END",
+                        x = arg(0)
+                    )
+                } else {
+                    format!("CAST({} AS STRING)", arg(0))
+                }
+            }
             "to_date" => format!("CAST({} AS DATE)", arg(0)),
             "trim" => format!("trim({})", arg(0)),
             "characters" => format!("length({})", arg(0)),
