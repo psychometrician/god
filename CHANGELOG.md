@@ -6,6 +6,21 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A column's name reaches the engine whole, and two it cannot use are refused
+
+The bindings describe a table to the engine as a list built from `,`, `=` and
+`:`, and the engine trimmed the spaces around each name. So a column called
+`price (USD, net)` was cut in two at its comma, and one called ` revenue`,
+which a header written `id, revenue` produces, lost its space: a sentence
+naming `revenue` passed the check and then failed in the engine. Both
+languages now send those characters, `%` and every space as `%XX`, and
+`--columns` decodes them, so a name arrives as it is. A table with two columns
+of one name, or a column with no name, is refused before the pipeline is
+checked, because a sentence naming it could not say which. And when the
+nearest name to a misspelling is one a `[ ]` cannot hold, because it begins or
+ends with a space or holds a comma or a bracket, the message says to rename it
+in R or Python first.
+
 ### A table in a dotted R variable works, written with an underscore
 
 To the grammar a dot joins the parts of a catalog name, as in `shop.orders`,

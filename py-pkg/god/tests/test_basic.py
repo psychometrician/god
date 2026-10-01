@@ -115,6 +115,25 @@ check(
     [90],
 )
 
+# **A column's name reaches the engine whole**, the R suite's checks on the same
+# names. A header written `id, revenue` gives pandas a column called
+# ` revenue`; it was described as `revenue`, passed the check, and then failed
+# in the engine, a sentence that checked and did not run.
+odd = pd.DataFrame({" revenue": [10, 20], "price (USD, net)": [5, 7],
+                    "a=b": [1, 0], "x:y": [3, 4]})
+check("a table whose names hold , = : and a leading space is described",
+      len(god.collect(odd >> god.take(2))), 2)
+check("and names holding = and : can be named",
+      (len(god.collect(odd >> god.keep(god.col["a=b"] == 1))),
+       len(god.collect(odd >> god.keep(god.col["x:y"] > 3)))),
+      (1, 1))
+check_error("a name the sentence would trim is refused at the check",
+            lambda: god.collect(odd >> god.keep(god.col.revenue > 15)),
+            "rename the column in R or Python")
+check_error("two columns with one name are refused",
+            lambda: god.collect(pd.DataFrame([[1, 2]], columns=["x", "x"]) >> god.take(1)),
+            "two columns called `x`")
+
 print("\npandas' own types reach the grammar")
 
 typed = pd.DataFrame(

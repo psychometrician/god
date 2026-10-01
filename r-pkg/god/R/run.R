@@ -456,7 +456,21 @@ god_source_dir <- function() {
 # it has no opinion about passes every test rather than failing them.
 columns_of <- function(table) {
   kinds <- vapply(table, god_type, character(1))
-  paste(sprintf("%s:%s", names(table), kinds), collapse = ",")
+  paste(sprintf("%s:%s", god_column_name(names(table)), kinds), collapse = ",")
+}
+
+# A column's name as `--columns` carries it, whole. The list is built from `,`,
+# `=` and `:`, and the engine trims the spaces a person types around them, so
+# those characters, `%` itself and every space are written as `%XX`, which the
+# engine decodes after trimming. Without it `price (USD, net)` was cut at its
+# comma, and a column called ` revenue` lost its space and was checked as one
+# called `revenue`. Python's half writes the same.
+god_column_name <- function(name) {
+  for (swap in list(c("%", "%25"), c(",", "%2C"), c("=", "%3D"), c(":", "%3A"),
+                    c(" ", "%20"), c("\t", "%09"), c("\n", "%0A"), c("\r", "%0D"))) {
+    name <- gsub(swap[[1L]], swap[[2L]], name, fixed = TRUE)
+  }
+  name
 }
 
 god_type <- function(column) {

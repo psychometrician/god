@@ -556,10 +556,30 @@ def _columns_of(frame) -> str:
     """
     pairs = []
     for name, kind in zip(_names(frame), _kinds(frame)):
-        pairs.append(f"{name}:{kind}")
+        pairs.append(f"{_column_name(name)}:{kind}")
     if not pairs:
         raise GodError("that table has no columns")
     return ",".join(pairs)
+
+
+# Written as `%XX` in a column's name: the characters the list is built from,
+# `%` itself, and every space, which the engine would otherwise trim. R's half
+# writes the same.
+_ENCODED = (("%", "%25"), (",", "%2C"), ("=", "%3D"), (":", "%3A"),
+            (" ", "%20"), ("\t", "%09"), ("\n", "%0A"), ("\r", "%0D"))
+
+
+def _column_name(name: str) -> str:
+    """A column's name as ``--columns`` carries it, whole.
+
+    Without it ``price (USD, net)`` was cut at its comma, and a column called
+    `` revenue``, from a header written ``id, revenue``, lost its space and was
+    checked as ``revenue``: the sentence passed the check and failed in the
+    engine.
+    """
+    for char, code in _ENCODED:
+        name = name.replace(char, code)
+    return name
 
 
 def _names(frame) -> list[str]:

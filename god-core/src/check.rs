@@ -1855,8 +1855,21 @@ fn known(name: &Name, schema: &Schema) -> Result<Type, Diagnostic> {
         return Ok(kind);
     }
     let names = schema.names();
+    // **A suggestion the reader can write.** A column whose name begins or ends
+    // with a space, or holds a comma or a bracket, arrives whole now, and a
+    // bracket cannot hold it: `[ revenue]` reads as `revenue` and
+    // `[price (USD, net)]` as two columns. Pointing at it without saying so
+    // sends someone round in a circle, so the message says to rename it in
+    // the host, which is the one place it can still be named.
     let suggestion = nearest(&name.text, names.iter().map(|s| s.as_str()))
-        .map(|s| format!(" Did you mean `{s}`?"))
+        .map(|s| {
+            let unwritable = s != s.trim() || s.contains([',', '[', ']']);
+            if unwritable {
+                format!(" Did you mean `{s}`? A bracket cannot hold that name, because it begins or ends with a space or holds a comma or a bracket, so rename the column in R or Python before the pipeline.")
+            } else {
+                format!(" Did you mean `{s}`?")
+            }
+        })
         .unwrap_or_default();
     Err(Diagnostic::illegal(
         format!(

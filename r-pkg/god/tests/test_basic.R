@@ -136,6 +136,25 @@ local({
               "already reads a different table called `my_data`")
 })
 
+# **A column's name reaches the engine whole.** The list that describes a table
+# is built from `,`, `=` and `:`, and trimmed, so `price (USD, net)` was cut at
+# its comma and the table could not be described at all, and ` revenue` was
+# described as `revenue`, passed the check, and then failed in the engine.
+local({
+  odd <- data.frame(` revenue` = c(10, 20), `price (USD, net)` = c(5, 7),
+                    `a=b` = c(1, 0), `x:y` = c(3, 4), check.names = FALSE)
+  rows <- function(p) tryCatch(nrow(collect(p)), error = function(e) conditionMessage(e))
+  check("a table whose names hold , = : and a leading space is described",
+        rows(odd |> take(2)), 2L)
+  check("and names holding = and : can be named",
+        c(rows(odd |> keep(`a=b` == 1)), rows(odd |> keep(`x:y` > 3))), c(1L, 1L))
+  check_error("a name the sentence would trim is refused at the check",
+              collect(odd |> keep(revenue > 15)), "rename the column in R or Python")
+  dup <- data.frame(x = 1, x = 2, check.names = FALSE)
+  check_error("two columns with one name are refused", collect(dup |> take(1)),
+              "two columns called `x`")
+})
+
 cat("\nR's own types reach the grammar\n")
 
 # Checked through what the grammar *does* with each type rather than by reading

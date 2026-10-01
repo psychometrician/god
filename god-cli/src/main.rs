@@ -48,6 +48,9 @@ Options
                        else is read as a type the grammar has no opinion about.
                        A timestamp is a date carrying a time. The two differ for
                        `hour` alone, and `kind` reports both as a date.
+                       A name holding `,` `=` `:` `%` or a space writes it as
+                       %XX (`%2C`, `%3D`, `%3A`, `%25`, `%20`), which is how
+                       the bindings send any name whole.
     --as <backend>     what to write out. Default: sql
     --draw <way>       draw what the pipeline does to the table, step by step,
                        and run nothing. `text` for a terminal, `svg` for a page.
@@ -368,6 +371,30 @@ fn run() -> Result<String, Failure> {
     Ok(out)
 }
 
+/// A column's name as `--columns` carries it: `%XX` stands for the byte `XX`.
+/// A `%` not followed by two hex digits is kept as it is, so a name a person
+/// types by hand, `growth%`, means what it says.
+fn decode(name: &str) -> String {
+    let bytes = name.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] == b'%'
+            && i + 2 < bytes.len()
+            && bytes[i + 1].is_ascii_hexdigit()
+            && bytes[i + 2].is_ascii_hexdigit()
+        {
+            let pair = std::str::from_utf8(&bytes[i + 1..i + 3]).expect("two ASCII digits");
+            out.push(u8::from_str_radix(pair, 16).expect("two hex digits"));
+            i += 3;
+            continue;
+        }
+        out.push(bytes[i]);
+        i += 1;
+    }
+    String::from_utf8_lossy(&out).into_owned()
+}
+
 /// Split `products=id:number` into the table and its columns.
 ///
 /// The `=` has to come before the first `:`, or `region:text` would read as a
@@ -390,22 +417,42 @@ fn split_named(value: &str) -> Option<(String, String)> {
 /// not, so refusing an unfamiliar word would refuse working pipelines over
 /// columns the grammar has simply never met.
 fn read_schema(list: &str) -> Result<Schema, Failure> {
-    let mut columns = Vec::new();
+    let mut columns: Vec<(String, Type)> = Vec::new();
     for piece in list.split(',') {
-        let piece = piece.trim();
+        let piece = piece.trim_matches(|c: char| c.is_ascii_whitespace());
         if piece.is_empty() {
             continue;
         }
         let (name, kind) = match piece.rsplit_once(':') {
-            Some((name, kind)) => (name.trim(), kind.trim()),
+            Some((name, kind)) => (
+                name.trim_matches(|c: char| c.is_ascii_whitespace()),
+                kind.trim_matches(|c: char| c.is_ascii_whitespace()),
+            ),
             None => {
                 return Err(Failure::Usage(format!(
                     "`{piece}` has no type. Write each column as name:type, like `revenue:number`"
                 )))
             }
         };
+        // **A name comes through whole, whatever it holds.** The list is built
+        // from `,`, `=` and `:`, and the spaces a person types around them are
+        // trimmed, so a column called `price (USD, net)` was cut at its comma
+        // and one called ` revenue` lost its space: that one then passed the
+        // check as `revenue` and failed in the engine, a sentence that checked
+        // and did not run. The bindings write those characters, `%` and every
+        // space as `%XX`, and the name is decoded after the trimming.
+        let name = decode(name);
         if name.is_empty() {
-            return Err(Failure::Usage(format!("`{piece}` has no column name")));
+            return Err(Failure::Refused(
+                "god: one of the table's columns has no name, so no sentence can name it. Give it one first".into(),
+            ));
+        }
+        // One name, one column: a sentence naming `x` over a table with two
+        // columns called `x` would mean whichever the engine found first.
+        if columns.iter().any(|(seen, _)| *seen == name) {
+            return Err(Failure::Refused(format!(
+                "god: the table has two columns called `{name}`, so a sentence naming `{name}` could mean either. Rename one first"
+            )));
         }
         let kind = match kind.to_ascii_lowercase().as_str() {
             "text" | "string" | "character" | "varchar" => Type::Text,
@@ -426,4 +473,31 @@ fn read_schema(list: &str) -> Result<Schema, Failure> {
         ));
     }
     Ok(Schema::new(columns))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A name the bindings send as `%XX` arrives whole, and a `%` a person
+    /// typed by hand keeps meaning `%`.
+    #[test]
+    fn a_column_name_is_decoded_whole() {
+        assert_eq!(decode("%20revenue"), " revenue");
+        assert_eq!(decode("price%20(USD%2C%20net)"), "price (USD, net)");
+        assert_eq!(decode("a%3Db%3Ac%25"), "a=b:c%");
+        assert_eq!(decode("%E2%82%AC"), "€", "a byte at a time, so UTF-8 survives");
+        assert_eq!(decode("growth%"), "growth%");
+        assert_eq!(decode("%zz%2"), "%zz%2", "not two hex digits, so not an escape");
+    }
+
+    /// `--columns` keeps a name's own spaces, trims the ones typed around it,
+    /// and refuses an empty name and a name given twice.
+    #[test]
+    fn a_column_list_keeps_names_and_refuses_the_two_it_cannot_use() {
+        let schema = read_schema("id:number, %20revenue:number ,a%2Cb:text").ok().expect("a schema");
+        assert_eq!(schema.names(), ["id", " revenue", "a,b"]);
+        assert!(matches!(read_schema("x:number,x:text"), Err(Failure::Refused(m)) if m.contains("two columns called `x`")));
+        assert!(matches!(read_schema("id:number,:text"), Err(Failure::Refused(m)) if m.contains("has no name")));
+    }
 }
