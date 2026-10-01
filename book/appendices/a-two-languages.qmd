@@ -147,6 +147,16 @@ sales |>
   summarize(n = row_count(), by = region)
 ```
 
+A dot in a variable's name is another of R's habits. To the grammar, a dot
+joins the parts of a table's name in a catalog, as in `shop.orders`, so a table
+held in `my.data` is written with an underscore instead, and `format` shows
+it:
+
+```{r}
+my.data <- sales
+cat(format(my.data |> take(3)))
+```
+
 ## The names god takes over
 
 Attaching god in R replaces `sort` for the rest of your session. That is

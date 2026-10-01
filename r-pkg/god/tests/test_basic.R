@@ -111,6 +111,31 @@ local({
 check("a table can be passed by name",
       run("t then take 1", t = data.frame(a = 1))$a, 1)
 
+# **A dot in an R variable is not a catalog path.** To the grammar `shop.orders`
+# is the table `orders` in a schema `shop`, so a frame held in `my.data` was
+# asked for as `"my"."data"` and every pipeline on it failed with the engine's
+# catalog error. Python cannot spell such a name; R spells it all the time.
+local({
+  my.data <- data.frame(x = 1:3, product = c("a", "b", "c"))
+  my.products <- data.frame(product = c("a", "b"), maker = c("M", "N"))
+  my.more <- data.frame(x = 9L, product = "z")
+  check("a frame in a dotted variable is written with an underscore",
+        format(my.data |> take(1)), "my_data\n  then take 1")
+  # Counted through `tryCatch`, so a regression reads as a failed check
+  # rather than stopping the suite on the engine's catalog error.
+  rows <- function(p) tryCatch(nrow(collect(p)), error = function(e) conditionMessage(e))
+  check("and the pipeline runs", rows(my.data |> keep(x > 1)), 2L)
+  check("a dotted table can be joined, added and matched",
+        c(rows(my.data |> join(my.products, by = product)),
+          rows(my.data |> add_rows(my.more)),
+          rows(my.data |> keep(matching(my.products, by = product)))),
+        c(3L, 4L, 2L))
+  my_data <- data.frame(x = 5:6, product = c("q", "r"))
+  check_error("two tables that would share one name are refused",
+              collect(my.data |> add_rows(my_data)),
+              "already reads a different table called `my_data`")
+})
+
 cat("\nR's own types reach the grammar\n")
 
 # Checked through what the grammar *does* with each type rather than by reading

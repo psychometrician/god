@@ -58,7 +58,7 @@ keep <- function(.data, condition) {
     if (is.null(found)) {
       stop(sprintf("`matching` names a table called `%s`, and there is no such table here", name), call. = FALSE)
     }
-    pipeline <- god_use_table(pipeline, name, found)
+    pipeline <- god_use_table(pipeline, god_sentence_name(name), found)
   }
 
   god_step(pipeline, sprintf("keep where %s", god_keep_condition(condition)))
@@ -511,7 +511,7 @@ join <- function(.data, other, by, unmatched = "this") {
       call. = FALSE
     )
   }
-  name <- as.character(name)
+  name <- god_sentence_name(as.character(name))
 
   pipeline <- god_use_table(pipeline, name, other)
 
@@ -561,13 +561,8 @@ add_rows <- function(.data, other) {
   if (!is.symbol(name)) {
     stop("`add_rows` needs the other table by name: add_rows(more_sales)", call. = FALSE)
   }
-  name <- as.character(name)
-  if (!is.data.frame(other)) {
-    stop(sprintf("`%s` is not a table", name), call. = FALSE)
-  }
-  tables <- .subset2(pipeline, "tables")
-  tables[[name]] <- other
-  pipeline[["tables"]] <- tables
+  name <- god_sentence_name(as.character(name))
+  pipeline <- god_use_table(pipeline, name, other)
   god_step(pipeline, sprintf("add_rows %s", name))
 }
 
@@ -883,6 +878,22 @@ widen <- function(.data, name, value, by, missing, giving) {
 # the unevaluated first argument. It is taken from there rather than from the
 # frame itself, because a data frame does not know what it is called and the
 # grammar's sentence names its table.
+# The name a table goes by in a sentence.
+#
+# **An R variable may hold a dot, and to the grammar a dot joins the parts of a
+# catalog name**, `shop.orders`. So a frame held in `my.data` was registered as
+# `my.data` and asked for as the table `data` in a schema called `my`, and
+# every pipeline on it failed with the engine's catalog error. A variable in
+# this session is never a catalog name, so the dot becomes `_`, and so does
+# anything else the grammar cannot hold in a name. The sentence shows the name
+# it used, so nothing is renamed out of sight, and two different tables that
+# would land on one name are refused by `god_use_table`.
+god_sentence_name <- function(name) {
+  said <- gsub("[^[:alnum:]_]", "_", name)
+  if (!grepl("^[[:alpha:]_]", said)) said <- paste0("_", said)
+  said
+}
+
 god_head <- function(data, expr, verb) {
   if (inherits(data, "god_pipeline")) {
     return(data)
@@ -892,7 +903,7 @@ god_head <- function(data, expr, verb) {
     god_not_a_table(data, expr, verb)
   }
 
-  name <- if (is.symbol(expr)) as.character(expr) else "table"
+  name <- if (is.symbol(expr)) god_sentence_name(as.character(expr)) else "table"
   tables <- list(data)
   names(tables) <- name
   structure(

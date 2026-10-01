@@ -6,6 +6,16 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A table in a dotted R variable works, written with an underscore
+
+To the grammar a dot joins the parts of a catalog name, as in `shop.orders`,
+so a data frame held in `my.data` was asked for as the table `data` in a schema
+called `my`, and every pipeline on it failed with the engine's catalog error.
+A variable in an R session is never a catalog name, so R now writes such a
+name with an underscore, `my_data`, at the head of a pipeline and in `join`,
+`add_rows` and `matching`, and `format` shows the name it used. Two different
+tables that would share one name are refused.
+
 ### A guard holds every example's tabs to one table, in one order
 
 The first page promises that the tabs of an example answer with the same

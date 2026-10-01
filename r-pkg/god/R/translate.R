@@ -528,7 +528,9 @@ god_matching <- function(args) {
     )
   }
 
-  other <- as.character(positional[[1L]])
+  # The name the table goes by in the sentence, the one `keep` registered it
+  # under: a dot in an R variable is not a catalog path.
+  other <- god_sentence_name(as.character(positional[[1L]]))
   by <- args[named == "by"]
   if (!length(by)) {
     return(sprintf("matching(%s)", other))
