@@ -29,7 +29,10 @@ from .run import GodError
 
 GOD_BOOK_DATA_URL = "https://psychometrician.github.io/god-book/data/"
 
-_NAME = re.compile(r"^[A-Za-z0-9_-]+$")
+# Matched whole, with `fullmatch`. A `$` also matches before a final newline,
+# so `"sales\n"` passed the check and failed later inside urllib, in its words
+# rather than god's.
+_NAME = re.compile(r"[A-Za-z0-9_-]+")
 
 __all__ = ["god_table"]
 
@@ -96,12 +99,25 @@ def god_table(name, text=()):
     # A name is a name, not a path. This mattered less when the only thing a
     # name could do was make a bad URL; now that it also names a file on disk, a
     # `/` or a `..` would reach outside `data/` entirely.
-    if not _NAME.match(name):
+    if not _NAME.fullmatch(name):
         raise GodError(
             f"god: {name!r} is not a table name. A name is letters, digits, "
             '`_` and `-`, as in god_table("sales"). It is not a path and not '
             "a file name."
         )
+    # **A bare string is one column**, as it is in R. Iterated as it came, it
+    # named each letter a column, so `text="code"` kept nothing as text.
+    columns = [text] if isinstance(text, str) else list(text)
     local = _walk_up_data(Path.cwd(), name)
     source = str(local) if local else GOD_BOOK_DATA_URL + name + ".csv"
-    return pd.read_csv(source, dtype={column: str for column in text})
+    frame = pd.read_csv(source, dtype={column: str for column in columns})
+    # A `text` column the file does not have is refused, in the same words as
+    # R's: pandas ignores one without a word, and a misspelt name means the
+    # column the caller wanted kept as text was not.
+    absent = [column for column in columns if column not in frame.columns]
+    if absent:
+        raise GodError(
+            f"god: `{name}` has no column called `{absent[0]}` to keep as text. "
+            f"The table has: {', '.join(map(str, frame.columns))}"
+        )
+    return frame

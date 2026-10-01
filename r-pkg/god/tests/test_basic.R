@@ -1263,6 +1263,21 @@ local({
   check("and the pipeline can name it",
         nrow(collect(spaced |> keep(`order date` > "2026-01-03"))), 1L)
 
+  # **`text` keeps a column as text, and is held to the file.** A CSV records
+  # what a value is and never what kind of thing it is, so `01` reads as 1
+  # unless the column is named. Python's half read a bare string one letter at
+  # a time, so `text = "code"` kept nothing there, and a misspelt name warned
+  # here and said nothing there. Both refuse one now, in the same words.
+  writeLines(c("code,product", "01,Widget", "02,Gadget"),
+             file.path(dirname(dirname(nest)), "data", "zips.csv"))
+  check("a column named in text stays text",
+        god_table("zips", text = "code")$code, c("01", "02"))
+  absent <- tryCatch(god_table("zips", text = "cdoe"),
+                     error = function(e) conditionMessage(e))
+  check("a text column the file does not have is refused",
+        absent, paste("god: `zips` has no column called `cdoe` to keep as text.",
+                      "The table has: code, product"))
+
   # The other direction: no `data/` anywhere above, so the published copy is
   # what it would reach for. Checked through the resolver rather than by
   # fetching, because the suite stays offline.

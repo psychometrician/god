@@ -5,6 +5,15 @@ a person using god can see.
 
 ## Unreleased
 
+### `god_table(..., text = "code")` keeps the column as text in Python too
+
+Python read a single name given to `text` one letter at a time, so
+`text = "code"` kept nothing as text while R kept the column. A column named in
+`text` that the file does not have is now refused in both languages, in the
+same words, where R warned and Python said nothing. And Python's name check
+now refuses a name ending in a newline, as R's already did, instead of letting
+it fail inside the download.
+
 ### A number in a pipeline keeps every digit it was written with
 
 R wrote a number with seven significant digits, so

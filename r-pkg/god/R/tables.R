@@ -86,6 +86,25 @@ god_table <- function(name, text = character()) {
   # out of its way to allow the name -- `[order date]` in the text form,
   # backticks in R, `col["order date"]` in Python -- so the reader that fetches
   # it has no business renaming it.
-  utils::read.csv(from, colClasses = classes, stringsAsFactors = FALSE,
-                  check.names = FALSE)
+  #
+  # **A `text` column the file does not have is refused**, in the grammar's
+  # words, rather than left to `read.csv`'s warning. Python's reader says
+  # nothing at all about one, and either way a misspelt name means the column
+  # the caller wanted kept as text was not.
+  frame <- withCallingHandlers(
+    utils::read.csv(from, colClasses = classes, stringsAsFactors = FALSE,
+                    check.names = FALSE),
+    warning = function(w) {
+      if (grepl("colClasses", conditionMessage(w), fixed = TRUE)) {
+        invokeRestart("muffleWarning")
+      }
+    }
+  )
+  absent <- setdiff(text, names(frame))
+  if (length(absent)) {
+    stop("god: `", name, "` has no column called `", absent[[1L]], "` to keep ",
+         "as text. The table has: ", paste(names(frame), collapse = ", "),
+         call. = FALSE)
+  }
+  frame
 }

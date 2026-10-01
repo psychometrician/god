@@ -1136,6 +1136,22 @@ with _tempfile.TemporaryDirectory() as _root:
         check("and the pipeline can name it",
               len(god.collect(_spaced >> god.keep(god.col["order date"] > "2026-01-03"))), 1)
 
+        # **`text` keeps a column as text, and is held to the file.** A bare
+        # string was read one letter at a time, so `text="code"` kept nothing
+        # as text here while R kept the column; a misspelt name said nothing
+        # here and warned there. Both refuse one now, in the same words.
+        (_top / "data" / "zips.csv").write_text("code,product\n01,Widget\n02,Gadget\n")
+        check("a column named in text stays text, named as one string",
+              list(god.god_table("zips", text="code")["code"]), ["01", "02"])
+        check("or in a list",
+              list(god.god_table("zips", text=["code"])["code"]), ["01", "02"])
+        check_error("a text column the file does not have is refused",
+                    lambda: god.god_table("zips", text="cdoe"),
+                    "god: `zips` has no column called `cdoe` to keep as text. "
+                    "The table has: code, product")
+        check_error("a name with a newline is not a name",
+                    lambda: god.god_table("zips\n"), "not a table name")
+
         # The other direction: no `data/` anywhere above, so the published copy
         # is what it would reach for. Checked through the resolver rather than
         # by fetching, because the suite stays offline.
