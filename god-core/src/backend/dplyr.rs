@@ -51,7 +51,7 @@ impl Backend for Dplyr {
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => {
                         format!(
-                            "{}({}, by = join_by({}))",
+                            "{}({}, by = join_by({}), na_matches = \"never\")",
                             if negated { "anti_join" } else { "semi_join" },
                             other.text,
                             join_by(by)
@@ -279,7 +279,16 @@ impl Backend for Dplyr {
                         Unmatched::None => "inner_join",
                         Unmatched::Both => "full_join",
                     };
-                    format!("{verb}({}, by = join_by({}))", other.text, join_by(by))
+                    // **`na_matches = "never"`, because dplyr's default joins a
+                    // missing key to a missing key** and every engine the
+                    // sentence runs on does not: a missing value equals
+                    // nothing, itself included. The filtering joins above say
+                    // the same.
+                    format!(
+                        "{verb}({}, by = join_by({}), na_matches = \"never\")",
+                        other.text,
+                        join_by(by)
+                    )
                 }
                 // dplyr names both ends, so this is the one target where the
                 // grammar's pair maps onto a pair rather than onto a mechanism.

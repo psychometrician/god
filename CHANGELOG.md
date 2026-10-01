@@ -6,6 +6,17 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed joins never match a missing key, and a polars full join keeps its key
+
+A missing value equals nothing, itself included, on every engine a sentence
+runs on, so a row whose key is missing finds no partner. pandas' `merge` and
+`isin` and dplyr's joins pair a missing key with a missing key by default, so
+the code `show_as` printed for `join` and `matching` could match rows the query
+never would. Printed dplyr now says `na_matches = "never"`; printed pandas
+leaves the other table's missing-key rows out of the match and, in a full join,
+hands them back unmatched. Separately, a printed polars full join now coalesces
+its key: a row only the other table had came back with its key missing.
+
 ### Printed pandas keeps a group whose key is missing
 
 pandas' `groupby` drops the rows whose key is missing unless told otherwise,

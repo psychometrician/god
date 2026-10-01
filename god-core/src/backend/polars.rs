@@ -158,11 +158,16 @@ impl Backend for Polars {
                         Unmatched::Both => "full",
                     };
                     // **`coalesce=True` is what makes a differing pair come back
-                    // under this table's name**, which is the same entry the
-                    // full join already needed for its key. Without it polars
-                    // hands back `id` beside `customer_id` on every join kind,
-                    // not only the full one.
-                    let coalesce = if by.iter().all(JoinKey::is_same) {
+                    // under this table's name.** Without it polars hands back
+                    // `id` beside `customer_id` on every join kind, not only
+                    // the full one.
+                    //
+                    // **A full join needs it even when the names agree**, and
+                    // went without until 2026-10-01: polars does not coalesce a
+                    // full join's key by default, so a row only the other table
+                    // had arrived with its key missing and the value parked in
+                    // `product_right`, which the next `pick` threw away.
+                    let coalesce = if by.iter().all(JoinKey::is_same) && how != "full" {
                         String::new()
                     } else {
                         ", coalesce=True".to_string()

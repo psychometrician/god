@@ -100,8 +100,13 @@ impl Backend for Pandas {
                         let mine = by.first().map(|k| k.this.text.clone()).unwrap_or_default();
                         let theirs =
                             by.first().map(|k| k.other.text.clone()).unwrap_or_default();
+                        // `dropna()` on their side, because `isin` finds a
+                        // missing value among missing values, and a missing key
+                        // matches nothing. A row here whose key is missing is
+                        // then matched by nothing, so the anti form keeps it,
+                        // which is what `NOT EXISTS` does.
                         calls.push(format!(
-                            "loc[lambda d: {}d[{}].isin({}[{}])]",
+                            "loc[lambda d: {}d[{}].isin({}[{}].dropna())]",
                             if negated { "~" } else { "" },
                             text(&mine),
                             other.text,
@@ -208,25 +213,40 @@ impl Backend for Pandas {
                         Unmatched::None => "inner",
                         Unmatched::Both => "outer",
                     };
+                    // **`merge` joins a missing key to a missing key**, and a
+                    // missing value equals nothing on every engine the sentence
+                    // runs on. So the other table comes in without the rows
+                    // whose key is missing, and a full join hands those back
+                    // afterwards, unmatched, the way the query does.
+                    let theirs: Vec<Name> = by.iter().map(|k| k.other.clone()).collect();
+                    let partner = format!("{}.dropna(subset={})", other.text, list(&theirs));
                     // **`on=` and `left_on=`/`right_on=` cannot be mixed**, so
                     // one differing key puts every key into the long form. That
                     // is pandas' rule rather than a choice made here.
-                    if by.iter().all(JoinKey::is_same) {
+                    let merged = if by.iter().all(JoinKey::is_same) {
                         let keys: Vec<Name> = by.iter().map(|k| k.this.clone()).collect();
-                        calls.push(format!(
-                            "merge({}, on={}, how=\"{how}\")",
-                            other.text,
-                            list(&keys)
-                        ));
+                        format!("merge({partner}, on={}, how=\"{how}\")", list(&keys))
                     } else {
                         let mine: Vec<Name> = by.iter().map(|k| k.this.clone()).collect();
-                        let theirs: Vec<Name> = by.iter().map(|k| k.other.clone()).collect();
-                        calls.push(format!(
-                            "merge({}, left_on={}, right_on={}, how=\"{how}\")",
-                            other.text,
+                        format!(
+                            "merge({partner}, left_on={}, right_on={}, how=\"{how}\")",
                             list(&mine),
                             list(&theirs)
+                        )
+                    };
+                    if *unmatched == Unmatched::Both {
+                        let set_aside = if theirs.len() == 1 {
+                            format!("{0}[{0}[{1}].isna()]", other.text, text(&theirs[0].text))
+                        } else {
+                            format!("{0}[{0}[{1}].isna().any(axis=1)]", other.text, list(&theirs))
+                        };
+                        calls.push(format!(
+                            "pipe(lambda d: pd.concat([d.{merged}, {set_aside}], ignore_index=True))"
                         ));
+                    } else {
+                        calls.push(merged);
+                    }
+                    if !by.iter().all(JoinKey::is_same) {
                         // **pandas keeps both key columns here and coalesces
                         // neither**, which is the difference from `on=` and the
                         // place this rendering would go quietly wrong. An outer
