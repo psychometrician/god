@@ -770,3 +770,16 @@ sales                                   region:text  product:text  revenue:numbe
                                         -product  -revenue  -cost  -ordered_on
     one row per group
 ---
+sales then keep where [revenue] > 99.9999999 then pick [product, revenue]
+sales                                  region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where ([revenue] > 99.9999999)  region  product  revenue  cost  ordered_on
+└ pick [product, revenue]              product  revenue
+                                       -region  -cost  -ordered_on
+---
+sales then keep where [revenue] * 0.000000000001 > 0.0000000001234 then pick [product, revenue]
+sales                                   region:text  product:text  revenue:number  cost:number  ordered_on:date
+├ keep where (([revenue] * 0.000000000001) > 0.0000000001234)
+│                                       region  product  revenue  cost  ordered_on
+└ pick [product, revenue]               product  revenue
+                                        -region  -cost  -ordered_on
+---
