@@ -223,6 +223,59 @@ const DUCKDB: Dialect = Dialect {
     group_concat: "string_agg({value}, {separator})",
 };
 
+/// The query that reads a CSV file into a table, for `god_table` in both
+/// bindings.
+///
+/// **One reader, so one file is one table.** R's `read.csv` and pandas'
+/// `read_csv` disagreed about the same file in a dozen ways: an empty text cell
+/// was `""` in one and missing in the other, `None` and `null` were text in one
+/// and missing in the other, `T` was truth in one and text in the other, a
+/// duplicate header was rejected by one and renamed by the other, and R sized
+/// its columns from the first five lines, so a later row with an extra field
+/// became a phantom row where pandas raised. 27 of the book's 38 tables came
+/// out of the two with different types. Both bindings now run this, on their
+/// own DuckDB, and get the same names, the same values and the same kinds.
+///
+/// Every option is pinned rather than sniffed, and each was measured on
+/// DuckDB 1.5.5 against files built to break it:
+///
+/// - `delim`, `quote`, `escape` and `skip = 0`: left to the sniffer, a file
+///   with one bad row was read as a single text column, or the sniffer skipped
+///   to the bad row and took it for the header, and handed back no rows at all
+///   without an error. Pinned, a row with the wrong number of fields is
+///   refused, which `strict_mode` makes certain.
+/// - `sample_size = -1`: the whole file decides a column's kind, not the first
+///   rows of it.
+/// - `nullstr = ['', 'NA']`: an empty field and `NA` are missing, which is what
+///   both languages' own readers agree on. `None` and `null` stay text.
+/// - `auto_type_candidates`: truth, whole numbers, decimals and text, and no
+///   dates. A date stays the text it was written as, the way the book keeps
+///   them, until `to_date` says otherwise.
+///
+/// `text` names columns that must stay text, so `01` is not read as 1.
+pub fn read_csv_query(path: &str, text: &[String]) -> String {
+    let mut options: Vec<String> = [
+        "header = true",
+        "skip = 0",
+        "delim = ','",
+        "quote = '\"'",
+        "escape = '\"'",
+        "strict_mode = true",
+        "sample_size = -1",
+        "nullstr = ['', 'NA']",
+        "auto_type_candidates = ['BOOLEAN', 'BIGINT', 'DOUBLE', 'VARCHAR']",
+    ]
+    .into_iter()
+    .map(String::from)
+    .collect();
+    if !text.is_empty() {
+        let kinds: Vec<String> =
+            text.iter().map(|column| format!("{}: 'VARCHAR'", DUCKDB.text(column))).collect();
+        options.push(format!("types = {{{}}}", kinds.join(", ")));
+    }
+    format!("SELECT * FROM read_csv({}, {})", DUCKDB.text(path), options.join(", "))
+}
+
 /// Spark, measured against a real 4.2 session on 2026-08-07 rather than read
 /// out of a manual. Most of these entries were found by running the
 /// constructs this file emits and reading what came back.

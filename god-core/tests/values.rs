@@ -977,3 +977,60 @@ fn to_text_writes_a_whole_number_whole_whatever_it_is_stored_as() {
     let (_, rows) = run(&conn, "t", "t then add [a] as to_text([n]), [b] as to_text([s]) then pick [a, b]");
     assert_eq!(rows, vec![vec!["3.5", "1.0"]]);
 }
+
+/// **One file is one table**: the query both bindings run to read a CSV, with
+/// every option pinned rather than sniffed.
+///
+/// R's `read.csv` and pandas' `read_csv` made this file into two different
+/// tables. This is the one reader both now use, and these are its answers: a
+/// repeated header and a blank one get names, `NA` is missing, `None` is text,
+/// `T` is truth, a date stays text, and a column named in `text` keeps its
+/// leading zero. And a row with a field too many is refused, where one reader
+/// made it a row of its own and a sniffer left to itself returned no rows at all.
+#[test]
+fn a_csv_is_read_with_every_option_pinned() {
+    use god_core::backend::sql::read_csv_query;
+
+    let dir = std::env::temp_dir().join(format!("god-read-csv-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("a scratch folder");
+    let tricky = dir.join("tricky.csv");
+    std::fs::write(&tricky, "x,x,,flag,note,when,code\n1,NA,a,T,None,2026-01-02,01\n3,4,b,F,,2026-01-03,02\n")
+        .expect("the tricky file");
+    let ragged = dir.join("ragged.csv");
+    std::fs::write(&ragged, "name,n\nann,5\nfay,6,late\n").expect("the ragged file");
+
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    let sql = read_csv_query(tricky.to_str().unwrap(), &["code".to_string()]);
+    let mut stmt = conn.prepare(&format!("DESCRIBE {sql}")).expect("the query describes");
+    let described: Vec<(String, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+        .expect("rows")
+        .collect::<Result<_, _>>()
+        .expect("rows");
+    let expected = [
+        ("x", "BIGINT"),
+        ("x_1", "BIGINT"),
+        ("column2", "VARCHAR"),
+        ("flag", "BOOLEAN"),
+        ("note", "VARCHAR"),
+        ("when", "VARCHAR"),
+        ("code", "VARCHAR"),
+    ];
+    assert_eq!(
+        described,
+        expected.iter().map(|(n, k)| (n.to_string(), k.to_string())).collect::<Vec<_>>()
+    );
+    let (_, rows) = {
+        let table = format!("CREATE TABLE tricky AS {sql}");
+        conn.execute_batch(&table).expect("the file reads");
+        run(&conn, "tricky", "tricky then pick [x_1, note, code]")
+    };
+    assert_eq!(rows, vec![vec!["missing", "None", "01"], vec!["4", "missing", "02"]]);
+
+    let refused = conn
+        .prepare(&read_csv_query(ragged.to_str().unwrap(), &[]))
+        .and_then(|mut s| s.query([]).map(|_| ()));
+    assert!(refused.is_err(), "a row with a field too many was read rather than refused");
+
+    std::fs::remove_dir_all(&dir).ok();
+}

@@ -1193,8 +1193,90 @@ with _tempfile.TemporaryDirectory() as _root:
         # by fetching, because the suite stays offline.
         check("with no local data/, nothing is found and the URL is the fallback",
               god.tables._walk_up_data(pathlib.Path.cwd(), "sales"), None)
+
+        # **One file is one table in both languages**: the file the R suite
+        # reads, and the same expectations. pandas and R's `read.csv`
+        # disagreed about it in nearly every column.
+        (_top / "data" / "tricky.csv").write_text(
+            "x,x,,flag,yn,note,blank,city,when,code\n"
+            "1,2,a,T,true,None,,Zürich,2026-01-02,01\n"
+            "3,NA,b,F,false,,,Köln,2026-01-03,02\n", encoding="utf-8")
+        _tricky = god.god_table("tricky", text="code")
+
+        # `.get`, so a column the reader names differently fails its check
+        # rather than stopping the suite.
+        def _plain(values):
+            return [None if pd.isna(v) else v for v in values]
+
+        check("a repeated and a blank header get names, the same in both languages",
+              list(_tricky.columns),
+              ["x", "x_1", "column2", "flag", "yn", "note", "blank", "city", "when", "code"])
+        check("NA and an empty field are missing, and None is text",
+              (_plain(_tricky.get("x_1", [])), _plain(_tricky.get("note", []))), ([2, None], ["None", None]))
+        check("T and true are truth, dates stay text, and a kept code keeps its zero",
+              (list(_tricky.get("flag", [])), list(_tricky.get("yn", [])), list(_tricky.get("when", [])),
+               list(_tricky.get("code", []))),
+              ([True, False], [True, False], ["2026-01-02", "2026-01-03"], ["01", "02"]))
+        check("accented text arrives as it was written",
+              list(_tricky.get("city", [])), ["Zürich", "Köln"])
+
+        (_top / "data" / "ragged.csv").write_text("name,n\nann,5\nfay,6,late\n")
+        check_error("a row with the wrong number of fields is refused, not guessed at",
+                    lambda: god.god_table("ragged"), "could not be read as a table")
+
+        # The name as written, letter for letter, on every filesystem.
+        (_top / "data" / "Sales.csv").write_text("region,revenue\nWest,10\n")
+        check("a file is found by its exact name", len(god.god_table("Sales")), 1)
+        _url = god.tables.GOD_BOOK_DATA_URL
+        god.tables.GOD_BOOK_DATA_URL = "http://127.0.0.1:9/"
+        try:
+            check_error("and not by a name that differs only in case",
+                        lambda: god.god_table("sales"),
+                        "god: no `data/sales.csv` was found here or in a folder above, "
+                        "and the copy published beside the book could not be fetched.")
+        finally:
+            god.tables.GOD_BOOK_DATA_URL = _url
     finally:
         os.chdir(_was)
+
+# **A fetch gives up, and says so in god's words.** With no limit, a server that
+# accepted and never answered held the session for as long as anybody waited.
+# And a name the book does not publish is told apart from a connection that
+# failed. Both against servers on this machine, so the suite stays offline.
+import http.server  # noqa: E402
+import socket  # noqa: E402
+import threading  # noqa: E402
+
+
+class _NotPublished(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):  # noqa: N802
+        self.send_error(404)
+
+    def log_message(self, *args):
+        pass
+
+
+_stalled = socket.socket()
+_stalled.bind(("127.0.0.1", 0))
+_stalled.listen(1)
+_server = http.server.HTTPServer(("127.0.0.1", 0), _NotPublished)
+threading.Thread(target=_server.serve_forever, daemon=True).start()
+_saved = (god.tables.GOD_BOOK_DATA_URL, god.tables._TIMEOUT, os.getcwd())
+with _tempfile.TemporaryDirectory() as _nowhere:
+    os.chdir(_nowhere)
+    try:
+        god.tables.GOD_BOOK_DATA_URL = f"http://127.0.0.1:{_stalled.getsockname()[1]}/"
+        god.tables._TIMEOUT = 1
+        check_error("a fetch that never answers gives up, in god's words",
+                    lambda: god.god_table("anything"), "could not be fetched")
+        god.tables.GOD_BOOK_DATA_URL = f"http://127.0.0.1:{_server.server_address[1]}/"
+        check_error("and a name the book does not publish is told apart",
+                    lambda: god.god_table("slaes"), "the book publishes no table by that name")
+    finally:
+        god.tables.GOD_BOOK_DATA_URL, god.tables._TIMEOUT = _saved[0], _saved[1]
+        os.chdir(_saved[2])
+        _server.shutdown()
+        _stalled.close()
 
 # --- every example in every docstring, run ----------------------------------
 #

@@ -68,6 +68,21 @@ check_render <- function(book = "book") {
     return(invisible(TRUE))
   }
 
+  # **A render that stopped partway is not a render of the book.** Quarto exits
+  # 0 when a chapter's code fails, and leaves the pages after it unwritten, so
+  # this guard graded the 44 pages that were left and called the book clean.
+  # Found on 2026-10-01, when one Python display error stopped the render at the
+  # capstone. Every page source has to have its page, and a source the author
+  # withholds is the `_` one, which the other guards already skip.
+  wanted <- list.files(book, pattern = "[.]qmd$", recursive = TRUE)
+  wanted <- wanted[!grepl("(^|/)_", wanted)]
+  unwritten <- wanted[!file.exists(file.path(out, sub("[.]qmd$", ".html", wanted)))]
+  if (length(unwritten)) {
+    fail(sprintf(
+      "check_render: %d of %d pages have no rendered page, so the render stopped partway. First: %s",
+      length(unwritten), length(wanted), paste(head(unwritten, 3), collapse = ", ")))
+  }
+
   pages <- list.files(out, pattern = "[.]html$", recursive = TRUE, full.names = TRUE)
   # Read once. Every assertion below is a pattern over the same text, and
   # reading 55 files once per assertion is five times the work for one answer.

@@ -37,8 +37,9 @@ returns
 
 ```{python}
 #| echo: false
+import html
 returns.style.hide(axis="index").format(
-    god_float, subset=["q1", "q2", "q3", "q1_alt"])
+    lambda v: html.escape(god_float(v)), subset=["q1", "q2", "q3", "q1_alt"])
 ```
 
 :::

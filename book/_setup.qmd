@@ -73,11 +73,11 @@ invisible(capture.output(
 # one table out of five. Reading one CSV in both languages removes the second
 # copy, for every table at once and for every table anybody adds later.
 #
-# **It does not make the two readers agree about every column.** Each language
-# reads the file with its own reader, so a whole-number column with holes
-# arrives as integers in R and as decimals in Python. The grammar has one
-# `number` kind, so the answers agree all the same: `to_text` writes a whole
-# number whole however it is stored.
+# **Both languages read the file with one reader**, DuckDB's, with options the
+# engine pins, so one file is one table: the same names, the same values and
+# the same missing cells. R still holds a whole number as a double where Python
+# holds an integer, and the grammar's one `number` kind is why that changes no
+# answer.
 #
 # **The cast is declared in the preface, and its shapes are load-bearing for
 # chapters, so change a CSV here only with the blast radius in mind: every
@@ -118,12 +118,17 @@ for _up in (_here, *_here.parents):
 import pandas as pd
 pd.set_option("display.width", 76)
 
-# The R side prints a whole double bare (165, never 165.0) and rounds to
-# seven significant digits, so the Python tabs are told to print the same
-# way: a page that says the tabs agree should not show 165.0 under that
-# sentence. NaN keeps pandas' own spelling; the difference from R's NA is a
-# real difference between the languages, not a display choice.
+# A whole number prints bare (165, never 165.0) and anything else to seven
+# significant digits, which is how R prints a column of whole numbers: a page
+# that says the tabs agree should not show 165.0 under that sentence. R pads a
+# column that mixes whole and fractional values to one width (20.0 beside
+# 2.5), and this formats one value at a time, so such a column still reads 20
+# here and 20.0 there. A missing value keeps pandas' own spelling for its
+# column, NaN for a decimal and <NA> for a whole number; the difference from
+# R's NA is a real difference between the languages, not a display choice.
 def god_float(v):
+    if v is pd.NA:
+        return "<NA>"
     if v != v:
         return "NaN"
     if abs(v) < 1e15 and v == int(v):

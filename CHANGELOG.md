@@ -6,6 +6,35 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### `god_table` reads a file the same way in R and in Python
+
+R's `read.csv` and pandas' `read_csv` made one file into two different
+tables: an empty text cell was `""` in one and missing in the other, `None` was
+text in one and missing in the other, `T` was truth in one and text in the
+other, a repeated or blank header broke one of them, and a row with an extra
+field became a phantom row in R. Both languages now read the file with DuckDB,
+through a query the engine writes, so one file is one table: the same names,
+values and missing cells. An empty field and `NA` are missing, a date stays
+text until `to_date` reads it, and a row with the wrong number of fields is
+refused. `god-cli --read-csv` prints the query.
+
+### The rendered-book check fails a render that stopped partway
+
+Quarto exits 0 when a chapter's code fails and leaves the pages after it
+unwritten, and the check that grades the rendered book graded the 44 pages
+that were left and called the book clean. It now requires a page for every
+chapter, appendix and page source.
+
+### `god_table` says what went wrong, waits a minute at most, and matches a name exactly
+
+A table that could not be found or fetched was reported in the download's own
+words, and in Python it was not a `GodError` at all. It is god's message now,
+the same in both languages, and it says whether the name is unknown or the
+copy could not be fetched. Python waited forever on a connection that never
+answered; both languages give up after 60 seconds. And `data/Sales.csv` no
+longer answers to `god_table("sales")` on a Mac while Linux fetches the book's
+own `sales`: the file's name has to match.
+
 ### `to_text` writes a whole number whole, whatever a language stored it as
 
 The grammar has one kind of number, but `to_text` let the storage decide. R

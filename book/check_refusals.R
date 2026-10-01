@@ -169,7 +169,16 @@ check_refusals <- function(dirs = "book") {
         } else {
           "it evaluated without complaint"
         }
-      }, error = function(e) conditionMessage(e))
+      }, error = function(e) {
+        # A table the page could not load is not a refusal either, and
+        # `god_table` marks those errors with a class of its own, now that
+        # its messages are god's words rather than R's "cannot open".
+        if (inherits(e, "god_table_error")) {
+          paste("cannot open the table:", conditionMessage(e))
+        } else {
+          conditionMessage(e)
+        }
+      })
 
       if (!grepl("^(the pipeline ran|it evaluated)", outcome)) {
         if (grepl(harness, outcome)) {

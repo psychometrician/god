@@ -10,8 +10,9 @@ god_table(name, text = character())
 \item{name}{The table's name without the extension, such as `"sales"`.}
 
 \item{text}{Columns that must stay text. A CSV records what a value is and
-never what kind of thing it is, so a column of `01`, `02`, `03` comes
-back as the numbers 1, 2, 3 unless it is named here.}
+never what kind of thing it is, so a column of `01`, `02`, `03` can come
+back as the numbers 1, 2, 3 unless it is named here. A name the file does
+not have is refused.}
 }
 \value{
 A data frame.
@@ -27,7 +28,14 @@ beside the manual is fetched. So it needs no connection once you have a
 Every table the book uses is published beside it, the cast the preface
 declares and the smaller ones a single chapter needs. A name is letters,
 digits, `_` and `-`; it is not a path, and a `/` or a `..` is refused rather
-than followed.
+than followed. The file's name has to match the name given, letter for
+letter, on every operating system.
+
+The file is read the same way in R and in Python, so one file is one table
+in either: a column name is kept exactly as the header writes it, an empty
+field and `NA` are missing, a date stays the text it was written as until
+`to_date` reads it, and a row with the wrong number of fields is refused
+rather than guessed at.
 }
 \examples{
 \dontrun{

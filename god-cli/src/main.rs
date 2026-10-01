@@ -63,6 +63,11 @@ Options
                        per line: seat, kind, stands or refused, and the note
                        the cell carries. The book's table is generated from
                        this, so it cannot drift from the checker.
+    --read-csv <path>  print the query that reads a CSV file into a table, and
+                       stop. Both bindings' `god_table` runs it, so one file is
+                       one table in either language.
+    --text <column>    with `--read-csv`, a column to keep as text, so `01`
+                       stays `01`. Give it once per column.
     --help             this
 
 Examples
@@ -178,11 +183,26 @@ fn run() -> Result<String, Failure> {
     let mut pipeline: Option<String> = None;
     let mut needs_only = false;
     let mut drawing: Option<String> = None;
+    let mut reading: Option<String> = None;
+    let mut text: Vec<String> = Vec::new();
 
     let mut args = std::env::args().skip(1);
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--help" | "-h" => return Err(Failure::Help),
+            "--read-csv" => {
+                if reading.is_some() {
+                    return Err(Failure::Usage(
+                        "`--read-csv` was given twice, and this reads one file".into(),
+                    ));
+                }
+                reading = Some(args.next().ok_or_else(|| {
+                    Failure::Usage("`--read-csv` needs the path of a CSV file".into())
+                })?)
+            }
+            "--text" => text.push(args.next().ok_or_else(|| {
+                Failure::Usage("`--text` needs the name of a column to keep as text".into())
+            })?),
             "--needs" => needs_only = true,
             "--draw" => {
                 if drawing.is_some() {
@@ -254,6 +274,24 @@ fn run() -> Result<String, Failure> {
                 pipeline = Some(other.to_string())
             }
         }
+    }
+
+    // **Reading a file is a question of its own, answered before any pipeline
+    // is asked for.** A binding's `god_table` wants the query that turns a CSV
+    // into a table, and the options that query pins live here so the two
+    // bindings cannot read one file two ways.
+    if let Some(path) = reading {
+        if pipeline.is_some() || columns.is_some() || !named.is_empty() {
+            return Err(Failure::Usage(
+                "`--read-csv` reads a file and takes no pipeline or `--columns`".into(),
+            ));
+        }
+        return Ok(format!("{}\n", backend::sql::read_csv_query(&path, &text)));
+    }
+    if !text.is_empty() {
+        return Err(Failure::Usage(
+            "`--text` says which columns of a file to keep as text, so it goes with `--read-csv`".into(),
+        ));
     }
 
     // No pipeline on the command line means it is arriving on stdin, which is

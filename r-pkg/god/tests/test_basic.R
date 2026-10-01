@@ -1326,6 +1326,46 @@ local({
   # fetching, because the suite stays offline.
   check("with no local data/, nothing is found and the URL is the fallback",
         is.na(god:::god_walk_up_data(nest, "sales")), TRUE)
+
+  # **One file is one table in both languages.** R's `read.csv` and pandas'
+  # `read_csv` disagreed about this file in nearly every column: a repeated and
+  # a blank header, `NA` and an empty field, `None` as text, `T` as truth, an
+  # all-blank column, accented text and a leading zero. Both now read it with
+  # DuckDB and the engine's options, and the Python suite asks the same of it.
+  data <- file.path(dirname(dirname(nest)), "data")
+  writeLines(c("x,x,,flag,yn,note,blank,city,when,code",
+               "1,2,a,T,true,None,,Zürich,2026-01-02,01",
+               "3,NA,b,F,false,,,Köln,2026-01-03,02"),
+             file.path(data, "tricky.csv"), useBytes = TRUE)
+  tricky <- god_table("tricky", text = "code")
+  check("a repeated and a blank header get names, the same in both languages",
+        names(tricky),
+        c("x", "x_1", "column2", "flag", "yn", "note", "blank", "city", "when", "code"))
+  check("NA and an empty field are missing, and None is text",
+        list(tricky$x_1, tricky$note), list(c(2, NA), c("None", NA)))
+  check("T and true are truth, dates stay text, and a kept code keeps its zero",
+        list(tricky$flag, tricky$yn, tricky$when, tricky$code),
+        list(c(TRUE, FALSE), c(TRUE, FALSE), c("2026-01-02", "2026-01-03"), c("01", "02")))
+  check("accented text arrives as it was written", tricky$city, c("Zürich", "Köln"))
+
+  # A row with a field too many was read as an extra row by R and refused by
+  # pandas. Refused in both now, in the grammar's words.
+  writeLines(c("name,n", "ann,5", "fay,6,late"), file.path(data, "ragged.csv"))
+  ragged <- tryCatch(god_table("ragged"), error = function(e) conditionMessage(e))
+  check("a row with the wrong number of fields is refused, not guessed at",
+        grepl("could not be read as a table", ragged, fixed = TRUE), TRUE)
+
+  # **The name as written, letter for letter.** A case-blind filesystem let
+  # `sales` read `data/Sales.csv` on a Mac while Linux fetched the book's own
+  # `sales`. With the network unplugged, the lowercase name finds nothing.
+  writeLines(c("region,revenue", "West,10"), file.path(data, "Sales.csv"))
+  check("a file is found by its exact name", nrow(god_table("Sales")), 1L)
+  lowered <- without_network(tryCatch(god_table("sales"), error = function(e) conditionMessage(e)))
+  check("and not by a name that differs only in case",
+        lowered,
+        paste("god: no `data/sales.csv` was found here or in a folder above, and",
+              "the copy published beside the book could not be fetched. Put",
+              "`sales.csv` in a `data/` folder to read it without a connection."))
 })
 
 

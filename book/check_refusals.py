@@ -165,8 +165,14 @@ def main(book: Path = BOOK) -> int:
                     return 1
 
     # The errors that mean this guard is broken rather than the book: Python's
-    # spellings of "object not found" and "could not find function".
-    harness = (NameError, ImportError)
+    # spellings of "object not found" and "could not find function". And a
+    # table the page could not load, which `god_table` raises as a
+    # `GodTableError`: a `GodError`, so a chunk's own handler would catch it
+    # and call it the refusal, which is why it is named here first.
+    tables = sys.modules.get("god.tables")
+    harness = (NameError, ImportError) + (
+        (tables.GodTableError,) if tables is not None and hasattr(tables, "GodTableError") else ()
+    )
 
     checked = 0
     quiet: list[str] = []
