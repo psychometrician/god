@@ -954,6 +954,38 @@ else:
     print("  FAIL  a Python refusal in the book stopped refusing\n"
           + _refusals.stdout.rstrip()[-2000:])
 
+
+# **A table that could not be read is not a refusal.** The guard counted every
+# exception a refusal chunk raised as the refusal, so a page whose table did not
+# exist passed, while the page itself would have shown a traceback. It is handed
+# two pages built for it, offline: one whose refusal is the grammar's, which
+# must pass, and one whose table exists nowhere, which must not.
+def _refusal_page(body: str) -> int:
+    with _tempfile.TemporaryDirectory() as _dir:
+        _book = pathlib.Path(_dir)
+        (_book / "_setup.qmd").write_text(
+            "```{python}\n"
+            f"import sys; sys.path.insert(0, {str(Path(__file__).resolve().parents[1])!r})\n"
+            "import pandas as pd\n"
+            "from god import *\n"
+            "```\n")
+        (_book / "page.qmd").write_text(
+            "```{python}\n#| classes: refusal\ntry:\n"
+            + "".join(f"    {line}\n" for line in body.splitlines())
+            + "except GodError as refusal:\n    print(refusal)\n```\n")
+        return subprocess.run(
+            [sys.executable,
+             str(Path(__file__).resolve().parents[3] / "book" / "check_refusals.py"),
+             str(_book)],
+            capture_output=True, text=True, env=_offline,
+        ).returncode
+
+
+check("the refusal guard passes a page whose refusal is the grammar's",
+      _refusal_page('collect(pd.DataFrame({"x": [1]}) >> keep(col.x > "a"))'), 0)
+check("and fails a page whose table could not be read",
+      _refusal_page('gone = god_table("no-such-table")\ncollect(gone >> take(1))'), 1)
+
 print("\nwhat the package exports")
 
 check("the six verbs are exported",

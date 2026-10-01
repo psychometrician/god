@@ -17,11 +17,15 @@ refusal block in the book collects inside the `try`, and where one does not,
 the pipeline it builds is forced here, or a refusal that no longer refuses
 would look exactly like one that does.
 
-**An error is not automatically a refusal**, so the same rule as the R guard:
-the short, stable list is the errors that mean *this file* failed to give a
-chunk what it needs (a missing name, a missing import). Anything else that
-raises is the grammar, or the driver carrying the grammar's answer, and both
-of those are refusals.
+**An error is not automatically a refusal.** The errors that mean *this file*
+failed to give a chunk what it needs (a missing name, a missing import) are
+reported as this file's fault. Past those, a refusal is what the chunk's own
+`except` catches, because that is what the page prints: every refusal arrives
+as a `GodError`, and anything else, a table that could not be read included,
+escapes the handler and is a traceback on the page rather than a refusal.
+
+Pass a directory to check a book other than this one; the suite does, to prove
+this guard fails on a page built to fail it.
 """
 
 import ast
@@ -86,6 +90,23 @@ def catches_goderror(node: ast.Try) -> bool:
     return False
 
 
+def caught_by(node: ast.Try, namespace: dict) -> tuple:
+    """The exception types a chunk's own `except` clauses catch.
+
+    **That is what a refusal is on the page.** The chunk prints what its
+    handler catches, and anything else escapes as a traceback. Counting every
+    exception as a refusal is how a chunk whose table could not be read passed
+    this guard.
+    """
+    caught: list = []
+    for handler in node.handlers:
+        if handler.type is None:
+            return (BaseException,)
+        kind = eval(compile(ast.Expression(body=handler.type), "<except>", "eval"), namespace)
+        caught.extend(kind if isinstance(kind, tuple) else (kind,))
+    return tuple(caught)
+
+
 def run_statements(statements, namespace, filename):
     """Execute statements; the last one, if an expression, hands back its value."""
     value = None
@@ -112,8 +133,8 @@ def force(value, namespace):
     return "it evaluated without complaint"
 
 
-def main() -> int:
-    if not BOOK.exists():
+def main(book: Path = BOOK) -> int:
+    if not book.exists():
         print("SKIP: no book/ here, so there are no refusal chunks to check")
         return 0
 
@@ -129,9 +150,9 @@ def main() -> int:
     # below to fail as a `NameError`, one line per chunk and none of them
     # saying why.
     shared: dict = {}
-    setup = BOOK / "_setup.qmd"
+    setup = book / "_setup.qmd"
     if setup.exists():
-        with working_directory(BOOK):
+        with working_directory(book):
             for chunk in python_chunks(setup.read_text().splitlines()):
                 try:
                     exec(compile(chunk["code"], str(setup), "exec"), shared)
@@ -151,7 +172,7 @@ def main() -> int:
     quiet: list[str] = []
     wrong: list[str] = []
 
-    qmds = sorted(p for p in BOOK.rglob("*.qmd") if "/_" not in str(p))
+    qmds = sorted(p for p in book.rglob("*.qmd") if "/_" not in str(p))
     for f in qmds:
         lines = f.read_text().splitlines()
         chunks = python_chunks(lines)
@@ -181,7 +202,7 @@ def main() -> int:
         with working_directory(f.parent):
             for i in range(last + 1):
                 chunk, tree = chunks[i], parsed[i]
-                where = f"{f.relative_to(ROOT)}:{chunk['line']}"
+                where = f"{f.relative_to(book.parent)}:{chunk['line']}"
                 if tree is None:
                     continue
 
@@ -203,15 +224,22 @@ def main() -> int:
                         shown = " ".join(
                             ast.get_source_segment(chunk["code"], node.body[0]).split()
                         ) if node.body else ""
+                        caught: tuple = ()
                         try:
+                            caught = caught_by(node, namespace)
                             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                                 value = run_statements(node.body, namespace, str(f))
                                 outcome = force(value, namespace)
                         except harness as e:
                             wrong.append(f"{where}: {type(e).__name__}: {e}")
                             continue
-                        except Exception:
-                            continue  # it refused, which is the promise kept
+                        except Exception as e:
+                            # Caught by the chunk's own handler: it refused,
+                            # which is the promise kept. Anything else escapes
+                            # the handler and the page shows a traceback.
+                            if not isinstance(e, caught):
+                                wrong.append(f"{where}: {type(e).__name__}: {e}")
+                            continue
                         quiet.append(f"{where} ({outcome}): {shown}")
                     else:
                         try:
@@ -237,7 +265,8 @@ def main() -> int:
             print("FAIL: these failed for a reason that is not a refusal")
             for line in wrong:
                 print(f"  {line}")
-            print("  That is this guard missing a table, not the book being wrong. Fix the guard.")
+            print("  None of these reached the grammar: either this guard is missing a table,")
+            print("  or the page could not read one.")
         return 1
 
     print(f"PASS: every Python refusal refuses ( {checked} chunks )")
@@ -245,4 +274,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else BOOK))

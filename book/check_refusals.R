@@ -92,8 +92,14 @@ check_refusals <- function(dirs = "book") {
   # them and reports a working refusal as a fault.
   #
   # What is short and stable is the other list: the errors R raises when this
-  # file has failed to give a chunk what it needs.
-  harness <- "object '[^']*' not found|could not find function|unused argument"
+  # file has failed to give a chunk what it needs, and the one it raises when a
+  # chunk could not read its own table. **That last is not a refusal either.**
+  # A chunk that loads its table inside `error: true` tolerates a missing CSV
+  # exactly as it tolerates the grammar saying no, and counting the first as
+  # the second is how a page showing "cannot open URL ... 404" where its
+  # refusal belonged passed this guard.
+  harness <- paste0("object '[^']*' not found|could not find function|",
+                    "unused argument|cannot open")
 
   checked <- 0L
   quiet <- character()
@@ -193,7 +199,8 @@ check_refusals <- function(dirs = "book") {
     if (length(wrong)) {
       cat("FAIL: these failed for a reason that is not a refusal\n")
       for (line in wrong) cat("  ", line, "\n", sep = "")
-      cat("  That is this guard missing a table, not the book being wrong. Fix the guard.\n")
+      cat("  None of these reached the grammar: either this guard is missing a table,\n")
+      cat("  or the page could not read one.\n")
     }
     stop(sprintf("check_refusals: %d chunk(s) wrong", length(quiet) + length(wrong)),
          call. = FALSE)

@@ -5,6 +5,15 @@ a person using god can see.
 
 ## Unreleased
 
+### A refusal example whose table could not be read no longer passes as one
+
+The guards that prove every refusal in the book still refuses counted any error
+in a refusal example as the refusal. So an example that loaded its table inside
+the refusal, and found no table, passed: the page showed "cannot open URL ...
+404" where the refusal belonged, and the build went on. Both guards now fail
+it. In Python a refusal is what the example's own `except GodError` catches,
+because that is what the page prints; anything else is a traceback.
+
 ### The refusal guards read the book's own tables, and pass with no network
 
 The two guards that prove every refusal in the book still refuses ran the

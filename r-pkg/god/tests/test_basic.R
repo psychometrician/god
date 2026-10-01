@@ -963,6 +963,31 @@ without_network(
   book_guard("every refusal the book shows, the grammar makes, with no network",
              "book/check_refusals.R", "check_refusals")
 )
+# **A table that could not be read is not a refusal.** A chunk that loads its
+# table inside `error: true` tolerates a missing CSV exactly as it tolerates the
+# grammar saying no, and the guard counted both as refusals. So it is handed two
+# pages built for it, offline: one whose refusal is the grammar's, which must
+# pass, and one whose table exists nowhere, which must not.
+if (file.exists("book/check_refusals.R")) local({
+  guard <- new.env(parent = globalenv())
+  source("book/check_refusals.R", local = guard)
+  page <- function(lines) {
+    book <- tempfile("refusal-book-")
+    dir.create(book)
+    writeLines(c("```{r}", "invisible(NULL)", "```"), file.path(book, "_setup.qmd"))
+    writeLines(c("```{r}", "#| error: true", lines, "```"), file.path(book, "page.qmd"))
+    without_network(tryCatch({
+      capture.output(get("check_refusals", envir = guard)(book))
+      "it passed"
+    }, error = function(e) conditionMessage(e)))
+  }
+  check("the refusal guard passes a page whose refusal is the grammar's",
+        page(c("tiny <- data.frame(x = 1)", 'tiny |> keep(x > "a") |> collect()')),
+        "it passed")
+  check("and fails a page whose table could not be read",
+        page(c('gone <- god_table("no-such-table")', "gone |> take(1) |> collect()")),
+        "check_refusals: 1 chunk(s) wrong")
+})
 book_guard("every tabset holds one sentence in both languages",
            "book/check_tabs.R", "check_tabs")
 book_guard("every verb chapter follows the template",
