@@ -825,7 +825,20 @@ impl Dialect {
                     unmatched,
                     ..
                 } => {
-                    let right = self.table(&other.text);
+                    // **A partner named in parts is joined under a name of its
+                    // own.** Its columns are reached through the table's name,
+                    // and DuckDB's parser will not read a star qualified by a
+                    // name in parts, `"shop"."products".*`, so the join that a
+                    // dotted name was documented to allow failed to parse.
+                    // `partner` is one word inside this step, which is all the
+                    // references need. A plain name keeps its own, so every
+                    // other join reads as it always has.
+                    let named = self.table(&other.text);
+                    let (joined, right) = if other.text.contains('.') {
+                        (format!("{named} AS partner"), "partner".to_string())
+                    } else {
+                        (named.clone(), named)
+                    };
                     let on: Vec<String> = by
                         .iter()
                         .map(|k| {
@@ -886,7 +899,7 @@ impl Dialect {
                     };
 
                     format!(
-                        "SELECT {left_side}, {right}.* {} ({}) FROM {from} {kind} {right} ON {}",
+                        "SELECT {left_side}, {right}.* {} ({}) FROM {from} {kind} {joined} ON {}",
                         self.exclude,
                         dropped.join(", "),
                         on.join(" AND ")

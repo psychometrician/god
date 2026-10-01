@@ -1038,6 +1038,19 @@ check("and the whole name is not quoted as one", "`shop.orders`" in _parts, Fals
 _py = god.show_as("shop.orders then take 1", "pyspark", **{"shop.orders": pd.DataFrame({"a": [1]})})
 check("pyspark asks the session for it", 'spark.table("shop.orders")' in _py, True)
 
+# **And the other table in a join is one too.** It was written bare, so
+# `shop.products` printed as a Python name nothing defined; and the SQL reached
+# its columns through `"shop"."products".*`, which DuckDB will not parse.
+_shop = {"shop.orders": pd.DataFrame({"product": ["Widget"]}),
+         "shop.products": pd.DataFrame({"product": ["Widget"], "maker": ["Acme"]})}
+_joined = god.show_as("shop.orders then join shop.products by [product]", "pyspark", **_shop)
+check("pyspark asks the session for the other table too",
+      'spark.table("shop.products")' in _joined, True)
+_joined_sql = god.show_as("shop.orders then join shop.products by [product]", "sql", **_shop)
+check("and the SQL joins it under a name of its own",
+      ('"shop"."products" AS partner' in _joined_sql, '"shop"."products".*' in _joined_sql),
+      (True, False))
+
 check_error("a dot with nothing after it says so",
             lambda: god.show_as("shop. then take 1", "sql", **{"shop": pd.DataFrame({"a": [1]})}),
             "names a table in parts")

@@ -65,6 +65,17 @@ run("shop.orders then summarize [total] as total([revenue]) by [region]")
 The table was never in this session. It was described by asking the engine for
 its columns and no rows, and the totalling happened where the data already was.
 
+The other table in a `join` can be named in parts too:
+
+```{r}
+DBI::dbExecute(warehouse,
+  "CREATE TABLE shop.managers (region VARCHAR, manager VARCHAR)")
+DBI::dbExecute(warehouse,
+  "INSERT INTO shop.managers VALUES ('West', 'Ada'), ('East', 'Grace')")
+
+run("shop.orders then join shop.managers by [region] then sort [revenue]")
+```
+
 ```{r}
 use_engine()   # back to the engine on this machine
 ```

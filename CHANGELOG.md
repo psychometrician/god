@@ -6,6 +6,17 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A table named in parts can be the other table in a join
+
+`shop.orders then join shop.products by [product]` is a join the book says a
+name in parts allows, and it did not run. The query reached the other table's
+columns through `"shop"."products".*`, which DuckDB's parser refuses; the
+joined table now has a name of its own inside the query. Printed PySpark wrote
+the other table bare in `join`, `add_rows` and `matching`, so `shop.products`
+was a Python name nothing defined; it is looked up with `spark.table` now, as
+the head already was. The chapter on running somewhere else shows the join
+live.
+
 ### The preface says only what is true about where its tables come from
 
 It said nothing in the book is typed rather than read, while one chapter types

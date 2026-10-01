@@ -58,12 +58,18 @@ fn schema_of(conn: &Connection, table: &str) -> Schema {
 
 /// Compile against both tables and read back what the engine returns.
 fn run(conn: &Connection, pipeline: &str) -> (Vec<String>, Vec<Vec<String>>) {
-    let left = schema_of(conn, "sales");
-    let others = Tables::new([
-        ("products", schema_of(conn, "products")),
-        ("more_sales", schema_of(conn, "more_sales")),
-        ("catalog", schema_of(conn, "catalog")),
-    ]);
+    run_with(conn, pipeline, "sales", &["products", "more_sales", "catalog"])
+}
+
+/// The same, with the head and the other tables named by the caller.
+fn run_with(
+    conn: &Connection,
+    pipeline: &str,
+    head: &str,
+    named: &[&str],
+) -> (Vec<String>, Vec<Vec<String>>) {
+    let left = schema_of(conn, head);
+    let others = Tables::new(named.iter().map(|name| (*name, schema_of(conn, name))));
     let compiled = match compile_tables(pipeline, &left, &others, "sql") {
         Ok(c) => c,
         Err(d) => panic!("\n{}\n", d.render(pipeline)),
@@ -108,6 +114,73 @@ fn refusal(pipeline: &str) -> String {
 }
 
 // -- the three kinds -------------------------------------------------------
+
+/// A table named in parts can be joined, added and matched, not only read.
+///
+/// **`join` was the one of the four that failed.** It reached the other table's
+/// columns through that table's name, and DuckDB will not parse a star
+/// qualified by a name in parts, `"sch"."products".*`, so a join a page says is
+/// allowed never got past the parser. The head was tested and the other three
+/// positions were not.
+#[test]
+fn a_table_named_in_parts_can_be_joined_added_and_matched() {
+    let conn = Connection::open_in_memory().expect("an in-memory database");
+    conn.execute_batch(
+        "CREATE SCHEMA sch;
+         CREATE TABLE sch.orders (product VARCHAR, revenue DOUBLE);
+         INSERT INTO sch.orders VALUES ('Widget', 100), ('Gadget', 300);
+         CREATE TABLE sch.products (product VARCHAR, maker VARCHAR);
+         INSERT INTO sch.products VALUES ('Widget', 'Acme');
+         CREATE TABLE sch.more (product VARCHAR, revenue DOUBLE);
+         INSERT INTO sch.more VALUES ('Gizmo', 50);",
+    )
+    .expect("the fixture schema and tables");
+    let run = |pipeline: &str| {
+        run_with(&conn, pipeline, "sch.orders", &["sch.products", "sch.more"]).1
+    };
+    let row = |cells: &[&str]| cells.iter().map(|c| c.to_string()).collect::<Vec<_>>();
+
+    assert_eq!(
+        run("sch.orders then join sch.products by [product] then sort [product]"),
+        vec![row(&["Gadget", "300", "missing"]), row(&["Widget", "100", "Acme"])]
+    );
+    assert_eq!(
+        run("sch.orders then add_rows sch.more then sort [product]"),
+        vec![row(&["Gadget", "300"]), row(&["Gizmo", "50"]), row(&["Widget", "100"])]
+    );
+    assert_eq!(
+        run("sch.orders then keep where matching(sch.products, by [product])"),
+        vec![row(&["Widget", "100"])]
+    );
+}
+
+/// The printed PySpark looks a catalog table up in all four positions.
+///
+/// A plain name is the frame in hand, and a name in parts is something the
+/// session is asked for. The head was written that way and the other table
+/// was written bare, so `shop.products` printed as a Python name that did not
+/// exist.
+#[test]
+fn printed_pyspark_looks_up_a_table_named_in_parts_wherever_it_appears() {
+    let orders = Schema::new([("product", Type::Text), ("revenue", Type::Number)]);
+    let products = Schema::new([("product", Type::Text), ("maker", Type::Text)]);
+    let others = Tables::new([("shop.products", products), ("shop.more", orders.clone())]);
+    for pipeline in [
+        "shop.orders then join shop.products by [product]",
+        "shop.orders then add_rows shop.more",
+        "shop.orders then keep where matching(shop.products, by [product])",
+    ] {
+        let printed = compile_tables(pipeline, &orders, &others, "pyspark")
+            .unwrap_or_else(|d| panic!("\n{}\n", d.render(pipeline)))
+            .text;
+        assert!(printed.contains("spark.table(\"shop.orders\")"), "{printed}");
+        let partner = if pipeline.contains("more") { "shop.more" } else { "shop.products" };
+        assert!(
+            printed.contains(&format!("spark.table(\"{partner}\")")),
+            "the other table is written bare:\n{printed}"
+        );
+    }
+}
 
 #[test]
 fn the_default_keeps_every_row_of_this_table() {

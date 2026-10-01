@@ -1196,6 +1196,18 @@ local({
   check("a table named in parts is found in the engine", answer$product, "Gadget")
   check("and it is described without fetching it",      nrow(answer), 1L)
 
+  # **And the other table in a join can be named in parts too.** The query
+  # reached its columns through a star qualified by the name in parts,
+  # `"sch"."products".*`, which DuckDB will not parse, so the join a page says
+  # is allowed never ran.
+  DBI::dbExecute(con, "CREATE TABLE sch.products (product VARCHAR, maker VARCHAR)")
+  DBI::dbExecute(con, "INSERT INTO sch.products VALUES ('Widget', 'Acme')")
+  joined <- tryCatch(
+    run("sch.orders then join sch.products by [product] then sort [product]"),
+    error = function(e) conditionMessage(e))
+  check("a table named in parts can be joined",
+        if (is.data.frame(joined)) joined$maker else joined, c(NA, "Acme"))
+
   use_engine()
   sales_here <- data.frame(region = "West", revenue = 10)
   check("and the engine here takes over again",

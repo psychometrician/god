@@ -71,7 +71,7 @@ impl Backend for PySpark {
                 Step::Keep { condition, .. } => match filtering_join(condition) {
                     Some((other, by, negated)) => calls.push(format!(
                         "join({}{}, on={}, how=\"{}\")",
-                        other.text,
+                        frame_of(&other.text),
                         renames(by),
                         list(&by.iter().map(|k| k.this.clone()).collect::<Vec<_>>()),
                         if negated { "anti" } else { "semi" }
@@ -226,7 +226,7 @@ impl Backend for PySpark {
                     // kind behaves as the same-named case already does.
                     calls.push(format!(
                         "join({}{}, on={}, how=\"{how}\")",
-                        other.text,
+                        frame_of(&other.text),
                         renames(by),
                         list(&by.iter().map(|k| k.this.clone()).collect::<Vec<_>>())
                     ));
@@ -236,7 +236,7 @@ impl Backend for PySpark {
                 // what the sentence said. The checker has already refused a pair
                 // of tables whose columns differ.
                 Step::AddRows { other, .. } => {
-                    calls.push(format!("unionByName({})", other.text))
+                    calls.push(format!("unionByName({})", frame_of(&other.text)))
                 }
 
                 // The same mechanism the other two need. Spark's `full` join
@@ -360,7 +360,7 @@ impl Backend for PySpark {
             }
         }
 
-        let head = head_of(&plan.source);
+        let head = frame_of(&plan.source);
         if calls.is_empty() {
             return head;
         }
@@ -368,13 +368,16 @@ impl Backend for PySpark {
     }
 }
 
-/// The frame a pipeline starts from.
+/// The frame a table's name means, at the head of a pipeline or as the other
+/// table in `join`, `add_rows` and `matching`.
 ///
 /// **A name in parts is a table in a catalog, and Spark is the one target that
 /// has one.** `main.sales.orders` is not a variable a notebook holds; it is
 /// something the session looks up, so it is written the way the session is
 /// asked. A plain name is a plain name, which is the frame already in hand.
-fn head_of(source: &str) -> String {
+/// The other table used to be written bare, so a dotted one printed as
+/// `shop.products`, which is a `NameError` when the code runs.
+fn frame_of(source: &str) -> String {
     if source.contains('.') {
         format!("spark.table({})", text(source))
     } else {
