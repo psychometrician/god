@@ -117,15 +117,31 @@ def main() -> int:
         print("SKIP: no book/ here, so there are no refusal chunks to check")
         return 0
 
-    # The shared fixtures, read the way a chapter reads them.
+    # The shared fixtures, read the way a chapter reads them, and **from
+    # `book/`**, for the reason `working_directory` gives. The setup is
+    # included into every page, so knitr runs it from that page's directory,
+    # and from any of them `god_table` walks up to `book/data/`. From the
+    # repository root, where the suites start this file, it found no `data/`
+    # and fetched the published copies: the guard failed without a network,
+    # and with one it graded the site rather than the tree.
+    #
+    # **A setup that fails is a failure.** Swallowing it left every refusal
+    # below to fail as a `NameError`, one line per chunk and none of them
+    # saying why.
     shared: dict = {}
     setup = BOOK / "_setup.qmd"
     if setup.exists():
-        for chunk in python_chunks(setup.read_text().splitlines()):
-            try:
-                exec(compile(chunk["code"], str(setup), "exec"), shared)
-            except Exception:
-                pass
+        with working_directory(BOOK):
+            for chunk in python_chunks(setup.read_text().splitlines()):
+                try:
+                    exec(compile(chunk["code"], str(setup), "exec"), shared)
+                except Exception as e:
+                    print(
+                        f"FAIL: the book's setup failed at _setup.qmd:{chunk['line']}, "
+                        "so no refusal can be checked against the book's tables: "
+                        f"{type(e).__name__}: {e}"
+                    )
+                    return 1
 
     # The errors that mean this guard is broken rather than the book: Python's
     # spellings of "object not found" and "could not find function".

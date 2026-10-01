@@ -939,8 +939,30 @@ book_guard("every count the engine can check, the book gets right",
 # presents as a refusal can quietly stop refusing, render a table, and the build
 # still exits 0. A pipeline is lazy, so this one has to force each chunk or it
 # would report every refusal as passing while testing none.
-book_guard("every refusal the book shows, the grammar makes",
-           "book/check_refusals.R", "check_refusals")
+#
+# **And it runs with the network unplugged, because it is the guard that once
+# needed one.** It evaluated the book's setup from the repository root, where
+# `god_table` finds no `data/` and fetches the published copy, so it failed on
+# a laptop with no connection and graded the site rather than the tree on one
+# with a connection. For the length of the call every proxy variable points at
+# a port nobody answers, so a fetch fails at once, here, instead of passing.
+without_network <- function(expr) {
+  vars <- c("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY",
+            "no_proxy", "NO_PROXY")
+  was <- Sys.getenv(vars, unset = NA)
+  on.exit(for (v in vars) {
+    if (is.na(was[[v]])) Sys.unsetenv(v) else do.call(Sys.setenv, as.list(was[v]))
+  })
+  Sys.unsetenv(c("no_proxy", "NO_PROXY"))
+  dead <- "http://127.0.0.1:9"
+  Sys.setenv(http_proxy = dead, https_proxy = dead, HTTP_PROXY = dead,
+             HTTPS_PROXY = dead)
+  expr
+}
+without_network(
+  book_guard("every refusal the book shows, the grammar makes, with no network",
+             "book/check_refusals.R", "check_refusals")
+)
 book_guard("every tabset holds one sentence in both languages",
            "book/check_tabs.R", "check_tabs")
 book_guard("every verb chapter follows the template",

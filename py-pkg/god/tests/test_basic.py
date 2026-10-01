@@ -932,13 +932,23 @@ else:
 # `error: true` chunks; the try/except twins beside them were proved by
 # nothing until this guard, and a binding can drift visibly on a page while
 # parity stays green — `show_as` did exactly that for a day.
+#
+# **With the network unplugged, because this is the guard that once needed
+# one.** It ran the book's setup from the repository root, where `god_table`
+# finds no `data/` and fetches the published copy, so it failed with no
+# connection, graded the site rather than the tree with one, and never returned
+# on a connection that never answered. Every proxy variable points at a port
+# nobody answers, so a fetch fails at once instead.
+_offline = {k: v for k, v in os.environ.items() if k.lower() != "no_proxy"}
+_offline.update(dict.fromkeys(
+    ("http_proxy", "https_proxy", "HTTP_PROXY", "HTTPS_PROXY"), "http://127.0.0.1:9"))
 _refusals = subprocess.run(
     [sys.executable, str(Path(__file__).resolve().parents[3] / "book" / "check_refusals.py")],
-    capture_output=True, text=True,
+    capture_output=True, text=True, env=_offline,
 )
 if _refusals.returncode == 0:
     passed += 1
-    print("  ok    every Python refusal in the book still refuses")
+    print("  ok    every Python refusal in the book still refuses, with no network")
 else:
     failed += 1
     print("  FAIL  a Python refusal in the book stopped refusing\n"

@@ -45,13 +45,43 @@ check_refusals <- function(dirs = "book") {
 
   # The shared fixtures every chapter includes. Read as a chapter would read it,
   # so the tables here are the tables the examples ran against.
+  #
+  # **From `book/`, not from wherever this guard was started.** The setup is
+  # included into every page, so knitr runs it from that page's directory, and
+  # from any of them `god_table` walks up to `book/data/`. From the repository
+  # root, where both suites start this file, it found no `data/` and fetched
+  # the *published* copies instead: the guard failed without a network, and
+  # with one it graded the site rather than the tree. The chapters below were
+  # already run from their own directories for the same reason; the setup was
+  # the one thing that was not.
+  #
+  # **A setup chunk that fails is a failure, not a shrug.** Swallowing it left
+  # every refusal below running against whatever happened to be lying around,
+  # and the R suite's own five-row `sales` was lying around, so the refusals
+  # that asked for `sales` passed against it. The one chunk allowed to fail is
+  # the one that points reticulate at the virtualenv: this guard evaluates R
+  # chunks only, and the CI job that runs it has no virtualenv.
   shared <- new.env(parent = globalenv())
   setup <- file.path(dirs[[1]], "_setup.qmd")
   if (file.exists(setup)) {
-    for (code in r_chunks(readLines(setup, warn = FALSE))) {
-      try(eval(parse(text = paste(code$code, collapse = "\n")), envir = shared),
-          silent = TRUE)
+    setup_chunks <- r_chunks(readLines(setup, warn = FALSE))
+    owd <- getwd()
+    on.exit(setwd(owd), add = TRUE)
+    setwd(dirname(setup))
+    for (chunk in setup_chunks) {
+      code <- paste(chunk$code, collapse = "\n")
+      problem <- tryCatch({
+        eval(parse(text = code), envir = shared)
+        NULL
+      }, error = function(e) conditionMessage(e))
+      if (!is.null(problem) && !grepl("use_virtualenv(", code, fixed = TRUE)) {
+        stop(sprintf(paste0(
+          "check_refusals: the book's setup failed at _setup.qmd:%d, so no ",
+          "refusal can be checked against the book's tables: %s"),
+          chunk$line, trimws(strsplit(problem, "\n")[[1]][1])), call. = FALSE)
+      }
     }
+    setwd(owd)
   }
 
   # **Asked the other way round: which errors mean this guard is broken?**

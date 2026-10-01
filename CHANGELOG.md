@@ -5,6 +5,20 @@ a person using god can see.
 
 ## Unreleased
 
+### The refusal guards read the book's own tables, and pass with no network
+
+The two guards that prove every refusal in the book still refuses ran the
+book's setup from the repository root. There `god_table` finds no `data/`
+folder, so it fetched the published copy of every table instead. Both test
+suites therefore failed without a connection, and with one, the guards checked
+the website's tables rather than the tree's. They now run the setup from
+`book/`, where it finds `book/data/`. A setup that fails now stops the guard
+with a message naming the chunk, where it used to leave the refusals running
+against whatever tables happened to be defined.
+
+Both suites now run these guards with the network cut off, so a table fetched
+from the website fails the check instead of passing it.
+
 ### `god_table` says what it can do, in the preface and on its help page
 
 Both said the cast was eight tables and stopped there. Every table the book
