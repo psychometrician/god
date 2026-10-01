@@ -214,6 +214,8 @@ Rscript book/check_counts.R               # every prose count of a thing the eng
 Rscript book/check_refusals.R             # every refusal chunk actually refuses (the R half)
 python3 book/check_refusals.py            # the same promise, kept by the Python half
 Rscript book/check_tabs.R                 # every tabset holds both languages
+Rscript book/check_agreement.R            # and every tab of an example answers with
+                                          # one table, in one order (needs book/.venv)
 Rscript book/check_template.R             # the verb-chapter shape, and every page ends on prose
 Rscript book/check_promises.R             # the five rules the preface states
 Rscript book/check_render.R               # the rendered book, for the defects only output has

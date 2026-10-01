@@ -6,6 +6,18 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### A guard holds every example's tabs to one table, in one order
+
+The first page promises that the tabs of an example answer with the same
+table, and nothing checked it: one guard proved the tabs exist, and the parity
+harness compares its own sentences rather than the book's. A new guard runs
+every page the way the render does, R and Python both, and compares what the
+run, R and Python tabs of each example produce, values and row order alike. It
+found one more disagreement on its first run, a join shown whole whose rows
+came back in a different order in each language, and that example now sorts.
+It needs the book's virtualenv, and says so and grades nothing where there is
+none.
+
 ### `god_table` reads a file the same way in R and in Python
 
 R's `read.csv` and pandas' `read_csv` made one file into two different

@@ -32,13 +32,17 @@ run('
   sales
     then join products by [product]
     then pick [product, maker, revenue]
+    then sort [product], [revenue]
 ')
 ```
 
 ### R
 
 ```{r}
-sales |> join(products, by = product) |> pick(product, maker, revenue)
+sales |>
+  join(products, by = product) |>
+  pick(product, maker, revenue) |>
+  sort(product, revenue)
 ```
 
 ### Python
@@ -46,12 +50,13 @@ sales |> join(products, by = product) |> pick(product, maker, revenue)
 ```{python}
 (sales
   >> join(products, by = col.product)
-  >> pick(col.product, col.maker, col.revenue))
+  >> pick(col.product, col.maker, col.revenue)
+  >> sort(col.product, col.revenue))
 ```
 
 :::
 
-*`sales then join products by [product] then pick [product, maker, revenue]`*
+*`sales then join products by [product] then pick [product, maker, revenue] then sort [product], [revenue]`*
 
 The Sprocket rows come back with `maker` missing. `sales` sold a product
 that `products` has never heard of, so there was no row to bring columns

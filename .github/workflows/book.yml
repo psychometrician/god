@@ -167,12 +167,15 @@ jobs:
       # cheap and each one fails on something a render would happily publish:
       # a pipeline the grammar cannot read, a word no chapter demonstrates, a
       # refusal that stopped refusing in either language, a tabset that lost a
-      # tab, a chapter that broke the template its part page promises, a rule
-      # the preface states and the pages no longer keep.
+      # tab, the tabs of one example answering with different tables, a
+      # chapter that broke the template its part page promises, a rule the
+      # preface states and the pages no longer keep.
       #
       # They also run inside the two suites, which is where a developer meets
       # them. Repeated here because a publish is the last place to find out.
-      # The Python one runs in the book's venv, which holds its pandas.
+      # The Python one runs in the book's venv, which holds its pandas, and so
+      # does the tab comparison, which is why this is the one place in CI it
+      # runs: the test workflow has no venv, and there it says so and skips.
       - name: The book's own guards
         run: |
           Rscript book/check_grammar.R
@@ -180,6 +183,7 @@ jobs:
           Rscript book/check_vocabulary.R
           Rscript book/check_refusals.R
           Rscript book/check_tabs.R
+          Rscript book/check_agreement.R
           Rscript book/check_template.R
           Rscript book/check_promises.R
           book/.venv/bin/python book/check_refusals.py

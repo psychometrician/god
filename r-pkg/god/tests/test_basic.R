@@ -1038,6 +1038,41 @@ if (file.exists("book/check_refusals.R")) local({
 })
 book_guard("every tabset holds one sentence in both languages",
            "book/check_tabs.R", "check_tabs")
+# **And every tab of one example answers with one table, in one order.** The
+# preface promises it; until this guard nothing kept the promise, and the
+# published page on joins showed different rows in its R and Python tabs. It
+# runs the Python tabs, so it needs the book's virtualenv and skips without one.
+book_guard("every tab of an example answers with the same table",
+           "book/check_agreement.R", "check_agreement")
+# It is handed two pages built for it: one whose tabs agree, which must pass,
+# and one whose tabs hold the same rows in a different order, which must not.
+if (file.exists("book/check_agreement.R") && dir.exists("book/.venv") &&
+    requireNamespace("reticulate", quietly = TRUE)) local({
+  guard <- new.env(parent = globalenv())
+  source("book/check_agreement.R", local = guard)
+  page <- function(python_rows) {
+    book <- tempfile("agreement-book-")
+    dir.create(book)
+    file.symlink(normalizePath("book/.venv"), file.path(book, ".venv"))
+    writeLines(c("```{python}",
+                 sprintf("import sys; sys.path.insert(0, %s)",
+                         shQuote(normalizePath("py-pkg/god"), type = "sh")),
+                 "import pandas as pd", "```"),
+               file.path(book, "_setup.qmd"))
+    writeLines(c("::: {.panel-tabset}", "", "### R", "", "```{r}",
+                 "data.frame(x = c(1, 2))", "```", "", "### Python", "",
+                 "```{python}", sprintf("pd.DataFrame({'x': %s})", python_rows),
+                 "```", "", ":::"),
+               file.path(book, "page.qmd"))
+    tryCatch({
+      capture.output(get("check_agreement", envir = guard)(book))
+      "it passed"
+    }, error = function(e) conditionMessage(e))
+  }
+  check("the tab guard passes a page whose tabs agree", page("[1, 2]"), "it passed")
+  check("and fails one whose tabs hold the same rows in another order",
+        page("[2, 1]"), "check_agreement: 1 disagreement(s), 0 tab(s) that would not run")
+})
 book_guard("every verb chapter follows the template",
            "book/check_template.R", "check_template")
 book_guard("the book keeps the rules its preface states",
