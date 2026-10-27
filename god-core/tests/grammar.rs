@@ -120,6 +120,34 @@ fn every_function_is_spelled_by_every_backend() {
     }
 }
 
+/// Every aggregate must also be spelled by every backend in a grouped `add`.
+///
+/// The test above puts an aggregate only in `summarize`, and an `add ... by` is
+/// a different path through most printers: the group's answer is handed back to
+/// every row in it, through `transform` in pandas and a window everywhere else.
+/// pandas had no word for `join_rows` there and panicked rather than refusing,
+/// and nothing walked that path to see it.
+#[test]
+fn every_aggregate_is_spelled_in_a_grouped_add_by_every_backend() {
+    for f in vocabulary::FUNCTIONS
+        .iter()
+        .filter(|f| f.kind == vocabulary::Kind::Aggregate)
+    {
+        let summarized = pipeline_using(f);
+        let (_, call) = summarized.split_once(" as ").expect("an aggregate is summarized");
+        let pipeline = format!("sales then sort [revenue] then add [answer] as {call} by [region]");
+        for name in backend::names() {
+            let result = compile(&pipeline, &schema(), name);
+            assert!(
+                result.is_ok(),
+                "the `{name}` backend cannot write `{}` in a grouped `add`: {}",
+                f.name,
+                result.err().map(|d| d.message).unwrap_or_default()
+            );
+        }
+    }
+}
+
 /// One well-formed sentence per verb.
 ///
 /// Written as data rather than as a second list of verbs: the assertion in

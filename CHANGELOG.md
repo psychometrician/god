@@ -6,6 +6,15 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### Printed pandas writes `join_rows` in an `add` with `by`
+
+`show_as` stopped with an internal error for `join_rows` in an `add` with
+`by`, because the pandas printer had no spelling for it there. It now writes
+the lambda `summarize` uses, and the answer agrees with the query. The check
+that runs the printed code had counted the failure as a refusal, so it said
+nothing; it now counts only a refusal as one, and a test writes every
+aggregate in an `add` with `by` through every printer.
+
 ### An R package tarball never carries an engine left over from an install
 
 A local `R CMD build` shipped whatever `god-cli` the last `R CMD INSTALL` had

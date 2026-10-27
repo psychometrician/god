@@ -95,7 +95,13 @@ def sentences(path: Path) -> list[str]:
 
 
 def render(sentence: str, backend: str, columns: list[str]) -> str | None:
-    """The printed text, or `None` where the grammar turned the sentence away."""
+    """The printed text, or `None` where the grammar turned the sentence away.
+
+    **Only a refusal is the grammar turning a sentence away.** The engine exits
+    2 for one; a usage error exits 1 and a panic 101. Counting every failure as
+    a refusal is how a pandas panic on `join_rows` in a grouped `add` went
+    unseen: its sentence was left out of pandas' count, and nothing said so.
+    """
     from god.run import _binary
 
     args = [_binary()]
@@ -103,7 +109,12 @@ def render(sentence: str, backend: str, columns: list[str]) -> str | None:
         args += ["--columns", c]
     args += ["--as", backend]
     done = subprocess.run(args, input=sentence, capture_output=True, text=True)
-    return done.stdout.strip() if done.returncode == 0 else None
+    if done.returncode == 0:
+        return done.stdout.strip()
+    if done.returncode == 2:
+        return None
+    first = (done.stderr.strip().splitlines() or [""])[0]
+    raise RuntimeError(f"god-cli exited {done.returncode} printing {backend}: {first}")
 
 
 def tables(fixture: Path) -> dict:
@@ -418,25 +429,30 @@ def main() -> int:
             for n, sentence in enumerate(corpus, 1):
                 if n not in wanted:
                     continue
-                printed = render(sentence, backend, columns)
-                if printed is None:
-                    continue
                 try:
+                    printed = render(sentence, backend, columns)
+                    if printed is None:
+                        continue
                     results[backend][n] = collect(eval(printed, dict(scope)))
                 except Exception as e:  # noqa: BLE001
                     results[backend][n] = e
 
         if use_r:
             printed = {}
+            broken: dict[int, object] = {}
             for n, sentence in enumerate(corpus, 1):
                 if n in wanted:
-                    code = render(sentence, "dplyr", columns)
+                    try:
+                        code = render(sentence, "dplyr", columns)
+                    except RuntimeError as e:
+                        broken[n] = e
+                        continue
                     if code is not None:
                         printed[n] = code
             with tempfile.TemporaryDirectory(prefix="god-dplyr-") as tmp:
                 scratch = Path(tmp) / "sentences"
                 scratch.mkdir()
-                results["dplyr"] = dplyr_answers(printed, fixture, scratch)
+                results["dplyr"] = dplyr_answers(printed, fixture, scratch) | broken
 
         for backend, answers in results.items():
             agreed = differed = broke = 0

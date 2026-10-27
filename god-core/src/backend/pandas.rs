@@ -1167,6 +1167,9 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             "last" => "last",
             "unique_count" => "nunique",
             "row_count" => "size",
+            // No method of pandas' joins a group's text, so `how` below spells
+            // it as the lambda `summarize` uses.
+            "join_rows" => "",
             _ => unreachable!("every aggregate has a transform word"),
         };
         let groups = grouped(over.partition);
@@ -1175,11 +1178,15 @@ fn call(fname: &str, args: &[Expr], over: Over) -> String {
             (_, Some(Expr::Column(n))) => text(&n.text),
             _ => unreachable!("refused before rendering"),
         };
-        // The same three corrections the named aggregations make.
+        // The same four corrections the named aggregations make.
         let how = match fname {
             "total" => format!("{}, min_count=1", text(word)),
             "first" => "lambda s: s.iloc[0]".to_string(),
             "last" => "lambda s: s.iloc[-1]".to_string(),
+            "join_rows" => format!(
+                "lambda s: {}.join(s.dropna()) if s.notna().any() else None",
+                inner(&args[1], Over::default())
+            ),
             _ => text(word),
         };
         return format!("d.{groups}[{column}].transform({how})");
