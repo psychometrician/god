@@ -6,6 +6,8 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+## 0.2.3 — 2026-10-26
+
 ### Printed pandas writes `join_rows` in an `add` with `by`
 
 `show_as` stopped with an internal error for `join_rows` in an `add` with
@@ -14,6 +16,12 @@ the lambda `summarize` uses, and the answer agrees with the query. The check
 that runs the printed code had counted the failure as a refusal, so it said
 nothing; it now counts only a refusal as one, and a test writes every
 aggregate in an `add` with `by` through every printer.
+
+### Two rulings on missing values are confirmed
+
+`rank` and `running_total` answering missing on a row whose own value is
+missing, and `widen` refusing a row whose name is missing, were both ruled on
+2026-10-01 and are now confirmed. Both are entries below.
 
 ### An R package tarball never carries an engine left over from an install
 

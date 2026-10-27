@@ -1,3 +1,103 @@
+# god 0.2.3
+
+## After a join, say which rows come first
+
+A join hands its rows back in the order the engine matched them, and that
+order is not the same on every engine, or in R and in Python. `take 3` after a
+join returned three different rows in the two languages. So after a `join`,
+`take`, `first`, `last` and `join_rows` are refused until a `sort` says which
+rows come first, and the message gives the sort to write:
+
+```r
+sales |> join(products, by = product) |> sort(date) |> take(3)
+```
+
+A step that sets an order of its own, such as `summarize`, settles it as well.
+
+## A missing value has no rank, and a missing name has no column
+
+`rank` and `running_total` answer missing on a row whose own value is missing,
+and no other row changes. Before, the query ranked that row after every value
+and repeated the total above it, as if the hole had added 0.
+
+```r
+patchy |>
+  sort(product) |>
+  add(so_far = running_total(revenue), place = rank(descending(revenue)))
+```
+
+`widen` refuses a row whose name is missing, where it used to drop that row
+without a word. The message gives the two ways out: `drop_missing` the rows,
+or `fill_missing` the hole and list what fills it in `giving`.
+
+## One file is one table, in R and in Python
+
+`god_table` reads a file with DuckDB in both languages, so a CSV gives the same
+names, values and missing cells whichever language reads it. Before, an empty
+cell was `""` in R and missing in Python, `T` was true in one and text in the
+other, and R renamed a header such as `order date` to `order.date`. An empty
+field and `NA` are now missing, a date stays text until `to_date` reads it, and
+a row with the wrong number of fields is refused.
+
+It also says what went wrong in god's own words, gives up after 60 seconds,
+and matches a file's name exactly. In Python, `text = "code"` keeps that column
+as text, as it always did in R.
+
+## Numbers and names arrive as they were written
+
+* A number in a pipeline keeps every digit. R wrote seven significant digits,
+  so `keep(amount >= 123456.78)` filtered on `123456.8`, and Python cut `1e-12`
+  to `0.0`. Both now write the number they were given, and Python takes a
+  numpy number such as `sales.revenue.max()`.
+* `to_text` writes a whole number without a decimal point, however a language
+  stored it. `to_text` of 7 was `"7.0"` in R and `"7"` in Python.
+* A table with a column called `price (USD, net)` now works. The engine used
+  to cut that name in two at its comma. A table with two columns of one name,
+  or a column with no name, is refused, because a sentence could not say which.
+* In R, a table held in a dotted variable such as `my.data` works. The dot was
+  read as a catalog name; R now writes the table as `my_data`.
+
+## In Python
+
+* `first_present` takes a value as its last fallback, as R's always has:
+  `first_present(col.revenue, 0)`. Python read `"none"` as a column called
+  `none`, and refused `0`.
+* `NaN` and `pd.NA` in a sentence are `missing`, as `None` already was, so
+  `keep(col.a != np.nan)` works as it does in R.
+* A pandas frame is handed to the engine in whichever form it reads faster.
+  For plain numbers, and for text held as Python objects, that is several
+  times faster than before. The answers are the same.
+
+## What `show_as` prints answers what the query answers, holes and all
+
+The pandas, polars, PySpark and dplyr that `show_as` prints now agree with the
+query on a table with missing values, row by row and in order. About sixty
+places disagreed, and each is fixed. The printed code keeps a group whose key
+is missing, never matches a missing key in a join, keeps no row whose condition
+is unknown, answers missing for a total of nothing, and restates the row order
+the query settles.
+
+## Smaller
+
+* An aggregate in an `add` with `by` keeps the order a `sort` above it asked
+  for, and `first`, `last` and `join_rows` there read the rows in that order.
+  On Spark, `join_rows` and a distinct count in an `add` now run.
+* A grouped `take`, `take(n, ties = TRUE)` and `take_last` list what they kept
+  in the same order every time.
+* A table named in parts, such as `shop.products`, can be the other table in a
+  `join`.
+* `show_as(..., "pandas")` writes `join_rows` in an `add` with `by`, where it
+  stopped with an internal error.
+
+## The manual reads every table from a file
+
+Every example table in the book is now a CSV published beside it, read with
+`god_table` and shown on the page that uses it, so `god_table("hourly")` hands
+you the table a chapter reasons from. The R examples pipe into `collect` and
+`show_as` rather than wrapping the pipeline in them.
+
+<https://psychometrician.github.io/god-book/>
+
 # god 0.2.2
 
 ## One word is gone, and two took its place
