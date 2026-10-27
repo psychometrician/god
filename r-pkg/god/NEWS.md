@@ -79,6 +79,8 @@ the query settles.
 
 ## Smaller
 
+* `widen` without `giving` runs on DuckDB 2.0, released on 2026-10-21, where
+  it stopped saying that a step of its own query did not exist.
 * An aggregate in an `add` with `by` keeps the order a `sort` above it asked
   for, and `first`, `last` and `join_rows` there read the rows in that order.
   On Spark, `join_rows` and a distinct count in an `add` now run.

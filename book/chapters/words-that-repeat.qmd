@@ -60,6 +60,7 @@ run('
   sales
     then add [share] as ([revenue] / total([revenue])) by [product]
     then pick [product, revenue, share]
+    then sort [product], [revenue]
 ')
 ```
 
@@ -68,7 +69,8 @@ run('
 ```{r}
 sales |>
   add(share = revenue / total(revenue), by = product) |>
-  pick(product, revenue, share)
+  pick(product, revenue, share) |>
+  sort(product, revenue)
 ```
 
 ### Python
@@ -76,7 +78,8 @@ sales |>
 ```{python}
 (sales
   >> add(share = col.revenue / total(col.revenue), by = col.product)
-  >> pick(col.product, col.revenue, col.share))
+  >> pick(col.product, col.revenue, col.share)
+  >> sort(col.product, col.revenue))
 ```
 
 :::

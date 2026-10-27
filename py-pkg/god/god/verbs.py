@@ -469,12 +469,13 @@ def join(other, *, by=None, unmatched="this"):
     ...                       "cost": [40, 80, 75, 60]})
     >>> products = pd.DataFrame({"product": ["Widget", "Gadget"],
     ...                          "maker": ["Acme", "Globex"]})
-    >>> collect(sales >> pick(col.product, col.revenue) >> join(products, by=col.product) >> sort(col.product))
+    >>> collect(sales >> pick(col.product, col.revenue) >> join(products, by=col.product)
+    ...         >> sort(col.product, col.revenue))
          product  revenue   maker
     0  Doohickey      120     NaN
     1     Gadget      120  Globex
-    2     Widget      150    Acme
-    3     Widget      100    Acme
+    2     Widget      100    Acme
+    3     Widget      150    Acme
     """
     if not _is_frame(other):
         raise GodExpressionError(

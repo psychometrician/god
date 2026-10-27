@@ -6,13 +6,28 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+## 0.2.3 — 2026-10-26
+
+### `widen` with no `giving` runs on DuckDB 2.0
+
+DuckDB 2.0, released on 2026-10-21, refused every `widen` that works its
+columns out from the data, saying a step of the query did not exist. A pivot
+with no list of values runs a query of its own first, to find them, and 2.0
+runs that query outside the steps before it. The query now writes those steps
+inside the pivot, which runs on DuckDB 1.5 and 2.0 alike. A `widen` with
+`giving` was never affected.
+
+### The `join` example sorts on both columns it shows
+
+The example on `join`'s help page sorted by `product` alone, so its two Widget
+rows came back in one order in R's help and the other in Python's, and DuckDB
+2.0 swapped Python's. It sorts by `product` and then `revenue` now, in both.
+
 ### The book and test workflows run on Ubuntu 26.04
 
 GitHub's `ubuntu-latest` became Ubuntu 26.04, whose `sudo` ignores `-E`, and
 the R setup step lost its environment there and stopped before installing a
 package. Both workflows now pin the `r-lib/actions` release that runs on it.
-
-## 0.2.3 — 2026-10-26
 
 ### Printed pandas writes `join_rows` in an `add` with `by`
 

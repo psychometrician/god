@@ -43,7 +43,7 @@ products <- data.frame(
 sales |>
   pick(product, revenue) |>
   join(products, by = product) |>
-  sort(product)
+  sort(product, revenue)
 #>     product revenue  maker
 #> 1 Doohickey     120   <NA>
 #> 2    Gadget     120 Globex

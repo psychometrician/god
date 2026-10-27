@@ -341,6 +341,9 @@ impl Dialect {
         for (i, step) in plan.steps.iter().enumerate() {
             let from = format!("step{i}");
             super::entering(entering.get(i));
+            // Set where a step takes every step before it inside itself, so
+            // they are not written twice.
+            let mut nested = false;
             let body = match step {
                 Step::Keep { condition, .. } => {
                     format!(
@@ -864,6 +867,21 @@ impl Dialect {
                         // Nothing was declared, so the columns come from the
                         // data and only the engine can name them. The checker
                         // has already refused any step after this one.
+                        //
+                        // **The steps before it go inside the pivot, as a
+                        // `WITH` of their own.** A pivot with no value list runs
+                        // a query first to find the values, and DuckDB 2.0 runs
+                        // that query outside the `WITH` the pivot sits in, so a
+                        // pivot naming an earlier step answered that the step
+                        // does not exist. Measured 2026-10-26: DuckDB 1.5.5 ran
+                        // the old shape and 2.0.0 refused it, and both run this
+                        // one, which names nothing outside itself.
+                        let chain = format!(
+                            "(WITH {} SELECT * FROM {from}) AS {from}",
+                            parts.join(",\n     ")
+                        );
+                        let counted = format!("(SELECT *, {held} AS {} FROM {chain})", self.name(CELL));
+                        nested = true;
                         let on = if labelled.len() == 1 {
                             labelled[0].clone()
                         } else {
@@ -1128,6 +1146,9 @@ impl Dialect {
                     }
                 }
             };
+            if nested {
+                parts.clear();
+            }
             parts.push(format!("step{} AS ({body})", i + 1));
         }
         super::entering(None);

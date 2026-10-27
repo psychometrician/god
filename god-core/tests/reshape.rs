@@ -199,6 +199,30 @@ fn the_round_trip_gives_back_the_table_it_started_from() {
     assert_eq!(before_rows, after_rows);
 }
 
+/// **A pivot with no value list names no step outside itself.** It runs a query
+/// of its own first, to find the values, and DuckDB 2.0 runs that query outside
+/// the `WITH` the pivot sits in, so a pivot naming an earlier step answered that
+/// the step did not exist. This suite links DuckDB 1.5, which never minded, so
+/// the shape is asserted here and the rows by the round trip above.
+#[test]
+fn a_widen_with_no_value_list_names_no_step_outside_its_pivot() {
+    let schema = Schema::new([
+        ("student", Type::Text),
+        ("q1", Type::Number),
+        ("q2", Type::Number),
+    ]);
+    let sql = compile(
+        "answers then keep where [q1] > 0 then lengthen [q1, q2] then widen",
+        &schema,
+        "sql",
+    )
+    .expect("the sentence checks")
+    .text;
+    let (outer, inside) = sql.split_once(" AS (").expect("a WITH");
+    assert_eq!(outer, "WITH step3", "the widen is the outer query's only step:\n{sql}");
+    assert!(inside.contains("(WITH step0 AS"), "the steps before it are inside the pivot:\n{sql}");
+}
+
 #[test]
 fn a_pattern_splits_one_name_into_two_columns() {
     let conn = Connection::open_in_memory().expect("a database");
