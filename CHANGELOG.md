@@ -6,6 +6,12 @@ release notes, the changes a reader would notice, are in `r-pkg/god/NEWS.md`.
 
 ## Unreleased
 
+### The book and test workflows run on Ubuntu 26.04
+
+GitHub's `ubuntu-latest` became Ubuntu 26.04, whose `sudo` ignores `-E`, and
+the R setup step lost its environment there and stopped before installing a
+package. Both workflows now pin the `r-lib/actions` release that runs on it.
+
 ## 0.2.3 — 2026-10-26
 
 ### Printed pandas writes `join_rows` in an `add` with `by`
